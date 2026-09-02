@@ -196,8 +196,6 @@
     "deleteTeamConfirm": "「{name}」を完全に削除しますか？終了済みの所属 {inactive} 件とコーチ割り当て {coaches} 件も削除されます。選手マスターは削除しません。元に戻せません。",
     "deleteTeamBlockedConfirm": "「{name}」は削除できません。有効な所属が {count} 件あります。先に他チームへ移すか所属を終了してください。",
     "deleteBlockedActive": "このチームには有効な所属が {count} 件あるため削除できません。先に他チームへ移すか所属を終了してください。",
-    "deleteBlockedMemberships": "このチームには所属レコードが {count} 件あります。削除前に取り除くか、チームを無効化してください。",
-    "deleteBlockedCoaches": "このチームにはコーチ割り当てが {count} 件あります。先に解除するか、チームを無効化してください。",
     "openTeamRoster": "名簿を開く"
   },
   "roster": {

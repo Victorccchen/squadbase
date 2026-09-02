@@ -196,8 +196,6 @@
     "deleteTeamConfirm": "確定永久刪除「{name}」？將一併移除 {inactive} 筆已結束歸屬與 {coaches} 筆教練指派。球員主檔不會刪除。此操作無法復原。",
     "deleteTeamBlockedConfirm": "無法刪除「{name}」：仍有 {count} 名啟用中球員。請先把球員改到其他隊伍或結束歸屬。",
     "deleteBlockedActive": "此隊伍仍有 {count} 名啟用中球員，無法刪除。請先把球員改到其他隊伍或結束歸屬。",
-    "deleteBlockedMemberships": "此隊伍仍有 {count} 筆球員歸屬紀錄。請先移除後再刪除，或改為停用隊伍。",
-    "deleteBlockedCoaches": "此隊伍仍有 {count} 筆教練指派。請先取消指派，或改為停用隊伍。",
     "openTeamRoster": "查看名單"
   },
   "roster": {

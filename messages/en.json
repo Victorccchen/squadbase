@@ -196,8 +196,6 @@
     "deleteTeamConfirm": "Permanently delete “{name}”? This also removes {inactive} ended memberships and {coaches} coach assignments. Player records are not deleted. This cannot be undone.",
     "deleteTeamBlockedConfirm": "Cannot delete “{name}”: {count} active players remain. Move them to another team or end those memberships first.",
     "deleteBlockedActive": "This team still has {count} active players, so it cannot be deleted. Move them to another team or end those memberships first.",
-    "deleteBlockedMemberships": "This team still has {count} membership rows. Remove them before deleting, or deactivate the team instead.",
-    "deleteBlockedCoaches": "This team still has {count} coach assignments. Unassign coaches first, or deactivate the team instead.",
     "openTeamRoster": "Open roster"
   },
   "roster": {
