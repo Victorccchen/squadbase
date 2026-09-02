@@ -2,6 +2,7 @@
 
 import { useActionState, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
+import { LocaleHiddenField } from "@/components/admin/locale-hidden-field";
 import {
   ageBandFromBirthDate,
   formatIsoDate,
@@ -45,6 +46,7 @@ export function PlayerForm({
 
   return (
     <form action={formAction} className="flex max-w-xl flex-col gap-4">
+      <LocaleHiddenField />
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         {t("nameZh")}
         <input

@@ -9,3 +9,9 @@ export const routing = defineRouting({
 });
 
 export type AppLocale = (typeof routing.locales)[number];
+
+export function parseAppLocale(value: string): AppLocale {
+  return (routing.locales as readonly string[]).includes(value)
+    ? (value as AppLocale)
+    : routing.defaultLocale;
+}

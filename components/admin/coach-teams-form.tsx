@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { useTranslations } from "next-intl";
+import { LocaleHiddenField } from "@/components/admin/locale-hidden-field";
 import { assignCoachTeam, unassignCoachTeam, updateCoachStatus } from "@/lib/org/actions";
 import { INITIAL_ORG_ACTION_STATE } from "@/lib/org/errors";
 import type { Coach, Team } from "@/lib/supabase/database.types";
@@ -37,6 +38,7 @@ export function CoachTeamsForm({ coach, assignments, teams }: CoachTeamsFormProp
   return (
     <div className="flex flex-col gap-8">
       <form action={statusAction} className="flex max-w-xl flex-col gap-4">
+        <LocaleHiddenField />
         <label className="flex flex-col gap-1.5 text-sm font-medium">
           {t("status")}
           <select
@@ -75,6 +77,7 @@ export function CoachTeamsForm({ coach, assignments, teams }: CoachTeamsFormProp
                     : t("unknownTeam")}
                 </span>
                 <form action={unassignCoachTeam}>
+                  <LocaleHiddenField />
                   <input type="hidden" name="assignment_id" value={assignment.id} />
                   <input type="hidden" name="coach_id" value={coach.id} />
                   <button type="submit" className={dangerButtonClassName}>
@@ -88,6 +91,7 @@ export function CoachTeamsForm({ coach, assignments, teams }: CoachTeamsFormProp
       </section>
 
       <form action={assignAction} className="flex max-w-xl flex-col gap-4">
+        <LocaleHiddenField />
         <label className="flex flex-col gap-1.5 text-sm font-medium">
           {t("assignTeam")}
           <select
