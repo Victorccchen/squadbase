@@ -381,6 +381,11 @@ export async function listGuardianLinksForAdmin(): Promise<GuardianLinkWithPlaye
     .select("*, players(*, team_memberships(*, teams(*))), profiles!guardian_player_links_guardian_user_id_fkey(*)")
     .order("created_at", { ascending: false });
 
+  if (error) {
+    console.error("listGuardianLinksForAdmin", error.message);
+    return [];
+  }
+
   return (data ?? []).map((row) => mapLinkRow(row as unknown as Record<string, unknown>));
 }
 
