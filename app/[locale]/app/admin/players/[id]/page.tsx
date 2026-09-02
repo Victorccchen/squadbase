@@ -3,7 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { PageHeader } from "@/components/page-header";
 import { getPlayer } from "@/lib/org/queries";
-import { localizedPlayerName } from "@/lib/org/display-name";
+import { localizedPlayerName, displayOptionalName } from "@/lib/org/display-name";
 import { ageBandFromBirthDate, formatIsoDate, seasonStartForBirthDate } from "@/lib/age-band";
 import { secondaryButtonClassName } from "@/lib/ui";
 
@@ -42,15 +42,19 @@ export default async function PlayerDetailPage({ params }: PlayerDetailPageProps
         <dl className="grid gap-3 rounded-2xl border border-zinc-200 bg-white p-6 text-sm dark:border-zinc-800 dark:bg-zinc-900">
           <div className="flex justify-between gap-4">
             <dt className="text-zinc-500">{org("nameZh")}</dt>
-            <dd className="font-medium">{player.name_zh}</dd>
+            <dd className="font-medium">{displayOptionalName(player.name_zh)}</dd>
           </div>
           <div className="flex justify-between gap-4">
-            <dt className="text-zinc-500">{org("nameEn")}</dt>
-            <dd className="font-medium">{player.name_en}</dd>
+            <dt className="text-zinc-500">{org("nameEnGiven")}</dt>
+            <dd className="font-medium">{player.name_en_given}</dd>
+          </div>
+          <div className="flex justify-between gap-4">
+            <dt className="text-zinc-500">{org("nameEnFamily")}</dt>
+            <dd className="font-medium">{player.name_en_family}</dd>
           </div>
           <div className="flex justify-between gap-4">
             <dt className="text-zinc-500">{org("nameJa")}</dt>
-            <dd className="font-medium">{player.name_ja}</dd>
+            <dd className="font-medium">{displayOptionalName(player.name_ja)}</dd>
           </div>
           <div className="flex justify-between gap-4">
             <dt className="text-zinc-500">{org("birthDate")}</dt>

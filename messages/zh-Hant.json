@@ -100,7 +100,7 @@
       },
       "players": {
         "title": "球員",
-        "body": "建立球員資料：中／英／日文姓名、出生日期、隊伍與背號。"
+        "body": "建立球員資料：英文名與姓必填，繁中或日文姓名至少一項，加上出生日期、隊伍與背號。"
       },
       "coaches": {
         "title": "教練",
@@ -145,7 +145,7 @@
     "teamsTitle": "隊伍",
     "teamsBody": "建立訓練隊，設定年齡組與啟用／停用狀態。",
     "playersTitle": "球員",
-    "playersBody": "每位球員需要中、英、日文姓名、出生日期、隊伍，以及該隊伍內不可重複的背號。",
+    "playersBody": "每位球員需要英文名與姓、繁中或日文姓名至少一項、出生日期、隊伍，以及該隊伍內不可重複的背號。",
     "coachesTitle": "教練",
     "coachesBody": "對方必須先登入一次以建立個人資料。你再在此連結並指派隊伍。連結時會授予教練角色。",
     "createTeam": "新增隊伍",
@@ -181,7 +181,10 @@
     "statusInactive": "停用",
     "nameZh": "姓名（繁體中文）",
     "nameEn": "姓名（英文）",
+    "nameEnGiven": "英文名（名）",
+    "nameEnFamily": "英文姓（姓）",
     "nameJa": "姓名（日文）",
+    "nameCjkHint": "繁體中文與日文姓名至少填寫一項。",
     "birthDate": "出生日期",
     "suggestedAgeBand": "建議年齡組",
     "ageBandUnknown": "請先輸入出生日期",
@@ -219,7 +222,8 @@
     "errors": {
       "forbidden": "你沒有權限執行此操作。",
       "notConfigured": "尚未設定公開 Supabase 環境變數。",
-      "invalidName": "請填寫所有必填姓名。",
+      "invalidName": "請填寫英文名與英文姓。",
+      "missingCjkName": "請至少填寫繁體中文或日文姓名。",
       "invalidAgeBand": "請選擇有效的年齡組。",
       "invalidStatus": "請選擇有效的狀態。",
       "invalidBirthDate": "請輸入有效的出生日期。",

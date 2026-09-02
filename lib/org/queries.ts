@@ -87,7 +87,8 @@ export async function listPlayers(): Promise<PlayerWithMembership[]> {
   const { data, error } = await supabase
     .from("players")
     .select("*, team_memberships(*, teams(*))")
-    .order("name_zh");
+    .order("name_en_family")
+    .order("name_en_given");
 
   if (error) {
     console.error("listPlayers", error.message);

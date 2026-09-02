@@ -2,8 +2,11 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   isJerseyUniqueViolation,
+  isPlayersCjkNameCheckViolation,
   parseBirthDate,
   parseJersey,
+  parsePlayerNames,
+  playerNamesError,
 } from "./parse.ts";
 
 describe("parseJersey", () => {
@@ -51,6 +54,105 @@ describe("isJerseyUniqueViolation", () => {
         code: "23505",
         message: 'duplicate key value violates unique constraint "team_memberships_player_team_key"',
         details: "Key (player_id, team_id)=(abc, def) already exists.",
+      }),
+      false,
+    );
+  });
+});
+
+describe("playerNamesError", () => {
+  it("requires English given and family names", () => {
+    assert.equal(
+      playerNamesError({
+        nameZh: "陳小明",
+        nameEnGiven: "",
+        nameEnFamily: "Chen",
+        nameJa: null,
+      }),
+      "invalidName",
+    );
+    assert.equal(
+      playerNamesError({
+        nameZh: "陳小明",
+        nameEnGiven: "Ming",
+        nameEnFamily: "",
+        nameJa: null,
+      }),
+      "invalidName",
+    );
+  });
+
+  it("requires at least one of Traditional Chinese or Japanese", () => {
+    assert.equal(
+      playerNamesError({
+        nameZh: null,
+        nameEnGiven: "Ming",
+        nameEnFamily: "Chen",
+        nameJa: null,
+      }),
+      "missingCjkName",
+    );
+  });
+
+  it("accepts English plus Traditional Chinese only", () => {
+    assert.equal(
+      playerNamesError({
+        nameZh: "陳小明",
+        nameEnGiven: "Ming",
+        nameEnFamily: "Chen",
+        nameJa: null,
+      }),
+      null,
+    );
+  });
+
+  it("accepts English plus Japanese only", () => {
+    assert.equal(
+      playerNamesError({
+        nameZh: null,
+        nameEnGiven: "Ming",
+        nameEnFamily: "Chen",
+        nameJa: "チン ショウメイ",
+      }),
+      null,
+    );
+  });
+
+  it("treats whitespace-only CJK fields as empty", () => {
+    const form = new FormData();
+    form.set("name_zh", "   ");
+    form.set("name_en_given", " Ming ");
+    form.set("name_en_family", " Chen ");
+    form.set("name_ja", "");
+    const names = parsePlayerNames(form);
+    assert.deepEqual(names, {
+      nameZh: null,
+      nameEnGiven: "Ming",
+      nameEnFamily: "Chen",
+      nameJa: null,
+    });
+    assert.equal(playerNamesError(names), "missingCjkName");
+  });
+});
+
+describe("isPlayersCjkNameCheckViolation", () => {
+  it("matches the zh-or-ja CHECK constraint", () => {
+    assert.equal(
+      isPlayersCjkNameCheckViolation({
+        code: "23514",
+        message:
+          'new row for relation "players" violates check constraint "players_name_zh_or_ja_present"',
+      }),
+      true,
+    );
+  });
+
+  it("ignores other check failures", () => {
+    assert.equal(
+      isPlayersCjkNameCheckViolation({
+        code: "23514",
+        message:
+          'new row for relation "players" violates check constraint "players_name_en_given_not_blank"',
       }),
       false,
     );

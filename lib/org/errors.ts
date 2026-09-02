@@ -2,6 +2,7 @@ export type OrgErrorKey =
   | "forbidden"
   | "notConfigured"
   | "invalidName"
+  | "missingCjkName"
   | "invalidAgeBand"
   | "invalidStatus"
   | "invalidBirthDate"

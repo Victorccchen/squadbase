@@ -29,6 +29,38 @@ export function parseJersey(value: string): number | null {
   return n;
 }
 
+export function optionalTrimmed(value: string): string | null {
+  return value.length > 0 ? value : null;
+}
+
+export type ParsedPlayerNames = {
+  nameZh: string | null;
+  nameEnGiven: string;
+  nameEnFamily: string;
+  nameJa: string | null;
+};
+
+export type PlayerNameErrorKey = "invalidName" | "missingCjkName";
+
+export function parsePlayerNames(formData: FormData): ParsedPlayerNames {
+  return {
+    nameZh: optionalTrimmed(readString(formData, "name_zh")),
+    nameEnGiven: readString(formData, "name_en_given"),
+    nameEnFamily: readString(formData, "name_en_family"),
+    nameJa: optionalTrimmed(readString(formData, "name_ja")),
+  };
+}
+
+export function playerNamesError(names: ParsedPlayerNames): PlayerNameErrorKey | null {
+  if (!names.nameEnGiven || !names.nameEnFamily) {
+    return "invalidName";
+  }
+  if (!names.nameZh && !names.nameJa) {
+    return "missingCjkName";
+  }
+  return null;
+}
+
 export function parseBirthDate(value: string, todayIso: string): string | "future" | null {
   const parsed = parseIsoDate(value);
   if (!parsed) {
@@ -73,4 +105,14 @@ export function isJerseyUniqueViolation(error: PgLikeError): boolean {
     text.includes("jersey_number") ||
     text.includes("(team_id, jersey_number)")
   );
+}
+
+export function isPlayersCjkNameCheckViolation(error: PgLikeError): boolean {
+  if (!error) {
+    return false;
+  }
+  if (error.code !== "23514" && !errorBlob(error).includes("check constraint")) {
+    return false;
+  }
+  return errorBlob(error).includes("players_name_zh_or_ja_present");
 }
