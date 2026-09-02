@@ -2,8 +2,11 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { RequestLinkForm } from "@/components/children/request-link-form";
+import { CancelLinkForm } from "@/components/children/cancel-link-form";
+import { LinkStatusBadge } from "@/components/bindings/link-status-badge";
 import { listActiveTeamsForLink, listOwnGuardianLinks } from "@/lib/org/queries";
 import { localizedPlayerName, playerNameList } from "@/lib/org/display-name";
+import { canParentCancelLink } from "@/lib/org/parse";
 import { ageBandFromBirthDate } from "@/lib/age-band";
 
 export default async function ChildrenPage() {
@@ -86,7 +89,10 @@ export default async function ChildrenPage() {
                   className="flex flex-col gap-2 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900"
                 >
                   <div className="flex flex-wrap items-center gap-2">
-                    <StatusBadge status={link.status} label={t(`statuses.${link.status}`)} />
+                    <LinkStatusBadge
+                      status={link.status}
+                      label={t(`statuses.${link.status}`)}
+                    />
                     <span className="text-sm font-medium">{t(`relations.${link.relation}`)}</span>
                   </div>
                   <p className="text-sm text-zinc-500">
@@ -97,11 +103,12 @@ export default async function ChildrenPage() {
                       {t("parentNote")}: {link.parent_note}
                     </p>
                   ) : null}
-                  {link.status === "rejected" && link.admin_note ? (
+                  {(link.status === "rejected" || link.status === "revoked") && link.admin_note ? (
                     <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">
                       {t("adminNote")}: {link.admin_note}
                     </p>
                   ) : null}
+                  {canParentCancelLink(link.status) ? <CancelLinkForm linkId={link.id} /> : null}
                 </li>
               ))}
             </ul>
@@ -120,26 +127,5 @@ export default async function ChildrenPage() {
         {common("footer")}
       </footer>
     </>
-  );
-}
-
-function StatusBadge({
-  status,
-  label,
-}: {
-  status: "pending" | "approved" | "rejected";
-  label: string;
-}) {
-  const className =
-    status === "approved"
-      ? "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100"
-      : status === "rejected"
-        ? "bg-red-100 text-red-900 dark:bg-red-950 dark:text-red-100"
-        : "bg-amber-100 text-amber-950 dark:bg-amber-950 dark:text-amber-100";
-
-  return (
-    <span className={`rounded-full px-2.5 py-1 text-xs font-medium uppercase tracking-wide ${className}`}>
-      {label}
-    </span>
   );
 }

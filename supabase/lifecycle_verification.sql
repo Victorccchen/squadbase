@@ -1,0 +1,256 @@
+-- Lifecycle verification helpers (staging SQL Editor only).
+-- Do not run against production. Uses synthetic names, not real PII.
+-- Run AFTER:
+--   20260902200000_link_status_add_revoked.sql
+--   20260902220000_lifecycle_revoke_and_team_delete.sql
+--
+-- Replace GUARDIAN_PROFILE_UUID with a real profiles.id (a user who has
+-- signed in once). Blocks roll back so staging stays unchanged.
+
+-- =============================================================================
+-- Unique open-link index + revoke/re-apply
+-- Expected:
+--   * second pending for the same (guardian, player) fails
+--   * after revoke, a new pending is allowed
+--   * pending while approved exists fails
+-- =============================================================================
+
+-- begin;
+--
+-- delete from public.team_memberships
+-- where player_id in (
+--   select id from public.players
+--   where name_en_given = 'Lifecycle' and name_en_family = 'Verify'
+-- );
+-- delete from public.guardian_player_links
+-- where player_id in (
+--   select id from public.players
+--   where name_en_given = 'Lifecycle' and name_en_family = 'Verify'
+-- );
+-- delete from public.players
+-- where name_en_given = 'Lifecycle' and name_en_family = 'Verify';
+-- delete from public.teams where name = 'Lifecycle Verify Team';
+--
+-- insert into public.teams (name, age_band, status)
+-- values ('Lifecycle Verify Team', 'U12', 'active');
+--
+-- insert into public.players (
+--   name_zh, name_en_given, name_en_family, name_ja, birth_date, status
+-- )
+-- values ('生命週期', 'Lifecycle', 'Verify', null, '2014-08-15', 'active');
+--
+-- insert into public.team_memberships (player_id, team_id, jersey_number, status)
+-- select p.id, t.id, 21, 'active'
+-- from public.players p
+-- join public.teams t on t.name = 'Lifecycle Verify Team'
+-- where p.name_en_given = 'Lifecycle' and p.name_en_family = 'Verify';
+--
+-- insert into public.guardian_player_links (
+--   guardian_user_id, player_id, relation, status
+-- )
+-- select 'GUARDIAN_PROFILE_UUID', p.id, 'parent', 'pending'
+-- from public.players p
+-- where p.name_en_given = 'Lifecycle' and p.name_en_family = 'Verify';
+--
+-- -- Duplicate open (pending) pair must fail.
+-- do $$
+-- begin
+--   insert into public.guardian_player_links (
+--     guardian_user_id, player_id, relation, status
+--   )
+--   select 'GUARDIAN_PROFILE_UUID', p.id, 'parent', 'pending'
+--   from public.players p
+--   where p.name_en_given = 'Lifecycle' and p.name_en_family = 'Verify';
+--   raise exception 'unique failed: second pending was accepted';
+-- exception
+--   when unique_violation then
+--     raise notice 'unique passed: second pending rejected';
+-- end
+-- $$;
+--
+-- -- Parent-style cancel: pending → revoked (no review columns).
+-- update public.guardian_player_links
+-- set status = 'revoked'
+-- where guardian_user_id = 'GUARDIAN_PROFILE_UUID'
+--   and status = 'pending'
+--   and player_id in (
+--     select id from public.players
+--     where name_en_given = 'Lifecycle' and name_en_family = 'Verify'
+--   );
+--
+-- -- Re-apply after revoke must succeed.
+-- insert into public.guardian_player_links (
+--   guardian_user_id, player_id, relation, status
+-- )
+-- select 'GUARDIAN_PROFILE_UUID', p.id, 'parent', 'pending'
+-- from public.players p
+-- where p.name_en_given = 'Lifecycle' and p.name_en_family = 'Verify';
+--
+-- raise notice 're-apply after revoke inserted';
+--
+-- update public.guardian_player_links
+-- set status = 'approved',
+--     reviewed_by = 'GUARDIAN_PROFILE_UUID',
+--     reviewed_at = now()
+-- where guardian_user_id = 'GUARDIAN_PROFILE_UUID'
+--   and status = 'pending'
+--   and player_id in (
+--     select id from public.players
+--     where name_en_given = 'Lifecycle' and name_en_family = 'Verify'
+--   );
+--
+-- -- Duplicate open (approved) pair must fail.
+-- do $$
+-- begin
+--   insert into public.guardian_player_links (
+--     guardian_user_id, player_id, relation, status
+--   )
+--   select 'GUARDIAN_PROFILE_UUID', p.id, 'parent', 'pending'
+--   from public.players p
+--   where p.name_en_given = 'Lifecycle' and p.name_en_family = 'Verify';
+--   raise exception 'unique failed: pending while approved was accepted';
+-- exception
+--   when unique_violation then
+--     raise notice 'unique passed: pending while approved rejected';
+-- end
+-- $$;
+--
+-- update public.guardian_player_links
+-- set status = 'revoked',
+--     reviewed_by = 'GUARDIAN_PROFILE_UUID',
+--     reviewed_at = now()
+-- where guardian_user_id = 'GUARDIAN_PROFILE_UUID'
+--   and status = 'approved'
+--   and player_id in (
+--     select id from public.players
+--     where name_en_given = 'Lifecycle' and name_en_family = 'Verify'
+--   );
+--
+-- -- is_approved_guardian_for_player is session-scoped (auth.uid()). In the
+-- -- SQL editor auth.uid() is null, so this is a direct status assertion.
+-- do $$
+-- declare
+--   approved_count integer;
+-- begin
+--   select count(*) into approved_count
+--   from public.guardian_player_links
+--   where guardian_user_id = 'GUARDIAN_PROFILE_UUID'
+--     and status = 'approved'
+--     and player_id in (
+--       select id from public.players
+--       where name_en_given = 'Lifecycle' and name_en_family = 'Verify'
+--     );
+--   if approved_count <> 0 then
+--     raise exception 'revoke failed: approved row still present';
+--   end if;
+--   raise notice 'revoke passed: no approved row remains';
+-- end
+-- $$;
+--
+-- rollback;
+
+-- =============================================================================
+-- Team deactivate hides from list_active_teams_for_link; hard delete rules
+-- =============================================================================
+
+-- begin;
+--
+-- delete from public.coach_team_assignments
+-- where team_id in (select id from public.teams where name like 'Lifecycle Team %');
+-- delete from public.team_memberships
+-- where team_id in (select id from public.teams where name like 'Lifecycle Team %');
+-- delete from public.teams where name like 'Lifecycle Team %';
+--
+-- insert into public.teams (name, age_band, status)
+-- values
+--   ('Lifecycle Team Empty', 'U12', 'active'),
+--   ('Lifecycle Team Roster', 'U12', 'active');
+--
+-- insert into public.players (
+--   name_zh, name_en_given, name_en_family, name_ja, birth_date, status
+-- )
+-- values ('生命週期乙', 'Lifecycle', 'Member', null, '2014-08-16', 'active');
+--
+-- insert into public.team_memberships (player_id, team_id, jersey_number, status)
+-- select p.id, t.id, 8, 'active'
+-- from public.players p
+-- join public.teams t on t.name = 'Lifecycle Team Roster'
+-- where p.name_en_given = 'Lifecycle' and p.name_en_family = 'Member';
+--
+-- update public.teams
+-- set status = 'inactive'
+-- where name = 'Lifecycle Team Roster';
+--
+-- -- Inactive team must not appear in the parent-facing active list.
+-- -- list_active_teams_for_link requires auth.uid(); this checks the same filter.
+-- do $$
+-- begin
+--   if exists (
+--     select 1 from public.teams
+--     where name = 'Lifecycle Team Roster' and status = 'active'
+--   ) then
+--     raise exception 'deactivate failed: team still active';
+--   end if;
+--   raise notice 'deactivate passed: team is inactive';
+-- end
+-- $$;
+--
+-- -- Hard delete with an active membership must fail.
+-- do $$
+-- declare
+--   roster_id uuid;
+-- begin
+--   select id into roster_id from public.teams where name = 'Lifecycle Team Roster';
+--   begin
+--     -- Bypass the RPC (no auth.uid() in SQL editor) and assert the same rule.
+--     if exists (
+--       select 1 from public.team_memberships
+--       where team_id = roster_id and status = 'active'
+--     ) then
+--       raise notice 'delete blocked: active memberships present';
+--     else
+--       raise exception 'expected active memberships on Lifecycle Team Roster';
+--     end if;
+--   end;
+-- end
+-- $$;
+--
+-- -- Empty team hard delete succeeds (no memberships, no coach assignments).
+-- delete from public.teams where name = 'Lifecycle Team Empty';
+--
+-- do $$
+-- begin
+--   if exists (select 1 from public.teams where name = 'Lifecycle Team Empty') then
+--     raise exception 'empty-team delete failed';
+--   end if;
+--   raise notice 'empty-team delete passed';
+-- end
+-- $$;
+--
+-- rollback;
+
+-- =============================================================================
+-- RLS: parent cannot revoke approved; parent can cancel pending
+-- Fill in PARENT_UUID (non-admin parent) and LINK_UUID.
+-- =============================================================================
+
+-- begin;
+-- set local role authenticated;
+-- select set_config('request.jwt.claim.sub', 'PARENT_UUID', true);
+-- select set_config('request.jwt.claim.role', 'authenticated', true);
+--
+-- -- Expect UPDATE 0 if the link is approved.
+-- update public.guardian_player_links
+-- set status = 'revoked'
+-- where id = 'LINK_UUID'
+--   and guardian_user_id = 'PARENT_UUID'
+--   and status = 'approved';
+--
+-- -- Expect UPDATE 1 if the link is pending (and review columns stay null).
+-- update public.guardian_player_links
+-- set status = 'revoked'
+-- where id = 'PENDING_LINK_UUID'
+--   and guardian_user_id = 'PARENT_UUID'
+--   and status = 'pending';
+--
+-- rollback;

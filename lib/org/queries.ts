@@ -40,6 +40,57 @@ export async function listTeams(): Promise<Team[]> {
   return data ?? [];
 }
 
+export type TeamAdminRow = Team & {
+  membershipCount: number;
+  activeMembershipCount: number;
+  coachAssignmentCount: number;
+};
+
+export async function listTeamsForAdmin(): Promise<TeamAdminRow[]> {
+  const supabase = await createClient();
+  const [teamsResult, membershipsResult, assignmentsResult] = await Promise.all([
+    supabase.from("teams").select("*").order("name"),
+    supabase.from("team_memberships").select("team_id, status"),
+    supabase.from("coach_team_assignments").select("team_id"),
+  ]);
+
+  if (teamsResult.error) {
+    console.error("listTeamsForAdmin", teamsResult.error.message);
+    return [];
+  }
+  if (membershipsResult.error) {
+    console.error("listTeamsForAdmin memberships", membershipsResult.error.message);
+  }
+  if (assignmentsResult.error) {
+    console.error("listTeamsForAdmin assignments", assignmentsResult.error.message);
+  }
+
+  const membershipByTeam = new Map<string, { total: number; active: number }>();
+  for (const row of membershipsResult.data ?? []) {
+    const current = membershipByTeam.get(row.team_id) ?? { total: 0, active: 0 };
+    current.total += 1;
+    if (row.status === "active") {
+      current.active += 1;
+    }
+    membershipByTeam.set(row.team_id, current);
+  }
+
+  const coachesByTeam = new Map<string, number>();
+  for (const row of assignmentsResult.data ?? []) {
+    coachesByTeam.set(row.team_id, (coachesByTeam.get(row.team_id) ?? 0) + 1);
+  }
+
+  return (teamsResult.data ?? []).map((team) => {
+    const membership = membershipByTeam.get(team.id) ?? { total: 0, active: 0 };
+    return {
+      ...team,
+      membershipCount: membership.total,
+      activeMembershipCount: membership.active,
+      coachAssignmentCount: coachesByTeam.get(team.id) ?? 0,
+    };
+  });
+}
+
 export async function getTeam(id: string): Promise<Team | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -387,4 +438,19 @@ export async function listGuardianLinksForAdmin(): Promise<GuardianLinkWithPlaye
   }
 
   return (data ?? []).map((row) => mapLinkRow(row as unknown as Record<string, unknown>));
+}
+
+export async function countCoachAssignmentsForTeam(teamId: string): Promise<number> {
+  const supabase = await createClient();
+  const { count, error } = await supabase
+    .from("coach_team_assignments")
+    .select("id", { count: "exact", head: true })
+    .eq("team_id", teamId);
+
+  if (error) {
+    console.error("countCoachAssignmentsForTeam", error.message);
+    return 0;
+  }
+
+  return count ?? 0;
 }

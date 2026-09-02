@@ -18,6 +18,13 @@ export type OrgErrorKey =
   | "invalidRelation"
   | "invalidDecision"
   | "linkAlreadyOpen"
+  | "cannotCancelLink"
+  | "cannotRevokeApproved"
+  | "cannotRevokeLink"
+  | "teamNotFound"
+  | "teamHasActiveMemberships"
+  | "teamHasMemberships"
+  | "teamHasCoachAssignments"
   | "generic";
 
 export type OrgActionState = {

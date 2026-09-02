@@ -8,6 +8,7 @@
 - [ ] Stage 1 auth / profiles / roles / RLS (no business features)
 - [ ] Stage 2 org master data (teams, players, coaches, roster read)
 - [ ] Stage 3 guardian–player binding with admin approval
+- [ ] Lifecycle: revoke/cancel links + team deactivate/hard-delete
 
 ## Verification
 

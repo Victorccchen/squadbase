@@ -16,8 +16,10 @@ import {
   parseJersey,
   parseOrgStatus,
   parsePlayerNames,
+  parseUuid,
   playerNamesError,
   readString,
+  teamDeleteErrorKey,
 } from "@/lib/org/parse";
 import { type OrgActionState, type OrgErrorKey } from "@/lib/org/errors";
 
@@ -149,6 +151,76 @@ export async function updateTeam(
 
   revalidateOrg();
   redirectAdmin(`/app/admin/teams/${teamId}`, formData);
+  return ok();
+}
+
+export async function setTeamStatus(
+  teamId: string,
+  _prev: OrgActionState,
+  formData: FormData,
+): Promise<OrgActionState> {
+  const actor = await requireAdminActor();
+  if (!actor.ok) {
+    return fail(actor.errorKey);
+  }
+
+  const status = parseOrgStatus(readString(formData, "status"));
+  if (!status) {
+    return fail("invalidStatus");
+  }
+
+  const { data, error } = await actor.supabase
+    .from("teams")
+    .update({
+      status,
+      updated_by: actor.user.id,
+    })
+    .eq("id", teamId)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    console.error("setTeamStatus", error.message);
+    return fail("generic");
+  }
+  if (!data) {
+    return fail("teamNotFound");
+  }
+
+  revalidateOrg();
+  if (readString(formData, "next") === "teams") {
+    redirectAdmin("/app/admin/teams", formData);
+  } else {
+    redirectAdmin(`/app/admin/teams/${teamId}`, formData);
+  }
+  return ok();
+}
+
+export async function deleteTeam(
+  _prev: OrgActionState,
+  formData: FormData,
+): Promise<OrgActionState> {
+  const actor = await requireAdminActor();
+  if (!actor.ok) {
+    return fail(actor.errorKey);
+  }
+
+  const teamId = parseUuid(readString(formData, "team_id"));
+  if (!teamId) {
+    return fail("generic");
+  }
+
+  const { error } = await actor.supabase.rpc("admin_delete_team", {
+    p_team_id: teamId,
+  });
+
+  if (error) {
+    console.error("deleteTeam", error.message);
+    return fail(teamDeleteErrorKey(error));
+  }
+
+  revalidateOrg();
+  redirectAdmin("/app/admin/teams", formData);
   return ok();
 }
 

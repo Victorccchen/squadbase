@@ -11,9 +11,9 @@
     "footer": "Production deploys require human approval. Do not publish to production automatically."
   },
   "home": {
-    "eyebrow": "Stage 3 · guardian–player linking",
+    "eyebrow": "Stage 3 · guardian links and team lifecycle",
     "headline": "Welcome to the Club management system",
-    "lead": "Sign in with a phone SMS one-time code. Parents can request a link to an existing player; admins approve. Admins also manage squads, players, and coaches.",
+    "lead": "Sign in with a phone SMS one-time code. Parents can request a link to an existing player; admins approve. Admins can revoke approved links, deactivate or delete empty squads, and manage players and coaches.",
     "openDashboard": "Open dashboard",
     "sampleLabel": "Sample copy",
     "sampleBody": "Current language: English. Use the language switcher above to see Traditional Chinese or Japanese strings.",
@@ -58,7 +58,7 @@
   "app": {
     "eyebrow": "Dashboard",
     "title": "Club dashboard",
-    "welcome": "Parents can request a link to a child. Admins manage teams, players, coaches, and binding approvals. Coaches can open assigned rosters. Other operations features are still later stages.",
+    "welcome": "Parents can request a link to a child and withdraw a pending request. Admins manage teams, players, coaches, and binding approval or revoke. Coaches can open assigned rosters. Other operations features are still later stages.",
     "accountTitle": "Account",
     "phoneLabel": "Phone",
     "rolesLabel": "Roles",
@@ -121,7 +121,7 @@
       },
       "bindings": {
         "title": "Guardian bindings",
-        "body": "Approve or reject parent requests to link to a player."
+        "body": "Approve, reject, or revoke parent requests to link to a player."
       },
       "adminNote": {
         "title": "Role promotion",
@@ -150,13 +150,13 @@
     "title": "Admin",
     "lead": "Organization master data for this club. No real personal data is seeded.",
     "teamsTitle": "Teams",
-    "teamsBody": "Create training squads with an age band and active/inactive status.",
+    "teamsBody": "Create training squads with an age band and active/inactive status. Deactivate, reactivate, or delete an empty team from this list.",
     "playersTitle": "Players",
     "playersBody": "Each player needs an English given name and family name, at least one of Traditional Chinese or Japanese, a date of birth, a team, and a jersey number unique on that team.",
     "coachesTitle": "Coaches",
     "coachesBody": "The person must sign in once so a profile exists. Then you link them here and assign teams. That also grants the coach role.",
     "bindingsTitle": "Guardian bindings",
-    "bindingsBody": "Parents search for an existing player with team + jersey or birth date + name, then request a link. Approve or reject here. Pending and rejected parents cannot read that child’s record.",
+    "bindingsBody": "Parents search for an existing player with team + jersey or birth date + name, then request a link. Approve, reject, or revoke an approved link here. Pending, rejected, and revoked parents cannot read that child’s record.",
     "createTeam": "Create team",
     "editTeam": "Edit team",
     "createPlayer": "Create player",
@@ -177,12 +177,26 @@
     "teamRosterEmptyBody": "Create a player and assign this squad plus a jersey number.",
     "approve": "Approve",
     "reject": "Reject",
+    "revoke": "Revoke approval",
+    "revokeNote": "Reason for revoke (optional)",
     "pendingQueue": "Pending requests",
-    "allRequests": "Reviewed requests",
+    "allRequests": "Reviewed and history",
     "guardian": "Parent / guardian",
     "decisionNote": "Note to the parent (optional)",
     "bindingsEmptyTitle": "No pending requests",
-    "bindingsEmptyBody": "When a parent requests a link, it shows up here for approval."
+    "bindingsEmptyBody": "When a parent requests a link, it shows up here for approval.",
+    "teamLifecycleTitle": "Team status and delete",
+    "teamLifecycleBody": "Deactivating hides this squad from parent link search; existing memberships stay. Permanent delete is allowed only when there are no memberships and no coach assignments.",
+    "deactivateTeam": "Deactivate team",
+    "deactivateTeamShort": "Deactivate",
+    "reactivateTeam": "Reactivate team",
+    "reactivateTeamShort": "Reactivate",
+    "deleteTeam": "Permanently delete team",
+    "deleteTeamShort": "Delete",
+    "deleteTeamConfirm": "Permanently delete “{name}”? This cannot be undone.",
+    "deleteBlockedActive": "This team still has {count} active memberships. End or inactivate those memberships first, or deactivate the team instead.",
+    "deleteBlockedMemberships": "This team still has {count} membership rows. Remove them before deleting, or deactivate the team instead.",
+    "deleteBlockedCoaches": "This team still has {count} coach assignments. Unassign coaches first, or deactivate the team instead."
   },
   "roster": {
     "title": "Roster",
@@ -210,6 +224,7 @@
     "team": "Team",
     "selectTeam": "Select a team",
     "noTeam": "No team",
+    "membershipInactive": "Membership inactive",
     "jerseyNumber": "Jersey number",
     "jerseyHint": "1–99. Unique on this team; the same number may be used on another team.",
     "ageBandMismatch": "The player’s suggested age band does not match this team’s band. You can still save.",
@@ -256,6 +271,13 @@
       "invalidRelation": "Choose how you relate to this player.",
       "invalidDecision": "Choose approve or reject.",
       "linkAlreadyOpen": "You already have a pending or approved link to this player.",
+      "cannotCancelLink": "You can only withdraw your own pending request.",
+      "cannotRevokeApproved": "Approved links can only be revoked by an admin.",
+      "cannotRevokeLink": "Only an approved link can be revoked.",
+      "teamNotFound": "That team was not found.",
+      "teamHasActiveMemberships": "This team still has active memberships. End or inactivate them first, or deactivate the team instead.",
+      "teamHasMemberships": "This team still has membership rows. Remove them before deleting, or deactivate the team instead.",
+      "teamHasCoachAssignments": "This team still has coach assignments. Unassign coaches first, or deactivate the team instead.",
       "generic": "Could not save. Please try again."
     }
   },
@@ -288,15 +310,17 @@
     "parentNote": "Note to admin",
     "parentNoteHint": "Optional. For example how the club can recognise you. Do not paste extra contact details the club does not already have.",
     "submitRequest": "Submit request",
+    "cancelRequest": "Withdraw request",
     "statuses": {
       "pending": "Pending",
       "approved": "Approved",
-      "rejected": "Rejected"
+      "rejected": "Rejected",
+      "revoked": "Revoked"
     },
     "requestedAt": "Requested",
     "reviewedAt": "Reviewed",
     "adminNote": "Admin note",
-    "noMatchDetails": "Player details are hidden until this link is approved.",
+    "noMatchDetails": "Player details are shown only while this link is approved.",
     "player": "Player",
     "playerNames": "Names",
     "playerTeam": "Team / jersey",

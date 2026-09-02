@@ -9,6 +9,9 @@ import { canAccessAdmin } from "@/lib/auth/roles";
 import { createClient } from "@/lib/supabase/server";
 import { todayInClubTimeZone, formatIsoDate } from "@/lib/age-band";
 import {
+  canAdminRevokeLink,
+  canParentCancelLink,
+  isLinkNotApprovedViolation,
   isOpenGuardianLinkViolation,
   parseGuardianRelation,
   parseGuardianSearch,
@@ -157,6 +160,121 @@ export async function reviewGuardianLink(
 
   if (error) {
     console.error("reviewGuardianLink", error.message);
+    return fail("generic");
+  }
+
+  revalidateBindings();
+  redirect({ href: "/app/admin/bindings", locale: localeFromForm(formData) });
+  return ok();
+}
+
+export async function cancelPendingGuardianLink(
+  _prev: OrgActionState,
+  formData: FormData,
+): Promise<OrgActionState> {
+  if (!getPublicSupabaseEnv().isConfigured) {
+    return fail("notConfigured");
+  }
+
+  const { user } = await loadSignedInAccount();
+  if (!user) {
+    return fail("forbidden");
+  }
+
+  const linkId = parseUuid(readString(formData, "link_id"));
+  if (!linkId) {
+    return fail("generic");
+  }
+
+  const supabase = await createClient();
+  const { data: existing, error: loadError } = await supabase
+    .from("guardian_player_links")
+    .select("id, status, guardian_user_id")
+    .eq("id", linkId)
+    .maybeSingle();
+
+  if (loadError) {
+    console.error("cancelPendingGuardianLink load", loadError.message);
+    return fail("generic");
+  }
+
+  if (!existing || existing.guardian_user_id !== user.id) {
+    return fail("cannotCancelLink");
+  }
+  if (!canParentCancelLink(existing.status)) {
+    return fail(existing.status === "approved" ? "cannotRevokeApproved" : "cannotCancelLink");
+  }
+
+  const { data: updated, error } = await supabase
+    .from("guardian_player_links")
+    .update({ status: "revoked", updated_by: user.id })
+    .eq("id", linkId)
+    .eq("guardian_user_id", user.id)
+    .eq("status", "pending")
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    console.error("cancelPendingGuardianLink", error.message);
+    return fail("generic");
+  }
+  if (!updated) {
+    return fail("cannotCancelLink");
+  }
+
+  revalidateBindings();
+  redirect({ href: "/app/children", locale: localeFromForm(formData) });
+  return ok();
+}
+
+export async function revokeApprovedGuardianLink(
+  _prev: OrgActionState,
+  formData: FormData,
+): Promise<OrgActionState> {
+  if (!getPublicSupabaseEnv().isConfigured) {
+    return fail("notConfigured");
+  }
+
+  const { roles } = await loadSignedInAccount();
+  if (!canAccessAdmin(roles)) {
+    return fail("forbidden");
+  }
+
+  const linkId = parseUuid(readString(formData, "link_id"));
+  const adminNote = parseLinkNote(readString(formData, "admin_note"));
+
+  if (!linkId) {
+    return fail("generic");
+  }
+
+  const supabase = await createClient();
+  const { data: existing, error: loadError } = await supabase
+    .from("guardian_player_links")
+    .select("id, status")
+    .eq("id", linkId)
+    .maybeSingle();
+
+  if (loadError) {
+    console.error("revokeApprovedGuardianLink load", loadError.message);
+    return fail("generic");
+  }
+  if (!existing) {
+    return fail("cannotRevokeLink");
+  }
+  if (!canAdminRevokeLink(existing.status)) {
+    return fail("cannotRevokeLink");
+  }
+
+  const { error } = await supabase.rpc("admin_revoke_guardian_link", {
+    p_link_id: linkId,
+    p_admin_note: adminNote,
+  });
+
+  if (error) {
+    if (isLinkNotApprovedViolation(error)) {
+      return fail("cannotRevokeLink");
+    }
+    console.error("revokeApprovedGuardianLink", error.message);
     return fail("generic");
   }
 
