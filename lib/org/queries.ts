@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import type {
   Coach,
   CoachTeamAssignment,
+  GuardianPlayerLink,
+  LinkableTeam,
   Player,
   Profile,
   Team,
@@ -298,4 +300,91 @@ export async function listRoster(): Promise<RosterRow[]> {
       }
       return row.player.status === "active" && row.team.status === "active";
     });
+}
+
+export type GuardianLinkWithPlayer = GuardianPlayerLink & {
+  player: PlayerWithMembership | null;
+  guardian: Profile | null;
+};
+
+function mapMembershipEmbed(
+  rows: (TeamMembership & { teams: Team | Team[] | null })[] | null,
+): (TeamMembership & { team: Team | null }) | null {
+  return pickCurrentMembership(rows);
+}
+
+function mapPlayerEmbed(
+  player: (Player & { team_memberships?: (TeamMembership & { teams: Team | Team[] | null })[] | null }) | Player[] | null,
+): PlayerWithMembership | null {
+  const row = Array.isArray(player) ? player[0] ?? null : player;
+  if (!row) {
+    return null;
+  }
+  const { team_memberships, ...rest } = row as Player & {
+    team_memberships?: (TeamMembership & { teams: Team | Team[] | null })[] | null;
+  };
+  return {
+    ...(rest as Player),
+    membership: mapMembershipEmbed(team_memberships ?? null),
+  };
+}
+
+function mapLinkRow(row: Record<string, unknown>): GuardianLinkWithPlayer {
+  const { players, profiles, ...link } = row;
+  const guardianSource = profiles as Profile | Profile[] | null | undefined;
+  const guardian = Array.isArray(guardianSource)
+    ? guardianSource[0] ?? null
+    : guardianSource ?? null;
+  return {
+    ...(link as GuardianPlayerLink),
+    player: mapPlayerEmbed(
+      (players as
+        | (Player & { team_memberships?: (TeamMembership & { teams: Team | Team[] | null })[] | null })
+        | Player[]
+        | null) ?? null,
+    ),
+    guardian,
+  };
+}
+
+export async function listActiveTeamsForLink(): Promise<LinkableTeam[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("list_active_teams_for_link");
+
+  if (error) {
+    console.error("listActiveTeamsForLink", error.message);
+    return [];
+  }
+
+  return data ?? [];
+}
+
+export async function listOwnGuardianLinks(): Promise<GuardianLinkWithPlayer[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("guardian_player_links")
+    .select("*, players(*, team_memberships(*, teams(*)))")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("listOwnGuardianLinks", error.message);
+    return [];
+  }
+
+  return (data ?? []).map((row) => mapLinkRow(row as unknown as Record<string, unknown>));
+}
+
+export async function listGuardianLinksForAdmin(): Promise<GuardianLinkWithPlayer[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("guardian_player_links")
+    .select("*, players(*, team_memberships(*, teams(*))), profiles!guardian_player_links_guardian_user_id_fkey(*)")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("listGuardianLinksForAdmin", error.message);
+    return [];
+  }
+
+  return (data ?? []).map((row) => mapLinkRow(row as unknown as Record<string, unknown>));
 }

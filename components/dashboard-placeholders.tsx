@@ -7,7 +7,7 @@ type DashboardPlaceholdersProps = {
   roles: AppRole[];
 };
 
-const PARENT_ITEMS = ["children", "courses"] as const;
+const PARENT_COMING = ["courses"] as const;
 const COACH_COMING = ["attendance", "assessments"] as const;
 
 function PlaceholderCard({
@@ -38,7 +38,7 @@ function LinkCard({
   body,
   action,
 }: {
-  href: "/app/roster" | "/app/admin" | "/app/admin/teams" | "/app/admin/players" | "/app/admin/coaches";
+  href: "/app/roster" | "/app/admin" | "/app/admin/teams" | "/app/admin/players" | "/app/admin/coaches" | "/app/admin/bindings" | "/app/children";
   title: string;
   body: string;
   action: string;
@@ -78,7 +78,13 @@ export async function DashboardPlaceholders({ roles }: DashboardPlaceholdersProp
             {t("parentSection")}
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
-            {PARENT_ITEMS.map((key) => (
+            <LinkCard
+              href="/app/children"
+              title={t("placeholders.children.title")}
+              body={t("placeholders.children.body")}
+              action={t("openChildren")}
+            />
+            {PARENT_COMING.map((key) => (
               <PlaceholderCard
                 key={key}
                 title={t(`placeholders.${key}.title`)}
@@ -136,6 +142,12 @@ export async function DashboardPlaceholders({ roles }: DashboardPlaceholdersProp
               href="/app/admin/coaches"
               title={t("placeholders.coaches.title")}
               body={t("placeholders.coaches.body")}
+              action={t("openAdmin")}
+            />
+            <LinkCard
+              href="/app/admin/bindings"
+              title={t("placeholders.bindings.title")}
+              body={t("placeholders.bindings.body")}
               action={t("openAdmin")}
             />
             <PlaceholderCard

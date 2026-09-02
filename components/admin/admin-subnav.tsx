@@ -7,6 +7,7 @@ const LINKS = [
   { href: "/app/admin/teams", key: "teams" as const, match: "/app/admin/teams" },
   { href: "/app/admin/players", key: "players" as const, match: "/app/admin/players" },
   { href: "/app/admin/coaches", key: "coaches" as const, match: "/app/admin/coaches" },
+  { href: "/app/admin/bindings", key: "bindings" as const, match: "/app/admin/bindings" },
 ];
 
 export function AdminSubnav() {

@@ -21,6 +21,12 @@ export function AppNav({ isAdmin, canRoster }: AppNavProps) {
   const items = [
     { href: "/app", label: t("dashboard"), show: true, match: (path: string) => path === "/app" },
     {
+      href: "/app/children",
+      label: t("children"),
+      show: true,
+      match: (path: string) => path.startsWith("/app/children"),
+    },
+    {
       href: "/app/roster",
       label: t("roster"),
       show: canRoster,

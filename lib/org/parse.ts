@@ -116,3 +116,114 @@ export function isPlayersCjkNameCheckViolation(error: PgLikeError): boolean {
   }
   return errorBlob(error).includes("players_name_zh_or_ja_present");
 }
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function parseUuid(value: string): string | null {
+  return UUID_RE.test(value) ? value.toLowerCase() : null;
+}
+
+export const GUARDIAN_RELATIONS = ["parent", "guardian", "other"] as const;
+export type ParsedGuardianRelation = (typeof GUARDIAN_RELATIONS)[number];
+
+export function parseGuardianRelation(value: string): ParsedGuardianRelation | null {
+  return (GUARDIAN_RELATIONS as readonly string[]).includes(value)
+    ? (value as ParsedGuardianRelation)
+    : null;
+}
+
+export function parseLinkDecision(value: string): "approved" | "rejected" | null {
+  if (value === "approved" || value === "rejected") {
+    return value;
+  }
+  return null;
+}
+
+export const MIN_SEARCH_NAME_FRAGMENT = 2;
+export const MAX_SEARCH_NAME_FRAGMENT = 80;
+export const MAX_LINK_NOTE = 1000;
+
+export function parseNameFragment(value: string): string {
+  return value.trim();
+}
+
+export function isNameFragmentComplete(value: string): boolean {
+  return (
+    value.length >= MIN_SEARCH_NAME_FRAGMENT &&
+    value.length <= MAX_SEARCH_NAME_FRAGMENT
+  );
+}
+
+export type GuardianSearchFields = {
+  teamId: string | null;
+  jersey: number | null;
+  birthDate: string | null;
+  nameFragment: string;
+  jerseyMode: boolean;
+  identityMode: boolean;
+};
+
+export type GuardianSearchParseResult =
+  | { ok: true; fields: GuardianSearchFields }
+  | { ok: false; errorKey: "incompleteSearch" | "searchNameTooShort" | "invalidBirthDate" | "futureBirthDate" };
+
+export function parseGuardianSearch(
+  formData: FormData,
+  todayIso: string,
+): GuardianSearchParseResult {
+  const teamId = parseUuid(readString(formData, "team_id"));
+  const jerseyRaw = readString(formData, "jersey_number");
+  const jersey = jerseyRaw ? parseJersey(jerseyRaw) : null;
+  const birthRaw = readString(formData, "birth_date");
+  const birthDate = birthRaw ? parseBirthDate(birthRaw, todayIso) : null;
+  const nameFragment = parseNameFragment(readString(formData, "name_fragment"));
+
+  if (birthDate === "future") {
+    return { ok: false, errorKey: "futureBirthDate" };
+  }
+  if (birthRaw && birthDate === null) {
+    return { ok: false, errorKey: "invalidBirthDate" };
+  }
+
+  const jerseyMode = Boolean(teamId && jersey !== null);
+  const identityMode = Boolean(birthDate && isNameFragmentComplete(nameFragment));
+
+  if (!jerseyMode && !identityMode) {
+    if (nameFragment.length === 1 || (birthDate && nameFragment.length > 0 && !isNameFragmentComplete(nameFragment))) {
+      return { ok: false, errorKey: "searchNameTooShort" };
+    }
+    return { ok: false, errorKey: "incompleteSearch" };
+  }
+
+  return {
+    ok: true,
+    fields: {
+      teamId: jerseyMode ? teamId : null,
+      jersey: jerseyMode ? jersey : null,
+      birthDate: identityMode ? (birthDate as string) : null,
+      nameFragment: identityMode ? nameFragment : "",
+      jerseyMode,
+      identityMode,
+    },
+  };
+}
+
+export function parseLinkNote(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  return trimmed.slice(0, MAX_LINK_NOTE);
+}
+
+export function isOpenGuardianLinkViolation(error: PgLikeError): boolean {
+  if (!isUniqueViolation(error)) {
+    return false;
+  }
+  const text = errorBlob(error);
+  return (
+    text.includes("guardian_player_links_open_pair") ||
+    text.includes("(guardian_user_id, player_id)")
+  );
+}

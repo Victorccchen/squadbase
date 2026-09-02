@@ -11,16 +11,16 @@
     "footer": "生產環境部署需人工核准，請勿自動發佈到 production。"
   },
   "home": {
-    "eyebrow": "階段 2 · 隊伍、球員與教練",
+    "eyebrow": "階段 3 · 家長與球員連結",
     "headline": "歡迎使用球團管理系統",
-    "lead": "以手機簡訊驗證碼登入。管理員可管理隊伍、球員與教練指派；教練可檢視被指派隊伍的名單。",
+    "lead": "以手機簡訊驗證碼登入。家長可申請連結既有球員，管理員核准後才看得到子女資料。管理員也可管理隊伍、球員與教練。",
     "openDashboard": "進入儀表板",
     "sampleLabel": "範例文案",
     "sampleBody": "目前語言：繁體中文。切換上方語言後，標題與說明應改為英文或日文。",
     "stackTitle": "技術堆疊",
     "stackNext": "Next.js App Router + TypeScript",
     "stackI18n": "next-intl（繁中 / English / 日本語）",
-    "stackSupabase": "Supabase Phone OTP、profiles、多角色、組織主檔與 RLS",
+    "stackSupabase": "Supabase Phone OTP、profiles、多角色、組織主檔、家長連結與 RLS",
     "stackPwa": "PWA：網頁應用程式資訊清單與基本 meta",
     "envTitle": "環境",
     "envConfigured": "已讀取公開 Supabase 變數。登入會連線到此專案（僅使用 anon key）。",
@@ -58,7 +58,7 @@
   "app": {
     "eyebrow": "儀表板",
     "title": "球團儀表板",
-    "welcome": "管理員可在此管理隊伍、球員與教練。教練可開啟被指派的名單。其他營運功能仍屬後續階段。",
+    "welcome": "家長可申請連結子女。管理員可管理隊伍、球員、教練與連結核准。教練可開啟被指派的名單。其他營運功能仍屬後續階段。",
     "accountTitle": "帳號",
     "phoneLabel": "手機",
     "rolesLabel": "角色",
@@ -75,6 +75,7 @@
     "playerNote": "球員（player）角色已保留給後續階段，目前沒有球員登入介面。",
     "openRoster": "開啟名單",
     "openAdmin": "開啟管理",
+    "openChildren": "開啟我的子女",
     "roles": {
       "parent": "家長",
       "coach": "教練",
@@ -84,7 +85,7 @@
     "placeholders": {
       "children": {
         "title": "球員 / 子女",
-        "body": "家長與球員的連結、球員資料尚未開放。"
+        "body": "申請連結球團已建立的球員。管理員核准後會顯示在這裡。"
       },
       "courses": {
         "title": "課程",
@@ -116,7 +117,11 @@
       },
       "members": {
         "title": "成員",
-        "body": "家長與球員連結仍屬後續階段。額外管理員請在 Supabase Dashboard 升級。"
+        "body": "家長申請連結既有球員，管理員在連結審核頁核准。額外管理員請在 Supabase Dashboard 升級。"
+      },
+      "bindings": {
+        "title": "家長連結",
+        "body": "核准或拒絕家長申請連結球員。"
       },
       "adminNote": {
         "title": "角色升級",
@@ -127,15 +132,17 @@
   "nav": {
     "label": "功能區",
     "dashboard": "儀表板",
+    "children": "子女",
     "roster": "名單",
     "admin": "管理",
     "teams": "隊伍",
     "players": "球員",
-    "coaches": "教練"
+    "coaches": "教練",
+    "bindings": "連結審核"
   },
   "access": {
     "deniedTitle": "你沒有權限開啟此頁",
-    "deniedBodyAdmin": "管理頁僅限球團管理員。教練可開啟名單；家長請留在儀表板。",
+    "deniedBodyAdmin": "管理頁僅限球團管理員。教練可開啟名單；家長可在「子女」申請連結球員。",
     "deniedBodyRoster": "名單僅限被指派的教練與管理員。沒有這些角色的家長請留在儀表板。",
     "backToDashboard": "返回儀表板"
   },
@@ -148,6 +155,8 @@
     "playersBody": "每位球員需要英文名與姓、繁中或日文姓名至少一項、出生日期、隊伍，以及該隊伍內不可重複的背號。",
     "coachesTitle": "教練",
     "coachesBody": "對方必須先登入一次以建立個人資料。你再在此連結並指派隊伍。連結時會授予教練角色。",
+    "bindingsTitle": "家長連結",
+    "bindingsBody": "家長以隊伍加背號，或出生日期加姓名片段搜尋既有球員後提出申請。你在此核准或拒絕。待審與已拒絕的家長無法讀取該球員資料。",
     "createTeam": "新增隊伍",
     "editTeam": "編輯隊伍",
     "createPlayer": "新增球員",
@@ -165,7 +174,15 @@
     "playersNeedTeamBody": "球員需要所屬隊伍，以及該隊伍內不可重複的背號。",
     "teamRosterTitle": "此隊伍球員",
     "teamRosterEmptyTitle": "此隊伍尚無球員",
-    "teamRosterEmptyBody": "新增球員時選擇此隊伍並填寫背號。"
+    "teamRosterEmptyBody": "新增球員時選擇此隊伍並填寫背號。",
+    "approve": "核准",
+    "reject": "拒絕",
+    "pendingQueue": "待審申請",
+    "allRequests": "已審核申請",
+    "guardian": "家長 / 監護人",
+    "decisionNote": "給家長的備註（選填）",
+    "bindingsEmptyTitle": "目前沒有待審申請",
+    "bindingsEmptyBody": "家長送出連結申請後，會出現在這裡供你核准。"
   },
   "roster": {
     "title": "名單",
@@ -232,7 +249,57 @@
       "missingTeam": "請選擇隊伍。",
       "jerseyTaken": "此背號在這個隊伍已經被使用。",
       "profileRequired": "請選擇要連結的個人資料。",
+      "incompleteSearch": "請用隊伍加背號搜尋，或用出生日期加至少兩個字的姓名片段。",
+      "searchNameTooShort": "姓名片段至少需要兩個字。",
+      "noPlayerMatch": "找不到符合的球員。請核對隊伍、背號、出生日期或姓名。",
+      "playerRequired": "請選擇要申請連結的球員。",
+      "invalidRelation": "請選擇你與這位球員的關係。",
+      "invalidDecision": "請選擇核准或拒絕。",
+      "linkAlreadyOpen": "你已有此球員的待審或已核准連結。",
       "generic": "無法儲存，請再試一次。"
     }
+  },
+  "children": {
+    "title": "我的子女",
+    "lead": "申請連結球團已建立的球員。管理員核准後，才能在此看到子女資料。後續階段會用這層連結，讓家長代為報名課程或登記出缺席。",
+    "myChildren": "已連結子女",
+    "requests": "申請紀錄",
+    "emptyChildrenTitle": "尚無已連結子女",
+    "emptyChildrenBody": "管理員核准後，這裡會顯示球員姓名、出生日期、隊伍與背號。",
+    "emptyRequestsTitle": "沒有進行中的申請",
+    "emptyRequestsBody": "請用下方表單搜尋。系統不會列出全部球員，只有搜尋條件夠精確時才會出現符合結果。",
+    "requestTitle": "申請連結",
+    "requestLead": "請使用精確的隊伍與背號，或出生日期加姓名片段。兩個條件都填會更精準。",
+    "searchHint": "應用程式不會列出所有球員。請填寫一組完整條件（隊伍 + 背號，或出生日期 + 姓名），或兩組都填。",
+    "searchJerseyTitle": "隊伍與背號",
+    "searchIdentityTitle": "出生日期與姓名",
+    "searchIdentityHint": "姓名至少兩個字，會比對英文名／姓以及繁中或日文姓名。",
+    "nameFragment": "姓名片段",
+    "search": "搜尋",
+    "searching": "搜尋中…",
+    "matchesTitle": "確認球員",
+    "confirmHint": "請確認這是你的子女再送出。管理員核准前，無法在「已連結子女」看到其資料。",
+    "relation": "關係",
+    "relations": {
+      "parent": "父母",
+      "guardian": "監護人",
+      "other": "其他"
+    },
+    "parentNote": "給管理員的備註",
+    "parentNoteHint": "選填。例如球團如何辨認你。請不要填寫球團尚未持有的額外聯絡資料。",
+    "submitRequest": "送出申請",
+    "statuses": {
+      "pending": "待審",
+      "approved": "已核准",
+      "rejected": "已拒絕"
+    },
+    "requestedAt": "申請日期",
+    "reviewedAt": "審核日期",
+    "adminNote": "管理員備註",
+    "noMatchDetails": "連結尚未核准，不顯示球員資料。",
+    "player": "球員",
+    "playerNames": "姓名",
+    "playerTeam": "隊伍 / 背號",
+    "playerBirth": "出生日期"
   }
 }

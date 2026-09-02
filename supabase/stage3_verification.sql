@@ -1,0 +1,147 @@
+-- Stage 3 verification helpers (staging SQL Editor only).
+-- Do not run against production. Uses synthetic names, not real PII.
+-- Run AFTER applying 20260902160000_stage3_guardian_player_links.sql
+-- (and Stage 2 migrations if those tables are missing).
+
+-- =============================================================================
+-- Unique open-link constraint (service role / SQL editor bypasses RLS)
+-- Expected:
+--   * second pending for the same (guardian, player) fails
+--   * after reject, a new pending is allowed
+--   * pending while approved exists fails
+-- The block rolls back so staging stays unchanged.
+--
+-- Replace GUARDIAN_PROFILE_UUID with a real profiles.id (a user who has
+-- signed in once). The synthetic player/team rows are created inside the
+-- transaction and rolled back.
+-- =============================================================================
+
+-- begin;
+--
+-- delete from public.team_memberships
+-- where player_id in (
+--   select id from public.players
+--   where name_en_given = 'Stage3' and name_en_family = 'Verify'
+-- );
+-- delete from public.players
+-- where name_en_given = 'Stage3' and name_en_family = 'Verify';
+-- delete from public.teams where name = 'Stage3 Verify Team';
+--
+-- insert into public.teams (name, age_band, status)
+-- values ('Stage3 Verify Team', 'U12', 'active');
+--
+-- insert into public.players (
+--   name_zh, name_en_given, name_en_family, name_ja, birth_date, status
+-- )
+-- values ('驗證丙', 'Stage3', 'Verify', null, '2014-08-15', 'active');
+--
+-- insert into public.team_memberships (player_id, team_id, jersey_number, status)
+-- select p.id, t.id, 12, 'active'
+-- from public.players p
+-- join public.teams t on t.name = 'Stage3 Verify Team'
+-- where p.name_en_given = 'Stage3' and p.name_en_family = 'Verify';
+--
+-- insert into public.guardian_player_links (
+--   guardian_user_id, player_id, relation, status
+-- )
+-- select 'GUARDIAN_PROFILE_UUID', p.id, 'parent', 'pending'
+-- from public.players p
+-- where p.name_en_given = 'Stage3' and p.name_en_family = 'Verify';
+--
+-- -- Duplicate open (pending) pair must fail.
+-- do $$
+-- begin
+--   insert into public.guardian_player_links (
+--     guardian_user_id, player_id, relation, status
+--   )
+--   select 'GUARDIAN_PROFILE_UUID', p.id, 'parent', 'pending'
+--   from public.players p
+--   where p.name_en_given = 'Stage3' and p.name_en_family = 'Verify';
+--   raise exception 'T3 unique failed: second pending was accepted';
+-- exception
+--   when unique_violation then
+--     raise notice 'T3 unique passed: second pending rejected';
+-- end
+-- $$;
+--
+-- update public.guardian_player_links
+-- set status = 'rejected',
+--     reviewed_by = 'GUARDIAN_PROFILE_UUID',
+--     reviewed_at = now()
+-- where guardian_user_id = 'GUARDIAN_PROFILE_UUID'
+--   and status = 'pending'
+--   and player_id in (
+--     select id from public.players
+--     where name_en_given = 'Stage3' and name_en_family = 'Verify'
+--   );
+--
+-- -- Re-apply after reject must succeed.
+-- insert into public.guardian_player_links (
+--   guardian_user_id, player_id, relation, status
+-- )
+-- select 'GUARDIAN_PROFILE_UUID', p.id, 'parent', 'pending'
+-- from public.players p
+-- where p.name_en_given = 'Stage3' and p.name_en_family = 'Verify';
+--
+-- raise notice 'T3 re-apply after reject inserted';
+--
+-- rollback;
+
+-- =============================================================================
+-- RLS (T3-4 / T3-5 / pending cannot read player PII)
+-- Fill in real UUIDs from Authentication → Users.
+-- PARENT_UUID must be a non-admin parent.
+-- ADMIN_UUID is an admin.
+-- PLAYER_UUID is a real players.id the parent requested (or any player).
+--
+-- Expected as PARENT_UUID:
+--   * own_link_rows >= 0 (their requests)
+--   * other_users_links = 0
+--   * player_rows_visible = 0 if they have no approved link to that player
+--   * updating own link status to approved affects 0 rows (T3-4)
+-- Expected as anon:
+--   * 0 links, 0 players (T3-5)
+-- =============================================================================
+
+-- begin;
+-- set local role authenticated;
+-- select set_config('request.jwt.claim.sub', 'PARENT_UUID', true);
+-- select set_config('request.jwt.claim.role', 'authenticated', true);
+--
+-- select count(*) as own_link_rows
+-- from public.guardian_player_links
+-- where guardian_user_id = 'PARENT_UUID';
+--
+-- select count(*) as other_users_links
+-- from public.guardian_player_links
+-- where guardian_user_id <> 'PARENT_UUID';
+--
+-- select count(*) as player_rows_visible
+-- from public.players
+-- where id = 'PLAYER_UUID';
+--
+-- -- T3-4: parent cannot approve their own link.
+-- update public.guardian_player_links
+-- set status = 'approved',
+--     reviewed_by = 'PARENT_UUID',
+--     reviewed_at = now()
+-- where guardian_user_id = 'PARENT_UUID'
+--   and status = 'pending';
+-- -- Expect: UPDATE 0
+--
+-- -- Constrained search (not a table dump). Replace team id / jersey / DOB.
+-- select * from public.search_player_for_guardian_link(
+--   p_team_id := 'TEAM_UUID',
+--   p_jersey := 12,
+--   p_birth_date := null,
+--   p_name_fragment := null
+-- );
+--
+-- set local role anon;
+-- select count(*) as anon_links from public.guardian_player_links;
+-- select count(*) as anon_players from public.players;
+--
+-- -- Search should fail for anon (not authorized).
+-- -- select * from public.search_player_for_guardian_link();
+--
+-- rollback;

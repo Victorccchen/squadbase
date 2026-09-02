@@ -11,16 +11,16 @@
     "footer": "Production deploys require human approval. Do not publish to production automatically."
   },
   "home": {
-    "eyebrow": "Stage 2 · teams, players, and coaches",
+    "eyebrow": "Stage 3 · guardian–player linking",
     "headline": "Welcome to the Club management system",
-    "lead": "Sign in with a phone SMS one-time code. Admins can manage squads, players, and coach assignments. Coaches can read assigned rosters.",
+    "lead": "Sign in with a phone SMS one-time code. Parents can request a link to an existing player; admins approve. Admins also manage squads, players, and coaches.",
     "openDashboard": "Open dashboard",
     "sampleLabel": "Sample copy",
     "sampleBody": "Current language: English. Use the language switcher above to see Traditional Chinese or Japanese strings.",
     "stackTitle": "Stack",
     "stackNext": "Next.js App Router + TypeScript",
     "stackI18n": "next-intl (Traditional Chinese / English / Japanese)",
-    "stackSupabase": "Supabase phone OTP, profiles, multi-role, org master data, and RLS",
+    "stackSupabase": "Supabase phone OTP, profiles, multi-role, org master data, guardian links, and RLS",
     "stackPwa": "PWA: web app manifest and basic meta",
     "envTitle": "Environment",
     "envConfigured": "Public Supabase variables are present. Sign-in talks to this project (anon key only).",
@@ -58,7 +58,7 @@
   "app": {
     "eyebrow": "Dashboard",
     "title": "Club dashboard",
-    "welcome": "Admins manage teams, players, and coaches here. Coaches can open assigned rosters. Other operations features are still later stages.",
+    "welcome": "Parents can request a link to a child. Admins manage teams, players, coaches, and binding approvals. Coaches can open assigned rosters. Other operations features are still later stages.",
     "accountTitle": "Account",
     "phoneLabel": "Phone",
     "rolesLabel": "Roles",
@@ -75,6 +75,7 @@
     "playerNote": "The player role is reserved for later stages. There is no player login experience yet.",
     "openRoster": "Open roster",
     "openAdmin": "Open admin",
+    "openChildren": "Open my children",
     "roles": {
       "parent": "Parent",
       "coach": "Coach",
@@ -84,7 +85,7 @@
     "placeholders": {
       "children": {
         "title": "Players / children",
-        "body": "Guardian–player linking and player records are not available yet."
+        "body": "Request a link to an existing player. After an admin approves, they appear here."
       },
       "courses": {
         "title": "Courses",
@@ -116,7 +117,11 @@
       },
       "members": {
         "title": "Members",
-        "body": "Guardian linking is still a later stage. Promote extra admins in the Supabase Dashboard."
+        "body": "Parents request a link to an existing player; admins approve on the bindings page. Promote extra admins in the Supabase Dashboard."
+      },
+      "bindings": {
+        "title": "Guardian bindings",
+        "body": "Approve or reject parent requests to link to a player."
       },
       "adminNote": {
         "title": "Role promotion",
@@ -127,15 +132,17 @@
   "nav": {
     "label": "App sections",
     "dashboard": "Dashboard",
+    "children": "Children",
     "roster": "Roster",
     "admin": "Admin",
     "teams": "Teams",
     "players": "Players",
-    "coaches": "Coaches"
+    "coaches": "Coaches",
+    "bindings": "Bindings"
   },
   "access": {
     "deniedTitle": "You cannot open this page",
-    "deniedBodyAdmin": "Admin pages are limited to club admins. Coaches can open the roster; parents stay on the dashboard.",
+    "deniedBodyAdmin": "Admin pages are limited to club admins. Coaches can open the roster; parents can request a child link from My children.",
     "deniedBodyRoster": "The roster is limited to assigned coaches and admins. Parents without those roles stay on the dashboard.",
     "backToDashboard": "Back to dashboard"
   },
@@ -148,6 +155,8 @@
     "playersBody": "Each player needs an English given name and family name, at least one of Traditional Chinese or Japanese, a date of birth, a team, and a jersey number unique on that team.",
     "coachesTitle": "Coaches",
     "coachesBody": "The person must sign in once so a profile exists. Then you link them here and assign teams. That also grants the coach role.",
+    "bindingsTitle": "Guardian bindings",
+    "bindingsBody": "Parents search for an existing player with team + jersey or birth date + name, then request a link. Approve or reject here. Pending and rejected parents cannot read that child’s record.",
     "createTeam": "Create team",
     "editTeam": "Edit team",
     "createPlayer": "Create player",
@@ -165,7 +174,15 @@
     "playersNeedTeamBody": "A player needs a team and a jersey number unique on that team.",
     "teamRosterTitle": "Players on this team",
     "teamRosterEmptyTitle": "No players on this team",
-    "teamRosterEmptyBody": "Create a player and assign this squad plus a jersey number."
+    "teamRosterEmptyBody": "Create a player and assign this squad plus a jersey number.",
+    "approve": "Approve",
+    "reject": "Reject",
+    "pendingQueue": "Pending requests",
+    "allRequests": "Reviewed requests",
+    "guardian": "Parent / guardian",
+    "decisionNote": "Note to the parent (optional)",
+    "bindingsEmptyTitle": "No pending requests",
+    "bindingsEmptyBody": "When a parent requests a link, it shows up here for approval."
   },
   "roster": {
     "title": "Roster",
@@ -232,7 +249,57 @@
       "missingTeam": "Choose a team.",
       "jerseyTaken": "That jersey number is already used on this team.",
       "profileRequired": "Choose a profile to link.",
+      "incompleteSearch": "Search with team and jersey number, or with date of birth and at least two characters of a name.",
+      "searchNameTooShort": "Name fragment must be at least two characters.",
+      "noPlayerMatch": "No player matched those details. Check the team, jersey, date of birth, or name.",
+      "playerRequired": "Choose the player to request.",
+      "invalidRelation": "Choose how you relate to this player.",
+      "invalidDecision": "Choose approve or reject.",
+      "linkAlreadyOpen": "You already have a pending or approved link to this player.",
       "generic": "Could not save. Please try again."
     }
+  },
+  "children": {
+    "title": "My children",
+    "lead": "Request a link to a player the club already created. An admin must approve before you can see their details here. Later stages will use this link so a parent can register for courses or mark attendance.",
+    "myChildren": "Linked children",
+    "requests": "Requests",
+    "emptyChildrenTitle": "No linked children yet",
+    "emptyChildrenBody": "After an admin approves a request, the player’s name, date of birth, team, and jersey appear here.",
+    "emptyRequestsTitle": "No open requests",
+    "emptyRequestsBody": "Use the form below. You will not see a full club roster — only a match if your search is specific enough.",
+    "requestTitle": "Request a link",
+    "requestLead": "Use exact team and jersey, or date of birth plus part of a name. Both together narrows the result further.",
+    "searchHint": "The app does not list every player. Fill one complete search (team + jersey, or birth date + name), or fill both.",
+    "searchJerseyTitle": "Team and jersey",
+    "searchIdentityTitle": "Date of birth and name",
+    "searchIdentityHint": "Name needs at least two characters. It is matched against English given/family and Traditional Chinese or Japanese names.",
+    "nameFragment": "Part of the name",
+    "search": "Search",
+    "searching": "Searching…",
+    "matchesTitle": "Confirm the player",
+    "confirmHint": "Check this is your child, then submit. Until an admin approves, you cannot open their record from My children.",
+    "relation": "Relation",
+    "relations": {
+      "parent": "Parent",
+      "guardian": "Guardian",
+      "other": "Other"
+    },
+    "parentNote": "Note to admin",
+    "parentNoteHint": "Optional. For example how the club can recognise you. Do not paste extra contact details the club does not already have.",
+    "submitRequest": "Submit request",
+    "statuses": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "requestedAt": "Requested",
+    "reviewedAt": "Reviewed",
+    "adminNote": "Admin note",
+    "noMatchDetails": "Player details are hidden until this link is approved.",
+    "player": "Player",
+    "playerNames": "Names",
+    "playerTeam": "Team / jersey",
+    "playerBirth": "Date of birth"
   }
 }

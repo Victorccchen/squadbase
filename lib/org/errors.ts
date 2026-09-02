@@ -11,6 +11,13 @@ export type OrgErrorKey =
   | "missingTeam"
   | "jerseyTaken"
   | "profileRequired"
+  | "incompleteSearch"
+  | "searchNameTooShort"
+  | "noPlayerMatch"
+  | "playerRequired"
+  | "invalidRelation"
+  | "invalidDecision"
+  | "linkAlreadyOpen"
   | "generic";
 
 export type OrgActionState = {
@@ -21,4 +28,30 @@ export type OrgActionState = {
 export const INITIAL_ORG_ACTION_STATE: OrgActionState = {
   ok: false,
   errorKey: null,
+};
+
+export type PlayerSearchMatchState = {
+  id: string;
+  name_zh: string | null;
+  name_en_given: string;
+  name_en_family: string;
+  name_ja: string | null;
+  birth_date: string;
+  team_id: string | null;
+  team_name: string | null;
+  jersey_number: number | null;
+};
+
+export type SearchPlayersState = {
+  ok: boolean;
+  errorKey: OrgErrorKey | null;
+  matches: PlayerSearchMatchState[];
+  searched: boolean;
+};
+
+export const INITIAL_SEARCH_PLAYERS_STATE: SearchPlayersState = {
+  ok: false,
+  errorKey: null,
+  matches: [],
+  searched: false,
 };
