@@ -140,6 +140,49 @@ export function parseLinkDecision(value: string): "approved" | "rejected" | null
   return null;
 }
 
+export function canParentCancelLink(status: string): boolean {
+  return status === "pending";
+}
+
+export function canAdminRevokeLink(status: string): boolean {
+  return status === "approved";
+}
+
+export function teamHasNoDeleteBlockers(
+  membershipCount: number,
+  coachAssignmentCount: number,
+): boolean {
+  return membershipCount === 0 && coachAssignmentCount === 0;
+}
+
+type LifecycleErrorKey =
+  | "teamHasActiveMemberships"
+  | "teamHasCoachAssignments"
+  | "teamHasMemberships"
+  | "teamNotFound"
+  | "generic";
+
+export function teamDeleteErrorKey(error: PgLikeError): LifecycleErrorKey {
+  const text = errorBlob(error);
+  if (text.includes("team has active memberships")) {
+    return "teamHasActiveMemberships";
+  }
+  if (text.includes("team has coach assignments")) {
+    return "teamHasCoachAssignments";
+  }
+  if (text.includes("team has memberships") || text.includes("team_memberships")) {
+    return "teamHasMemberships";
+  }
+  if (text.includes("team not found")) {
+    return "teamNotFound";
+  }
+  return "generic";
+}
+
+export function isLinkNotApprovedViolation(error: PgLikeError): boolean {
+  return errorBlob(error).includes("link not found or not approved");
+}
+
 export const MIN_SEARCH_NAME_FRAGMENT = 2;
 export const MAX_SEARCH_NAME_FRAGMENT = 80;
 export const MAX_LINK_NOTE = 1000;

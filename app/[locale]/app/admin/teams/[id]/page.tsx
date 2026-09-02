@@ -4,10 +4,13 @@ import { Link } from "@/i18n/navigation";
 import { AccessDenied } from "@/components/access-denied";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
+import { TeamLifecycleForms } from "@/components/admin/team-lifecycle-forms";
 import { canRenderAdminPage } from "@/lib/auth/admin-page";
-import { getTeam, listTeamPlayers } from "@/lib/org/queries";
+import { getTeam, listTeamPlayers, countCoachAssignmentsForTeam } from "@/lib/org/queries";
+import { setTeamStatus } from "@/lib/org/actions";
 import { localizedPlayerName } from "@/lib/org/display-name";
 import { ageBandFromBirthDate } from "@/lib/age-band";
+import { teamHasNoDeleteBlockers } from "@/lib/org/parse";
 import { secondaryButtonClassName } from "@/lib/ui";
 
 type TeamDetailPageProps = {
@@ -29,7 +32,15 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
   const org = await getTranslations("org");
   const common = await getTranslations("common");
   const locale = await getLocale();
-  const members = await listTeamPlayers(team.id);
+  const [members, coachAssignmentCount] = await Promise.all([
+    listTeamPlayers(team.id),
+    countCoachAssignmentsForTeam(team.id),
+  ]);
+  const membershipCount = members.length;
+  const activeMembershipCount = members.filter(
+    (row) => row.membership.status === "active",
+  ).length;
+  const canDelete = teamHasNoDeleteBlockers(membershipCount, coachAssignmentCount);
 
   return (
     <>
@@ -85,6 +96,9 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
                         {band ? org(`ageBands.${band}`) : org("ageBandUnknown")}
                         {" · "}
                         {org(row.player.status === "active" ? "statusActive" : "statusInactive")}
+                        {row.membership.status === "inactive"
+                          ? ` · ${org("membershipInactive")}`
+                          : ""}
                       </span>
                     </Link>
                   </li>
@@ -93,6 +107,16 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
             </ul>
           )}
         </section>
+        <TeamLifecycleForms
+          teamId={team.id}
+          teamName={team.name}
+          status={team.status}
+          canDelete={canDelete}
+          membershipCount={membershipCount}
+          activeMembershipCount={activeMembershipCount}
+          coachAssignmentCount={coachAssignmentCount}
+          setStatusAction={setTeamStatus.bind(null, team.id)}
+        />
       </main>
       <footer className="border-t border-zinc-200 px-6 py-4 pb-10 text-sm text-zinc-500 dark:border-zinc-800">
         {common("footer")}

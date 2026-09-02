@@ -381,10 +381,20 @@ export async function listGuardianLinksForAdmin(): Promise<GuardianLinkWithPlaye
     .select("*, players(*, team_memberships(*, teams(*))), profiles!guardian_player_links_guardian_user_id_fkey(*)")
     .order("created_at", { ascending: false });
 
+  return (data ?? []).map((row) => mapLinkRow(row as unknown as Record<string, unknown>));
+}
+
+export async function countCoachAssignmentsForTeam(teamId: string): Promise<number> {
+  const supabase = await createClient();
+  const { count, error } = await supabase
+    .from("coach_team_assignments")
+    .select("id", { count: "exact", head: true })
+    .eq("team_id", teamId);
+
   if (error) {
-    console.error("listGuardianLinksForAdmin", error.message);
-    return [];
+    console.error("countCoachAssignmentsForTeam", error.message);
+    return 0;
   }
 
-  return (data ?? []).map((row) => mapLinkRow(row as unknown as Record<string, unknown>));
+  return count ?? 0;
 }

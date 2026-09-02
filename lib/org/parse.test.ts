@@ -2,8 +2,11 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   isJerseyUniqueViolation,
+  isLinkNotApprovedViolation,
   isOpenGuardianLinkViolation,
   isPlayersCjkNameCheckViolation,
+  canAdminRevokeLink,
+  canParentCancelLink,
   parseBirthDate,
   parseGuardianRelation,
   parseGuardianSearch,
@@ -11,6 +14,8 @@ import {
   parseLinkDecision,
   parsePlayerNames,
   playerNamesError,
+  teamDeleteErrorKey,
+  teamHasNoDeleteBlockers,
 } from "./parse.ts";
 
 describe("parseJersey", () => {
@@ -234,6 +239,52 @@ describe("parseLinkDecision", () => {
     assert.equal(parseLinkDecision("approved"), "approved");
     assert.equal(parseLinkDecision("rejected"), "rejected");
     assert.equal(parseLinkDecision("pending"), null);
+    assert.equal(parseLinkDecision("revoked"), null);
+  });
+});
+
+describe("canParentCancelLink / canAdminRevokeLink", () => {
+  it("parent may cancel pending only; admin may revoke approved only", () => {
+    assert.equal(canParentCancelLink("pending"), true);
+    assert.equal(canParentCancelLink("approved"), false);
+    assert.equal(canParentCancelLink("rejected"), false);
+    assert.equal(canParentCancelLink("revoked"), false);
+    assert.equal(canAdminRevokeLink("approved"), true);
+    assert.equal(canAdminRevokeLink("pending"), false);
+    assert.equal(canAdminRevokeLink("revoked"), false);
+  });
+});
+
+describe("teamHasNoDeleteBlockers", () => {
+  it("requires zero memberships and zero coach assignments", () => {
+    assert.equal(teamHasNoDeleteBlockers(0, 0), true);
+    assert.equal(teamHasNoDeleteBlockers(1, 0), false);
+    assert.equal(teamHasNoDeleteBlockers(0, 1), false);
+  });
+});
+
+describe("teamDeleteErrorKey", () => {
+  it("maps active memberships before the generic memberships message", () => {
+    assert.equal(
+      teamDeleteErrorKey({
+        message:
+          "team has active memberships; end or inactivate memberships first, or deactivate the team instead",
+      }),
+      "teamHasActiveMemberships",
+    );
+    assert.equal(
+      teamDeleteErrorKey({
+        message:
+          "team has memberships; remove remaining membership rows before deleting, or deactivate the team instead",
+      }),
+      "teamHasMemberships",
+    );
+    assert.equal(
+      teamDeleteErrorKey({
+        message: "team has coach assignments; unassign coaches first, or deactivate the team instead",
+      }),
+      "teamHasCoachAssignments",
+    );
   });
 });
 
@@ -247,6 +298,23 @@ describe("isOpenGuardianLinkViolation", () => {
         details: "Key (guardian_user_id, player_id)=(abc, def) already exists.",
       }),
       true,
+    );
+  });
+});
+
+describe("isLinkNotApprovedViolation", () => {
+  it("matches the admin revoke RPC miss", () => {
+    assert.equal(
+      isLinkNotApprovedViolation({
+        message: "link not found or not approved",
+      }),
+      true,
+    );
+    assert.equal(
+      isLinkNotApprovedViolation({
+        message: "link not found or not pending",
+      }),
+      false,
     );
   });
 });

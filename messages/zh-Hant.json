@@ -11,9 +11,9 @@
     "footer": "生產環境部署需人工核准，請勿自動發佈到 production。"
   },
   "home": {
-    "eyebrow": "階段 3 · 家長與球員連結",
+    "eyebrow": "階段 3 · 家長連結與隊伍生命週期",
     "headline": "歡迎使用球團管理系統",
-    "lead": "以手機簡訊驗證碼登入。家長可申請連結既有球員，管理員核准後才看得到子女資料。管理員也可管理隊伍、球員與教練。",
+    "lead": "以手機簡訊驗證碼登入。家長可申請連結既有球員，管理員核准後才看得到子女資料。管理員可撤銷已核准連結、停用或刪除空隊伍，並管理球員與教練。",
     "openDashboard": "進入儀表板",
     "sampleLabel": "範例文案",
     "sampleBody": "目前語言：繁體中文。切換上方語言後，標題與說明應改為英文或日文。",
@@ -58,7 +58,7 @@
   "app": {
     "eyebrow": "儀表板",
     "title": "球團儀表板",
-    "welcome": "家長可申請連結子女。管理員可管理隊伍、球員、教練與連結核准。教練可開啟被指派的名單。其他營運功能仍屬後續階段。",
+    "welcome": "家長可申請連結子女，並可撤回待審申請。管理員可管理隊伍、球員、教練與連結核准／撤銷。教練可開啟被指派的名單。其他營運功能仍屬後續階段。",
     "accountTitle": "帳號",
     "phoneLabel": "手機",
     "rolesLabel": "角色",
@@ -121,7 +121,7 @@
       },
       "bindings": {
         "title": "家長連結",
-        "body": "核准或拒絕家長申請連結球員。"
+        "body": "核准、拒絕或撤銷家長申請連結球員。"
       },
       "adminNote": {
         "title": "角色升級",
@@ -156,7 +156,7 @@
     "coachesTitle": "教練",
     "coachesBody": "對方必須先登入一次以建立個人資料。你再在此連結並指派隊伍。連結時會授予教練角色。",
     "bindingsTitle": "家長連結",
-    "bindingsBody": "家長以隊伍加背號，或出生日期加姓名片段搜尋既有球員後提出申請。你在此核准或拒絕。待審與已拒絕的家長無法讀取該球員資料。",
+    "bindingsBody": "家長以隊伍加背號，或出生日期加姓名片段搜尋既有球員後提出申請。你在此核准、拒絕，或撤銷已核准的連結。待審、已拒絕與已撤銷的家長無法讀取該球員資料。",
     "createTeam": "新增隊伍",
     "editTeam": "編輯隊伍",
     "createPlayer": "新增球員",
@@ -177,12 +177,23 @@
     "teamRosterEmptyBody": "新增球員時選擇此隊伍並填寫背號。",
     "approve": "核准",
     "reject": "拒絕",
+    "revoke": "撤銷核准",
+    "revokeNote": "撤銷原因（選填）",
     "pendingQueue": "待審申請",
-    "allRequests": "已審核申請",
+    "allRequests": "已審核與歷史申請",
     "guardian": "家長 / 監護人",
     "decisionNote": "給家長的備註（選填）",
     "bindingsEmptyTitle": "目前沒有待審申請",
-    "bindingsEmptyBody": "家長送出連結申請後，會出現在這裡供你核准。"
+    "bindingsEmptyBody": "家長送出連結申請後，會出現在這裡供你核准。",
+    "teamLifecycleTitle": "隊伍狀態與刪除",
+    "teamLifecycleBody": "停用後，家長連結搜尋不會再列出此隊伍；既有歸屬紀錄仍保留。永久刪除僅在沒有任何球員歸屬與教練指派時可用。",
+    "deactivateTeam": "停用隊伍",
+    "reactivateTeam": "重新啟用",
+    "deleteTeam": "永久刪除隊伍",
+    "deleteTeamConfirm": "確定永久刪除「{name}」？此操作無法復原。",
+    "deleteBlockedActive": "此隊伍仍有 {count} 筆啟用中的球員歸屬。請先結束或停用歸屬，或改為停用隊伍。",
+    "deleteBlockedMemberships": "此隊伍仍有 {count} 筆球員歸屬紀錄。請先移除後再刪除，或改為停用隊伍。",
+    "deleteBlockedCoaches": "此隊伍仍有 {count} 筆教練指派。請先取消指派，或改為停用隊伍。"
   },
   "roster": {
     "title": "名單",
@@ -210,6 +221,7 @@
     "team": "隊伍",
     "selectTeam": "選擇隊伍",
     "noTeam": "未分隊",
+    "membershipInactive": "歸屬已停用",
     "jerseyNumber": "背號",
     "jerseyHint": "1–99。同一隊伍內不可重複；不同隊伍可以使用相同背號。",
     "ageBandMismatch": "此球員的建議年齡組與隊伍年齡組不同，仍可儲存。",
@@ -256,6 +268,13 @@
       "invalidRelation": "請選擇你與這位球員的關係。",
       "invalidDecision": "請選擇核准或拒絕。",
       "linkAlreadyOpen": "你已有此球員的待審或已核准連結。",
+      "cannotCancelLink": "只能撤回自己的待審申請。",
+      "cannotRevokeApproved": "已核准的連結只能由管理員撤銷。",
+      "cannotRevokeLink": "只能撤銷已核准的連結。",
+      "teamNotFound": "找不到這支隊伍。",
+      "teamHasActiveMemberships": "此隊伍仍有啟用中的球員歸屬。請先結束或停用歸屬，或改為停用隊伍。",
+      "teamHasMemberships": "此隊伍仍有球員歸屬紀錄。請先移除後再刪除，或改為停用隊伍。",
+      "teamHasCoachAssignments": "此隊伍仍有教練指派。請先取消指派，或改為停用隊伍。",
       "generic": "無法儲存，請再試一次。"
     }
   },
@@ -288,15 +307,17 @@
     "parentNote": "給管理員的備註",
     "parentNoteHint": "選填。例如球團如何辨認你。請不要填寫球團尚未持有的額外聯絡資料。",
     "submitRequest": "送出申請",
+    "cancelRequest": "撤回申請",
     "statuses": {
       "pending": "待審",
       "approved": "已核准",
-      "rejected": "已拒絕"
+      "rejected": "已拒絕",
+      "revoked": "已撤銷"
     },
     "requestedAt": "申請日期",
     "reviewedAt": "審核日期",
     "adminNote": "管理員備註",
-    "noMatchDetails": "連結尚未核准，不顯示球員資料。",
+    "noMatchDetails": "僅在連結已核准時顯示球員資料。",
     "player": "球員",
     "playerNames": "姓名",
     "playerTeam": "隊伍 / 背號",

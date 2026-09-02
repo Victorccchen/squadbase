@@ -3,9 +3,12 @@ import { AccessDenied } from "@/components/access-denied";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { BindingReviewForm } from "@/components/admin/binding-review-form";
+import { BindingRevokeForm } from "@/components/admin/binding-revoke-form";
+import { LinkStatusBadge } from "@/components/bindings/link-status-badge";
 import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { listGuardianLinksForAdmin } from "@/lib/org/queries";
 import { localizedPlayerName, playerNameList } from "@/lib/org/display-name";
+import { canAdminRevokeLink } from "@/lib/org/parse";
 import type { GuardianLinkWithPlayer } from "@/lib/org/queries";
 
 export default async function AdminBindingsPage() {
@@ -85,17 +88,10 @@ function BindingCard({
   return (
     <article className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
       <div className="flex flex-wrap items-center gap-2">
-        <span
-          className={`rounded-full px-2.5 py-1 text-xs font-medium uppercase tracking-wide ${
-            link.status === "approved"
-              ? "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100"
-              : link.status === "rejected"
-                ? "bg-red-100 text-red-900 dark:bg-red-950 dark:text-red-100"
-                : "bg-amber-100 text-amber-950 dark:bg-amber-950 dark:text-amber-100"
-          }`}
-        >
-          {childrenT(`statuses.${link.status}`)}
-        </span>
+        <LinkStatusBadge
+          status={link.status}
+          label={childrenT(`statuses.${link.status}`)}
+        />
         <span className="text-sm font-medium">
           {childrenT(`relations.${link.relation}`)}
         </span>
@@ -147,6 +143,9 @@ function BindingCard({
         ) : null}
       </dl>
       {review ? <BindingReviewForm linkId={link.id} /> : null}
+      {!review && canAdminRevokeLink(link.status) ? (
+        <BindingRevokeForm linkId={link.id} />
+      ) : null}
     </article>
   );
 }

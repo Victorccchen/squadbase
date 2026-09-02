@@ -10,7 +10,7 @@ export type AgeBand =
   | "senior";
 export type OrgStatus = "active" | "inactive";
 export type GuardianRelation = "parent" | "guardian" | "other";
-export type LinkStatus = "pending" | "approved" | "rejected";
+export type LinkStatus = "pending" | "approved" | "rejected" | "revoked";
 
 export type Profile = {
   id: string;
@@ -384,6 +384,19 @@ export type Database = {
           p_link_id: string;
           p_status: LinkStatus;
           p_admin_note?: string | null;
+        };
+        Returns: string;
+      };
+      admin_revoke_guardian_link: {
+        Args: {
+          p_link_id: string;
+          p_admin_note?: string | null;
+        };
+        Returns: string;
+      };
+      admin_delete_team: {
+        Args: {
+          p_team_id: string;
         };
         Returns: string;
       };

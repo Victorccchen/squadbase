@@ -2,9 +2,9 @@
 
 Responsive web + PWA for a football **Club** (球團) operations app: training squads, courses, attendance, assessments, and matches/events.
 
-This repository is currently **Stage 3**: Stage 1 phone OTP login, Stage 2 admin-managed organization master data (teams, players, coaches, coach↔team assignments) and a read-only coach roster, plus **guardian–player binding with admin approval**. Courses, attendance, assessments, and match management are not included.
+This repository is currently **Stage 3 plus lifecycle**: Stage 1 phone OTP login, Stage 2 admin-managed organization master data (teams, players, coaches, coach↔team assignments) and a read-only coach roster, **guardian–player binding with admin approval**, parent withdraw of a pending link, admin revoke of an approved link, and admin team deactivate / hard-delete of empty squads. Courses, attendance, assessments, and match management are not included.
 
-Parents can request a link to an **existing** player (the club creates the player record first). Until an admin approves, the parent cannot read that player’s private fields. After approval, the parent sees a basic “my children” list (names, birth date, team, jersey). Later stages can reuse an **approved** link so a parent proxies course registration or match attendance — those flows are not built here.
+Parents can request a link to an **existing** player (the club creates the player record first). Until an admin approves, the parent cannot read that player’s private fields. After approval, the parent sees a basic “my children” list (names, birth date, team, jersey). The parent may **withdraw a pending request**; only an **admin** may revoke an **approved** link. After revoke or withdraw, `is_approved_guardian_for_player` is false and the same pair may apply again. Later stages can reuse an **approved** link so a parent proxies course registration or match attendance — those flows are not built here.
 
 Branding in code, package name, and this README is neutral (`Club` / `球團`). Do not add a real club name.
 
@@ -80,7 +80,7 @@ The Stage 2 admin player form keeps **at most one membership row per player** (c
 
 Jersey uniqueness is a **full** unique constraint, including inactive memberships (hypothesis: do not silently reuse a number while the row still exists). Stage 2 has no hard-delete UI; change the number or mark the player/membership inactive without freeing the number until the membership row is removed in SQL.
 
-Stage 2 uses **active/inactive status** instead of hard delete. Membership and assignment foreign keys are `ON DELETE RESTRICT` on teams, so removing a squad that still has players would fail. Mark the row inactive instead.
+Stage 2 uses **active/inactive status** for day-to-day roster turnover. Membership and assignment foreign keys are `ON DELETE RESTRICT` on teams. Admins can **deactivate** a squad (it disappears from parent-facing active lists such as `list_active_teams_for_link`) without deleting history. **Hard delete** is allowed only when there are **no** `team_memberships` rows (active or inactive) and **no** `coach_team_assignments`. Players are never cascade-deleted. If memberships remain, deactivate instead (or move/end memberships first).
 
 `coaches.profile_id` is 1:1 with `profiles` (and therefore `auth.users`). `coach_team_assignments(coach_id, team_id)` controls which squads a coach may read.
 
@@ -101,13 +101,13 @@ Player names:
 | `guardian_user_id` | The signed-in parent’s `profiles.id` (same UUID as `auth.users`) |
 | `player_id` | Existing `players.id` (club-created; parents do not create players) |
 | `relation` | `parent` / `guardian` / `other` |
-| `status` | `pending` / `approved` / `rejected` |
+| `status` | `pending` / `approved` / `rejected` / `revoked` |
 | `parent_note` | Optional note from the parent (max 1000 chars) |
 | `admin_note` | Optional decision note from the admin |
 | `reviewed_by` / `reviewed_at` | Set only when status leaves `pending` |
 | `created_by` / `updated_by` / timestamps | Same actor pattern as Stage 2 |
 
-**Hypothesis (locked for this stage):** at most one **open** link per `(guardian_user_id, player_id)` — meaning pending or approved. Rejected rows are kept as history. After a reject, the parent may insert a new pending row. A player may have more than one approved guardian (two parents).
+**Hypothesis (locked for this stage):** at most one **open** link per `(guardian_user_id, player_id)` — meaning pending or approved. Rejected and **revoked** rows are kept as history. After a reject, parent withdraw, or admin revoke, the parent may insert a new pending row. A player may have more than one approved guardian (two parents). Parents must **not** revoke an approved link; only an admin may.
 
 This row is the future parent-proxy gate: later course registration / attendance should check `status = 'approved'` for `(guardian, player)`. Those features are out of scope.
 
@@ -137,6 +137,8 @@ Apply in order:
 3. [`supabase/migrations/20260902140000_players_split_english_names.sql`](supabase/migrations/20260902140000_players_split_english_names.sql) (player name columns; **paste this file if Stage 2 is already applied**)
 4. [`supabase/migrations/20260902160000_stage3_guardian_player_links.sql`](supabase/migrations/20260902160000_stage3_guardian_player_links.sql) (**Stage 3; paste this file on staging**)
 5. [`supabase/migrations/20260902180000_regrant_stage3_privileges.sql`](supabase/migrations/20260902180000_regrant_stage3_privileges.sql) (**Stage 3 follow-up; paste this even if Stage 3 already ran** — repairs GRANT on `guardian_player_links`, `teams`, and the Stage 3 RPCs. Does not change RLS.)
+6. [`supabase/migrations/20260902200000_link_status_add_revoked.sql`](supabase/migrations/20260902200000_link_status_add_revoked.sql) (**lifecycle step 1; paste this file and wait for it to finish** — adds `link_status.revoked`. PostgreSQL cannot use a new enum value in the same transaction that added it.)
+7. [`supabase/migrations/20260902220000_lifecycle_revoke_and_team_delete.sql`](supabase/migrations/20260902220000_lifecycle_revoke_and_team_delete.sql) (**lifecycle step 2; paste only after step 1 committed** — parent cancel pending, admin revoke approved, `admin_delete_team`)
 
 Steps:
 
@@ -160,12 +162,15 @@ Stage 3 (`20260902160000_stage3_guardian_player_links.sql`) is written to be re-
 
 The privilege follow-up (`20260902180000_regrant_stage3_privileges.sql`) is also re-runnable. **Staging that already has Stage 3 must apply this file** if parents or admins see `permission denied for table guardian_player_links` or `permission denied for function list_active_teams_for_link`. It only re-grants table/function privileges to `authenticated` (and revokes them from `anon` / `public`). It does not change RLS.
 
+The lifecycle pair must be pasted as **two separate SQL Editor runs**. First `20260902200000_link_status_add_revoked.sql` (adds the enum value). After that query succeeds, paste `20260902220000_lifecycle_revoke_and_team_delete.sql`. Do not concatenate them into one query. Staging that already has Stage 3 still needs both files. Do not run them on production.
+
 ### How to verify the migration
 
 - Table Editor shows the five Stage 2 tables above, with RLS enabled, plus `guardian_player_links` after Stage 3.
 - After the player-name follow-up: `players` has `name_en_given` and `name_en_family` (required), `name_zh` and `name_ja` nullable, and no `name_en` column.
 - Optional: paste [`supabase/stage2_verification.sql`](supabase/stage2_verification.sql). The jersey block asserts T2-2 (duplicate rejected) and T2-3 (same number on another team allowed), then `ROLLBACK` so it does not leave rows.
 - Optional: paste [`supabase/stage3_verification.sql`](supabase/stage3_verification.sql) after substituting real profile UUIDs. The unique-index block asserts re-apply-after-reject and rolls back. The RLS block documents T3-4 / T3-5.
+- Optional: paste [`supabase/lifecycle_verification.sql`](supabase/lifecycle_verification.sql) after substituting real profile UUIDs. Asserts re-apply-after-revoke, empty-team delete, and that active memberships block delete. Rolls back.
 - Optional: the RLS block at the bottom of the Stage 2 file, with real user UUIDs.
 
 There is **no seed data** and no real PII in the repo.
@@ -252,9 +257,9 @@ Do not grant extra roles from the browser except through this admin action. RLS 
   - own rows in `guardian_player_links`;
   - after **approved**, that linked player’s basic row, their membership, and that team (for “my children”).
   - constrained search RPCs (`list_active_teams_for_link`, `search_player_for_guardian_link`) which do not dump the roster.
-  - Insert own **pending** links only. Cannot set `approved` / `rejected` (T3-4). Cannot update links.
+  - Insert own **pending** links only. Cannot set `approved` / `rejected` (T3-4). Can update **own pending** rows only to `revoked` (withdraw). Cannot revoke `approved`.
 - `coach`: read assigned teams, memberships, and those players (including `birth_date`, needed to show age band on the roster). No insert/update/delete on org tables. Same parent-link rules if they also have the parent role (default).
-- `admin`: full CRUD on org tables; can `select` all `profiles` in order to link coaches (phone is PII; admins can see it); can select all guardian links and call `admin_review_guardian_link`.
+- `admin`: full CRUD on org tables; can `select` all `profiles` in order to link coaches (phone is PII; admins can see it); can select all guardian links and call `admin_review_guardian_link` / `admin_revoke_guardian_link` / `admin_delete_team`. Team hard-delete refuses while any memberships or coach assignments remain.
 
 Public match pages that show names without dates of birth are a later stage. This stage does not expose player rows to unauthenticated users.
 
@@ -302,6 +307,10 @@ Use **one admin account** and **one parent account**. The parent needs a **secon
 | T3-4 | Parent cannot approve their own link: no approve UI on `/app/children`; `/app/admin/bindings` is access denied; SQL `UPDATE … status = 'approved'` as that user affects 0 rows. See [`supabase/stage3_verification.sql`](supabase/stage3_verification.sql). |
 | T3-5 | Signed out, open `/zh-Hant/app/children`. Redirect to that locale’s login. |
 | T3-6 | `npm run lint`, `npm run typecheck`, and `npm test` pass. |
+| T3-7 | Parent withdraws a **pending** request on `/app/children` (cancel). Status becomes `revoked` (history stays). No cancel/revoke control on an **approved** child card. A crafted cancel of an approved id is rejected (`cannotRevokeApproved` / RLS). |
+| T3-8 | Admin revokes an **approved** link on `/app/admin/bindings` (optional note). Parent loses “my children” PII for that player (`is_approved_guardian_for_player` is false). The same pair can submit a new pending request. |
+| T2-9 | Admin deactivates a team on `/app/admin/teams/[id]`. The squad disappears from the parent link team dropdown (`list_active_teams_for_link`). Reactivate brings it back. |
+| T2-10 | Admin hard-deletes an **empty** team (confirm). A team with **active memberships** keeps the delete control disabled and the RPC returns a clear error if forced. Deactivate remains available. |
 
 Wrong-search check (not a numbered T3, but part of “no PII dump”): a parent who omits fields, or uses a jersey that does not exist, gets no player list.
 
@@ -349,7 +358,6 @@ Auth uses the official `@supabase/ssr` cookie pattern for Next.js, composed in `
 - Service role keys in the repo or in client code
 - In-app admin backdoors or phone whitelists
 - Seeding real personal data
-- In-app revoke of an already-approved link (admin can reject only from `pending`; reversing an approval is SQL for now)
 
 ## Later stages
 
