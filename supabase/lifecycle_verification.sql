@@ -3,6 +3,7 @@
 -- Run AFTER:
 --   20260902200000_link_status_add_revoked.sql
 --   20260902220000_lifecycle_revoke_and_team_delete.sql
+--   20260902260000_admin_delete_team_active_only.sql (replace admin_delete_team)
 --
 -- Replace GUARDIAN_PROFILE_UUID with a real profiles.id (a user who has
 -- signed in once). Blocks roll back so staging stays unchanged.
@@ -224,6 +225,48 @@
 --     raise exception 'empty-team delete failed';
 --   end if;
 --   raise notice 'empty-team delete passed';
+-- end
+-- $$;
+--
+-- -- Inactive memberships must not permanently block delete. SQL Editor cannot
+-- -- call admin_delete_team (auth.uid() is null); this repeats the RPC body.
+-- insert into public.teams (name, age_band, status)
+-- values ('Lifecycle Team Ended', 'U8', 'inactive');
+--
+-- insert into public.team_memberships (player_id, team_id, jersey_number, status)
+-- select p.id, t.id, 9, 'inactive'
+-- from public.players p
+-- join public.teams t on t.name = 'Lifecycle Team Ended'
+-- where p.name_en_given = 'Lifecycle' and p.name_en_family = 'Member';
+--
+-- do $$
+-- declare
+--   ended_id uuid;
+--   active_memberships integer;
+-- begin
+--   select id into ended_id from public.teams where name = 'Lifecycle Team Ended';
+--   select count(*) into active_memberships
+--   from public.team_memberships
+--   where team_id = ended_id and status = 'active';
+--   if active_memberships <> 0 then
+--     raise exception 'expected no active memberships on Lifecycle Team Ended';
+--   end if;
+--
+--   delete from public.team_memberships
+--   where team_id = ended_id and status is distinct from 'active';
+--   delete from public.coach_team_assignments where team_id = ended_id;
+--   delete from public.teams where id = ended_id;
+--
+--   if exists (select 1 from public.teams where name = 'Lifecycle Team Ended') then
+--     raise exception 'ended-membership team delete failed';
+--   end if;
+--   if not exists (
+--     select 1 from public.players
+--     where name_en_given = 'Lifecycle' and name_en_family = 'Member'
+--   ) then
+--     raise exception 'player was cascade-deleted; that must not happen';
+--   end if;
+--   raise notice 'ended-membership team delete passed; player remains';
 -- end
 -- $$;
 --

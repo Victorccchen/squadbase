@@ -12,6 +12,7 @@ type EditTeamPageProps = {
 };
 
 export default async function EditTeamPage({ params }: EditTeamPageProps) {
+  // Return before getTeam so non-admins never query `teams`.
   if (!(await canRenderAdminPage())) {
     return <AccessDenied area="admin" />;
   }

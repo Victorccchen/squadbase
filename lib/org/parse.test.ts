@@ -256,10 +256,9 @@ describe("canParentCancelLink / canAdminRevokeLink", () => {
 });
 
 describe("teamHasNoDeleteBlockers", () => {
-  it("requires zero memberships and zero coach assignments", () => {
-    assert.equal(teamHasNoDeleteBlockers(0, 0), true);
-    assert.equal(teamHasNoDeleteBlockers(1, 0), false);
-    assert.equal(teamHasNoDeleteBlockers(0, 1), false);
+  it("blocks only while active memberships remain", () => {
+    assert.equal(teamHasNoDeleteBlockers(0), true);
+    assert.equal(teamHasNoDeleteBlockers(1), false);
   });
 });
 

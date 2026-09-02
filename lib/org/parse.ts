@@ -148,11 +148,8 @@ export function canAdminRevokeLink(status: string): boolean {
   return status === "approved";
 }
 
-export function teamHasNoDeleteBlockers(
-  membershipCount: number,
-  coachAssignmentCount: number,
-): boolean {
-  return membershipCount === 0 && coachAssignmentCount === 0;
+export function teamHasNoDeleteBlockers(activeMembershipCount: number): boolean {
+  return activeMembershipCount === 0;
 }
 
 type LifecycleErrorKey =

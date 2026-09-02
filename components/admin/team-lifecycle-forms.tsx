@@ -14,7 +14,6 @@ type TeamLifecycleFormsProps = {
   teamId: string;
   teamName: string;
   status: OrgStatus;
-  canDelete: boolean;
   membershipCount: number;
   activeMembershipCount: number;
   coachAssignmentCount: number;
@@ -28,7 +27,6 @@ export function TeamLifecycleForms({
   teamId,
   teamName,
   status,
-  canDelete,
   membershipCount,
   activeMembershipCount,
   coachAssignmentCount,
@@ -51,14 +49,34 @@ export function TeamLifecycleForms({
   const nextStatus = status === "active" ? "inactive" : "active";
   const nextField = redirectTo === "list" ? "teams" : "detail";
   const errorKey = statusState.errorKey ?? deleteState.errorKey;
-  const blockedMessage =
-    activeMembershipCount > 0
-      ? t("deleteBlockedActive", { count: activeMembershipCount })
-      : membershipCount > 0
-        ? t("deleteBlockedMemberships", { count: membershipCount })
-        : coachAssignmentCount > 0
-          ? t("deleteBlockedCoaches", { count: coachAssignmentCount })
-          : null;
+  const inactiveMembershipCount = Math.max(0, membershipCount - activeMembershipCount);
+  const deleteBlocked = activeMembershipCount > 0;
+  const deleteBlockId = `team-delete-block-${teamId}`;
+  const confirmMessage = deleteBlocked
+    ? t("deleteTeamBlockedConfirm", { name: teamName, count: activeMembershipCount })
+    : t("deleteTeamConfirm", {
+        name: teamName,
+        inactive: inactiveMembershipCount,
+        coaches: coachAssignmentCount,
+      });
+
+  const blocker =
+    deleteBlocked ? (
+      <p
+        id={deleteBlockId}
+        role="status"
+        className={
+          variant === "inline"
+            ? "max-w-md text-sm leading-5 text-amber-800 dark:text-amber-200"
+            : "rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:bg-amber-950 dark:text-amber-100"
+        }
+      >
+        {t("deleteBlockedActive", { count: activeMembershipCount })}{" "}
+        <Link href={`/app/admin/teams/${teamId}`} className="font-medium underline underline-offset-2">
+          {t("openTeamRoster")}
+        </Link>
+      </p>
+    ) : null;
 
   const actions = (
     <div className="flex flex-wrap items-center gap-2">
@@ -86,29 +104,38 @@ export function TeamLifecycleForms({
       <form
         action={deleteAction}
         onSubmit={(event) => {
-          if (!window.confirm(t("deleteTeamConfirm", { name: teamName }))) {
+          if (deleteBlocked) {
+            window.confirm(confirmMessage);
+            event.preventDefault();
+            return;
+          }
+          if (!window.confirm(confirmMessage)) {
             event.preventDefault();
           }
         }}
       >
         <LocaleHiddenField />
         <input type="hidden" name="team_id" value={teamId} />
-        <button type="submit" disabled={deletePending} className={dangerButtonClassName}>
+        <button
+          type="submit"
+          disabled={deletePending}
+          className={dangerButtonClassName}
+          aria-describedby={deleteBlocked ? deleteBlockId : undefined}
+        >
           {deletePending ? org("saving") : t("deleteTeamShort")}
         </button>
       </form>
+      {variant === "inline" ? blocker : null}
     </div>
   );
 
   const alerts = (
     <>
+      {variant === "card" ? blocker : null}
       {errorKey ? (
         <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800 dark:bg-red-950 dark:text-red-100">
           {org(`errors.${errorKey}`)}
         </p>
-      ) : null}
-      {!canDelete && blockedMessage ? (
-        <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">{blockedMessage}</p>
       ) : null}
     </>
   );

@@ -10,7 +10,6 @@ import { getTeam, listTeamPlayers, countCoachAssignmentsForTeam } from "@/lib/or
 import { setTeamStatus } from "@/lib/org/actions";
 import { localizedPlayerName } from "@/lib/org/display-name";
 import { ageBandFromBirthDate } from "@/lib/age-band";
-import { teamHasNoDeleteBlockers } from "@/lib/org/parse";
 import { secondaryButtonClassName } from "@/lib/ui";
 
 type TeamDetailPageProps = {
@@ -18,6 +17,7 @@ type TeamDetailPageProps = {
 };
 
 export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
+  // Return before getTeam / listTeamPlayers so non-admins never query org tables.
   if (!(await canRenderAdminPage())) {
     return <AccessDenied area="admin" />;
   }
@@ -40,7 +40,6 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
   const activeMembershipCount = members.filter(
     (row) => row.membership.status === "active",
   ).length;
-  const canDelete = teamHasNoDeleteBlockers(membershipCount, coachAssignmentCount);
 
   return (
     <>
@@ -111,7 +110,6 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
           teamId={team.id}
           teamName={team.name}
           status={team.status}
-          canDelete={canDelete}
           membershipCount={membershipCount}
           activeMembershipCount={activeMembershipCount}
           coachAssignmentCount={coachAssignmentCount}

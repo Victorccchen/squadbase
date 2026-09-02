@@ -186,17 +186,17 @@
     "bindingsEmptyTitle": "No pending requests",
     "bindingsEmptyBody": "When a parent requests a link, it shows up here for approval.",
     "teamLifecycleTitle": "Team status and delete",
-    "teamLifecycleBody": "Deactivating hides this squad from parent link search; existing memberships stay. Permanent delete is allowed only when there are no memberships and no coach assignments.",
+    "teamLifecycleBody": "Deactivating hides this squad from parent link search; existing memberships stay. Permanent delete is allowed only when there are no active memberships. Ended memberships and coach assignments are removed with the team.",
     "deactivateTeam": "Deactivate team",
     "deactivateTeamShort": "Deactivate",
     "reactivateTeam": "Reactivate team",
     "reactivateTeamShort": "Reactivate",
     "deleteTeam": "Permanently delete team",
     "deleteTeamShort": "Delete",
-    "deleteTeamConfirm": "Permanently delete “{name}”? This cannot be undone.",
-    "deleteBlockedActive": "This team still has {count} active memberships. End or inactivate those memberships first, or deactivate the team instead.",
-    "deleteBlockedMemberships": "This team still has {count} membership rows. Remove them before deleting, or deactivate the team instead.",
-    "deleteBlockedCoaches": "This team still has {count} coach assignments. Unassign coaches first, or deactivate the team instead."
+    "deleteTeamConfirm": "Permanently delete “{name}”? This also removes {inactive} ended memberships and {coaches} coach assignments. Player records are not deleted. This cannot be undone.",
+    "deleteTeamBlockedConfirm": "Cannot delete “{name}”: {count} active players remain. Move them to another team or end those memberships first.",
+    "deleteBlockedActive": "This team still has {count} active players, so it cannot be deleted. Move them to another team or end those memberships first.",
+    "openTeamRoster": "Open roster"
   },
   "roster": {
     "title": "Roster",
