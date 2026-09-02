@@ -1,25 +1,113 @@
 {
   "meta": {
     "title": "クラブ",
-    "description": "クラブ運営管理システム（開発用スケルトン）"
+    "description": "クラブ運営管理システム"
+  },
+  "common": {
+    "clubName": "クラブ",
+    "languageLabel": "言語",
+    "signIn": "ログイン",
+    "signOut": "ログアウト",
+    "footer": "本番環境へのデプロイには人による承認が必要です。自動で production へ公開しないでください。"
   },
   "home": {
-    "eyebrow": "ステージ 0 · プロジェクト骨格",
-    "clubName": "クラブ",
+    "eyebrow": "ステージ 1 · ログインとロール",
     "headline": "クラブ管理システムへようこそ",
-    "lead": "これは実行可能な開発用ホームページです。後続ステージでは、同じ構成の上に認証、トレーニング、コース、試合機能を追加します。",
+    "lead": "携帯電話のSMS認証コードでログインします。後続ステージでは、同じ構成の上に選手、コース、出欠、試合機能を追加します。",
+    "openDashboard": "ダッシュボードを開く",
     "sampleLabel": "サンプル文言",
     "sampleBody": "現在の言語：日本語。上の言語切替で繁体字中国語または英語の文言に変わります。",
     "stackTitle": "技術スタック",
     "stackNext": "Next.js App Router + TypeScript",
     "stackI18n": "next-intl（繁体字中国語 / English / 日本語）",
-    "stackSupabase": "Supabase ブラウザ／サーバクライアントの骨格",
+    "stackSupabase": "Supabase の電話OTP、プロフィール、複数ロール、RLS",
     "stackPwa": "PWA：ウェブアプリマニフェストと基本メタ",
     "envTitle": "環境",
-    "envConfigured": "公開用 Supabase 変数を検出しました（存在確認のみ。このページは接続しません）。",
-    "envMissing": "NEXT_PUBLIC_SUPABASE_URL または NEXT_PUBLIC_SUPABASE_ANON_KEY が未設定です。ホームページは表示できます。",
-    "envLabel": "環境ラベル",
-    "languageLabel": "言語",
-    "footer": "本番環境へのデプロイには人による承認が必要です。自動で production へ公開しないでください。"
+    "envConfigured": "公開用 Supabase 変数を検出しました。ログインはこのプロジェクトに接続します（anon key のみ）。",
+    "envMissing": "NEXT_PUBLIC_SUPABASE_URL または NEXT_PUBLIC_SUPABASE_ANON_KEY が未設定です。ホームページは表示できますが、ログインはできません。",
+    "envLabel": "環境ラベル"
+  },
+  "auth": {
+    "eyebrow": "電話認証",
+    "title": "電話番号でログイン",
+    "lead": "SMSでワンタイムコードを送信します。初回のログイン成功時にプロフィールを作成し、デフォルトの保護者（parent）ロールを付与します。",
+    "countryLabel": "国番号",
+    "phoneLabel": "電話番号",
+    "phonePlaceholder": "0912 345 678",
+    "phoneHint": "台湾の番号は 09 から始まる国内形式で入力できます。国際形式に変換します。",
+    "sendCode": "コードを送信",
+    "sending": "送信中…",
+    "codeLabel": "認証コード",
+    "codeSent": "SMSが設定済みなら、コードを送信しました。有効期限内に入力してください。",
+    "codeSentTo": "コードの送信先：{phone}",
+    "smsBlocked": "SMSを送信できませんでした。Supabase Dashboard で Phone Auth を有効にし、SMSプロバイダー（例：Twilio）を設定してください。エラー経路の確認のためにコード入力はできますが、SMSが使えるまではログインを完了できません。",
+    "verify": "確認してログイン",
+    "verifying": "確認中…",
+    "back": "番号を変更",
+    "resend": "再送信",
+    "errors": {
+      "notConfigured": "公開用の Supabase 環境変数がないため、ログインできません。",
+      "invalidPhone": "有効な電話番号を入力してください。",
+      "smsNotConfigured": "SMSが未設定か、送信に失敗しました。",
+      "rateLimit": "リクエストが多すぎます。しばらくしてから再試行してください。",
+      "invalidOtp": "認証コードが正しくありません。ログインしていません。",
+      "expiredOtp": "認証コードの有効期限が切れています。ログインしていません。新しいコードを送信してください。",
+      "generic": "ログインに失敗しました。もう一度お試しください。"
+    }
+  },
+  "app": {
+    "eyebrow": "ダッシュボード",
+    "title": "クラブ ダッシュボード",
+    "welcome": "ロール別のプレースホルダーのみです。業務機能はまだありません。",
+    "accountTitle": "アカウント",
+    "phoneLabel": "電話",
+    "rolesLabel": "ロール",
+    "profileLabel": "プロフィール",
+    "phoneUnknown": "（非表示）",
+    "rolesEmpty": "ロールなし",
+    "profileReady": "作成済み",
+    "profileMissing": "未作成（再ログインするか、データベース migration の適用を確認してください）",
+    "comingSoon": "近日公開",
+    "parentSection": "保護者",
+    "coachSection": "コーチ",
+    "adminSection": "管理者",
+    "noDashboardRole": "このアカウントには保護者・コーチ・管理者ロールがありません。",
+    "playerNote": "選手（player）ロールは後続ステージ用に予約されています。ステージ 1 に選手ログイン画面はありません。",
+    "roles": {
+      "parent": "保護者",
+      "coach": "コーチ",
+      "admin": "管理者",
+      "player": "選手"
+    },
+    "placeholders": {
+      "children": {
+        "title": "選手 / 子ども",
+        "body": "保護者と選手の紐付け、選手データの機能はまだありません。"
+      },
+      "courses": {
+        "title": "コース",
+        "body": "コース申込とスケジュールはまだありません。"
+      },
+      "squads": {
+        "title": "トレーニングチーム",
+        "body": "トレーニングチーム名簿はまだありません。"
+      },
+      "attendance": {
+        "title": "出欠",
+        "body": "出欠管理はまだありません。"
+      },
+      "assessments": {
+        "title": "評価",
+        "body": "能力評価はまだありません。"
+      },
+      "members": {
+        "title": "メンバー",
+        "body": "メンバー管理はまだありません。最初の管理者は Supabase Dashboard で手動昇格してください。"
+      },
+      "adminNote": {
+        "title": "ロール昇格",
+        "body": "アプリ内にバックドアはありません。Dashboard の user_roles テーブルでユーザーに admin を追加してください。"
+      }
+    }
   }
 }

@@ -1,5 +1,6 @@
 import { createBrowserClient } from "@supabase/ssr";
 import { getPublicSupabaseEnv } from "@/lib/env";
+import type { Database } from "@/lib/supabase/database.types";
 
 /**
  * Browser Supabase client. Reads only the public URL and anon key.
@@ -14,5 +15,5 @@ export function createClient() {
     );
   }
 
-  return createBrowserClient(url, anonKey);
+  return createBrowserClient<Database>(url, anonKey);
 }

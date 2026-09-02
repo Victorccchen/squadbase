@@ -5,14 +5,18 @@
 ## Stage
 
 - [ ] Stage 0 scaffold only (no business features)
+- [ ] Stage 1 auth / profiles / roles / RLS (no business features)
 
 ## Verification
 
-- [ ] `npm install` and `npm run dev` serve the homepage
-- [ ] Language switcher updates sample copy: zh-Hant / en / ja
 - [ ] `npm run lint` and `npm run typecheck` pass
+- [ ] Unauthenticated `/app` redirects to login (T1-1)
+- [ ] Phone OTP request + verify + logout flows exist with zh-Hant / en / ja copy
+- [ ] Migration SQL is in `supabase/migrations/` (applied on **staging only**)
 - [ ] No secrets, `.env`, or service role keys in the diff
+- [ ] This PR is not merged to `main` by the agent
+- [ ] This PR does **not** deploy to production
 
 ## Deploy
 
-This PR must **not** deploy to production. Production deploys require human approval.
+This PR must **not** deploy to production. Production deploys require human approval. CI is lint + typecheck only.

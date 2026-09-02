@@ -1,25 +1,113 @@
 {
   "meta": {
     "title": "Club",
-    "description": "Club operations management system (development scaffold)"
+    "description": "Club operations management system"
+  },
+  "common": {
+    "clubName": "Club",
+    "languageLabel": "Language",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "footer": "Production deploys require human approval. Do not publish to production automatically."
   },
   "home": {
-    "eyebrow": "Stage 0 · project scaffold",
-    "clubName": "Club",
+    "eyebrow": "Stage 1 · sign-in and roles",
     "headline": "Welcome to the Club management system",
-    "lead": "This is a runnable development homepage. Later stages will add auth, training squads, courses, and match features on the same structure.",
+    "lead": "Sign in with a phone SMS one-time code. Later stages will add players, courses, attendance, and matches on the same structure.",
+    "openDashboard": "Open dashboard",
     "sampleLabel": "Sample copy",
     "sampleBody": "Current language: English. Use the language switcher above to see Traditional Chinese or Japanese strings.",
     "stackTitle": "Stack",
     "stackNext": "Next.js App Router + TypeScript",
     "stackI18n": "next-intl (Traditional Chinese / English / Japanese)",
-    "stackSupabase": "Supabase browser and server client skeleton",
+    "stackSupabase": "Supabase phone OTP, profiles, multi-role, and RLS",
     "stackPwa": "PWA: web app manifest and basic meta",
     "envTitle": "Environment",
-    "envConfigured": "Public Supabase variables are present (existence check only; this page does not connect).",
-    "envMissing": "NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY is not set. The homepage still previews.",
-    "envLabel": "Environment label",
-    "languageLabel": "Language",
-    "footer": "Production deploys require human approval. Do not publish to production automatically."
+    "envConfigured": "Public Supabase variables are present. Sign-in talks to this project (anon key only).",
+    "envMissing": "NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY is not set. The homepage still previews, but sign-in cannot work.",
+    "envLabel": "Environment label"
+  },
+  "auth": {
+    "eyebrow": "Phone verification",
+    "title": "Sign in with your phone",
+    "lead": "We send a one-time SMS code. On first successful sign-in we create a profile and assign the default parent role.",
+    "countryLabel": "Country code",
+    "phoneLabel": "Phone number",
+    "phonePlaceholder": "0912 345 678",
+    "phoneHint": "Taiwan numbers can be entered in local 09… format; we convert them to E.164.",
+    "sendCode": "Send code",
+    "sending": "Sending…",
+    "codeLabel": "Verification code",
+    "codeSent": "If SMS is configured, a code was sent. Enter it before it expires.",
+    "codeSentTo": "The code will be sent to {phone}",
+    "smsBlocked": "SMS could not be sent. Enable Phone Auth in the Supabase Dashboard and configure an SMS provider (for example Twilio). You can still enter a code to test the error path, but you cannot complete login until SMS works.",
+    "verify": "Verify and sign in",
+    "verifying": "Verifying…",
+    "back": "Change number",
+    "resend": "Resend code",
+    "errors": {
+      "notConfigured": "Public Supabase environment variables are missing, so sign-in is unavailable.",
+      "invalidPhone": "Enter a valid phone number.",
+      "smsNotConfigured": "SMS is not configured or the message failed to send.",
+      "rateLimit": "Too many requests. Please wait and try again.",
+      "invalidOtp": "That code is not valid. You are not signed in.",
+      "expiredOtp": "That code has expired. You are not signed in. Request a new one.",
+      "generic": "Sign-in failed. Please try again."
+    }
+  },
+  "app": {
+    "eyebrow": "Dashboard",
+    "title": "Club dashboard",
+    "welcome": "Role-aware placeholders only. Business features are not available yet.",
+    "accountTitle": "Account",
+    "phoneLabel": "Phone",
+    "rolesLabel": "Roles",
+    "profileLabel": "Profile",
+    "phoneUnknown": "(not shown)",
+    "rolesEmpty": "No roles yet",
+    "profileReady": "Created",
+    "profileMissing": "Missing (sign in again, or confirm the database migration was applied)",
+    "comingSoon": "Coming soon",
+    "parentSection": "Parent",
+    "coachSection": "Coach",
+    "adminSection": "Admin",
+    "noDashboardRole": "This account does not have a parent, coach, or admin role.",
+    "playerNote": "The player role is reserved for later stages. There is no player login experience in Stage 1.",
+    "roles": {
+      "parent": "Parent",
+      "coach": "Coach",
+      "admin": "Admin",
+      "player": "Player"
+    },
+    "placeholders": {
+      "children": {
+        "title": "Players / children",
+        "body": "Guardian–player linking and player records are not available yet."
+      },
+      "courses": {
+        "title": "Courses",
+        "body": "Course enrollment and schedules are not available yet."
+      },
+      "squads": {
+        "title": "Squads",
+        "body": "Training squad lists are not available yet."
+      },
+      "attendance": {
+        "title": "Attendance",
+        "body": "Attendance tracking is not available yet."
+      },
+      "assessments": {
+        "title": "Assessments",
+        "body": "Ability assessments are not available yet."
+      },
+      "members": {
+        "title": "Members",
+        "body": "Member management is not available yet. Promote the first admin in the Supabase Dashboard."
+      },
+      "adminNote": {
+        "title": "Role promotion",
+        "body": "There is no in-app backdoor. Add an admin row for the user in the Dashboard user_roles table."
+      }
+    }
   }
 }
