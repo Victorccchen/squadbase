@@ -18,6 +18,7 @@ type TeamDetailPageProps = {
 };
 
 export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
+  // Return before getTeam / listTeamPlayers so non-admins never query org tables.
   if (!(await canRenderAdminPage())) {
     return <AccessDenied area="admin" />;
   }

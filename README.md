@@ -139,6 +139,7 @@ Apply in order:
 5. [`supabase/migrations/20260902180000_regrant_stage3_privileges.sql`](supabase/migrations/20260902180000_regrant_stage3_privileges.sql) (**Stage 3 follow-up; paste this even if Stage 3 already ran** — repairs GRANT on `guardian_player_links`, `teams`, and the Stage 3 RPCs. Does not change RLS.)
 6. [`supabase/migrations/20260902200000_link_status_add_revoked.sql`](supabase/migrations/20260902200000_link_status_add_revoked.sql) (**lifecycle step 1; paste this file and wait for it to finish** — adds `link_status.revoked`. PostgreSQL cannot use a new enum value in the same transaction that added it.)
 7. [`supabase/migrations/20260902220000_lifecycle_revoke_and_team_delete.sql`](supabase/migrations/20260902220000_lifecycle_revoke_and_team_delete.sql) (**lifecycle step 2; paste only after step 1 committed** — parent cancel pending, admin revoke approved, `admin_delete_team`)
+8. [`supabase/migrations/20260902240000_regrant_lifecycle_privileges.sql`](supabase/migrations/20260902240000_regrant_lifecycle_privileges.sql) (**paste if admins see `permission denied for table teams`** — re-grants `teams`, `team_memberships`, `coach_team_assignments`, `players`, `guardian_player_links` to `authenticated`. Does not change RLS. Safe to re-run even if step 7 already included a teams GRANT.)
 
 Steps:
 
@@ -163,6 +164,8 @@ Stage 3 (`20260902160000_stage3_guardian_player_links.sql`) is written to be re-
 The privilege follow-up (`20260902180000_regrant_stage3_privileges.sql`) is also re-runnable. **Staging that already has Stage 3 must apply this file** if parents or admins see `permission denied for table guardian_player_links` or `permission denied for function list_active_teams_for_link`. It only re-grants table/function privileges to `authenticated` (and revokes them from `anon` / `public`). It does not change RLS.
 
 The lifecycle pair must be pasted as **two separate SQL Editor runs**. First `20260902200000_link_status_add_revoked.sql` (adds the enum value). After that query succeeds, paste `20260902220000_lifecycle_revoke_and_team_delete.sql`. Do not concatenate them into one query. Staging that already has Stage 3 still needs both files. Do not run them on production.
+
+If an admin opening `/app/admin/teams` still sees `permission denied for table teams` in logs (empty list or failed load), paste [`supabase/migrations/20260902240000_regrant_lifecycle_privileges.sql`](supabase/migrations/20260902240000_regrant_lifecycle_privileges.sql) in the staging SQL Editor. It only repairs GRANT on org tables (and lifecycle RPCs if those functions already exist). It does not change RLS. Safe to re-run.
 
 ### How to verify the migration
 
