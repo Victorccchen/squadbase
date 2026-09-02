@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --experimental-default-type=module --test lib/age-band.test.ts lib/org/parse.test.ts"
   },
   "engines": {
     "node": ">=20.9.0"

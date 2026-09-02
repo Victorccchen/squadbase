@@ -11,16 +11,16 @@
     "footer": "本番環境へのデプロイには人による承認が必要です。自動で production へ公開しないでください。"
   },
   "home": {
-    "eyebrow": "ステージ 1 · ログインとロール",
+    "eyebrow": "ステージ 2 · チーム、選手、コーチ",
     "headline": "クラブ管理システムへようこそ",
-    "lead": "携帯電話のSMS認証コードでログインします。後続ステージでは、同じ構成の上に選手、コース、出欠、試合機能を追加します。",
+    "lead": "携帯電話のSMS認証コードでログインします。管理者はチーム・選手・コーチ割当を管理でき、コーチは担当チームの名簿を閲覧できます。",
     "openDashboard": "ダッシュボードを開く",
     "sampleLabel": "サンプル文言",
     "sampleBody": "現在の言語：日本語。上の言語切替で繁体字中国語または英語の文言に変わります。",
     "stackTitle": "技術スタック",
     "stackNext": "Next.js App Router + TypeScript",
     "stackI18n": "next-intl（繁体字中国語 / English / 日本語）",
-    "stackSupabase": "Supabase の電話OTP、プロフィール、複数ロール、RLS",
+    "stackSupabase": "Supabase の電話OTP、プロフィール、複数ロール、組織マスター、RLS",
     "stackPwa": "PWA：ウェブアプリマニフェストと基本メタ",
     "envTitle": "環境",
     "envConfigured": "公開用 Supabase 変数を検出しました。ログインはこのプロジェクトに接続します（anon key のみ）。",
@@ -58,7 +58,7 @@
   "app": {
     "eyebrow": "ダッシュボード",
     "title": "クラブ ダッシュボード",
-    "welcome": "ロール別のプレースホルダーのみです。業務機能はまだありません。",
+    "welcome": "管理者はチーム・選手・コーチを管理します。コーチは担当名簿を開けます。その他の運営機能は後続ステージです。",
     "accountTitle": "アカウント",
     "phoneLabel": "電話",
     "rolesLabel": "ロール",
@@ -72,7 +72,9 @@
     "coachSection": "コーチ",
     "adminSection": "管理者",
     "noDashboardRole": "このアカウントには保護者・コーチ・管理者ロールがありません。",
-    "playerNote": "選手（player）ロールは後続ステージ用に予約されています。ステージ 1 に選手ログイン画面はありません。",
+    "playerNote": "選手（player）ロールは後続ステージ用に予約されています。現時点で選手ログイン画面はありません。",
+    "openRoster": "名簿を開く",
+    "openAdmin": "管理を開く",
     "roles": {
       "parent": "保護者",
       "coach": "コーチ",
@@ -89,8 +91,20 @@
         "body": "コース申込とスケジュールはまだありません。"
       },
       "squads": {
-        "title": "トレーニングチーム",
-        "body": "トレーニングチーム名簿はまだありません。"
+        "title": "担当名簿",
+        "body": "割り当てられたチームの選手を読み取り専用で表示します。"
+      },
+      "teams": {
+        "title": "チーム",
+        "body": "トレーニングチームと年齢区分を作成・編集します。"
+      },
+      "players": {
+        "title": "選手",
+        "body": "中・英・日の氏名、生年月日、チーム、背番号で選手を作成します。"
+      },
+      "coaches": {
+        "title": "コーチ",
+        "body": "一度ログイン済みのプロフィールを紐付け、チームを割り当てます。"
       },
       "attendance": {
         "title": "出欠",
@@ -102,12 +116,119 @@
       },
       "members": {
         "title": "メンバー",
-        "body": "メンバー管理はまだありません。最初の管理者は Supabase Dashboard で手動昇格してください。"
+        "body": "保護者と選手の紐付けは後続ステージです。追加の管理者は Supabase Dashboard で昇格してください。"
       },
       "adminNote": {
         "title": "ロール昇格",
-        "body": "アプリ内にバックドアはありません。Dashboard の user_roles テーブルでユーザーに admin を追加してください。"
+        "body": "アプリ内にバックドアはありません。Dashboard の user_roles テーブルでユーザーに admin を追加してください。コーチを紐付けると coach ロールも付与されます。"
       }
+    }
+  },
+  "nav": {
+    "label": "アプリの区画",
+    "dashboard": "ダッシュボード",
+    "roster": "名簿",
+    "admin": "管理",
+    "teams": "チーム",
+    "players": "選手",
+    "coaches": "コーチ"
+  },
+  "access": {
+    "deniedTitle": "このページを開けません",
+    "deniedBodyAdmin": "管理ページはクラブ管理者専用です。コーチは名簿を開けます。保護者はダッシュボードに留まってください。",
+    "deniedBodyRoster": "名簿は割り当てられたコーチと管理者専用です。それらのロールがない保護者はダッシュボードに留まってください。",
+    "backToDashboard": "ダッシュボードに戻る"
+  },
+  "admin": {
+    "title": "管理",
+    "lead": "クラブの組織マスターデータです。実在の個人情報はシードしません。",
+    "teamsTitle": "チーム",
+    "teamsBody": "年齢区分と有効／無効ステータス付きでトレーニングチームを作成します。",
+    "playersTitle": "選手",
+    "playersBody": "各選手には中国語・英語・日本語の氏名、生年月日、チーム、そのチーム内で一意の背番号が必要です。",
+    "coachesTitle": "コーチ",
+    "coachesBody": "相手は先に一度ログインしてプロフィールを作る必要があります。ここで紐付けてチームを割り当てます。紐付け時にコーチロールも付与されます。",
+    "createTeam": "チームを作成",
+    "editTeam": "チームを編集",
+    "createPlayer": "選手を作成",
+    "editPlayer": "選手を編集",
+    "linkCoach": "コーチを紐付け",
+    "edit": "編集",
+    "save": "保存",
+    "teamsEmptyTitle": "チームはまだありません",
+    "teamsEmptyBody": "最初のチームを作成してください。初期データはありません。",
+    "playersEmptyTitle": "選手はまだありません",
+    "playersEmptyBody": "先にチームを作成してから選手を追加してください。共有ステージングでは、意図しない限り実在の個人情報を入れないでください。",
+    "coachesEmptyTitle": "コーチはまだありません",
+    "coachesEmptyBody": "コーチに一度ログインしてもらい、そのプロフィールを紐付けてください。",
+    "playersNeedTeamTitle": "先にチームを作成してください",
+    "playersNeedTeamBody": "選手にはチームと、そのチーム内で一意の背番号が必要です。",
+    "teamRosterTitle": "このチームの選手",
+    "teamRosterEmptyTitle": "このチームに選手はいません",
+    "teamRosterEmptyBody": "選手を作成し、このチームと背番号を割り当ててください。"
+  },
+  "roster": {
+    "title": "名簿",
+    "lead": "割り当てられたチームの選手です。この一覧は読み取り専用です。",
+    "emptyTitle": "担当選手はいません",
+    "emptyBody": "管理者が選手のいるチームにあなたを割り当てると、ここに表示されます。"
+  },
+  "org": {
+    "teamName": "チーム名",
+    "ageBand": "年齢区分",
+    "status": "ステータス",
+    "statusActive": "有効",
+    "statusInactive": "無効",
+    "nameZh": "氏名（繁体字中国語）",
+    "nameEn": "氏名（英語）",
+    "nameJa": "氏名（日本語）",
+    "birthDate": "生年月日",
+    "suggestedAgeBand": "提案される年齢区分",
+    "ageBandUnknown": "生年月日を入力してください",
+    "seasonStart": "シーズン開始日",
+    "seasonStartLabel": "この計算で使うシーズン開始日：{date}（毎年8月15日に切替、Asia/Taipei）",
+    "team": "チーム",
+    "selectTeam": "チームを選択",
+    "noTeam": "未所属",
+    "jerseyNumber": "背番号",
+    "jerseyHint": "1–99。同じチーム内では重複不可。別チームでは同じ番号を使えます。",
+    "ageBandMismatch": "選手の提案年齢区分がチームの区分と一致しません。保存はできます。",
+    "profile": "プロフィール",
+    "selectProfile": "プロフィールを選択",
+    "linkCoach": "コーチとして紐付け",
+    "linkCoachHint": "ユーザーは既に存在する必要があります（一度ログイン）。紐付けでコーチ記録を作り、コーチロールを付与します。その後チームを割り当てます。",
+    "noLinkableProfiles": "紐付けできるプロフィールがありません。相手が電話OTPで一度ログインしてから、このページを再読み込みしてください。",
+    "saveStatus": "ステータスを保存",
+    "assignedTeams": "割り当て済みチーム",
+    "noAssignedTeams": "チーム未割り当て",
+    "assignTeam": "チームを割り当て",
+    "assign": "割り当て",
+    "unassign": "解除",
+    "unknownTeam": "不明なチーム",
+    "saving": "保存中…",
+    "ageBands": {
+      "U6": "U6",
+      "U8": "U8",
+      "U10": "U10",
+      "U12": "U12",
+      "U15": "U15",
+      "U18": "U18",
+      "reserve": "リザーブ",
+      "senior": "シニア"
+    },
+    "errors": {
+      "forbidden": "この操作を行う権限がありません。",
+      "notConfigured": "公開用の Supabase 環境変数がありません。",
+      "invalidName": "必須の氏名をすべて入力してください。",
+      "invalidAgeBand": "有効な年齢区分を選んでください。",
+      "invalidStatus": "有効なステータスを選んでください。",
+      "invalidBirthDate": "有効な生年月日を入力してください。",
+      "futureBirthDate": "生年月日を未来にできません。",
+      "invalidJersey": "背番号は 1〜99 の整数です。",
+      "missingTeam": "チームを選んでください。",
+      "jerseyTaken": "この背番号は同じチームですでに使われています。",
+      "profileRequired": "紐付けるプロフィールを選んでください。",
+      "generic": "保存できませんでした。もう一度お試しください。"
     }
   }
 }

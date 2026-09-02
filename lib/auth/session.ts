@@ -52,3 +52,9 @@ export async function loadOwnAccount(userId: string): Promise<{
     roles: (roleRows ?? []).map((row) => row.role),
   };
 }
+
+export async function loadSignedInAccount() {
+  const user = await requireUser();
+  const account = await loadOwnAccount(user.id);
+  return { user, ...account };
+}
