@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/page-header";
 import { loadSignedInAccount } from "@/lib/auth/session";
 import { canAccessRoster } from "@/lib/auth/roles";
 import { listRoster } from "@/lib/org/queries";
-import { localizedPlayerName } from "@/lib/org/display-name";
+import { localizedPlayerName, playerNameList } from "@/lib/org/display-name";
 import { ageBandFromBirthDate } from "@/lib/age-band";
 
 export default async function RosterPage() {
@@ -58,7 +58,7 @@ export default async function RosterPage() {
                         #{row.membership.jersey_number} {localizedPlayerName(row.player, locale)}
                       </span>
                       <span className="text-sm text-zinc-500">
-                        {row.player.name_zh} · {row.player.name_en} · {row.player.name_ja}
+                        {playerNameList(row.player)}
                         {" · "}
                         {band ? org(`ageBands.${band}`) : org("ageBandUnknown")}
                       </span>

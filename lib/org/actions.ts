@@ -10,10 +10,13 @@ import { createClient } from "@/lib/supabase/server";
 import { todayInClubTimeZone, formatIsoDate } from "@/lib/age-band";
 import {
   isJerseyUniqueViolation,
+  isPlayersCjkNameCheckViolation,
   parseAgeBand,
   parseBirthDate,
   parseJersey,
   parseOrgStatus,
+  parsePlayerNames,
+  playerNamesError,
   readString,
 } from "@/lib/org/parse";
 import { type OrgActionState, type OrgErrorKey } from "@/lib/org/errors";
@@ -224,9 +227,7 @@ async function upsertMembership(
 }
 
 function playerFields(formData: FormData) {
-  const nameZh = readString(formData, "name_zh");
-  const nameEn = readString(formData, "name_en");
-  const nameJa = readString(formData, "name_ja");
+  const names = parsePlayerNames(formData);
   const birthRaw = readString(formData, "birth_date");
   const today = formatIsoDate(todayInClubTimeZone());
   const birthDate = parseBirthDate(birthRaw, today);
@@ -234,12 +235,13 @@ function playerFields(formData: FormData) {
   const teamId = readString(formData, "team_id");
   const jersey = parseJersey(readString(formData, "jersey_number"));
 
-  return { nameZh, nameEn, nameJa, birthDate, status, teamId, jersey };
+  return { ...names, birthDate, status, teamId, jersey };
 }
 
 function validatePlayerFields(fields: ReturnType<typeof playerFields>): OrgErrorKey | null {
-  if (!fields.nameZh || !fields.nameEn || !fields.nameJa) {
-    return "invalidName";
+  const nameError = playerNamesError(fields);
+  if (nameError) {
+    return nameError;
   }
   if (fields.birthDate === "future") {
     return "futureBirthDate";
@@ -254,6 +256,16 @@ function validatePlayerFields(fields: ReturnType<typeof playerFields>): OrgError
     return "invalidJersey";
   }
   return null;
+}
+
+function playerWriteError(error: { code?: string; message?: string; details?: string } | null): OrgErrorKey {
+  if (isPlayersCjkNameCheckViolation(error)) {
+    return "missingCjkName";
+  }
+  if (error) {
+    console.error("playerWrite", error.message);
+  }
+  return "generic";
 }
 
 export async function createPlayer(
@@ -275,7 +287,8 @@ export async function createPlayer(
     .from("players")
     .insert({
       name_zh: fields.nameZh,
-      name_en: fields.nameEn,
+      name_en_given: fields.nameEnGiven,
+      name_en_family: fields.nameEnFamily,
       name_ja: fields.nameJa,
       birth_date: fields.birthDate as string,
       status: fields.status,
@@ -286,8 +299,7 @@ export async function createPlayer(
     .single();
 
   if (error || !player) {
-    console.error("createPlayer", error?.message);
-    return fail("generic");
+    return fail(playerWriteError(error));
   }
 
   const membershipError = await upsertMembership(
@@ -328,7 +340,8 @@ export async function updatePlayer(
     .from("players")
     .update({
       name_zh: fields.nameZh,
-      name_en: fields.nameEn,
+      name_en_given: fields.nameEnGiven,
+      name_en_family: fields.nameEnFamily,
       name_ja: fields.nameJa,
       birth_date: fields.birthDate as string,
       status: fields.status,
@@ -337,8 +350,7 @@ export async function updatePlayer(
     .eq("id", playerId);
 
   if (error) {
-    console.error("updatePlayer", error.message);
-    return fail("generic");
+    return fail(playerWriteError(error));
   }
 
   const membershipError = await upsertMembership(

@@ -1,22 +1,44 @@
-import type { AppLocale } from "@/i18n/routing";
+export type PlayerNameFields = {
+  name_zh: string | null;
+  name_en_given: string;
+  name_en_family: string;
+  name_ja: string | null;
+};
 
-export function localizedPlayerName(
-  player: {
-    name_zh: string;
-    name_en: string;
-    name_ja: string;
-  },
-  locale: string,
+export function englishPlayerName(
+  player: Pick<PlayerNameFields, "name_en_given" | "name_en_family">,
 ): string {
-  if (locale === "en") {
-    return player.name_en || player.name_zh || player.name_ja;
-  }
-  if (locale === "ja") {
-    return player.name_ja || player.name_zh || player.name_en;
-  }
-  return player.name_zh || player.name_en || player.name_ja;
+  return [player.name_en_given, player.name_en_family]
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0)
+    .join(" ");
 }
 
-export function isAppLocale(value: string): value is AppLocale {
+export function localizedPlayerName(player: PlayerNameFields, locale: string): string {
+  const zh = player.name_zh?.trim() ?? "";
+  const ja = player.name_ja?.trim() ?? "";
+  const en = englishPlayerName(player);
+
+  if (locale === "en") {
+    return en || zh || ja;
+  }
+  if (locale === "ja") {
+    return ja || en || zh;
+  }
+  return zh || en || ja;
+}
+
+export function playerNameList(player: PlayerNameFields): string {
+  return [player.name_zh?.trim(), englishPlayerName(player), player.name_ja?.trim()]
+    .filter((part): part is string => Boolean(part && part.length > 0))
+    .join(" · ");
+}
+
+export function displayOptionalName(value: string | null | undefined): string {
+  const trimmed = value?.trim() ?? "";
+  return trimmed.length > 0 ? trimmed : "—";
+}
+
+export function isAppLocale(value: string): value is "zh-Hant" | "en" | "ja" {
   return value === "zh-Hant" || value === "en" || value === "ja";
 }

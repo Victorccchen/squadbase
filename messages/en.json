@@ -100,7 +100,7 @@
       },
       "players": {
         "title": "Players",
-        "body": "Create player records with three names, date of birth, team, and jersey number."
+        "body": "Create player records with English given and family names, at least one of Traditional Chinese or Japanese, date of birth, team, and jersey number."
       },
       "coaches": {
         "title": "Coaches",
@@ -145,7 +145,7 @@
     "teamsTitle": "Teams",
     "teamsBody": "Create training squads with an age band and active/inactive status.",
     "playersTitle": "Players",
-    "playersBody": "Each player needs Chinese, English, and Japanese names, a date of birth, a team, and a jersey number unique on that team.",
+    "playersBody": "Each player needs an English given name and family name, at least one of Traditional Chinese or Japanese, a date of birth, a team, and a jersey number unique on that team.",
     "coachesTitle": "Coaches",
     "coachesBody": "The person must sign in once so a profile exists. Then you link them here and assign teams. That also grants the coach role.",
     "createTeam": "Create team",
@@ -181,7 +181,10 @@
     "statusInactive": "Inactive",
     "nameZh": "Name (Traditional Chinese)",
     "nameEn": "Name (English)",
+    "nameEnGiven": "Given name (English)",
+    "nameEnFamily": "Family name (English)",
     "nameJa": "Name (Japanese)",
+    "nameCjkHint": "Fill Traditional Chinese and/or Japanese. At least one of the two is required.",
     "birthDate": "Date of birth",
     "suggestedAgeBand": "Suggested age band",
     "ageBandUnknown": "Enter a date of birth",
@@ -219,7 +222,8 @@
     "errors": {
       "forbidden": "You do not have permission to do that.",
       "notConfigured": "Public Supabase environment variables are missing.",
-      "invalidName": "Fill in every required name.",
+      "invalidName": "Enter both the English given name and family name.",
+      "missingCjkName": "Enter a Traditional Chinese name, a Japanese name, or both.",
       "invalidAgeBand": "Choose a valid age band.",
       "invalidStatus": "Choose a valid status.",
       "invalidBirthDate": "Enter a valid date of birth.",

@@ -1,6 +1,7 @@
 -- Stage 2 verification helpers (staging SQL Editor only).
 -- Do not run against production. These statements use synthetic names, not real PII.
--- Run AFTER applying 20260902120000_stage2_org_master.sql.
+-- Run AFTER applying 20260902120000_stage2_org_master.sql and
+-- 20260902140000_players_split_english_names.sql.
 
 -- =============================================================================
 -- T2-2 / T2-3: jersey uniqueness (constraint; service role / SQL editor bypasses RLS)
@@ -15,10 +16,10 @@ begin;
 delete from public.team_memberships
 where player_id in (
   select id from public.players
-  where name_en in ('Stage2 Verify A', 'Stage2 Verify B', 'Stage2 Verify C')
+  where name_en_given = 'Stage2' and name_en_family in ('Verify A', 'Verify B', 'Verify C')
 );
 delete from public.players
-where name_en in ('Stage2 Verify A', 'Stage2 Verify B', 'Stage2 Verify C');
+where name_en_given = 'Stage2' and name_en_family in ('Verify A', 'Verify B', 'Verify C');
 delete from public.teams
 where name in ('Stage2 Verify Team A', 'Stage2 Verify Team B');
 
@@ -27,24 +28,36 @@ values
   ('Stage2 Verify Team A', 'U12', 'active'),
   ('Stage2 Verify Team B', 'U12', 'active');
 
-insert into public.players (name_zh, name_en, name_ja, birth_date, status)
+insert into public.players (name_zh, name_en_given, name_en_family, name_ja, birth_date, status)
 values
-  ('驗證甲', 'Stage2 Verify A', '検証A', '2014-08-15', 'active'),
-  ('驗證乙', 'Stage2 Verify B', '検証B', '2014-08-16', 'active'),
-  ('驗證丙', 'Stage2 Verify C', '検証C', '2014-08-17', 'active');
+  ('驗證甲', 'Stage2', 'Verify A', '検証A', '2014-08-15', 'active'),
+  ('驗證乙', 'Stage2', 'Verify B', null, '2014-08-16', 'active'),
+  (null, 'Stage2', 'Verify C', '検証C', '2014-08-17', 'active');
 
--- T2-3: same jersey on different teams is allowed.
+-- T2-8: both CJK names empty must fail.
+do $$
+begin
+  insert into public.players (name_zh, name_en_given, name_en_family, name_ja, birth_date, status)
+  values (null, 'Stage2', 'Verify Empty CJK', null, '2014-08-18', 'active');
+  raise exception 'T2-8 failed: player without zh/ja was accepted';
+exception
+  when check_violation then
+    raise notice 'T2-8 passed: missing zh and ja rejected';
+end
+$$;
+
+-- T2-2 / T2-3 jersey checks use the three players above.
 insert into public.team_memberships (player_id, team_id, jersey_number, status)
 select p.id, t.id, 7, 'active'
 from public.players p
 join public.teams t on t.name = 'Stage2 Verify Team A'
-where p.name_en = 'Stage2 Verify A';
+where p.name_en_given = 'Stage2' and p.name_en_family = 'Verify A';
 
 insert into public.team_memberships (player_id, team_id, jersey_number, status)
 select p.id, t.id, 7, 'active'
 from public.players p
 join public.teams t on t.name = 'Stage2 Verify Team B'
-where p.name_en = 'Stage2 Verify B';
+where p.name_en_given = 'Stage2' and p.name_en_family = 'Verify B';
 
 -- T2-2: duplicate jersey on the same team must fail.
 do $$
@@ -53,7 +66,7 @@ begin
   select p.id, t.id, 7, 'active'
   from public.players p
   join public.teams t on t.name = 'Stage2 Verify Team A'
-  where p.name_en = 'Stage2 Verify C';
+  where p.name_en_given = 'Stage2' and p.name_en_family = 'Verify C';
 
   raise exception 'T2-2 failed: duplicate jersey on the same team was accepted';
 exception

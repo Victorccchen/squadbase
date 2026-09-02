@@ -83,6 +83,12 @@ Stage 2 uses **active/inactive status** instead of hard delete. Membership and a
 
 Age band is stored on **teams** (the squad’s intended band). It is **not** stored on players. The app computes a suggested band from `birth_date` and the 15 August season rule (see below).
 
+Player names:
+
+- `name_en_given` and `name_en_family` are both required (English given + family).
+- `name_zh` and `name_ja` are optional, but **at least one** must be non-empty (database `CHECK` + form validation).
+- UI display prefers the name for the active locale if it is filled; otherwise English “Given Family”; otherwise the other filled CJK name.
+
 ## Apply migrations (staging only)
 
 Do **not** run this SQL on production.
@@ -90,7 +96,8 @@ Do **not** run this SQL on production.
 Apply in order:
 
 1. [`supabase/migrations/20260902100000_stage1_profiles_and_roles.sql`](supabase/migrations/20260902100000_stage1_profiles_and_roles.sql) (skip if Stage 1 is already on staging)
-2. [`supabase/migrations/20260902120000_stage2_org_master.sql`](supabase/migrations/20260902120000_stage2_org_master.sql)
+2. [`supabase/migrations/20260902120000_stage2_org_master.sql`](supabase/migrations/20260902120000_stage2_org_master.sql) (skip if Stage 2 is already on staging)
+3. [`supabase/migrations/20260902140000_players_split_english_names.sql`](supabase/migrations/20260902140000_players_split_english_names.sql) (player name columns; **paste this file if Stage 2 is already applied**)
 
 Steps:
 
@@ -106,11 +113,14 @@ If you use the Supabase CLI and it is linked to **staging** (never production):
 supabase db push
 ```
 
-If an earlier Stage 2 draft was already applied, run the file again. It is written to be re-runnable (`create table if not exists`, `create or replace function`, `drop policy if exists`). Re-running is required to pick up `GRANT USAGE` on `age_band` and `org_status`; without those grants, admin inserts can fail with “permission denied for type”.
+If an earlier Stage 2 draft was already applied, run the Stage 2 file again. It is written to be re-runnable (`create table if not exists`, `create or replace function`, `drop policy if exists`). Re-running is required to pick up `GRANT USAGE` on `age_band` and `org_status`; without those grants, admin inserts can fail with “permission denied for type”.
+
+The player-name follow-up (`20260902140000_players_split_english_names.sql`) is also written to be re-runnable. **Staging that already has Stage 2 must apply this file** (SQL Editor paste is enough). Do not run it on production.
 
 ### How to verify the migration
 
 - Table Editor shows the five tables above, with RLS enabled.
+- After the player-name follow-up: `players` has `name_en_given` and `name_en_family` (required), `name_zh` and `name_ja` nullable, and no `name_en` column.
 - Optional: paste [`supabase/stage2_verification.sql`](supabase/stage2_verification.sql). The jersey block asserts T2-2 (duplicate rejected) and T2-3 (same number on another team allowed), then `ROLLBACK` so it does not leave rows.
 - Optional: the RLS block at the bottom of that file, with real user UUIDs.
 
@@ -221,15 +231,16 @@ SMS/OTP is required to **create** a session (or a second user such as a coach/pa
 
 | ID | Check |
 | --- | --- |
-| T2-1 | Admin creates a team, then a player with zh/en/ja names, DOB, team, jersey → saved. Suggested age band appears on the form/detail. |
+| T2-1 | Admin creates a team, then a player with English given + family and at least one of zh/ja, DOB, team, jersey → saved. Suggested age band appears on the form/detail. |
 | T2-2 | Same jersey on the same team → rejected (UI error and/or DB `23505`). |
 | T2-3 | Same jersey on a different team → allowed. |
 | T2-4 | Age-band examples around 15 Aug: `npm test` and the table above. |
 | T2-5 | Coach assigned to team A sees A on `/app/roster`, not team B. Coach cannot use admin CRUD (`/app/admin` shows access denied). |
 | T2-6 | Parent (no coach/admin) opening `/app/admin` or `/app/admin/teams/new` sees access denied, not the forms. |
 | T2-7 | `npm run lint`, `npm run typecheck`, and `npm test` pass. |
+| T2-8 | Player names: EN given + EN family required; zh and ja optional but at least one required. Create fails if both CJK names are empty, or if either English given or family is empty. Create succeeds with EN+ZH only and with EN+JA only. Display prefers the UI-locale name if present, then English “Given Family”, then the other filled CJK name. |
 
-Locale check: switch zh-Hant / en / ja on admin and roster screens; labels should change. Player **names** stay as entered; roster prefers the name for the active UI locale.
+Locale check: switch zh-Hant / en / ja on admin and roster screens; labels should change. Player **names** stay as entered; roster prefers the name for the active UI locale (then English given + family, then the other filled CJK name).
 
 ## Staging vs production
 

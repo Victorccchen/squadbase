@@ -43,9 +43,10 @@ export type Team = {
 
 export type Player = {
   id: string;
-  name_zh: string;
-  name_en: string;
-  name_ja: string;
+  name_zh: string | null;
+  name_en_given: string;
+  name_en_family: string;
+  name_ja: string | null;
   birth_date: string;
   status: OrgStatus;
   created_at: string;
@@ -146,16 +147,18 @@ export type Database = {
         Row: Player;
         Insert: {
           id?: string;
-          name_zh: string;
-          name_en: string;
-          name_ja: string;
+          name_zh?: string | null;
+          name_en_given: string;
+          name_en_family: string;
+          name_ja?: string | null;
           birth_date: string;
           status?: OrgStatus;
         } & TimestampInsert;
         Update: {
-          name_zh?: string;
-          name_en?: string;
-          name_ja?: string;
+          name_zh?: string | null;
+          name_en_given?: string;
+          name_en_family?: string;
+          name_ja?: string | null;
           birth_date?: string;
           status?: OrgStatus;
           updated_at?: string;

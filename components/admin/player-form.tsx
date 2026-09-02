@@ -15,7 +15,10 @@ import { inputClassName, primaryButtonClassName } from "@/lib/ui";
 
 type PlayerFormProps = {
   action: (prev: OrgActionState, formData: FormData) => Promise<OrgActionState>;
-  player?: Pick<Player, "name_zh" | "name_en" | "name_ja" | "birth_date" | "status">;
+  player?: Pick<
+    Player,
+    "name_zh" | "name_en_given" | "name_en_family" | "name_ja" | "birth_date" | "status"
+  >;
   membership?: Pick<TeamMembership, "team_id" | "jersey_number"> | null;
   teams: Pick<Team, "id" | "name" | "age_band" | "status">[];
   submitLabel: string;
@@ -48,20 +51,31 @@ export function PlayerForm({
     <form action={formAction} className="flex max-w-xl flex-col gap-4">
       <LocaleHiddenField />
       <label className="flex flex-col gap-1.5 text-sm font-medium">
-        {t("nameZh")}
+        {t("nameEnGiven")}
         <input
-          name="name_zh"
+          name="name_en_given"
           required
-          defaultValue={player?.name_zh ?? ""}
+          autoComplete="given-name"
+          defaultValue={player?.name_en_given ?? ""}
           className={inputClassName}
         />
       </label>
       <label className="flex flex-col gap-1.5 text-sm font-medium">
-        {t("nameEn")}
+        {t("nameEnFamily")}
         <input
-          name="name_en"
+          name="name_en_family"
           required
-          defaultValue={player?.name_en ?? ""}
+          autoComplete="family-name"
+          defaultValue={player?.name_en_family ?? ""}
+          className={inputClassName}
+        />
+      </label>
+      <p className="text-sm font-normal text-zinc-500">{t("nameCjkHint")}</p>
+      <label className="flex flex-col gap-1.5 text-sm font-medium">
+        {t("nameZh")}
+        <input
+          name="name_zh"
+          defaultValue={player?.name_zh ?? ""}
           className={inputClassName}
         />
       </label>
@@ -69,7 +83,6 @@ export function PlayerForm({
         {t("nameJa")}
         <input
           name="name_ja"
-          required
           defaultValue={player?.name_ja ?? ""}
           className={inputClassName}
         />
