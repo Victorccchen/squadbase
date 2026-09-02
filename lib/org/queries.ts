@@ -143,32 +143,69 @@ export async function listCoaches(): Promise<CoachWithProfile[]> {
     return [];
   }
 
-  return (data ?? []).map((row) => {
-    const { profiles, coach_team_assignments, ...coach } = row;
-    const profile = Array.isArray(profiles) ? profiles[0] ?? null : profiles;
-    const assignments = (
-      (coach_team_assignments as (CoachTeamAssignment & {
-        teams: Team | Team[] | null;
-      })[]) ?? []
-    ).map((assignment) => {
-      const { teams, ...rest } = assignment;
-      return {
-        ...rest,
-        team: Array.isArray(teams) ? teams[0] ?? null : teams,
-      };
-    });
+  return (data ?? []).map((row) =>
+    mapCoachRow(
+      row as {
+        profiles: Profile | Profile[] | null;
+        coach_team_assignments:
+          | (CoachTeamAssignment & { teams: Team | Team[] | null })[]
+          | null;
+        [key: string]: unknown;
+      },
+    ),
+  );
+}
 
+function mapCoachRow(row: {
+  profiles: Profile | Profile[] | null;
+  coach_team_assignments:
+    | (CoachTeamAssignment & { teams: Team | Team[] | null })[]
+    | null;
+  [key: string]: unknown;
+}): CoachWithProfile {
+  const { profiles, coach_team_assignments, ...coach } = row;
+  const profile = Array.isArray(profiles) ? profiles[0] ?? null : profiles;
+  const assignments = (coach_team_assignments ?? []).map((assignment) => {
+    const { teams, ...rest } = assignment;
     return {
-      ...(coach as Coach),
-      profile,
-      assignments,
+      ...rest,
+      team: Array.isArray(teams) ? teams[0] ?? null : teams,
     };
   });
+
+  return {
+    ...(coach as Coach),
+    profile,
+    assignments,
+  };
 }
 
 export async function getCoach(id: string): Promise<CoachWithProfile | null> {
-  const coaches = await listCoaches();
-  return coaches.find((coach) => coach.id === id) ?? null;
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("coaches")
+    .select("*, profiles(*), coach_team_assignments(*, teams(*))")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("getCoach", error.message);
+    return null;
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  return mapCoachRow(
+    data as {
+      profiles: Profile | Profile[] | null;
+      coach_team_assignments:
+        | (CoachTeamAssignment & { teams: Team | Team[] | null })[]
+        | null;
+      [key: string]: unknown;
+    },
+  );
 }
 
 export async function listLinkableProfiles(excludeProfileIds: string[]): Promise<Profile[]> {
@@ -187,6 +224,50 @@ export async function listLinkableProfiles(excludeProfileIds: string[]): Promise
   return (data ?? []).filter((profile) => !excluded.has(profile.id));
 }
 
+function toRosterRow(row: {
+  players: Player | Player[] | null;
+  teams: Team | Team[] | null;
+  [key: string]: unknown;
+}): RosterRow | null {
+  const { players, teams, ...membership } = row;
+  const player = Array.isArray(players) ? players[0] ?? null : players;
+  const team = Array.isArray(teams) ? teams[0] ?? null : teams;
+  if (!player || !team) {
+    return null;
+  }
+  return {
+    membership: membership as TeamMembership,
+    player,
+    team,
+  };
+}
+
+export async function listTeamPlayers(teamId: string): Promise<RosterRow[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("team_memberships")
+    .select("*, players(*), teams(*)")
+    .eq("team_id", teamId)
+    .order("jersey_number");
+
+  if (error) {
+    console.error("listTeamPlayers", error.message);
+    return [];
+  }
+
+  return (data ?? [])
+    .map((row) =>
+      toRosterRow(
+        row as {
+          players: Player | Player[] | null;
+          teams: Team | Team[] | null;
+          [key: string]: unknown;
+        },
+      ),
+    )
+    .filter((row): row is RosterRow => row !== null);
+}
+
 export async function listRoster(): Promise<RosterRow[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -200,20 +281,20 @@ export async function listRoster(): Promise<RosterRow[]> {
     return [];
   }
 
-  const rows: RosterRow[] = [];
-  for (const row of data ?? []) {
-    const { players, teams, ...membership } = row;
-    const player = Array.isArray(players) ? players[0] ?? null : players;
-    const team = Array.isArray(teams) ? teams[0] ?? null : teams;
-    if (!player || !team || player.status !== "active" || team.status !== "active") {
-      continue;
-    }
-    rows.push({
-      membership: membership as TeamMembership,
-      player,
-      team,
+  return (data ?? [])
+    .map((row) =>
+      toRosterRow(
+        row as {
+          players: Player | Player[] | null;
+          teams: Team | Team[] | null;
+          [key: string]: unknown;
+        },
+      ),
+    )
+    .filter((row): row is RosterRow => {
+      if (!row) {
+        return false;
+      }
+      return row.player.status === "active" && row.team.status === "active";
     });
-  }
-
-  return rows;
 }

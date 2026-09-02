@@ -135,7 +135,8 @@
   },
   "access": {
     "deniedTitle": "You cannot open this page",
-    "deniedBody": "This area is limited to club admins or assigned coaches. Parents without those roles stay on the dashboard.",
+    "deniedBodyAdmin": "Admin pages are limited to club admins. Coaches can open the roster; parents stay on the dashboard.",
+    "deniedBodyRoster": "The roster is limited to assigned coaches and admins. Parents without those roles stay on the dashboard.",
     "backToDashboard": "Back to dashboard"
   },
   "admin": {
@@ -159,7 +160,12 @@
     "playersEmptyTitle": "No players yet",
     "playersEmptyBody": "Create a team first, then add players. Do not enter real personal data on shared staging unless you intend to.",
     "coachesEmptyTitle": "No coaches yet",
-    "coachesEmptyBody": "Ask the coach to sign in once, then link their profile."
+    "coachesEmptyBody": "Ask the coach to sign in once, then link their profile.",
+    "playersNeedTeamTitle": "Create a team first",
+    "playersNeedTeamBody": "A player needs a team and a jersey number unique on that team.",
+    "teamRosterTitle": "Players on this team",
+    "teamRosterEmptyTitle": "No players on this team",
+    "teamRosterEmptyBody": "Create a player and assign this squad plus a jersey number."
   },
   "roster": {
     "title": "Roster",

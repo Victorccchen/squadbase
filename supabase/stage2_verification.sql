@@ -7,6 +7,7 @@
 -- Expected:
 --   * second insert on the same team with jersey 7 fails (23505)
 --   * same jersey 7 on a different team succeeds
+-- The block rolls back so staging stays empty unless you change ROLLBACK to COMMIT.
 -- =============================================================================
 
 begin;
@@ -45,14 +46,21 @@ from public.players p
 join public.teams t on t.name = 'Stage2 Verify Team B'
 where p.name_en = 'Stage2 Verify B';
 
--- T2-2: duplicate jersey on the same team must fail. Uncomment the block below
--- (it is expected to error with unique violation 23505), then rollback.
---
--- insert into public.team_memberships (player_id, team_id, jersey_number, status)
--- select p.id, t.id, 7, 'active'
--- from public.players p
--- join public.teams t on t.name = 'Stage2 Verify Team A'
--- where p.name_en = 'Stage2 Verify C';
+-- T2-2: duplicate jersey on the same team must fail.
+do $$
+begin
+  insert into public.team_memberships (player_id, team_id, jersey_number, status)
+  select p.id, t.id, 7, 'active'
+  from public.players p
+  join public.teams t on t.name = 'Stage2 Verify Team A'
+  where p.name_en = 'Stage2 Verify C';
+
+  raise exception 'T2-2 failed: duplicate jersey on the same team was accepted';
+exception
+  when unique_violation then
+    raise notice 'T2-2 passed: duplicate jersey rejected (23505)';
+end
+$$;
 
 -- Leave committed only if you want the synthetic rows for UI checks.
 -- Prefer rolling back so staging stays empty:

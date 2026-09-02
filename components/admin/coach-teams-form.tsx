@@ -76,6 +76,7 @@ export function CoachTeamsForm({ coach, assignments, teams }: CoachTeamsFormProp
                 </span>
                 <form action={unassignCoachTeam}>
                   <input type="hidden" name="assignment_id" value={assignment.id} />
+                  <input type="hidden" name="coach_id" value={coach.id} />
                   <button type="submit" className={dangerButtonClassName}>
                     {t("unassign")}
                   </button>

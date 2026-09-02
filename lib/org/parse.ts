@@ -1,6 +1,6 @@
-import { parseIsoDate } from "@/lib/age-band";
-import type { AgeBand, OrgStatus } from "@/lib/supabase/database.types";
-import { isAgeBand } from "@/lib/age-band";
+// Relative imports so `npm test` can load this file without the `@/` alias.
+import { isAgeBand, parseIsoDate } from "../age-band.ts";
+import type { AgeBand, OrgStatus } from "../supabase/database.types.ts";
 
 export function readString(formData: FormData, key: string): string {
   const value = formData.get(key);
@@ -40,26 +40,37 @@ export function parseBirthDate(value: string, todayIso: string): string | "futur
   return value;
 }
 
-export function isUniqueViolation(error: { code?: string; message?: string } | null): boolean {
+type PgLikeError = {
+  code?: string;
+  message?: string;
+  details?: string;
+} | null;
+
+function errorBlob(error: PgLikeError): string {
+  if (!error) {
+    return "";
+  }
+  return `${error.message ?? ""} ${error.details ?? ""}`.toLowerCase();
+}
+
+export function isUniqueViolation(error: PgLikeError): boolean {
   if (!error) {
     return false;
   }
   if (error.code === "23505") {
     return true;
   }
-  return (error.message ?? "").toLowerCase().includes("duplicate key");
+  return errorBlob(error).includes("duplicate key");
 }
 
-export function isJerseyUniqueViolation(
-  error: { code?: string; message?: string } | null,
-): boolean {
+export function isJerseyUniqueViolation(error: PgLikeError): boolean {
   if (!isUniqueViolation(error)) {
     return false;
   }
-  const message = (error?.message ?? "").toLowerCase();
+  const text = errorBlob(error);
   return (
-    message.includes("team_memberships_team_jersey") ||
-    message.includes("jersey_number") ||
-    message.includes("(team_id, jersey_number)")
+    text.includes("team_memberships_team_jersey") ||
+    text.includes("jersey_number") ||
+    text.includes("(team_id, jersey_number)")
   );
 }

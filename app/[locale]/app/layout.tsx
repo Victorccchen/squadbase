@@ -3,6 +3,8 @@ import { AppNav } from "@/components/app-nav";
 import { loadSignedInAccount } from "@/lib/auth/session";
 import { canAccessAdmin, canAccessRoster } from "@/lib/auth/roles";
 
+export const dynamic = "force-dynamic";
+
 type AppLayoutProps = {
   children: React.ReactNode;
 };

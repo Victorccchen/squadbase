@@ -57,7 +57,7 @@ Routes:
 
 ## Checks (CI)
 
-Pull request CI runs **lint + typecheck + age-band unit tests**. It does **not** deploy.
+Pull request CI runs **lint + typecheck + unit tests** (age-band and form parse helpers). It does **not** deploy.
 
 ```bash
 npm run lint
@@ -74,6 +74,10 @@ Players do **not** store a primary `team_id`. Membership and jersey number live 
 - Jersey numbers are integers 1–99
 
 The Stage 2 admin player form keeps **at most one membership row per player** (create/update reuses that row). The table can hold more than one membership later without another migration.
+
+Jersey uniqueness is a **full** unique constraint, including inactive memberships (hypothesis: do not silently reuse a number while the row still exists). Stage 2 has no hard-delete UI; change the number or mark the player/membership inactive without freeing the number until the membership row is removed in SQL.
+
+Stage 2 uses **active/inactive status** instead of hard delete. Membership and assignment foreign keys are `ON DELETE RESTRICT` on teams, so removing a squad that still has players would fail. Mark the row inactive instead.
 
 `coaches.profile_id` is 1:1 with `profiles` (and therefore `auth.users`). `coach_team_assignments(coach_id, team_id)` controls which squads a coach may read.
 
@@ -102,10 +106,12 @@ If you use the Supabase CLI and it is linked to **staging** (never production):
 supabase db push
 ```
 
+If an earlier Stage 2 draft was already applied, run the file again. It is written to be re-runnable (`create table if not exists`, `create or replace function`, `drop policy if exists`). Re-running is required to pick up `GRANT USAGE` on `age_band` and `org_status`; without those grants, admin inserts can fail with “permission denied for type”.
+
 ### How to verify the migration
 
 - Table Editor shows the five tables above, with RLS enabled.
-- Optional: paste [`supabase/stage2_verification.sql`](supabase/stage2_verification.sql). The jersey block uses `ROLLBACK` so it does not leave rows. Uncomment the duplicate-jersey insert to confirm it fails with `23505`.
+- Optional: paste [`supabase/stage2_verification.sql`](supabase/stage2_verification.sql). The jersey block asserts T2-2 (duplicate rejected) and T2-3 (same number on another team allowed), then `ROLLBACK` so it does not leave rows.
 - Optional: the RLS block at the bottom of that file, with real user UUIDs.
 
 There is **no seed data** and no real PII in the repo.

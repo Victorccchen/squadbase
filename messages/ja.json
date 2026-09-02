@@ -135,7 +135,8 @@
   },
   "access": {
     "deniedTitle": "このページを開けません",
-    "deniedBody": "この領域はクラブ管理者、または割り当てられたコーチ専用です。それらのロールがない保護者はダッシュボードに留まってください。",
+    "deniedBodyAdmin": "管理ページはクラブ管理者専用です。コーチは名簿を開けます。保護者はダッシュボードに留まってください。",
+    "deniedBodyRoster": "名簿は割り当てられたコーチと管理者専用です。それらのロールがない保護者はダッシュボードに留まってください。",
     "backToDashboard": "ダッシュボードに戻る"
   },
   "admin": {
@@ -159,7 +160,12 @@
     "playersEmptyTitle": "選手はまだありません",
     "playersEmptyBody": "先にチームを作成してから選手を追加してください。共有ステージングでは、意図しない限り実在の個人情報を入れないでください。",
     "coachesEmptyTitle": "コーチはまだありません",
-    "coachesEmptyBody": "コーチに一度ログインしてもらい、そのプロフィールを紐付けてください。"
+    "coachesEmptyBody": "コーチに一度ログインしてもらい、そのプロフィールを紐付けてください。",
+    "playersNeedTeamTitle": "先にチームを作成してください",
+    "playersNeedTeamBody": "選手にはチームと、そのチーム内で一意の背番号が必要です。",
+    "teamRosterTitle": "このチームの選手",
+    "teamRosterEmptyTitle": "このチームに選手はいません",
+    "teamRosterEmptyBody": "選手を作成し、このチームと背番号を割り当ててください。"
   },
   "roster": {
     "title": "名簿",

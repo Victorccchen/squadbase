@@ -20,4 +20,4 @@
 
 ## Deploy
 
-This PR must **not** deploy to production. Production deploys require human approval. CI is lint + typecheck + age-band unit tests only.
+This PR must **not** deploy to production. Production deploys require human approval. CI is lint + typecheck + unit tests only.

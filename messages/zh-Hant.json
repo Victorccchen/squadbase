@@ -135,7 +135,8 @@
   },
   "access": {
     "deniedTitle": "你沒有權限開啟此頁",
-    "deniedBody": "此區僅限球團管理員或被指派的教練。沒有這些角色的家長請留在儀表板。",
+    "deniedBodyAdmin": "管理頁僅限球團管理員。教練可開啟名單；家長請留在儀表板。",
+    "deniedBodyRoster": "名單僅限被指派的教練與管理員。沒有這些角色的家長請留在儀表板。",
     "backToDashboard": "返回儀表板"
   },
   "admin": {
@@ -159,7 +160,12 @@
     "playersEmptyTitle": "尚無球員",
     "playersEmptyBody": "請先建立隊伍再新增球員。共享測試環境請避免填入真實個資，除非你有意為之。",
     "coachesEmptyTitle": "尚無教練",
-    "coachesEmptyBody": "請教練先登入一次，再連結其個人資料。"
+    "coachesEmptyBody": "請教練先登入一次，再連結其個人資料。",
+    "playersNeedTeamTitle": "請先建立隊伍",
+    "playersNeedTeamBody": "球員需要所屬隊伍，以及該隊伍內不可重複的背號。",
+    "teamRosterTitle": "此隊伍球員",
+    "teamRosterEmptyTitle": "此隊伍尚無球員",
+    "teamRosterEmptyBody": "新增球員時選擇此隊伍並填寫背號。"
   },
   "roster": {
     "title": "名單",

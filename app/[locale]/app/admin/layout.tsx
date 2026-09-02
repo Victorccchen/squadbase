@@ -11,7 +11,7 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
   const { roles } = await loadSignedInAccount();
 
   if (!canAccessAdmin(roles)) {
-    return <AccessDenied />;
+    return <AccessDenied area="admin" />;
   }
 
   return (

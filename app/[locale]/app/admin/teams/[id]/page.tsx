@@ -1,8 +1,11 @@
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { PageHeader } from "@/components/page-header";
-import { getTeam } from "@/lib/org/queries";
+import { EmptyState } from "@/components/empty-state";
+import { getTeam, listTeamPlayers } from "@/lib/org/queries";
+import { localizedPlayerName } from "@/lib/org/display-name";
+import { ageBandFromBirthDate } from "@/lib/age-band";
 import { secondaryButtonClassName } from "@/lib/ui";
 
 type TeamDetailPageProps = {
@@ -19,6 +22,8 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
   const t = await getTranslations("admin");
   const org = await getTranslations("org");
   const common = await getTranslations("common");
+  const locale = await getLocale();
+  const members = await listTeamPlayers(team.id);
 
   return (
     <>
@@ -26,9 +31,14 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
         <PageHeader
           title={team.name}
           actions={
-            <Link href={`/app/admin/teams/${team.id}/edit`} className={secondaryButtonClassName}>
-              {t("edit")}
-            </Link>
+            <span className="flex flex-wrap gap-2">
+              <Link href="/app/admin/players/new" className={secondaryButtonClassName}>
+                {t("createPlayer")}
+              </Link>
+              <Link href={`/app/admin/teams/${team.id}/edit`} className={secondaryButtonClassName}>
+                {t("edit")}
+              </Link>
+            </span>
           }
         />
         <dl className="grid gap-3 rounded-2xl border border-zinc-200 bg-white p-6 text-sm dark:border-zinc-800 dark:bg-zinc-900">
@@ -43,6 +53,40 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
             </dd>
           </div>
         </dl>
+        <section className="flex flex-col gap-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+            {t("teamRosterTitle")}
+          </h2>
+          {members.length === 0 ? (
+            <EmptyState
+              title={t("teamRosterEmptyTitle")}
+              body={t("teamRosterEmptyBody")}
+            />
+          ) : (
+            <ul className="grid gap-2">
+              {members.map((row) => {
+                const band = ageBandFromBirthDate(row.player.birth_date);
+                return (
+                  <li key={row.membership.id}>
+                    <Link
+                      href={`/app/admin/players/${row.player.id}`}
+                      className="flex flex-col gap-1 rounded-2xl border border-zinc-200 bg-white px-5 py-4 hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <span className="font-medium">
+                        #{row.membership.jersey_number} {localizedPlayerName(row.player, locale)}
+                      </span>
+                      <span className="text-sm text-zinc-500">
+                        {band ? org(`ageBands.${band}`) : org("ageBandUnknown")}
+                        {" · "}
+                        {org(row.player.status === "active" ? "statusActive" : "statusInactive")}
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
       </main>
       <footer className="border-t border-zinc-200 px-6 py-4 pb-10 text-sm text-zinc-500 dark:border-zinc-800">
         {common("footer")}

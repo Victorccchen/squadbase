@@ -172,6 +172,10 @@ comment on table public.coaches is
 comment on table public.coach_team_assignments is
   'Which squads a coach may read. Writes are admin-only.';
 
+-- PostgREST inserts bind enum parameters; USAGE is required or admin CRUD fails.
+grant usage on type public.age_band to authenticated;
+grant usage on type public.org_status to authenticated;
+
 drop trigger if exists teams_set_updated_at on public.teams;
 create trigger teams_set_updated_at
   before update on public.teams

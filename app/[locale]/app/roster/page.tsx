@@ -11,7 +11,7 @@ import { ageBandFromBirthDate } from "@/lib/age-band";
 export default async function RosterPage() {
   const { roles } = await loadSignedInAccount();
   if (!canAccessRoster(roles)) {
-    return <AccessDenied />;
+    return <AccessDenied area="roster" />;
   }
 
   const t = await getTranslations("roster");

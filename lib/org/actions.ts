@@ -451,6 +451,7 @@ export async function unassignCoachTeam(formData: FormData): Promise<void> {
   }
 
   const assignmentId = readString(formData, "assignment_id");
+  const coachId = readString(formData, "coach_id");
   if (!assignmentId) {
     return;
   }
@@ -466,4 +467,7 @@ export async function unassignCoachTeam(formData: FormData): Promise<void> {
   }
 
   revalidateOrg();
+  if (coachId) {
+    await redirectAdmin(`/app/admin/coaches/${coachId}`);
+  }
 }
