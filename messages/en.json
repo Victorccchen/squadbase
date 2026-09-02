@@ -11,16 +11,16 @@
     "footer": "Production deploys require human approval. Do not publish to production automatically."
   },
   "home": {
-    "eyebrow": "Stage 1 · sign-in and roles",
+    "eyebrow": "Stage 2 · teams, players, and coaches",
     "headline": "Welcome to the Club management system",
-    "lead": "Sign in with a phone SMS one-time code. Later stages will add players, courses, attendance, and matches on the same structure.",
+    "lead": "Sign in with a phone SMS one-time code. Admins can manage squads, players, and coach assignments. Coaches can read assigned rosters.",
     "openDashboard": "Open dashboard",
     "sampleLabel": "Sample copy",
     "sampleBody": "Current language: English. Use the language switcher above to see Traditional Chinese or Japanese strings.",
     "stackTitle": "Stack",
     "stackNext": "Next.js App Router + TypeScript",
     "stackI18n": "next-intl (Traditional Chinese / English / Japanese)",
-    "stackSupabase": "Supabase phone OTP, profiles, multi-role, and RLS",
+    "stackSupabase": "Supabase phone OTP, profiles, multi-role, org master data, and RLS",
     "stackPwa": "PWA: web app manifest and basic meta",
     "envTitle": "Environment",
     "envConfigured": "Public Supabase variables are present. Sign-in talks to this project (anon key only).",
@@ -58,7 +58,7 @@
   "app": {
     "eyebrow": "Dashboard",
     "title": "Club dashboard",
-    "welcome": "Role-aware placeholders only. Business features are not available yet.",
+    "welcome": "Admins manage teams, players, and coaches here. Coaches can open assigned rosters. Other operations features are still later stages.",
     "accountTitle": "Account",
     "phoneLabel": "Phone",
     "rolesLabel": "Roles",
@@ -72,7 +72,9 @@
     "coachSection": "Coach",
     "adminSection": "Admin",
     "noDashboardRole": "This account does not have a parent, coach, or admin role.",
-    "playerNote": "The player role is reserved for later stages. There is no player login experience in Stage 1.",
+    "playerNote": "The player role is reserved for later stages. There is no player login experience yet.",
+    "openRoster": "Open roster",
+    "openAdmin": "Open admin",
     "roles": {
       "parent": "Parent",
       "coach": "Coach",
@@ -89,8 +91,20 @@
         "body": "Course enrollment and schedules are not available yet."
       },
       "squads": {
-        "title": "Squads",
-        "body": "Training squad lists are not available yet."
+        "title": "Assigned roster",
+        "body": "Read-only list of players on teams assigned to you."
+      },
+      "teams": {
+        "title": "Teams",
+        "body": "Create and edit training squads and age bands."
+      },
+      "players": {
+        "title": "Players",
+        "body": "Create player records with three names, date of birth, team, and jersey number."
+      },
+      "coaches": {
+        "title": "Coaches",
+        "body": "Link an existing signed-in profile, then assign teams."
       },
       "attendance": {
         "title": "Attendance",
@@ -102,12 +116,113 @@
       },
       "members": {
         "title": "Members",
-        "body": "Member management is not available yet. Promote the first admin in the Supabase Dashboard."
+        "body": "Guardian linking is still a later stage. Promote extra admins in the Supabase Dashboard."
       },
       "adminNote": {
         "title": "Role promotion",
-        "body": "There is no in-app backdoor. Add an admin row for the user in the Dashboard user_roles table."
+        "body": "There is no in-app backdoor. Add an admin row for the user in the Dashboard user_roles table. Linking a coach also grants the coach role."
       }
+    }
+  },
+  "nav": {
+    "label": "App sections",
+    "dashboard": "Dashboard",
+    "roster": "Roster",
+    "admin": "Admin",
+    "teams": "Teams",
+    "players": "Players",
+    "coaches": "Coaches"
+  },
+  "access": {
+    "deniedTitle": "You cannot open this page",
+    "deniedBody": "This area is limited to club admins or assigned coaches. Parents without those roles stay on the dashboard.",
+    "backToDashboard": "Back to dashboard"
+  },
+  "admin": {
+    "title": "Admin",
+    "lead": "Organization master data for this club. No real personal data is seeded.",
+    "teamsTitle": "Teams",
+    "teamsBody": "Create training squads with an age band and active/inactive status.",
+    "playersTitle": "Players",
+    "playersBody": "Each player needs Chinese, English, and Japanese names, a date of birth, a team, and a jersey number unique on that team.",
+    "coachesTitle": "Coaches",
+    "coachesBody": "The person must sign in once so a profile exists. Then you link them here and assign teams. That also grants the coach role.",
+    "createTeam": "Create team",
+    "editTeam": "Edit team",
+    "createPlayer": "Create player",
+    "editPlayer": "Edit player",
+    "linkCoach": "Link coach",
+    "edit": "Edit",
+    "save": "Save",
+    "teamsEmptyTitle": "No teams yet",
+    "teamsEmptyBody": "Create the first squad. Nothing is preloaded.",
+    "playersEmptyTitle": "No players yet",
+    "playersEmptyBody": "Create a team first, then add players. Do not enter real personal data on shared staging unless you intend to.",
+    "coachesEmptyTitle": "No coaches yet",
+    "coachesEmptyBody": "Ask the coach to sign in once, then link their profile."
+  },
+  "roster": {
+    "title": "Roster",
+    "lead": "Players on teams assigned to you. This list is read-only.",
+    "emptyTitle": "No assigned players",
+    "emptyBody": "When an admin assigns you to a team that has players, they will show up here."
+  },
+  "org": {
+    "teamName": "Team name",
+    "ageBand": "Age band",
+    "status": "Status",
+    "statusActive": "Active",
+    "statusInactive": "Inactive",
+    "nameZh": "Name (Traditional Chinese)",
+    "nameEn": "Name (English)",
+    "nameJa": "Name (Japanese)",
+    "birthDate": "Date of birth",
+    "suggestedAgeBand": "Suggested age band",
+    "ageBandUnknown": "Enter a date of birth",
+    "seasonStart": "Season start",
+    "seasonStartLabel": "Season start used for this calculation: {date} (cutover every 15 August, Asia/Taipei)",
+    "team": "Team",
+    "selectTeam": "Select a team",
+    "noTeam": "No team",
+    "jerseyNumber": "Jersey number",
+    "jerseyHint": "1–99. Unique on this team; the same number may be used on another team.",
+    "ageBandMismatch": "The player’s suggested age band does not match this team’s band. You can still save.",
+    "profile": "Profile",
+    "selectProfile": "Select a profile",
+    "linkCoach": "Link as coach",
+    "linkCoachHint": "The user must already exist (they should sign in once). Linking creates a coach record and grants the coach role. Then assign teams.",
+    "noLinkableProfiles": "There are no other profiles to link. The person needs to sign in with phone OTP once, then reload this page.",
+    "saveStatus": "Save status",
+    "assignedTeams": "Assigned teams",
+    "noAssignedTeams": "No teams assigned",
+    "assignTeam": "Assign a team",
+    "assign": "Assign",
+    "unassign": "Unassign",
+    "unknownTeam": "Unknown team",
+    "saving": "Saving…",
+    "ageBands": {
+      "U6": "U6",
+      "U8": "U8",
+      "U10": "U10",
+      "U12": "U12",
+      "U15": "U15",
+      "U18": "U18",
+      "reserve": "Reserve",
+      "senior": "Senior"
+    },
+    "errors": {
+      "forbidden": "You do not have permission to do that.",
+      "notConfigured": "Public Supabase environment variables are missing.",
+      "invalidName": "Fill in every required name.",
+      "invalidAgeBand": "Choose a valid age band.",
+      "invalidStatus": "Choose a valid status.",
+      "invalidBirthDate": "Enter a valid date of birth.",
+      "futureBirthDate": "Date of birth cannot be in the future.",
+      "invalidJersey": "Jersey number must be an integer from 1 to 99.",
+      "missingTeam": "Choose a team.",
+      "jerseyTaken": "That jersey number is already used on this team.",
+      "profileRequired": "Choose a profile to link.",
+      "generic": "Could not save. Please try again."
     }
   }
 }

@@ -29,4 +29,7 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Unit tests
+        run: npm test
+
 # This workflow must not deploy. Production deploys require human approval.

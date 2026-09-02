@@ -10,3 +10,15 @@ export function isDashboardRole(role: AppRole): role is DashboardRole {
 export function uniqueRoles(roles: AppRole[]): AppRole[] {
   return Array.from(new Set(roles));
 }
+
+export function hasRole(roles: AppRole[], role: AppRole): boolean {
+  return roles.includes(role);
+}
+
+export function canAccessAdmin(roles: AppRole[]): boolean {
+  return hasRole(roles, "admin");
+}
+
+export function canAccessRoster(roles: AppRole[]): boolean {
+  return hasRole(roles, "coach") || hasRole(roles, "admin");
+}

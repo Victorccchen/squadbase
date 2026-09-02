@@ -6,10 +6,11 @@
 
 - [ ] Stage 0 scaffold only (no business features)
 - [ ] Stage 1 auth / profiles / roles / RLS (no business features)
+- [ ] Stage 2 org master data (teams, players, coaches, roster read)
 
 ## Verification
 
-- [ ] `npm run lint` and `npm run typecheck` pass
+- [ ] `npm run lint`, `npm run typecheck`, and `npm test` pass
 - [ ] Unauthenticated `/app` redirects to login (T1-1)
 - [ ] Phone OTP request + verify + logout flows exist with zh-Hant / en / ja copy
 - [ ] Migration SQL is in `supabase/migrations/` (applied on **staging only**)
@@ -19,4 +20,4 @@
 
 ## Deploy
 
-This PR must **not** deploy to production. Production deploys require human approval. CI is lint + typecheck only.
+This PR must **not** deploy to production. Production deploys require human approval. CI is lint + typecheck + age-band unit tests only.
