@@ -1,11 +1,17 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { AccessDenied } from "@/components/access-denied";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { listCoaches } from "@/lib/org/queries";
 import { primaryButtonClassName } from "@/lib/ui";
 
 export default async function AdminCoachesPage() {
+  if (!(await canRenderAdminPage())) {
+    return <AccessDenied area="admin" />;
+  }
+
   const t = await getTranslations("admin");
   const org = await getTranslations("org");
   const common = await getTranslations("common");

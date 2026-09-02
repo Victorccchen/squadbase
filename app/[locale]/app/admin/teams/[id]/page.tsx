@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { AccessDenied } from "@/components/access-denied";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
+import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { getTeam, listTeamPlayers } from "@/lib/org/queries";
 import { localizedPlayerName } from "@/lib/org/display-name";
 import { ageBandFromBirthDate } from "@/lib/age-band";
@@ -13,6 +15,10 @@ type TeamDetailPageProps = {
 };
 
 export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
+  if (!(await canRenderAdminPage())) {
+    return <AccessDenied area="admin" />;
+  }
+
   const { id } = await params;
   const team = await getTeam(id);
   if (!team) {

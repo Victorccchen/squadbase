@@ -2,7 +2,9 @@
 
 Responsive web + PWA for a football **Club** (球團) operations app: training squads, courses, attendance, assessments, and matches/events.
 
-This repository is currently **Stage 2**: Stage 1 phone OTP login plus admin-managed organization master data (teams, players, coaches, coach↔team assignments) and a read-only coach roster. Guardian linking, courses, attendance, assessments, and match management are not included.
+This repository is currently **Stage 3**: Stage 1 phone OTP login, Stage 2 admin-managed organization master data (teams, players, coaches, coach↔team assignments) and a read-only coach roster, plus **guardian–player binding with admin approval**. Courses, attendance, assessments, and match management are not included.
+
+Parents can request a link to an **existing** player (the club creates the player record first). Until an admin approves, the parent cannot read that player’s private fields. After approval, the parent sees a basic “my children” list (names, birth date, team, jersey). Later stages can reuse an **approved** link so a parent proxies course registration or match attendance — those flows are not built here.
 
 Branding in code, package name, and this README is neutral (`Club` / `球團`). Do not add a real club name.
 
@@ -52,7 +54,8 @@ Routes:
 | `/[locale]` | Public homepage |
 | `/[locale]/login` | Phone OTP sign-in |
 | `/[locale]/app` | Signed-in dashboard |
-| `/[locale]/app/admin/*` | Admin CRUD (teams, players, coaches). Parents/coaches without admin see an access-denied page. |
+| `/[locale]/app/children` | Parent: linked children, request status, constrained search form |
+| `/[locale]/app/admin/*` | Admin CRUD (teams, players, coaches) and binding approvals. Parents/coaches without admin see an access-denied page. |
 | `/[locale]/app/roster` | Coach (or admin) read-only roster of assigned teams |
 
 ## Checks (CI)
@@ -89,6 +92,40 @@ Player names:
 - `name_zh` and `name_ja` are optional, but **at least one** must be non-empty (database `CHECK` + form validation).
 - UI display prefers the name for the active locale if it is filled; otherwise English “Given Family”; otherwise the other filled CJK name.
 
+## Schema choice (Stage 3)
+
+`guardian_player_links` is the only binding table:
+
+| Column | Purpose |
+| --- | --- |
+| `guardian_user_id` | The signed-in parent’s `profiles.id` (same UUID as `auth.users`) |
+| `player_id` | Existing `players.id` (club-created; parents do not create players) |
+| `relation` | `parent` / `guardian` / `other` |
+| `status` | `pending` / `approved` / `rejected` |
+| `parent_note` | Optional note from the parent (max 1000 chars) |
+| `admin_note` | Optional decision note from the admin |
+| `reviewed_by` / `reviewed_at` | Set only when status leaves `pending` |
+| `created_by` / `updated_by` / timestamps | Same actor pattern as Stage 2 |
+
+**Hypothesis (locked for this stage):** at most one **open** link per `(guardian_user_id, player_id)` — meaning pending or approved. Rejected rows are kept as history. After a reject, the parent may insert a new pending row. A player may have more than one approved guardian (two parents).
+
+This row is the future parent-proxy gate: later course registration / attendance should check `status = 'approved'` for `(guardian, player)`. Those features are out of scope.
+
+### Player discovery (search UX)
+
+Parents must **not** receive a full roster dump. They never `SELECT` from `players` until an approved link exists.
+
+**Chosen UX (hypothesis):** a constrained search that requires **multiple fields**, implemented as `search_player_for_guardian_link` (security definer RPC):
+
+1. **Team + exact jersey** (unique per team, so 0–1 match), and/or
+2. **Exact birth date + name fragment** (at least two characters; `ILIKE` against English given/family, zh, ja, and “Given Family”). `%` and `_` in the fragment are escaped.
+
+If both modes are complete, results must satisfy **both** (AND). If neither mode is complete, the function returns no rows. At most five rows. Team names for the dropdown come from `list_active_teams_for_link` (active squad names only — not player PII).
+
+A successful search may show names / DOB / team / jersey so the parent can confirm before submitting. That confirmation is RPC output, not a table `SELECT` on `players`. Pending/rejected parents still cannot read the player row from “my children”.
+
+**Residual risk:** an authenticated parent who knows a team can try jersey numbers 1–99. Documented; not rate-limited in Stage 3. Birth date + name is the stronger mode. Phone OTP still required to get an account.
+
 ## Apply migrations (staging only)
 
 Do **not** run this SQL on production.
@@ -98,6 +135,8 @@ Apply in order:
 1. [`supabase/migrations/20260902100000_stage1_profiles_and_roles.sql`](supabase/migrations/20260902100000_stage1_profiles_and_roles.sql) (skip if Stage 1 is already on staging)
 2. [`supabase/migrations/20260902120000_stage2_org_master.sql`](supabase/migrations/20260902120000_stage2_org_master.sql) (skip if Stage 2 is already on staging)
 3. [`supabase/migrations/20260902140000_players_split_english_names.sql`](supabase/migrations/20260902140000_players_split_english_names.sql) (player name columns; **paste this file if Stage 2 is already applied**)
+4. [`supabase/migrations/20260902160000_stage3_guardian_player_links.sql`](supabase/migrations/20260902160000_stage3_guardian_player_links.sql) (**Stage 3; paste this file on staging**)
+5. [`supabase/migrations/20260902180000_regrant_stage3_privileges.sql`](supabase/migrations/20260902180000_regrant_stage3_privileges.sql) (**Stage 3 follow-up; paste this even if Stage 3 already ran** — repairs GRANT on `guardian_player_links`, `teams`, and the Stage 3 RPCs. Does not change RLS.)
 
 Steps:
 
@@ -105,7 +144,7 @@ Steps:
 2. Go to **SQL Editor** → **New query**.
 3. Paste the full contents of the migration file.
 4. Run the query.
-5. In **Table Editor**, confirm `teams`, `players`, `team_memberships`, `coaches`, and `coach_team_assignments` exist.
+5. In **Table Editor**, confirm `teams`, `players`, `team_memberships`, `coaches`, `coach_team_assignments`, and (after Stage 3) `guardian_player_links` exist.
 
 If you use the Supabase CLI and it is linked to **staging** (never production):
 
@@ -117,12 +156,17 @@ If an earlier Stage 2 draft was already applied, run the Stage 2 file again. It 
 
 The player-name follow-up (`20260902140000_players_split_english_names.sql`) is also written to be re-runnable. **Staging that already has Stage 2 must apply this file** (SQL Editor paste is enough). Do not run it on production.
 
+Stage 3 (`20260902160000_stage3_guardian_player_links.sql`) is written to be re-runnable (`create table if not exists`, `create or replace function`, `drop policy if exists`). Apply it on **staging only**.
+
+The privilege follow-up (`20260902180000_regrant_stage3_privileges.sql`) is also re-runnable. **Staging that already has Stage 3 must apply this file** if parents or admins see `permission denied for table guardian_player_links` or `permission denied for function list_active_teams_for_link`. It only re-grants table/function privileges to `authenticated` (and revokes them from `anon` / `public`). It does not change RLS.
+
 ### How to verify the migration
 
-- Table Editor shows the five tables above, with RLS enabled.
+- Table Editor shows the five Stage 2 tables above, with RLS enabled, plus `guardian_player_links` after Stage 3.
 - After the player-name follow-up: `players` has `name_en_given` and `name_en_family` (required), `name_zh` and `name_ja` nullable, and no `name_en` column.
 - Optional: paste [`supabase/stage2_verification.sql`](supabase/stage2_verification.sql). The jersey block asserts T2-2 (duplicate rejected) and T2-3 (same number on another team allowed), then `ROLLBACK` so it does not leave rows.
-- Optional: the RLS block at the bottom of that file, with real user UUIDs.
+- Optional: paste [`supabase/stage3_verification.sql`](supabase/stage3_verification.sql) after substituting real profile UUIDs. The unique-index block asserts re-apply-after-reject and rolls back. The RLS block documents T3-4 / T3-5.
+- Optional: the RLS block at the bottom of the Stage 2 file, with real user UUIDs.
 
 There is **no seed data** and no real PII in the repo.
 
@@ -201,12 +245,16 @@ They keep `parent` and also become `admin`. Reload `/app`.
 
 Do not grant extra roles from the browser except through this admin action. RLS still forbids client inserts into `user_roles`.
 
-## RLS (Stage 2)
+## RLS (Stage 2 + Stage 3)
 
-- `anon`: no access to org tables; cannot read `birth_date`.
-- `parent` (no admin/coach): cannot read other profiles, and cannot read `players` / `teams` / memberships. Birth dates are not visible because no player rows are returned.
-- `coach`: read assigned teams, memberships, and those players (including `birth_date`, needed to show age band on the roster). No insert/update/delete on org tables.
-- `admin`: full CRUD on org tables; can `select` all `profiles` in order to link coaches (phone is PII; admins can see it).
+- `anon`: no access to org tables or `guardian_player_links`; cannot read `birth_date`. Unauthenticated `/app` (including `/app/children`) redirects to login (T3-5).
+- `parent` (no admin/coach): cannot read other profiles. Cannot `SELECT` `players` / `teams` / memberships **except**:
+  - own rows in `guardian_player_links`;
+  - after **approved**, that linked player’s basic row, their membership, and that team (for “my children”).
+  - constrained search RPCs (`list_active_teams_for_link`, `search_player_for_guardian_link`) which do not dump the roster.
+  - Insert own **pending** links only. Cannot set `approved` / `rejected` (T3-4). Cannot update links.
+- `coach`: read assigned teams, memberships, and those players (including `birth_date`, needed to show age band on the roster). No insert/update/delete on org tables. Same parent-link rules if they also have the parent role (default).
+- `admin`: full CRUD on org tables; can `select` all `profiles` in order to link coaches (phone is PII; admins can see it); can select all guardian links and call `admin_review_guardian_link`.
 
 Public match pages that show names without dates of birth are a later stage. This stage does not expose player rows to unauthenticated users.
 
@@ -240,7 +288,24 @@ SMS/OTP is required to **create** a session (or a second user such as a coach/pa
 | T2-7 | `npm run lint`, `npm run typecheck`, and `npm test` pass. |
 | T2-8 | Player names: EN given + EN family required; zh and ja optional but at least one required. Create fails if both CJK names are empty, or if either English given or family is empty. Create succeeds with EN+ZH only and with EN+JA only. Display prefers the UI-locale name if present, then English “Given Family”, then the other filled CJK name. |
 
-Locale check: switch zh-Hant / en / ja on admin and roster screens; labels should change. Player **names** stay as entered; roster prefers the name for the active UI locale (then English given + family, then the other filled CJK name).
+### Stage 3
+
+Use **one admin account** and **one parent account**. The parent needs a **second phone** (or a second number that can receive SMS) because login is phone OTP. An already-logged-in admin can create the player and review bindings without a new code.
+
+**Hypothesis:** the admin account also has the default `parent` role, so it can open `/app/children` as well. Do not use that path for T3-1–T3-4; those checks need a non-admin parent so RLS is actually exercised.
+
+| ID | Check |
+| --- | --- |
+| T3-1 | Parent searches (team + jersey, or DOB + name fragment ≥ 2 chars) → sees a confirmation card (not a full roster) → submits → link is `pending`. “My children” still has no player names. |
+| T3-2 | Admin rejects (optional note). Parent sees `rejected` and the admin note. Nested player details stay hidden. |
+| T3-3 | Parent re-applies (allowed after reject) → admin approves → parent sees the child on “my children” (names, birth date, team, jersey). |
+| T3-4 | Parent cannot approve their own link: no approve UI on `/app/children`; `/app/admin/bindings` is access denied; SQL `UPDATE … status = 'approved'` as that user affects 0 rows. See [`supabase/stage3_verification.sql`](supabase/stage3_verification.sql). |
+| T3-5 | Signed out, open `/zh-Hant/app/children`. Redirect to that locale’s login. |
+| T3-6 | `npm run lint`, `npm run typecheck`, and `npm test` pass. |
+
+Wrong-search check (not a numbered T3, but part of “no PII dump”): a parent who omits fields, or uses a jersey that does not exist, gets no player list.
+
+Locale check: switch zh-Hant / en / ja on children, bindings, admin, and roster screens; labels should change. Player **names** stay as entered.
 
 ## Staging vs production
 
@@ -257,11 +322,11 @@ CI on pull requests does **not** deploy.
 ## Project layout
 
 ```text
-app/[locale]/          Public home, /login, gated /app, /app/admin, /app/roster
+app/[locale]/          Public home, /login, gated /app, /app/children, /app/admin, /app/roster
 components/            Header, forms, dashboard cards, access denied
 i18n/                  next-intl routing, navigation, request config
 lib/age-band.ts        Season-start age band helper
-lib/org/               Server actions, queries, display-name helper
+lib/org/               Server actions, queries, display-name helper, binding actions
 lib/auth/              Phone helpers, session/role guards
 lib/supabase/          Browser, server, and proxy (cookie) clients
 messages/              zh-Hant, en, ja copy
@@ -273,19 +338,19 @@ Auth uses the official `@supabase/ssr` cookie pattern for Next.js, composed in `
 
 ## PWA
 
-`app/manifest.ts` publishes a web app manifest. Placeholder icons live in `public/icons/`. Installability and offline caching are not Stage 2 goals.
+`app/manifest.ts` publishes a web app manifest. Placeholder icons live in `public/icons/`. Installability and offline caching are not Stage 3 goals.
 
-## Out of scope (Stage 2)
+## Out of scope (Stage 3)
 
-- Guardian–player linking (Stage 3)
-- Courses, registrations, attendance, assessments, matches/events management
+- Courses, registrations, attendance, assessments, match/event CRUD (parent-proxy is designed for later, not implemented)
 - Public match pages
 - Payments
 - Production deploys, merging this work to `main` from an agent, or modifying a production database
 - Service role keys in the repo or in client code
 - In-app admin backdoors or phone whitelists
 - Seeding real personal data
+- In-app revoke of an already-approved link (admin can reject only from `pending`; reversing an approval is SQL for now)
 
 ## Later stages
 
-Add guardian links, courses, attendance, assessments, and matches on this folder structure. Keep staging and production isolated, and keep production releases behind human approval.
+Add courses, attendance, assessments, and matches on this folder structure. Gate parent-proxy on `guardian_player_links.status = 'approved'`. Keep staging and production isolated, and keep production releases behind human approval.

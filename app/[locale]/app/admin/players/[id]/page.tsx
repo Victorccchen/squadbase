@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { AccessDenied } from "@/components/access-denied";
 import { PageHeader } from "@/components/page-header";
+import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { getPlayer } from "@/lib/org/queries";
 import { localizedPlayerName, displayOptionalName } from "@/lib/org/display-name";
 import { ageBandFromBirthDate, formatIsoDate, seasonStartForBirthDate } from "@/lib/age-band";
@@ -12,6 +14,10 @@ type PlayerDetailPageProps = {
 };
 
 export default async function PlayerDetailPage({ params }: PlayerDetailPageProps) {
+  if (!(await canRenderAdminPage())) {
+    return <AccessDenied area="admin" />;
+  }
+
   const { id } = await params;
   const player = await getPlayer(id);
   if (!player) {

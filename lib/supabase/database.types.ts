@@ -9,6 +9,8 @@ export type AgeBand =
   | "reserve"
   | "senior";
 export type OrgStatus = "active" | "inactive";
+export type GuardianRelation = "parent" | "guardian" | "other";
+export type LinkStatus = "pending" | "approved" | "rejected";
 
 export type Profile = {
   id: string;
@@ -85,6 +87,40 @@ export type CoachTeamAssignment = {
   updated_at: string;
   created_by: string | null;
   updated_by: string | null;
+};
+
+export type GuardianPlayerLink = {
+  id: string;
+  guardian_user_id: string;
+  player_id: string;
+  relation: GuardianRelation;
+  status: LinkStatus;
+  parent_note: string | null;
+  admin_note: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+};
+
+export type PlayerSearchMatch = {
+  id: string;
+  name_zh: string | null;
+  name_en_given: string;
+  name_en_family: string;
+  name_ja: string | null;
+  birth_date: string;
+  team_id: string | null;
+  team_name: string | null;
+  jersey_number: number | null;
+};
+
+export type LinkableTeam = {
+  id: string;
+  name: string;
+  age_band: AgeBand;
 };
 
 type TimestampInsert = {
@@ -253,6 +289,48 @@ export type Database = {
           },
         ];
       };
+      guardian_player_links: {
+        Row: GuardianPlayerLink;
+        Insert: {
+          id?: string;
+          guardian_user_id: string;
+          player_id: string;
+          relation?: GuardianRelation;
+          status?: LinkStatus;
+          parent_note?: string | null;
+          admin_note?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+        } & TimestampInsert;
+        Update: {
+          guardian_user_id?: string;
+          player_id?: string;
+          relation?: GuardianRelation;
+          status?: LinkStatus;
+          parent_note?: string | null;
+          admin_note?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "guardian_player_links_guardian_user_id_fkey";
+            columns: ["guardian_user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "guardian_player_links_player_id_fkey";
+            columns: ["player_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -280,11 +358,42 @@ export type Database = {
         Args: { target_profile_id: string };
         Returns: string;
       };
+      is_approved_guardian_for_player: {
+        Args: { p_player_id: string };
+        Returns: boolean;
+      };
+      guardian_can_read_team: {
+        Args: { p_team_id: string };
+        Returns: boolean;
+      };
+      list_active_teams_for_link: {
+        Args: Record<PropertyKey, never>;
+        Returns: LinkableTeam[];
+      };
+      search_player_for_guardian_link: {
+        Args: {
+          p_team_id?: string | null;
+          p_jersey?: number | null;
+          p_birth_date?: string | null;
+          p_name_fragment?: string | null;
+        };
+        Returns: PlayerSearchMatch[];
+      };
+      admin_review_guardian_link: {
+        Args: {
+          p_link_id: string;
+          p_status: LinkStatus;
+          p_admin_note?: string | null;
+        };
+        Returns: string;
+      };
     };
     Enums: {
       app_role: AppRole;
       age_band: AgeBand;
       org_status: OrgStatus;
+      guardian_relation: GuardianRelation;
+      link_status: LinkStatus;
     };
     CompositeTypes: Record<string, never>;
   };

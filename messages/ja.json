@@ -11,16 +11,16 @@
     "footer": "本番環境へのデプロイには人による承認が必要です。自動で production へ公開しないでください。"
   },
   "home": {
-    "eyebrow": "ステージ 2 · チーム、選手、コーチ",
+    "eyebrow": "ステージ 3 · 保護者と選手の紐付け",
     "headline": "クラブ管理システムへようこそ",
-    "lead": "携帯電話のSMS認証コードでログインします。管理者はチーム・選手・コーチ割当を管理でき、コーチは担当チームの名簿を閲覧できます。",
+    "lead": "携帯電話のSMS認証コードでログインします。保護者は既存の選手への紐付けを申請し、管理者が承認します。管理者はチーム・選手・コーチも管理できます。",
     "openDashboard": "ダッシュボードを開く",
     "sampleLabel": "サンプル文言",
     "sampleBody": "現在の言語：日本語。上の言語切替で繁体字中国語または英語の文言に変わります。",
     "stackTitle": "技術スタック",
     "stackNext": "Next.js App Router + TypeScript",
     "stackI18n": "next-intl（繁体字中国語 / English / 日本語）",
-    "stackSupabase": "Supabase の電話OTP、プロフィール、複数ロール、組織マスター、RLS",
+    "stackSupabase": "Supabase の電話OTP、プロフィール、複数ロール、組織マスター、保護者紐付け、RLS",
     "stackPwa": "PWA：ウェブアプリマニフェストと基本メタ",
     "envTitle": "環境",
     "envConfigured": "公開用 Supabase 変数を検出しました。ログインはこのプロジェクトに接続します（anon key のみ）。",
@@ -33,8 +33,8 @@
     "lead": "SMSでワンタイムコードを送信します。初回のログイン成功時にプロフィールを作成し、デフォルトの保護者（parent）ロールを付与します。",
     "countryLabel": "国番号",
     "phoneLabel": "電話番号",
-    "phonePlaceholder": "0912 345 678",
-    "phoneHint": "台湾の番号は 09 から始まる国内形式で入力できます。国際形式に変換します。",
+    "phonePlaceholder": "電話番号を入力してください",
+    "phoneHint": "台湾の番号は 09 から始まる国内形式で入力できます。国際形式に変換します。例：0912 345 678。",
     "sendCode": "コードを送信",
     "sending": "送信中…",
     "codeLabel": "認証コード",
@@ -58,7 +58,7 @@
   "app": {
     "eyebrow": "ダッシュボード",
     "title": "クラブ ダッシュボード",
-    "welcome": "管理者はチーム・選手・コーチを管理します。コーチは担当名簿を開けます。その他の運営機能は後続ステージです。",
+    "welcome": "保護者は子どもへの紐付けを申請できます。管理者はチーム・選手・コーチと紐付け承認を管理します。コーチは担当名簿を開けます。その他の運営機能は後続ステージです。",
     "accountTitle": "アカウント",
     "phoneLabel": "電話",
     "rolesLabel": "ロール",
@@ -75,6 +75,7 @@
     "playerNote": "選手（player）ロールは後続ステージ用に予約されています。現時点で選手ログイン画面はありません。",
     "openRoster": "名簿を開く",
     "openAdmin": "管理を開く",
+    "openChildren": "子どもを開く",
     "roles": {
       "parent": "保護者",
       "coach": "コーチ",
@@ -84,7 +85,7 @@
     "placeholders": {
       "children": {
         "title": "選手 / 子ども",
-        "body": "保護者と選手の紐付け、選手データの機能はまだありません。"
+        "body": "クラブが作成済みの選手への紐付けを申請します。管理者が承認するとここに表示されます。"
       },
       "courses": {
         "title": "コース",
@@ -116,7 +117,11 @@
       },
       "members": {
         "title": "メンバー",
-        "body": "保護者と選手の紐付けは後続ステージです。追加の管理者は Supabase Dashboard で昇格してください。"
+        "body": "保護者は既存選手への紐付けを申請し、管理者は紐付け審査ページで承認します。追加の管理者は Supabase Dashboard で昇格してください。"
+      },
+      "bindings": {
+        "title": "保護者紐付け",
+        "body": "保護者からの選手紐付け申請を承認または却下します。"
       },
       "adminNote": {
         "title": "ロール昇格",
@@ -127,15 +132,17 @@
   "nav": {
     "label": "アプリの区画",
     "dashboard": "ダッシュボード",
+    "children": "子ども",
     "roster": "名簿",
     "admin": "管理",
     "teams": "チーム",
     "players": "選手",
-    "coaches": "コーチ"
+    "coaches": "コーチ",
+    "bindings": "紐付け審査"
   },
   "access": {
     "deniedTitle": "このページを開けません",
-    "deniedBodyAdmin": "管理ページはクラブ管理者専用です。コーチは名簿を開けます。保護者はダッシュボードに留まってください。",
+    "deniedBodyAdmin": "管理ページはクラブ管理者専用です。コーチは名簿を開けます。保護者は「子ども」から紐付けを申請できます。",
     "deniedBodyRoster": "名簿は割り当てられたコーチと管理者専用です。それらのロールがない保護者はダッシュボードに留まってください。",
     "backToDashboard": "ダッシュボードに戻る"
   },
@@ -148,6 +155,8 @@
     "playersBody": "各選手には英語の名と姓、繁体字中国語か日本語の氏名（少なくとも一方）、生年月日、チーム、そのチーム内で一意の背番号が必要です。",
     "coachesTitle": "コーチ",
     "coachesBody": "相手は先に一度ログインしてプロフィールを作る必要があります。ここで紐付けてチームを割り当てます。紐付け時にコーチロールも付与されます。",
+    "bindingsTitle": "保護者紐付け",
+    "bindingsBody": "保護者はチームと背番号、または生年月日と氏名の一部で既存選手を検索して申請します。ここで承認または却下します。保留・却下中の保護者はその選手データを読めません。",
     "createTeam": "チームを作成",
     "editTeam": "チームを編集",
     "createPlayer": "選手を作成",
@@ -165,7 +174,15 @@
     "playersNeedTeamBody": "選手にはチームと、そのチーム内で一意の背番号が必要です。",
     "teamRosterTitle": "このチームの選手",
     "teamRosterEmptyTitle": "このチームに選手はいません",
-    "teamRosterEmptyBody": "選手を作成し、このチームと背番号を割り当ててください。"
+    "teamRosterEmptyBody": "選手を作成し、このチームと背番号を割り当ててください。",
+    "approve": "承認",
+    "reject": "却下",
+    "pendingQueue": "未審査の申請",
+    "allRequests": "審査済みの申請",
+    "guardian": "保護者",
+    "decisionNote": "保護者へのメモ（任意）",
+    "bindingsEmptyTitle": "未審査の申請はありません",
+    "bindingsEmptyBody": "保護者が紐付けを申請すると、ここに表示されます。"
   },
   "roster": {
     "title": "名簿",
@@ -232,7 +249,57 @@
       "missingTeam": "チームを選んでください。",
       "jerseyTaken": "この背番号は同じチームですでに使われています。",
       "profileRequired": "紐付けるプロフィールを選んでください。",
+      "incompleteSearch": "チームと背番号、または生年月日と2文字以上の氏名で検索してください。",
+      "searchNameTooShort": "氏名の一部は2文字以上にしてください。",
+      "noPlayerMatch": "一致する選手が見つかりません。チーム、背番号、生年月日、氏名を確認してください。",
+      "playerRequired": "申請する選手を選んでください。",
+      "invalidRelation": "この選手との関係を選んでください。",
+      "invalidDecision": "承認か却下を選んでください。",
+      "linkAlreadyOpen": "この選手にはすでに保留中または承認済みの紐付けがあります。",
       "generic": "保存できませんでした。もう一度お試しください。"
     }
+  },
+  "children": {
+    "title": "子ども",
+    "lead": "クラブが作成済みの選手への紐付けを申請します。管理者が承認するまで、ここでは詳細を見られません。後続ステージでは、この紐付けを使って保護者がコース申込や出欠を代行できます。",
+    "myChildren": "紐付け済みの子ども",
+    "requests": "申請",
+    "emptyChildrenTitle": "紐付け済みの子どもはまだいません",
+    "emptyChildrenBody": "管理者が承認すると、選手の氏名、生年月日、チーム、背番号がここに表示されます。",
+    "emptyRequestsTitle": "進行中の申請はありません",
+    "emptyRequestsBody": "下のフォームで検索してください。全選手の一覧は出ません。条件が十分なときだけ一致結果を返します。",
+    "requestTitle": "紐付けを申請",
+    "requestLead": "正確なチームと背番号、または生年月日と氏名の一部を使います。両方入れるとさらに絞り込めます。",
+    "searchHint": "アプリは全選手を列挙しません。チーム＋背番号、または生年月日＋氏名の一方（または両方）を完成させてください。",
+    "searchJerseyTitle": "チームと背番号",
+    "searchIdentityTitle": "生年月日と氏名",
+    "searchIdentityHint": "氏名は2文字以上。英語の名・姓、繁体字中国語、日本語の氏名に照合します。",
+    "nameFragment": "氏名の一部",
+    "search": "検索",
+    "searching": "検索中…",
+    "matchesTitle": "選手を確認",
+    "confirmHint": "自分の子どもであることを確認してから送信してください。管理者が承認するまで、「紐付け済みの子ども」には表示されません。",
+    "relation": "関係",
+    "relations": {
+      "parent": "親",
+      "guardian": "保護者",
+      "other": "その他"
+    },
+    "parentNote": "管理者へのメモ",
+    "parentNoteHint": "任意。クラブがあなたを識別する手がかりなど。クラブがまだ持っていない連絡先は書かないでください。",
+    "submitRequest": "申請を送信",
+    "statuses": {
+      "pending": "保留",
+      "approved": "承認済み",
+      "rejected": "却下"
+    },
+    "requestedAt": "申請日",
+    "reviewedAt": "審査日",
+    "adminNote": "管理者メモ",
+    "noMatchDetails": "この紐付けが承認されるまで選手詳細は表示されません。",
+    "player": "選手",
+    "playerNames": "氏名",
+    "playerTeam": "チーム / 背番号",
+    "playerBirth": "生年月日"
   }
 }

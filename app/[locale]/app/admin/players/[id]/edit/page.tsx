@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { AccessDenied } from "@/components/access-denied";
 import { PageHeader } from "@/components/page-header";
 import { PlayerForm } from "@/components/admin/player-form";
+import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { updatePlayer } from "@/lib/org/actions";
 import { getPlayer, listTeams } from "@/lib/org/queries";
 
@@ -10,6 +12,10 @@ type EditPlayerPageProps = {
 };
 
 export default async function EditPlayerPage({ params }: EditPlayerPageProps) {
+  if (!(await canRenderAdminPage())) {
+    return <AccessDenied area="admin" />;
+  }
+
   const { id } = await params;
   const [player, teams] = await Promise.all([getPlayer(id), listTeams()]);
   if (!player) {

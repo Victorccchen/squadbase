@@ -1,8 +1,14 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { AccessDenied } from "@/components/access-denied";
 import { PageHeader } from "@/components/page-header";
+import { canRenderAdminPage } from "@/lib/auth/admin-page";
 
 export default async function AdminHomePage() {
+  if (!(await canRenderAdminPage())) {
+    return <AccessDenied area="admin" />;
+  }
+
   const t = await getTranslations("admin");
   const common = await getTranslations("common");
 
@@ -10,13 +16,14 @@ export default async function AdminHomePage() {
     { href: "/app/admin/teams" as const, title: t("teamsTitle"), body: t("teamsBody") },
     { href: "/app/admin/players" as const, title: t("playersTitle"), body: t("playersBody") },
     { href: "/app/admin/coaches" as const, title: t("coachesTitle"), body: t("coachesBody") },
+    { href: "/app/admin/bindings" as const, title: t("bindingsTitle"), body: t("bindingsBody") },
   ];
 
   return (
     <>
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-6 py-12">
         <PageHeader title={t("title")} description={t("lead")} />
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {cards.map((card) => (
             <Link
               key={card.href}
