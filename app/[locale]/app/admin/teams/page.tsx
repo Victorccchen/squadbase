@@ -7,7 +7,6 @@ import { TeamLifecycleForms } from "@/components/admin/team-lifecycle-forms";
 import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { listTeamsForAdmin } from "@/lib/org/queries";
 import { setTeamStatus } from "@/lib/org/actions";
-import { teamHasNoDeleteBlockers } from "@/lib/org/parse";
 import { primaryButtonClassName } from "@/lib/ui";
 
 export default async function AdminTeamsPage() {
@@ -59,10 +58,6 @@ export default async function AdminTeamsPage() {
                   teamId={team.id}
                   teamName={team.name}
                   status={team.status}
-                  canDelete={teamHasNoDeleteBlockers(
-                    team.membershipCount,
-                    team.coachAssignmentCount,
-                  )}
                   membershipCount={team.membershipCount}
                   activeMembershipCount={team.activeMembershipCount}
                   coachAssignmentCount={team.coachAssignmentCount}

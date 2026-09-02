@@ -186,17 +186,19 @@
     "bindingsEmptyTitle": "未審査の申請はありません",
     "bindingsEmptyBody": "保護者が紐付けを申請すると、ここに表示されます。",
     "teamLifecycleTitle": "チームの状態と削除",
-    "teamLifecycleBody": "無効にすると、保護者の紐付け検索からこのチームが消えます。所属履歴は残ります。完全削除は所属もコーチ割り当てもないときだけできます。",
+    "teamLifecycleBody": "無効にすると、保護者の紐付け検索からこのチームが消えます。所属履歴は残ります。完全削除は有効な所属がないときだけできます。終了済みの所属とコーチ割り当ては一緒に削除されます。",
     "deactivateTeam": "チームを無効化",
     "deactivateTeamShort": "無効化",
     "reactivateTeam": "チームを再有効化",
     "reactivateTeamShort": "有効化",
     "deleteTeam": "チームを完全削除",
     "deleteTeamShort": "削除",
-    "deleteTeamConfirm": "「{name}」を完全に削除しますか？元に戻せません。",
-    "deleteBlockedActive": "このチームには有効な所属が {count} 件あります。先に所属を終了または無効にするか、チームを無効化してください。",
+    "deleteTeamConfirm": "「{name}」を完全に削除しますか？終了済みの所属 {inactive} 件とコーチ割り当て {coaches} 件も削除されます。選手マスターは削除しません。元に戻せません。",
+    "deleteTeamBlockedConfirm": "「{name}」は削除できません。有効な所属が {count} 件あります。先に他チームへ移すか所属を終了してください。",
+    "deleteBlockedActive": "このチームには有効な所属が {count} 件あるため削除できません。先に他チームへ移すか所属を終了してください。",
     "deleteBlockedMemberships": "このチームには所属レコードが {count} 件あります。削除前に取り除くか、チームを無効化してください。",
-    "deleteBlockedCoaches": "このチームにはコーチ割り当てが {count} 件あります。先に解除するか、チームを無効化してください。"
+    "deleteBlockedCoaches": "このチームにはコーチ割り当てが {count} 件あります。先に解除するか、チームを無効化してください。",
+    "openTeamRoster": "名簿を開く"
   },
   "roster": {
     "title": "名簿",
