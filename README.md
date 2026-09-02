@@ -310,7 +310,7 @@ Use **one admin account** and **one parent account**. The parent needs a **secon
 | T3-7 | Parent withdraws a **pending** request on `/app/children` (cancel). Status becomes `revoked` (history stays). No cancel/revoke control on an **approved** child card. A crafted cancel of an approved id is rejected (`cannotRevokeApproved` / RLS). |
 | T3-8 | Admin revokes an **approved** link on `/app/admin/bindings` (optional note). Parent loses “my children” PII for that player (`is_approved_guardian_for_player` is false). The same pair can submit a new pending request. |
 | T2-9 | Admin deactivates a team on `/app/admin/teams/[id]`. The squad disappears from the parent link team dropdown (`list_active_teams_for_link`). Reactivate brings it back. |
-| T2-10 | Admin hard-deletes an **empty** team (confirm). A team with **active memberships** keeps the delete control disabled and the RPC returns a clear error if forced. Deactivate remains available. |
+| T2-10 | On `/app/admin/teams`, each row has Edit, Deactivate/Reactivate, and **Delete**. Empty team (no memberships): confirm delete succeeds, including if the team is already inactive. A team with **active memberships** still shows Delete; after confirm it stays and shows a clear error (end memberships first). Inactive status alone does not block delete. |
 
 Wrong-search check (not a numbered T3, but part of “no PII dump”): a parent who omits fields, or uses a jersey that does not exist, gets no player list.
 

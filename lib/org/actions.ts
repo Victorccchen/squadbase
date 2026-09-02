@@ -188,7 +188,11 @@ export async function setTeamStatus(
   }
 
   revalidateOrg();
-  redirectAdmin(`/app/admin/teams/${teamId}`, formData);
+  if (readString(formData, "next") === "teams") {
+    redirectAdmin("/app/admin/teams", formData);
+  } else {
+    redirectAdmin(`/app/admin/teams/${teamId}`, formData);
+  }
   return ok();
 }
 
