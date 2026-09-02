@@ -1,25 +1,113 @@
 {
   "meta": {
     "title": "球團",
-    "description": "球團營運管理系統（開發骨架）"
+    "description": "球團營運管理系統"
+  },
+  "common": {
+    "clubName": "球團",
+    "languageLabel": "語言",
+    "signIn": "登入",
+    "signOut": "登出",
+    "footer": "生產環境部署需人工核准，請勿自動發佈到 production。"
   },
   "home": {
-    "eyebrow": "階段 0 · 專案骨架",
-    "clubName": "球團",
+    "eyebrow": "階段 1 · 登入與角色",
     "headline": "歡迎使用球團管理系統",
-    "lead": "這是可執行的開發骨架首頁。之後的階段會在同一結構上加入登入、訓練隊、課程與賽事功能。",
+    "lead": "以手機簡訊驗證碼登入。之後的階段會在同一結構上加入球員、課程、出缺席與賽事功能。",
+    "openDashboard": "進入儀表板",
     "sampleLabel": "範例文案",
     "sampleBody": "目前語言：繁體中文。切換上方語言後，標題與說明應改為英文或日文。",
     "stackTitle": "技術堆疊",
     "stackNext": "Next.js App Router + TypeScript",
     "stackI18n": "next-intl（繁中 / English / 日本語）",
-    "stackSupabase": "Supabase 瀏覽器與伺服器用戶端骨架",
+    "stackSupabase": "Supabase Phone OTP、profiles、多角色與 RLS",
     "stackPwa": "PWA：網頁應用程式資訊清單與基本 meta",
     "envTitle": "環境",
-    "envConfigured": "已讀取公開 Supabase 變數（只檢查是否存在，本頁不會連線）。",
-    "envMissing": "尚未設定 NEXT_PUBLIC_SUPABASE_URL 或 NEXT_PUBLIC_SUPABASE_ANON_KEY。本頁仍可預覽。",
-    "envLabel": "環境標籤",
-    "languageLabel": "語言",
-    "footer": "生產環境部署需人工核准，請勿自動發佈到 production。"
+    "envConfigured": "已讀取公開 Supabase 變數。登入會連線到此專案（僅使用 anon key）。",
+    "envMissing": "尚未設定 NEXT_PUBLIC_SUPABASE_URL 或 NEXT_PUBLIC_SUPABASE_ANON_KEY。首頁仍可預覽，但無法登入。",
+    "envLabel": "環境標籤"
+  },
+  "auth": {
+    "eyebrow": "手機驗證",
+    "title": "以手機號碼登入",
+    "lead": "我們會傳送一組簡訊驗證碼。新帳號第一次成功登入後，會建立個人資料並預設為家長（parent）角色。",
+    "countryLabel": "國碼",
+    "phoneLabel": "手機號碼",
+    "phonePlaceholder": "0912 345 678",
+    "phoneHint": "台灣號碼可輸入 09 開頭的本地格式，我們會轉成國際格式。",
+    "sendCode": "傳送驗證碼",
+    "sending": "傳送中…",
+    "codeLabel": "驗證碼",
+    "codeSent": "若簡訊服務已設定，驗證碼已送出。請在時限內輸入。",
+    "codeSentTo": "驗證碼將送到 {phone}",
+    "smsBlocked": "無法傳送簡訊。請在 Supabase Dashboard 啟用 Phone Auth 並設定 SMS 供應商（例如 Twilio）。你仍可輸入驗證碼以測試錯誤流程，但在簡訊可用前無法真正登入。",
+    "verify": "驗證並登入",
+    "verifying": "驗證中…",
+    "back": "返回修改號碼",
+    "resend": "重新傳送",
+    "errors": {
+      "notConfigured": "尚未設定公開 Supabase 環境變數，無法登入。",
+      "invalidPhone": "請輸入有效的手機號碼。",
+      "smsNotConfigured": "簡訊服務尚未設定或傳送失敗。",
+      "rateLimit": "請求太頻繁，請稍後再試。",
+      "invalidOtp": "驗證碼不正確，尚未登入。",
+      "expiredOtp": "驗證碼已過期，尚未登入。請重新傳送。",
+      "generic": "登入失敗，請再試一次。"
+    }
+  },
+  "app": {
+    "eyebrow": "儀表板",
+    "title": "球團儀表板",
+    "welcome": "這是角色導向的佔位頁面。業務功能尚未開放。",
+    "accountTitle": "帳號",
+    "phoneLabel": "手機",
+    "rolesLabel": "角色",
+    "profileLabel": "個人資料",
+    "phoneUnknown": "（未顯示）",
+    "rolesEmpty": "尚無角色",
+    "profileReady": "已建立",
+    "profileMissing": "尚未建立（請重新登入或確認已套用資料庫 migration）",
+    "comingSoon": "即將推出",
+    "parentSection": "家長",
+    "coachSection": "教練",
+    "adminSection": "管理員",
+    "noDashboardRole": "你的帳號目前沒有家長、教練或管理員角色。",
+    "playerNote": "球員（player）角色已保留給後續階段，此階段沒有球員登入介面。",
+    "roles": {
+      "parent": "家長",
+      "coach": "教練",
+      "admin": "管理員",
+      "player": "球員"
+    },
+    "placeholders": {
+      "children": {
+        "title": "球員 / 子女",
+        "body": "家長與球員的連結、球員資料尚未開放。"
+      },
+      "courses": {
+        "title": "課程",
+        "body": "課程報名與課表尚未開放。"
+      },
+      "squads": {
+        "title": "訓練隊",
+        "body": "訓練隊名單尚未開放。"
+      },
+      "attendance": {
+        "title": "出缺席",
+        "body": "出缺席紀錄尚未開放。"
+      },
+      "assessments": {
+        "title": "評核",
+        "body": "能力評核尚未開放。"
+      },
+      "members": {
+        "title": "成員",
+        "body": "成員管理尚未開放。第一位管理員請用 Supabase Dashboard 手動升級。"
+      },
+      "adminNote": {
+        "title": "角色升級",
+        "body": "應用程式內沒有後門。請在 Dashboard 的 user_roles 資料表為使用者新增 admin 角色。"
+      }
+    }
   }
 }

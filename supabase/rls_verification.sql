@@ -1,0 +1,38 @@
+-- T1-5 helper: confirm a logged-in user cannot read another user's profile.
+-- Run in the staging SQL Editor after two users have logged in once.
+--
+-- Replace the UUIDs, then execute. Expected:
+--   own_profile_count = 1
+--   other_profile_count = 0
+--   own_roles_visible >= 1
+--   other_roles_count = 0
+--
+-- This uses the `authenticated` role with a JWT claim. It does not use the
+-- service role (which bypasses RLS) and must not be run on production.
+
+-- begin;
+-- set local role authenticated;
+-- select set_config('request.jwt.claim.sub', 'USER_A_UUID', true);
+-- select set_config('request.jwt.claim.role', 'authenticated', true);
+--
+-- select count(*) as own_profile_count
+-- from public.profiles
+-- where id = 'USER_A_UUID';
+--
+-- select count(*) as other_profile_count
+-- from public.profiles
+-- where id = 'USER_B_UUID';
+--
+-- select count(*) as own_roles_visible
+-- from public.user_roles
+-- where user_id = 'USER_A_UUID';
+--
+-- select count(*) as other_roles_count
+-- from public.user_roles
+-- where user_id = 'USER_B_UUID';
+--
+-- -- Unauthenticated (anon) should see nothing:
+-- set local role anon;
+-- select count(*) as anon_profiles from public.profiles;
+-- select count(*) as anon_roles from public.user_roles;
+-- rollback;

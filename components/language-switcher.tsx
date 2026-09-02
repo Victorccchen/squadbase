@@ -11,7 +11,7 @@ const localeLabels: Record<AppLocale, string> = {
 };
 
 export function LanguageSwitcher() {
-  const t = useTranslations("home");
+  const t = useTranslations("common");
   const locale = useLocale();
   const pathname = usePathname();
 

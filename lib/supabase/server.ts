@@ -1,10 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { getPublicSupabaseEnv } from "@/lib/env";
+import type { Database } from "@/lib/supabase/database.types";
 
 /**
- * Server Supabase client for Server Components and Route Handlers.
+ * Server Supabase client for Server Components, Server Actions, and Route Handlers.
  * Cookie writes may fail in read-only Server Components; that is expected.
+ * Session refresh is handled in proxy.ts.
  */
 export async function createClient() {
   const { url, anonKey, isConfigured } = getPublicSupabaseEnv();
@@ -17,7 +19,7 @@ export async function createClient() {
 
   const cookieStore = await cookies();
 
-  return createServerClient(url, anonKey, {
+  return createServerClient<Database>(url, anonKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
