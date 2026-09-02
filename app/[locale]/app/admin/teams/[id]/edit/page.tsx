@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { AccessDenied } from "@/components/access-denied";
 import { PageHeader } from "@/components/page-header";
 import { TeamForm } from "@/components/admin/team-form";
+import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { updateTeam } from "@/lib/org/actions";
 import { getTeam } from "@/lib/org/queries";
 
@@ -10,6 +12,10 @@ type EditTeamPageProps = {
 };
 
 export default async function EditTeamPage({ params }: EditTeamPageProps) {
+  if (!(await canRenderAdminPage())) {
+    return <AccessDenied area="admin" />;
+  }
+
   const { id } = await params;
   const team = await getTeam(id);
   if (!team) {

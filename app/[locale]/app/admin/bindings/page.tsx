@@ -1,12 +1,18 @@
 import { getLocale, getTranslations } from "next-intl/server";
+import { AccessDenied } from "@/components/access-denied";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { BindingReviewForm } from "@/components/admin/binding-review-form";
+import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { listGuardianLinksForAdmin } from "@/lib/org/queries";
 import { localizedPlayerName, playerNameList } from "@/lib/org/display-name";
 import type { GuardianLinkWithPlayer } from "@/lib/org/queries";
 
 export default async function AdminBindingsPage() {
+  if (!(await canRenderAdminPage())) {
+    return <AccessDenied area="admin" />;
+  }
+
   const t = await getTranslations("admin");
   const childrenT = await getTranslations("children");
   const common = await getTranslations("common");

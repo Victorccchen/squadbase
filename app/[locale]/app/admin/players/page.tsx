@@ -1,13 +1,19 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { AccessDenied } from "@/components/access-denied";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { listPlayers } from "@/lib/org/queries";
 import { localizedPlayerName } from "@/lib/org/display-name";
 import { ageBandFromBirthDate } from "@/lib/age-band";
 import { primaryButtonClassName } from "@/lib/ui";
 
 export default async function AdminPlayersPage() {
+  if (!(await canRenderAdminPage())) {
+    return <AccessDenied area="admin" />;
+  }
+
   const t = await getTranslations("admin");
   const org = await getTranslations("org");
   const common = await getTranslations("common");

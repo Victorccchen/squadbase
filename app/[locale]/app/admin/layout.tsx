@@ -10,6 +10,8 @@ type AdminLayoutProps = {
 export default async function AdminLayout({ children }: AdminLayoutProps) {
   const { roles } = await loadSignedInAccount();
 
+  // Hides the admin subnav. Page RSCs still run in parallel, so each admin
+  // page must also call canRenderAdminPage() before any org query.
   if (!canAccessAdmin(roles)) {
     return <AccessDenied area="admin" />;
   }

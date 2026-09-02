@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { AccessDenied } from "@/components/access-denied";
 import { PageHeader } from "@/components/page-header";
 import { CoachTeamsForm } from "@/components/admin/coach-teams-form";
+import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { getCoach, listTeams } from "@/lib/org/queries";
 
 type CoachDetailPageProps = {
@@ -9,6 +11,10 @@ type CoachDetailPageProps = {
 };
 
 export default async function CoachDetailPage({ params }: CoachDetailPageProps) {
+  if (!(await canRenderAdminPage())) {
+    return <AccessDenied area="admin" />;
+  }
+
   const { id } = await params;
   const [coach, teams] = await Promise.all([getCoach(id), listTeams()]);
   if (!coach) {

@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { AppRole } from "@/lib/supabase/database.types";
-import { isDashboardRole } from "@/lib/auth/roles";
+import { canAccessAdmin, isDashboardRole } from "@/lib/auth/roles";
 
 type DashboardPlaceholdersProps = {
   roles: AppRole[];
@@ -60,7 +60,7 @@ export async function DashboardPlaceholders({ roles }: DashboardPlaceholdersProp
   const comingSoon = t("comingSoon");
   const hasParent = roles.includes("parent");
   const hasCoach = roles.includes("coach");
-  const hasAdmin = roles.includes("admin");
+  const hasAdmin = canAccessAdmin(roles);
   const hasPlayer = roles.includes("player");
   const hasDashboardRole = roles.some(isDashboardRole);
 

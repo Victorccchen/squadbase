@@ -1,8 +1,14 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { AccessDenied } from "@/components/access-denied";
 import { PageHeader } from "@/components/page-header";
+import { canRenderAdminPage } from "@/lib/auth/admin-page";
 
 export default async function AdminHomePage() {
+  if (!(await canRenderAdminPage())) {
+    return <AccessDenied area="admin" />;
+  }
+
   const t = await getTranslations("admin");
   const common = await getTranslations("common");
 

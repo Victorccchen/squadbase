@@ -1,9 +1,15 @@
 import { getTranslations } from "next-intl/server";
+import { AccessDenied } from "@/components/access-denied";
 import { PageHeader } from "@/components/page-header";
 import { TeamForm } from "@/components/admin/team-form";
+import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { createTeam } from "@/lib/org/actions";
 
 export default async function NewTeamPage() {
+  if (!(await canRenderAdminPage())) {
+    return <AccessDenied area="admin" />;
+  }
+
   const t = await getTranslations("admin");
   const common = await getTranslations("common");
 

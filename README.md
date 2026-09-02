@@ -136,6 +136,7 @@ Apply in order:
 2. [`supabase/migrations/20260902120000_stage2_org_master.sql`](supabase/migrations/20260902120000_stage2_org_master.sql) (skip if Stage 2 is already on staging)
 3. [`supabase/migrations/20260902140000_players_split_english_names.sql`](supabase/migrations/20260902140000_players_split_english_names.sql) (player name columns; **paste this file if Stage 2 is already applied**)
 4. [`supabase/migrations/20260902160000_stage3_guardian_player_links.sql`](supabase/migrations/20260902160000_stage3_guardian_player_links.sql) (**Stage 3; paste this file on staging**)
+5. [`supabase/migrations/20260902180000_regrant_stage3_privileges.sql`](supabase/migrations/20260902180000_regrant_stage3_privileges.sql) (**Stage 3 follow-up; paste this even if Stage 3 already ran** — repairs GRANT on `guardian_player_links`, `teams`, and the Stage 3 RPCs. Does not change RLS.)
 
 Steps:
 
@@ -156,6 +157,8 @@ If an earlier Stage 2 draft was already applied, run the Stage 2 file again. It 
 The player-name follow-up (`20260902140000_players_split_english_names.sql`) is also written to be re-runnable. **Staging that already has Stage 2 must apply this file** (SQL Editor paste is enough). Do not run it on production.
 
 Stage 3 (`20260902160000_stage3_guardian_player_links.sql`) is written to be re-runnable (`create table if not exists`, `create or replace function`, `drop policy if exists`). Apply it on **staging only**.
+
+The privilege follow-up (`20260902180000_regrant_stage3_privileges.sql`) is also re-runnable. **Staging that already has Stage 3 must apply this file** if parents or admins see `permission denied for table guardian_player_links` or `permission denied for function list_active_teams_for_link`. It only re-grants table/function privileges to `authenticated` (and revokes them from `anon` / `public`). It does not change RLS.
 
 ### How to verify the migration
 
