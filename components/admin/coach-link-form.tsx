@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { useTranslations } from "next-intl";
+import { LocaleHiddenField } from "@/components/admin/locale-hidden-field";
 import { INITIAL_ORG_ACTION_STATE } from "@/lib/org/errors";
 import type { OrgActionState } from "@/lib/org/errors";
 import type { Profile } from "@/lib/supabase/database.types";
@@ -22,6 +23,7 @@ export function CoachLinkForm({ action, profiles }: CoachLinkFormProps) {
 
   return (
     <form action={formAction} className="flex max-w-xl flex-col gap-4">
+      <LocaleHiddenField />
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         {t("profile")}
         <select name="profile_id" required defaultValue="" className={inputClassName}>

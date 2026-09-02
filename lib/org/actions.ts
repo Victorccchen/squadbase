@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getLocale } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
+import { parseAppLocale } from "@/i18n/routing";
 import { getPublicSupabaseEnv } from "@/lib/env";
 import { loadSignedInAccount } from "@/lib/auth/session";
 import { canAccessAdmin } from "@/lib/auth/roles";
@@ -58,9 +58,13 @@ type AdminHref =
   | `/app/admin/players/${string}`
   | `/app/admin/coaches/${string}`;
 
-async function redirectAdmin(href: AdminHref) {
-  const locale = await getLocale();
-  redirect({ href, locale });
+function localeFromForm(formData: FormData) {
+  return parseAppLocale(readString(formData, "locale"));
+}
+
+// Do not call getLocale() here: next-intl reads next/root-params, which Server Actions cannot use.
+function redirectAdmin(href: AdminHref, formData: FormData) {
+  redirect({ href, locale: localeFromForm(formData) });
 }
 
 export async function createTeam(
@@ -97,7 +101,7 @@ export async function createTeam(
   }
 
   revalidateOrg();
-  await redirectAdmin("/app/admin/teams");
+  redirectAdmin("/app/admin/teams", formData);
   return ok();
 }
 
@@ -141,7 +145,7 @@ export async function updateTeam(
   }
 
   revalidateOrg();
-  await redirectAdmin(`/app/admin/teams/${teamId}`);
+  redirectAdmin(`/app/admin/teams/${teamId}`, formData);
   return ok();
 }
 
@@ -300,7 +304,7 @@ export async function createPlayer(
   }
 
   revalidateOrg();
-  await redirectAdmin("/app/admin/players");
+  redirectAdmin("/app/admin/players", formData);
   return ok();
 }
 
@@ -350,7 +354,7 @@ export async function updatePlayer(
   }
 
   revalidateOrg();
-  await redirectAdmin(`/app/admin/players/${playerId}`);
+  redirectAdmin(`/app/admin/players/${playerId}`, formData);
   return ok();
 }
 
@@ -378,7 +382,7 @@ export async function linkCoach(
   }
 
   revalidateOrg();
-  await redirectAdmin(`/app/admin/coaches/${data}`);
+  redirectAdmin(`/app/admin/coaches/${data}`, formData);
   return ok();
 }
 
@@ -408,7 +412,7 @@ export async function updateCoachStatus(
   }
 
   revalidateOrg();
-  await redirectAdmin(`/app/admin/coaches/${coachId}`);
+  redirectAdmin(`/app/admin/coaches/${coachId}`, formData);
   return ok();
 }
 
@@ -440,7 +444,7 @@ export async function assignCoachTeam(
   }
 
   revalidateOrg();
-  await redirectAdmin(`/app/admin/coaches/${coachId}`);
+  redirectAdmin(`/app/admin/coaches/${coachId}`, formData);
   return ok();
 }
 
@@ -468,6 +472,6 @@ export async function unassignCoachTeam(formData: FormData): Promise<void> {
 
   revalidateOrg();
   if (coachId) {
-    await redirectAdmin(`/app/admin/coaches/${coachId}`);
+    redirectAdmin(`/app/admin/coaches/${coachId}`, formData);
   }
 }

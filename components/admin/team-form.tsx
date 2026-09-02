@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { useTranslations } from "next-intl";
+import { LocaleHiddenField } from "@/components/admin/locale-hidden-field";
 import { AGE_BANDS } from "@/lib/age-band";
 import { INITIAL_ORG_ACTION_STATE } from "@/lib/org/errors";
 import type { OrgActionState } from "@/lib/org/errors";
@@ -20,6 +21,7 @@ export function TeamForm({ action, team, submitLabel }: TeamFormProps) {
 
   return (
     <form action={formAction} className="flex max-w-xl flex-col gap-4">
+      <LocaleHiddenField />
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         {t("teamName")}
         <input
