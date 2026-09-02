@@ -61,7 +61,7 @@ export async function HomeScreen() {
         </section>
       </main>
 
-      <footer className="border-t border-zinc-200 px-6 py-4 text-sm text-zinc-500 dark:border-zinc-800">
+      <footer className="border-t border-zinc-200 px-6 py-4 pb-10 text-sm text-zinc-500 dark:border-zinc-800">
         {t("footer")}
       </footer>
     </div>

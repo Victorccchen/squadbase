@@ -20,7 +20,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The app redirects to a locale prefix:
+Open [http://localhost:3000](http://localhost:3000). The app always redirects `/` to Traditional Chinese (`/zh-Hant`). Other locales:
 
 - Traditional Chinese: `/zh-Hant`
 - English: `/en`
