@@ -11,6 +11,8 @@ import { teamHasNoDeleteBlockers } from "@/lib/org/parse";
 import { primaryButtonClassName } from "@/lib/ui";
 
 export default async function AdminTeamsPage() {
+  // Next.js still renders this RSC when the admin layout denies access.
+  // Must return before any org table query so parents/unauthenticated never hit `teams`.
   if (!(await canRenderAdminPage())) {
     return <AccessDenied area="admin" />;
   }
