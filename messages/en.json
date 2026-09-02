@@ -1,0 +1,25 @@
+{
+  "meta": {
+    "title": "Club",
+    "description": "Club operations management system (development scaffold)"
+  },
+  "home": {
+    "eyebrow": "Stage 0 · project scaffold",
+    "clubName": "Club",
+    "headline": "Welcome to the Club management system",
+    "lead": "This is a runnable development homepage. Later stages will add auth, training squads, courses, and match features on the same structure.",
+    "sampleLabel": "Sample copy",
+    "sampleBody": "Current language: English. Use the language switcher above to see Traditional Chinese or Japanese strings.",
+    "stackTitle": "Stack",
+    "stackNext": "Next.js App Router + TypeScript",
+    "stackI18n": "next-intl (Traditional Chinese / English / Japanese)",
+    "stackSupabase": "Supabase browser and server client skeleton",
+    "stackPwa": "PWA: web app manifest and basic meta",
+    "envTitle": "Environment",
+    "envConfigured": "Public Supabase variables are present (existence check only; this page does not connect).",
+    "envMissing": "NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY is not set. The homepage still previews.",
+    "envLabel": "Environment label",
+    "languageLabel": "Language",
+    "footer": "Production deploys require human approval. Do not publish to production automatically."
+  }
+}

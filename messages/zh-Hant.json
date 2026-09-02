@@ -1,0 +1,25 @@
+{
+  "meta": {
+    "title": "球團",
+    "description": "球團營運管理系統（開發骨架）"
+  },
+  "home": {
+    "eyebrow": "階段 0 · 專案骨架",
+    "clubName": "球團",
+    "headline": "歡迎使用球團管理系統",
+    "lead": "這是可執行的開發骨架首頁。之後的階段會在同一結構上加入登入、訓練隊、課程與賽事功能。",
+    "sampleLabel": "範例文案",
+    "sampleBody": "目前語言：繁體中文。切換上方語言後，標題與說明應改為英文或日文。",
+    "stackTitle": "技術堆疊",
+    "stackNext": "Next.js App Router + TypeScript",
+    "stackI18n": "next-intl（繁中 / English / 日本語）",
+    "stackSupabase": "Supabase 瀏覽器與伺服器用戶端骨架",
+    "stackPwa": "PWA：網頁應用程式資訊清單與基本 meta",
+    "envTitle": "環境",
+    "envConfigured": "已讀取公開 Supabase 變數（只檢查是否存在，本頁不會連線）。",
+    "envMissing": "尚未設定 NEXT_PUBLIC_SUPABASE_URL 或 NEXT_PUBLIC_SUPABASE_ANON_KEY。本頁仍可預覽。",
+    "envLabel": "環境標籤",
+    "languageLabel": "語言",
+    "footer": "生產環境部署需人工核准，請勿自動發佈到 production。"
+  }
+}
