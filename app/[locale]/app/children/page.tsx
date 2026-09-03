@@ -1,4 +1,5 @@
 import { getLocale, getTranslations } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { RequestLinkForm } from "@/components/children/request-link-form";
@@ -8,6 +9,7 @@ import { listActiveTeamsForLink, listOwnGuardianLinks } from "@/lib/org/queries"
 import { localizedPlayerName, playerNameList } from "@/lib/org/display-name";
 import { canParentCancelLink } from "@/lib/org/parse";
 import { ageBandFromBirthDate } from "@/lib/age-band";
+import { secondaryButtonClassName } from "@/lib/ui";
 
 export default async function ChildrenPage() {
   const t = await getTranslations("children");
@@ -25,7 +27,15 @@ export default async function ChildrenPage() {
   return (
     <>
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-10 px-6 py-12">
-        <PageHeader title={t("title")} description={t("lead")} />
+        <PageHeader
+          title={t("title")}
+          description={t("lead")}
+          actions={
+            <Link href="/app/sessions" className={secondaryButtonClassName}>
+              {t("openSessions")}
+            </Link>
+          }
+        />
 
         <section className="flex flex-col gap-4">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">

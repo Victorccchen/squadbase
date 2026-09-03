@@ -11,16 +11,16 @@
     "footer": "本番環境へのデプロイには人による承認が必要です。自動で production へ公開しないでください。"
   },
   "home": {
-    "eyebrow": "ステージ 3 · 紐付けとチームのライフサイクル",
+    "eyebrow": "ステージ 4 · 練習セッション申込",
     "headline": "クラブ管理システムへようこそ",
-    "lead": "携帯電話のSMS認証コードでログインします。保護者は既存の選手への紐付けを申請し、管理者が承認します。管理者は承認済み紐付けの取り消し、チームの無効化や空チームの削除、選手とコーチの管理ができます。",
+    "lead": "携帯電話のSMS認証コードでログインします。保護者は既存選手への紐付けを申請し、管理者が承認すると子どもを練習セッションに申し込み、取消・変更、クラブへの質問ができます。管理者はセッション作成と名簿確認ができます。",
     "openDashboard": "ダッシュボードを開く",
     "sampleLabel": "サンプル文言",
     "sampleBody": "現在の言語：日本語。上の言語切替で繁体字中国語または英語の文言に変わります。",
     "stackTitle": "技術スタック",
     "stackNext": "Next.js App Router + TypeScript",
     "stackI18n": "next-intl（繁体字中国語 / English / 日本語）",
-    "stackSupabase": "Supabase の電話OTP、プロフィール、複数ロール、組織マスター、保護者紐付け、RLS",
+    "stackSupabase": "Supabase の電話OTP、プロフィール、複数ロール、組織マスター、保護者紐付け、練習セッション、RLS",
     "stackPwa": "PWA：ウェブアプリマニフェストと基本メタ",
     "envTitle": "環境",
     "envConfigured": "公開用 Supabase 変数を検出しました。ログインはこのプロジェクトに接続します（anon key のみ）。",
@@ -58,7 +58,7 @@
   "app": {
     "eyebrow": "ダッシュボード",
     "title": "クラブ ダッシュボード",
-    "welcome": "保護者は子どもへの紐付けを申請し、保留中の申請を取り下げできます。管理者はチーム・選手・コーチと紐付けの承認／取り消しを管理します。コーチは担当名簿を開けます。その他の運営機能は後続ステージです。",
+    "welcome": "保護者は子どもへの紐付けを申請し、承認済みの子どもを練習セッションに申し込めます。管理者はチーム・選手・コーチ・紐付け審査・セッションを管理します。コーチは担当名簿と申込状況を開けます。その他の運営機能は後続ステージです。",
     "accountTitle": "アカウント",
     "phoneLabel": "電話",
     "rolesLabel": "ロール",
@@ -76,6 +76,7 @@
     "openRoster": "名簿を開く",
     "openAdmin": "管理を開く",
     "openChildren": "子どもを開く",
+    "openSessions": "練習セッションを開く",
     "roles": {
       "parent": "保護者",
       "coach": "コーチ",
@@ -86,6 +87,10 @@
       "children": {
         "title": "選手 / 子ども",
         "body": "クラブが作成済みの選手への紐付けを申請します。管理者が承認するとここに表示されます。"
+      },
+      "sessions": {
+        "title": "練習セッション",
+        "body": "承認済みの子どもをセッションに申し込み、取消・変更、クラブへの質問ができます。"
       },
       "courses": {
         "title": "コース",
@@ -123,6 +128,10 @@
         "title": "保護者紐付け",
         "body": "保護者からの選手紐付け申請を承認、却下、または取り消します。"
       },
+      "adminSessions": {
+        "title": "練習セッション",
+        "body": "チーム配下のセッションを作成・無効化し、申込名簿と保護者の質問を確認します。"
+      },
       "adminNote": {
         "title": "ロール昇格",
         "body": "アプリ内にバックドアはありません。Dashboard の user_roles テーブルでユーザーに admin を追加してください。コーチを紐付けると coach ロールも付与されます。"
@@ -133,6 +142,7 @@
     "label": "アプリの区画",
     "dashboard": "ダッシュボード",
     "children": "子ども",
+    "sessions": "練習セッション",
     "roster": "名簿",
     "admin": "管理",
     "teams": "チーム",
@@ -157,6 +167,8 @@
     "coachesBody": "相手は先に一度ログインしてプロフィールを作る必要があります。ここで紐付けてチームを割り当てます。紐付け時にコーチロールも付与されます。",
     "bindingsTitle": "保護者紐付け",
     "bindingsBody": "保護者はチームと背番号、または生年月日と氏名の一部で既存選手を検索して申請します。ここで承認、却下、または承認済み紐付けの取り消しができます。保留・却下・取消済みの保護者はその選手データを読めません。",
+    "sessionsTitle": "練習セッション",
+    "sessionsBody": "既存チーム配下に練習セッションを作成します。無効なセッションは保護者の新規申込に出ません。申込は自動承認です。このステージに定員はありません。",
     "createTeam": "チームを作成",
     "editTeam": "チームを編集",
     "createPlayer": "選手を作成",
@@ -196,13 +208,27 @@
     "deleteTeamConfirm": "「{name}」を完全に削除しますか？終了済みの所属 {inactive} 件とコーチ割り当て {coaches} 件も削除されます。選手マスターは削除しません。元に戻せません。",
     "deleteTeamBlockedConfirm": "「{name}」は削除できません。有効な所属が {count} 件あります。先に他チームへ移すか所属を終了してください。",
     "deleteBlockedActive": "このチームには有効な所属が {count} 件あるため削除できません。先に他チームへ移すか所属を終了してください。",
-    "openTeamRoster": "名簿を開く"
+    "openTeamRoster": "名簿を開く",
+    "createSession": "セッションを作成",
+    "editSession": "セッションを編集",
+    "deactivateSession": "セッションを無効化",
+    "reactivateSession": "セッションを再有効化",
+    "rosterCount": "申込 {count} 人",
+    "rosterTitle": "申込名簿",
+    "rosterEmptyTitle": "申込はまだありません",
+    "rosterEmptyBody": "保護者が承認済みの子どもを申し込むと、ここに表示されます。",
+    "sessionsEmptyTitle": "セッションはまだありません",
+    "sessionsEmptyBody": "先にチームを作成してからセッションを追加してください。"
   },
   "roster": {
     "title": "名簿",
     "lead": "割り当てられたチームの選手です。この一覧は読み取り専用です。",
     "emptyTitle": "担当選手はいません",
-    "emptyBody": "管理者が選手のいるチームにあなたを割り当てると、ここに表示されます。"
+    "emptyBody": "管理者が選手のいるチームにあなたを割り当てると、ここに表示されます。",
+    "sessionsTitle": "セッション申込",
+    "sessionsLead": "割り当てられたチームのセッションと申込選手を読み取り専用で表示します。",
+    "sessionsEmptyTitle": "担当セッションはありません",
+    "sessionsEmptyBody": "管理者が担当チームにセッションを作成すると、ここに表示されます。"
   },
   "org": {
     "teamName": "チーム名",
@@ -278,12 +304,26 @@
       "teamHasActiveMemberships": "このチームには有効な所属が残っています。先に所属を終了または無効にするか、チームを無効化してください。",
       "teamHasMemberships": "このチームには所属レコードが残っています。削除前に取り除くか、チームを無効化してください。",
       "teamHasCoachAssignments": "このチームにはコーチ割り当てが残っています。先に解除するか、チームを無効化してください。",
+      "sessionNotFound": "そのセッションは見つかりません。",
+      "sessionNotActive": "このセッションは無効のため、新規申込できません。",
+      "notApprovedGuardian": "承認済みの保護者だけがこの子どもを申し込めます。",
+      "playerNotOnSessionTeam": "その選手はこのセッションのチームに所属していません。",
+      "alreadyRegistered": "その選手はすでにこのセッションに申し込んでいます。",
+      "cannotCancelRegistration": "この申込は取り消せません。",
+      "cannotSwitchSession": "そのセッションに変更できません。まだ申込可能か確認してください。",
+      "invalidSessionTime": "有効な開始・終了時刻（または開始と所要時間）を入力してください。",
+      "endsBeforeStart": "終了時刻は開始時刻より後にしてください。",
+      "invalidDuration": "所要時間は 15〜480 分の整数です。",
+      "invalidLocation": "場所の文字数が長すぎます。",
+      "messageBodyRequired": "質問または返信を入力してください。",
+      "missingPlayer": "申し込む子どもを選んでください。",
+      "missingSession": "セッションを選んでください。",
       "generic": "保存できませんでした。もう一度お試しください。"
     }
   },
   "children": {
     "title": "子ども",
-    "lead": "クラブが作成済みの選手への紐付けを申請します。管理者が承認するまで、ここでは詳細を見られません。後続ステージでは、この紐付けを使って保護者がコース申込や出欠を代行できます。",
+    "lead": "クラブが作成済みの選手への紐付けを申請します。管理者が承認するまで、ここでは詳細を見られません。承認後は練習セッションに申し込めます。",
     "myChildren": "紐付け済みの子ども",
     "requests": "申請",
     "emptyChildrenTitle": "紐付け済みの子どもはまだいません",
@@ -324,6 +364,52 @@
     "player": "選手",
     "playerNames": "氏名",
     "playerTeam": "チーム / 背番号",
-    "playerBirth": "生年月日"
+    "playerBirth": "生年月日",
+    "openSessions": "練習セッションに申し込む"
+  },
+  "sessions": {
+    "title": "練習セッション",
+    "lead": "承認済みの子どもを所属チームの練習セッションに申し込みます。申込は自動承認です。無効なセッションは表示されません。取消後、セッションが有効なら同じ場に再申込できます。",
+    "upcomingTitle": "申込可能なセッション",
+    "myRegistrations": "自分の申込",
+    "emptyUpcomingTitle": "申し込めるセッションはありません",
+    "emptyUpcomingBody": "管理者が子どものチームにセッションを作成すると、ここに表示されます。無効または終了したセッションは出ません。",
+    "needApprovedChild": "先に子どもを紐付け、管理者の承認を待ってからセッションに申し込んでください。",
+    "emptyRegistrationsTitle": "申込はまだありません",
+    "emptyRegistrationsBody": "上の一覧からセッションを選び、子どもを申し込んでください。",
+    "register": "申し込む",
+    "registering": "申込中…",
+    "cancel": "申込を取り消す",
+    "change": "別セッションに変更",
+    "changeTo": "このセッションに変更",
+    "parentNote": "クラブへのメモ",
+    "parentNoteHint": "任意。クラブへの一方通行です。送迎や体調の連絡など。",
+    "selectChild": "子どもを選択",
+    "location": "場所",
+    "notes": "セッションメモ",
+    "askQuestion": "クラブに質問する",
+    "questionHint": "質問はこの申込に紐づきます。管理者の返信もここに表示されます。",
+    "sendQuestion": "質問を送信",
+    "sendReply": "返信を送信",
+    "reply": "保護者に返信",
+    "noMessages": "質問や返信はまだありません。",
+    "qaTitle": "Q&A",
+    "confirmation": "この子どもはセッションに申し込み済みです。",
+    "noEligibleChild": "申し込める承認済みの子どもがいないか、すでに申し込んでいます。",
+    "viewSession": "セッションを見る",
+    "backToList": "セッション一覧に戻る",
+    "timeZoneHint": "時刻はクラブのタイムゾーン Asia/Taipei です。開始と終了、または開始と所要時間（分）を入力してください。",
+    "startsAt": "開始",
+    "endsAt": "終了",
+    "durationMinutes": "所要時間（分、終了未入力の場合）",
+    "closedSignup": "このセッションは無効または終了しているため、新規申込できません。",
+    "authorParent": "保護者",
+    "authorAdmin": "管理者",
+    "unknownPlayer": "不明な選手",
+    "emptyRoster": "申込はまだありません。",
+    "statuses": {
+      "registered": "申込済み",
+      "cancelled": "取消済み"
+    }
   }
 }

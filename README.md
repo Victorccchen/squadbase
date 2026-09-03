@@ -2,9 +2,9 @@
 
 Responsive web + PWA for a football **Club** (球團) operations app: training squads, courses, attendance, assessments, and matches/events.
 
-This repository is currently **Stage 3 plus lifecycle**: Stage 1 phone OTP login, Stage 2 admin-managed organization master data (teams, players, coaches, coach↔team assignments) and a read-only coach roster, **guardian–player binding with admin approval**, parent withdraw of a pending link, admin revoke of an approved link, and admin team deactivate / hard-delete of empty squads. Courses, attendance, assessments, and match management are not included.
+This repository is currently **Stage 4**: Stage 1 phone OTP login, Stage 2 admin-managed organization master data (teams, players, coaches, coach↔team assignments) and a read-only coach roster, **guardian–player binding with admin approval**, parent withdraw of a pending link, admin revoke of an approved link, admin team deactivate / hard-delete of empty squads, and **training sessions hung under a team** with parent registration (auto-approved), optional note, cancel/switch, and parent↔admin Q&A. Prepaid sessions, payments, attendance, assessments, and match management are not included.
 
-Parents can request a link to an **existing** player (the club creates the player record first). Until an admin approves, the parent cannot read that player’s private fields. After approval, the parent sees a basic “my children” list (names, birth date, team, jersey). The parent may **withdraw a pending request**; only an **admin** may revoke an **approved** link. After revoke or withdraw, `is_approved_guardian_for_player` is false and the same pair may apply again. Later stages can reuse an **approved** link so a parent proxies course registration or match attendance — those flows are not built here.
+Parents can request a link to an **existing** player (the club creates the player record first). Until an admin approves, the parent cannot read that player’s private fields. After approval, the parent sees a basic “my children” list (names, birth date, team, jersey) and may **register that child for training sessions** on the child’s team. The parent may **withdraw a pending request**; only an **admin** may revoke an **approved** link. After revoke or withdraw, `is_approved_guardian_for_player` is false and the same pair may apply again. Session signup checks `guardian_player_links.status = approved`.
 
 Branding in code, package name, and this README is neutral (`Club` / `球團`). Do not add a real club name.
 
@@ -55,8 +55,9 @@ Routes:
 | `/[locale]/login` | Phone OTP sign-in |
 | `/[locale]/app` | Signed-in dashboard |
 | `/[locale]/app/children` | Parent: linked children, request status, constrained search form |
-| `/[locale]/app/admin/*` | Admin CRUD (teams, players, coaches) and binding approvals. Parents/coaches without admin see an access-denied page. |
-| `/[locale]/app/roster` | Coach (or admin) read-only roster of assigned teams |
+| `/[locale]/app/sessions` | Parent: upcoming sessions for linked children’s teams, register / cancel / switch, Q&A |
+| `/[locale]/app/admin/*` | Admin CRUD (teams, players, coaches, sessions) and binding approvals. Parents/coaches without admin see an access-denied page. |
+| `/[locale]/app/roster` | Coach (or admin) read-only roster of assigned teams and session signups |
 
 ## Checks (CI)
 
@@ -109,7 +110,23 @@ Player names:
 
 **Hypothesis (locked for this stage):** at most one **open** link per `(guardian_user_id, player_id)` — meaning pending or approved. Rejected and **revoked** rows are kept as history. After a reject, parent withdraw, or admin revoke, the parent may insert a new pending row. A player may have more than one approved guardian (two parents). Parents must **not** revoke an approved link; only an admin may.
 
-This row is the future parent-proxy gate: later course registration / attendance should check `status = 'approved'` for `(guardian, player)`. Those features are out of scope.
+This row is the parent-proxy gate: session registration (Stage 4) checks `status = 'approved'` for `(guardian, player)`.
+
+## Schema choice (Stage 4)
+
+Training sessions are independent events under an existing **team** (梯隊). They are not courses, not prepaid, and have **no capacity limit** in this stage.
+
+| Table | Purpose |
+| --- | --- |
+| `training_sessions` | `team_id`, `starts_at`, `ends_at`, optional `location` / `notes`, `status` `active`/`inactive` (same pattern as org status) |
+| `session_registrations` | Auto-approved signup: `registered` or `cancelled`. Optional `parent_note` (one-way to the club). Unique **open** row per `(session_id, player_id)` where `status = registered` |
+| `session_registration_messages` | Q&A thread on a registration. `author_role` is `parent` or `admin` |
+
+**Hypothesis (locked):** inactive sessions are not offered for new parent signup. After cancel, the same child may **re-register** on the same session while it stays `active` (cancelled rows are history; they do not occupy the unique index). A player may have only one open registration per session; if two approved guardians exist, either may see/cancel/post on that registration. Times are stored as `timestamptz` and edited as Asia/Taipei wall time (`+08:00`; Taiwan has no DST). Signup UI lists sessions that are `active` and have not yet ended (`ends_at` in the future).
+
+Parents never receive a full session or roster dump: they only see sessions on teams of their **approved** children. Writes go through security-definer RPCs (`register_player_for_session`, `cancel_session_registration`, `switch_session_registration`, `post_session_registration_message`). Coaches may `SELECT` sessions and registrations on assigned teams (roster page). Admins CRUD sessions and see the roster plus Q&A.
+
+Out of scope: payments / prepaid sessions / LINE OA, attendance, assessments, hard capacity / waitlist, production deploy.
 
 ### Player discovery (search UX)
 
@@ -141,6 +158,8 @@ Apply in order:
 7. [`supabase/migrations/20260902220000_lifecycle_revoke_and_team_delete.sql`](supabase/migrations/20260902220000_lifecycle_revoke_and_team_delete.sql) (**lifecycle step 2; paste only after step 1 committed** — parent cancel pending, admin revoke approved, `admin_delete_team`)
 8. [`supabase/migrations/20260902240000_regrant_lifecycle_privileges.sql`](supabase/migrations/20260902240000_regrant_lifecycle_privileges.sql) (**paste if admins see `permission denied for table teams`** — re-grants `teams`, `team_memberships`, `coach_team_assignments`, `players`, `guardian_player_links` to `authenticated`. Does not change RLS. Safe to re-run even if step 7 already included a teams GRANT.)
 9. [`supabase/migrations/20260902260000_admin_delete_team_active_only.sql`](supabase/migrations/20260902260000_admin_delete_team_active_only.sql) (**paste this so delete works** — `admin_delete_team` blocks only on **active** memberships; inactive memberships and coach assignments are removed in the same transaction. Also re-grants `teams` / memberships / assignments.)
+10. [`supabase/migrations/20260903000000_stage4_training_sessions.sql`](supabase/migrations/20260903000000_stage4_training_sessions.sql) (**Stage 4; paste this file on staging** — sessions, registrations, Q&A, RPCs/RLS. Also replaces `admin_delete_team` so hard-delete removes sessions.)
+11. [`supabase/migrations/20260903020000_regrant_stage4_privileges.sql`](supabase/migrations/20260903020000_regrant_stage4_privileges.sql) (**paste if parents/admins see `permission denied` on `training_sessions` or Stage 4 RPCs** — re-grants tables/functions to `authenticated`. Does not change RLS.)
 
 Steps:
 
@@ -148,7 +167,7 @@ Steps:
 2. Go to **SQL Editor** → **New query**.
 3. Paste the full contents of the migration file.
 4. Run the query.
-5. In **Table Editor**, confirm `teams`, `players`, `team_memberships`, `coaches`, `coach_team_assignments`, and (after Stage 3) `guardian_player_links` exist.
+5. In **Table Editor**, confirm `teams`, `players`, `team_memberships`, `coaches`, `coach_team_assignments`, `guardian_player_links`, and (after Stage 4) `training_sessions`, `session_registrations`, `session_registration_messages` exist.
 
 If you use the Supabase CLI and it is linked to **staging** (never production):
 
@@ -170,6 +189,8 @@ If an admin opening `/app/admin/teams` still sees `permission denied for table t
 
 If Delete on a deactivated team does nothing useful (or fails because ended memberships / coach assignments remain), paste [`supabase/migrations/20260902260000_admin_delete_team_active_only.sql`](supabase/migrations/20260902260000_admin_delete_team_active_only.sql). That replaces `admin_delete_team` so only **active** memberships block, and ended memberships plus coach assignments are deleted with the team.
 
+Stage 4 (`20260903000000_stage4_training_sessions.sql`) is written to be re-runnable (`create table if not exists`, `create or replace function`, `drop policy if exists`). Apply it on **staging only**. After it runs, `admin_delete_team` also removes `training_sessions` for that team (registrations and messages cascade). The privilege follow-up (`20260903020000_regrant_stage4_privileges.sql`) is also re-runnable and does not change RLS.
+
 ### How to verify the migration
 
 - Table Editor shows the five Stage 2 tables above, with RLS enabled, plus `guardian_player_links` after Stage 3.
@@ -177,6 +198,7 @@ If Delete on a deactivated team does nothing useful (or fails because ended memb
 - Optional: paste [`supabase/stage2_verification.sql`](supabase/stage2_verification.sql). The jersey block asserts T2-2 (duplicate rejected) and T2-3 (same number on another team allowed), then `ROLLBACK` so it does not leave rows.
 - Optional: paste [`supabase/stage3_verification.sql`](supabase/stage3_verification.sql) after substituting real profile UUIDs. The unique-index block asserts re-apply-after-reject and rolls back. The RLS block documents T3-4 / T3-5.
 - Optional: paste [`supabase/lifecycle_verification.sql`](supabase/lifecycle_verification.sql) after substituting real profile UUIDs. Asserts re-apply-after-revoke, empty-team delete, and that active memberships block delete. Rolls back.
+- Optional: paste [`supabase/stage4_verification.sql`](supabase/stage4_verification.sql). The unique-index block asserts re-register-after-cancel and rolls back. The RLS notes document T4-5 / T4-6.
 - Optional: the RLS block at the bottom of the Stage 2 file, with real user UUIDs.
 
 There is **no seed data** and no real PII in the repo.
@@ -256,7 +278,7 @@ They keep `parent` and also become `admin`. Reload `/app`.
 
 Do not grant extra roles from the browser except through this admin action. RLS still forbids client inserts into `user_roles`.
 
-## RLS (Stage 2 + Stage 3)
+## RLS (Stage 2 + Stage 3 + Stage 4)
 
 - `anon`: no access to org tables or `guardian_player_links`; cannot read `birth_date`. Unauthenticated `/app` (including `/app/children`) redirects to login (T3-5).
 - `parent` (no admin/coach): cannot read other profiles. Cannot `SELECT` `players` / `teams` / memberships **except**:
@@ -265,7 +287,8 @@ Do not grant extra roles from the browser except through this admin action. RLS 
   - constrained search RPCs (`list_active_teams_for_link`, `search_player_for_guardian_link`) which do not dump the roster.
   - Insert own **pending** links only. Cannot set `approved` / `rejected` (T3-4). Can update **own pending** rows only to `revoked` (withdraw). Cannot revoke `approved`.
 - `coach`: read assigned teams, memberships, and those players (including `birth_date`, needed to show age band on the roster). No insert/update/delete on org tables. Same parent-link rules if they also have the parent role (default).
-- `admin`: full CRUD on org tables; can `select` all `profiles` in order to link coaches (phone is PII; admins can see it); can select all guardian links and call `admin_review_guardian_link` / `admin_revoke_guardian_link` / `admin_delete_team`. Team hard-delete refuses while **active** `team_memberships` remain; inactive memberships and coach assignments are removed with the team.
+- `admin`: full CRUD on org tables and `training_sessions`; can `select` all `profiles` in order to link coaches (phone is PII; admins can see it); can select all guardian links and call `admin_review_guardian_link` / `admin_revoke_guardian_link` / `admin_delete_team`. Team hard-delete refuses while **active** `team_memberships` remain; inactive memberships, coach assignments, and training sessions are removed with the team. Admins can reply on `session_registration_messages`.
+- Training sessions: parents `SELECT` only sessions they can read via approved children (or existing registrations). `register_player_for_session` requires an approved guardian, an **active** session, and an active membership of that player on the session’s team. Parents cannot dump another family’s roster. Coaches `SELECT` sessions/registrations/messages on assigned teams. `anon` has no GRANT.
 
 Public match pages that show names without dates of birth are a later stage. This stage does not expose player rows to unauthenticated users.
 
@@ -320,7 +343,22 @@ Use **one admin account** and **one parent account**. The parent needs a **secon
 
 Wrong-search check (not a numbered T3, but part of “no PII dump”): a parent who omits fields, or uses a jersey that does not exist, gets no player list.
 
-Locale check: switch zh-Hant / en / ja on children, bindings, admin, and roster screens; labels should change. Player **names** stay as entered.
+### Stage 4
+
+Use **one admin account** and **one parent account** with an **approved** guardian link (the second-phone parent from Stage 3). Inactive sessions must not appear on `/app/sessions`.
+
+| ID | Check |
+| --- | --- |
+| T4-1 | Admin creates a session on a team (for example Futuro U8) from `/app/admin/sessions/new`. It appears in the admin list with roster count 0. |
+| T4-2 | Second-phone parent with an approved child registers with an optional note. Status is auto-registered; the parent sees confirmation; the note is saved. |
+| T4-3 | Parent cancels. Admin roster count drops. Parent may re-register the same session while it stays active. |
+| T4-4 | Parent posts a Q&A question on the registration. Admin replies on the session roster. Parent sees the reply. |
+| T4-5 | Parent without a binding, or with pending-only, cannot register (no signup list / RPC `not an approved guardian`). |
+| T4-6 | Admin deactivates a session. It is hidden from parent signup. |
+| T4-7 | Signed out, `/zh-Hant/app/admin/sessions` redirects to login. A signed-in non-admin sees access denied and the page does not query org tables before the gate. |
+| T4-8 | `npm run lint`, `npm run typecheck`, and `npm test` pass. |
+
+Locale check: switch zh-Hant / en / ja on sessions, admin sessions, and roster session blocks.
 
 ## Staging vs production
 
@@ -337,7 +375,7 @@ CI on pull requests does **not** deploy.
 ## Project layout
 
 ```text
-app/[locale]/          Public home, /login, gated /app, /app/children, /app/admin, /app/roster
+app/[locale]/          Public home, /login, gated /app, /app/children, /app/sessions, /app/admin, /app/roster
 components/            Header, forms, dashboard cards, access denied
 i18n/                  next-intl routing, navigation, request config
 lib/age-band.ts        Season-start age band helper
@@ -353,13 +391,15 @@ Auth uses the official `@supabase/ssr` cookie pattern for Next.js, composed in `
 
 ## PWA
 
-`app/manifest.ts` publishes a web app manifest. Placeholder icons live in `public/icons/`. Installability and offline caching are not Stage 3 goals.
+`app/manifest.ts` publishes a web app manifest. Placeholder icons live in `public/icons/`. Installability and offline caching are not Stage 4 goals.
 
-## Out of scope (Stage 3)
+## Out of scope (Stage 4)
 
-- Courses, registrations, attendance, assessments, match/event CRUD (parent-proxy is designed for later, not implemented)
+- Prepaid sessions / payments / bank transfer / LINE OA (Stage 4B)
+- Attendance / session deduction
+- Assessments / schedule public announcements
+- Hard capacity limits / waitlist
 - Public match pages
-- Payments
 - Production deploys, merging this work to `main` from an agent, or modifying a production database
 - Service role keys in the repo or in client code
 - In-app admin backdoors or phone whitelists
@@ -367,4 +407,4 @@ Auth uses the official `@supabase/ssr` cookie pattern for Next.js, composed in `
 
 ## Later stages
 
-Add courses, attendance, assessments, and matches on this folder structure. Gate parent-proxy on `guardian_player_links.status = 'approved'`. Keep staging and production isolated, and keep production releases behind human approval.
+Add attendance, assessments, matches, and (Stage 4B) prepaid session payments on this folder structure. Gate parent-proxy on `guardian_player_links.status = 'approved'`. Keep staging and production isolated, and keep production releases behind human approval.

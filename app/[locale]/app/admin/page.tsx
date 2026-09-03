@@ -17,13 +17,14 @@ export default async function AdminHomePage() {
     { href: "/app/admin/players" as const, title: t("playersTitle"), body: t("playersBody") },
     { href: "/app/admin/coaches" as const, title: t("coachesTitle"), body: t("coachesBody") },
     { href: "/app/admin/bindings" as const, title: t("bindingsTitle"), body: t("bindingsBody") },
+    { href: "/app/admin/sessions" as const, title: t("sessionsTitle"), body: t("sessionsBody") },
   ];
 
   return (
     <>
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-6 py-12">
         <PageHeader title={t("title")} description={t("lead")} />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {cards.map((card) => (
             <Link
               key={card.href}

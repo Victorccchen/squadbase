@@ -1,0 +1,139 @@
+import { notFound } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
+import { AccessDenied } from "@/components/access-denied";
+import { EmptyState } from "@/components/empty-state";
+import { PageHeader } from "@/components/page-header";
+import { SessionStatusForm } from "@/components/admin/session-status-form";
+import { QuestionForm } from "@/components/sessions/question-form";
+import { MessageThread } from "@/components/sessions/message-thread";
+import {
+  RegistrationStatusBadge,
+  SessionStatusBadge,
+} from "@/components/sessions/session-status-badge";
+import { canRenderAdminPage } from "@/lib/auth/admin-page";
+import { getSession, listSessionRegistrations } from "@/lib/org/session-queries";
+import { setSessionStatus } from "@/lib/org/session-actions";
+import { localizedPlayerName, playerNameList } from "@/lib/org/display-name";
+import { formatClubDateTimeRange } from "@/lib/org/session-time";
+import { secondaryButtonClassName } from "@/lib/ui";
+
+type SessionDetailPageProps = {
+  params: Promise<{ id: string }>;
+};
+
+export default async function AdminSessionDetailPage({ params }: SessionDetailPageProps) {
+  if (!(await canRenderAdminPage())) {
+    return <AccessDenied area="admin" />;
+  }
+
+  const { id } = await params;
+  const session = await getSession(id);
+  if (!session) {
+    notFound();
+  }
+
+  const t = await getTranslations("admin");
+  const sessionsT = await getTranslations("sessions");
+  const org = await getTranslations("org");
+  const common = await getTranslations("common");
+  const locale = await getLocale();
+  const registrations = await listSessionRegistrations(session.id);
+  const open = registrations.filter((row) => row.status === "registered");
+
+  return (
+    <>
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-6 py-12">
+        <PageHeader
+          title={session.team?.name ?? org("unknownTeam")}
+          description={formatClubDateTimeRange(session.starts_at, session.ends_at, locale)}
+          actions={
+            <span className="flex flex-wrap gap-2">
+              <Link href={`/app/admin/sessions/${session.id}/edit`} className={secondaryButtonClassName}>
+                {t("edit")}
+              </Link>
+            </span>
+          }
+        />
+        <dl className="grid gap-3 rounded-2xl border border-zinc-200 bg-white p-6 text-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="flex justify-between gap-4">
+            <dt className="text-zinc-500">{org("status")}</dt>
+            <dd>
+              <SessionStatusBadge
+                status={session.status}
+                label={org(session.status === "active" ? "statusActive" : "statusInactive")}
+              />
+            </dd>
+          </div>
+          <div className="flex justify-between gap-4">
+            <dt className="text-zinc-500">{sessionsT("location")}</dt>
+            <dd className="font-medium">{session.location || "—"}</dd>
+          </div>
+          {session.notes ? (
+            <div className="flex justify-between gap-4">
+              <dt className="text-zinc-500">{sessionsT("notes")}</dt>
+              <dd className="text-right">{session.notes}</dd>
+            </div>
+          ) : null}
+          <div className="flex justify-between gap-4">
+            <dt className="text-zinc-500">{t("rosterTitle")}</dt>
+            <dd className="font-medium">{t("rosterCount", { count: open.length })}</dd>
+          </div>
+        </dl>
+        <SessionStatusForm
+          status={session.status}
+          action={setSessionStatus.bind(null, session.id)}
+        />
+        <section className="flex flex-col gap-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+            {t("rosterTitle")}
+          </h2>
+          {open.length === 0 ? (
+            <EmptyState title={t("rosterEmptyTitle")} body={t("rosterEmptyBody")} />
+          ) : (
+            <ul className="grid gap-3">
+              {open.map((row) => (
+                <li
+                  key={row.id}
+                  className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <RegistrationStatusBadge
+                      status={row.status}
+                      label={sessionsT(`statuses.${row.status}`)}
+                    />
+                    <span className="font-medium">
+                      {row.player ? localizedPlayerName(row.player, locale) : sessionsT("unknownPlayer")}
+                    </span>
+                  </div>
+                  {row.player ? (
+                    <p className="text-sm text-zinc-500">{playerNameList(row.player)}</p>
+                  ) : null}
+                  {row.parent_note ? (
+                    <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">
+                      {sessionsT("parentNote")}: {row.parent_note}
+                    </p>
+                  ) : null}
+                  <div className="flex flex-col gap-3">
+                    <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                      {sessionsT("qaTitle")}
+                    </h3>
+                    <MessageThread messages={row.messages} locale={locale} />
+                    <QuestionForm
+                      registrationId={row.id}
+                      sessionId={session.id}
+                      authorRole="admin"
+                    />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </main>
+      <footer className="border-t border-zinc-200 px-6 py-4 pb-10 text-sm text-zinc-500 dark:border-zinc-800">
+        {common("footer")}
+      </footer>
+    </>
+  );
+}
