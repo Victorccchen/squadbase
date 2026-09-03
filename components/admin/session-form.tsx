@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { LocaleHiddenField } from "@/components/admin/locale-hidden-field";
 import { INITIAL_ORG_ACTION_STATE } from "@/lib/org/errors";
 import type { OrgActionState } from "@/lib/org/errors";
-import type { OrgStatus, Team, TrainingSession } from "@/lib/supabase/database.types";
+import type { Team, TrainingSession } from "@/lib/supabase/database.types";
 import { toDateTimeLocalInput } from "@/lib/org/session-time";
 import { inputClassName, primaryButtonClassName } from "@/lib/ui";
 
@@ -102,7 +102,7 @@ export function SessionForm({
         {org("status")}
         <select
           name="status"
-          defaultValue={(session?.status ?? "active") satisfies OrgStatus}
+          defaultValue={session?.status ?? "active"}
           className={inputClassName}
         >
           <option value="active">{org("statusActive")}</option>

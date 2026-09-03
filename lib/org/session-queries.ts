@@ -235,22 +235,6 @@ export async function listCoachRegisteredPlayers(): Promise<SessionRegistrationW
   return (data ?? []).map((row) => mapRegistrationRow(row as unknown as Record<string, unknown>));
 }
 
-export async function listCoachRegisteredPlayers(): Promise<SessionRegistrationWithDetails[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("session_registrations")
-    .select("*, players(*), training_sessions(*, teams(*)), session_registration_messages(*)")
-    .eq("status", "registered")
-    .order("created_at");
-
-  if (error) {
-    console.error("listCoachRegisteredPlayers", error.message);
-    return [];
-  }
-
-  return (data ?? []).map((row) => mapRegistrationRow(row as unknown as Record<string, unknown>));
-}
-
 export type EligibleChild = {
   player: Player;
   teamId: string;
