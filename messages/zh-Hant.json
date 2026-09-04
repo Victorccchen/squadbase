@@ -450,6 +450,7 @@
     "emptyRegistrationsBody": "從上方列表選擇場次並為子女報名。",
     "register": "報名",
     "registering": "報名中…",
+    "cancelInline": "取消",
     "cancel": "取消報名",
     "change": "改報其他場次",
     "changeTo": "改到此場次",

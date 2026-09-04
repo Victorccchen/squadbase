@@ -450,6 +450,7 @@
     "emptyRegistrationsBody": "上の一覧からセッションを選び、子どもを申し込んでください。",
     "register": "申し込む",
     "registering": "申込中…",
+    "cancelInline": "キャンセル",
     "cancel": "申込を取り消す",
     "change": "別セッションに変更",
     "changeTo": "このセッションに変更",

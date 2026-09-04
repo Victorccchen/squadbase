@@ -450,6 +450,7 @@
     "emptyRegistrationsBody": "Pick a session above and register a child.",
     "register": "Register",
     "registering": "Registering…",
+    "cancelInline": "Cancel",
     "cancel": "Cancel registration",
     "change": "Switch session",
     "changeTo": "Switch to this session",
