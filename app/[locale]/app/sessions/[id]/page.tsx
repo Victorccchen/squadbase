@@ -2,11 +2,7 @@ import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { PageHeader } from "@/components/page-header";
-import { RegisterForm } from "@/components/sessions/register-form";
-import { CancelRegistrationForm } from "@/components/sessions/cancel-registration-form";
-import { ChangeSessionForm } from "@/components/sessions/change-session-form";
-import { QuestionForm } from "@/components/sessions/question-form";
-import { MessageThread } from "@/components/sessions/message-thread";
+import { ParentNoteForm } from "@/components/sessions/parent-note-form";
 import {
   RegistrationStatusBadge,
   SessionDeletedBadge,
@@ -14,27 +10,26 @@ import {
   SessionPlayoffBadge,
   SessionStatusBadge,
 } from "@/components/sessions/session-status-badge";
-import { LeaveRequestForm } from "@/components/credits/leave-request-form";
 import { listOwnGuardianLinks } from "@/lib/org/queries";
 import {
   approvedChildrenFromLinks,
-  eligibleChildrenForSession,
   getSession,
-  listOpenSessionsForParent,
   listOwnSessionRegistrations,
-  openSessionsForChildTeam,
 } from "@/lib/org/session-queries";
 import { localizedPlayerName } from "@/lib/org/display-name";
 import { formatClubDateTimeRange, isSessionOpenForSignup } from "@/lib/org/session-time";
-import { listLeaveRequestsForRegistrations } from "@/lib/credits/queries";
 import { creditsApplyToAgeBand, defaultNoticeDebit } from "@/lib/credits/debit-rules";
 
 type ParentSessionDetailPageProps = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{
+    note?: string | string[];
+  }>;
 };
 
 export default async function ParentSessionDetailPage({
   params,
+  searchParams,
 }: ParentSessionDetailPageProps) {
   const { id } = await params;
   const session = await getSession(id);
@@ -47,22 +42,20 @@ export default async function ParentSessionDetailPage({
   const org = await getTranslations("org");
   const common = await getTranslations("common");
   const locale = await getLocale();
+  const query = await searchParams;
+  const noteRaw = Array.isArray(query.note) ? (query.note[0] ?? "") : (query.note ?? "");
+  const showNoteSaved = noteRaw === "1";
   const links = await listOwnGuardianLinks();
   const children = approvedChildrenFromLinks(links);
-  const teamIds = [...new Set(children.map((child) => child.teamId))];
   const playerIds = [...new Set(children.map((child) => child.player.id))];
-  const [openSessions, registrations] = await Promise.all([
-    listOpenSessionsForParent(teamIds),
-    listOwnSessionRegistrations(playerIds),
-  ]);
+  const registrations = await listOwnSessionRegistrations(playerIds);
 
-  const onThisSession = registrations.filter((row) => row.session_id === session.id);
-  const leaveRequests = await listLeaveRequestsForRegistrations(onThisSession.map((row) => row.id));
-  const leaveByRegistration = new Map(leaveRequests.map((row) => [row.registration_id, row]));
-  const eligible = eligibleChildrenForSession(children, session, registrations);
+  const openOnThisSession = registrations.filter(
+    (row) => row.session_id === session.id && row.status === "registered",
+  );
   const canSignup = isSessionOpenForSignup(session);
   const belongsToFamily = children.some((child) => child.teamId === session.team_id);
-  const hasOwnRegistration = onThisSession.length > 0;
+  const hasOwnRegistration = openOnThisSession.length > 0;
   const teamBand = session.team?.age_band ?? "U8";
   const noticeDebit = defaultNoticeDebit(
     session.kind,
@@ -131,7 +124,16 @@ export default async function ParentSessionDetailPage({
           </div>
         </dl>
 
-        {onThisSession.map((row) => (
+        {showNoteSaved ? (
+          <p
+            role="status"
+            className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100"
+          >
+            {t("noteSaved")}
+          </p>
+        ) : null}
+
+        {openOnThisSession.map((row) => (
           <section
             key={row.id}
             className="flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900"
@@ -142,66 +144,22 @@ export default async function ParentSessionDetailPage({
                 {row.player ? localizedPlayerName(row.player, locale) : t("unknownPlayer")}
               </span>
             </div>
-            {row.status === "registered" ? (
-              <p className="text-sm leading-6 text-emerald-800 dark:text-emerald-200">
-                {t("confirmation")}
-              </p>
-            ) : null}
-            {row.parent_note ? (
-              <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">
-                {t("parentNote")}: {row.parent_note}
-              </p>
-            ) : null}
-            {row.status === "registered" ? (
-              <>
-                <CancelRegistrationForm registrationId={row.id} sessionId={session.id} />
-                <ChangeSessionForm
-                  registrationId={row.id}
-                  options={openSessionsForChildTeam(openSessions, session.team_id, session.id)}
-                  locale={locale}
-                />
-                {(() => {
-                  const leave = leaveByRegistration.get(row.id);
-                  if (leave?.status === "pending") {
-                    return <p className="text-sm text-zinc-500">{creditsT("leavePending")}</p>;
-                  }
-                  if (leave?.status === "approved") {
-                    return <p className="text-sm text-emerald-800 dark:text-emerald-200">{creditsT("leaveApproved")}</p>;
-                  }
-                  return <LeaveRequestForm registrationId={row.id} sessionId={session.id} />;
-                })()}
-              </>
-            ) : null}
-            <div className="flex flex-col gap-3">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
-                {t("qaTitle")}
-              </h2>
-              <MessageThread messages={row.messages} locale={locale} />
-              <QuestionForm
-                registrationId={row.id}
-                sessionId={session.id}
-                authorRole="parent"
-              />
-            </div>
+            <p className="text-sm leading-6 text-emerald-800 dark:text-emerald-200">
+              {t("confirmation")}
+            </p>
+            <ParentNoteForm
+              registrationId={row.id}
+              sessionId={session.id}
+              initialNote={row.parent_note}
+            />
           </section>
         ))}
 
-        {canSignup ? (
-          <section className="flex flex-col gap-4">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
-              {t("register")}
-            </h2>
-            <RegisterForm
-              sessionId={session.id}
-              childrenOptions={eligible}
-              locale={locale}
-            />
-          </section>
-        ) : (
+        {openOnThisSession.length === 0 ? (
           <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">
-            {t("closedSignup")}
+            {canSignup ? t("registerFromListHint") : t("closedSignup")}
           </p>
-        )}
+        ) : null}
       </main>
       <footer className="border-t border-zinc-200 px-6 py-4 pb-10 text-sm text-zinc-500 dark:border-zinc-800">
         {common("footer")}
