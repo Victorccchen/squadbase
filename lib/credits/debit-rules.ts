@@ -7,13 +7,14 @@
  * (UI label: 不扣堂).
  *
  * Kind defaults (when no_debit is false and no override):
- * - regular: 1 on present or unexcused_absent; 0 if excused
+ * - regular: 1 on present; 0 on unexcused_absent (無故缺席) or excused
  * - special: 2 on present or unexcused_absent; 0 if excused leave approved
  * - cup/league: 1 per competing player per club calendar day (skip if already
  *   match-debited that day)
  *
  * Signup does not pre-debit. Cancel before attendance: no debit.
- * Per-session admin override: no_debit or debit_override_n.
+ * Per-session admin override: no_debit or debit_override_n (override still wins).
+ * Insufficient balance blocks outcomes that would debit.
  */
 
 import type { AgeBand } from "../age-band.ts";
@@ -131,17 +132,14 @@ export function computeSessionDebit(input: ComputeDebitInput): ComputeDebitResul
   }
 
   if (input.kind === "regular") {
-    if (
-      input.attendanceStatus === "present" ||
-      input.attendanceStatus === "unexcused_absent"
-    ) {
+    if (input.attendanceStatus === "present") {
       return {
         credits: 1,
-        entryType:
-          input.attendanceStatus === "unexcused_absent" ? "no_show_debit" : "attend_debit",
+        entryType: "attend_debit",
         noDebitLabel: false,
       };
     }
+    // unexcused_absent (無故缺席): 0 — only special unexcused still deducts.
     return { credits: 0, entryType: null, noDebitLabel: false };
   }
 

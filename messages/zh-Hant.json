@@ -618,7 +618,7 @@
     "debitOverrideTitle": "此場扣堂例外",
     "noDebitFlag": "不扣堂（覆蓋預設規則）",
     "debitOverride": "指定扣堂數（空白＝依種類預設）",
-    "debitOverrideHint": "例行訓練預設出席扣 1；特別場次出席或無故缺席扣 2；盃賽／聯賽出賽每人每天扣 1。U6、預備隊、成人永不扣堂。",
+    "debitOverrideHint": "例行訓練預設出席扣 1，無故缺席不扣堂；特別場次出席或無故缺席扣 2；盃賽／聯賽出賽每人每天扣 1。U6、預備隊、成人永不扣堂。",
     "saveDebitOverride": "儲存扣堂設定",
     "attendanceTitle": "出缺席",
     "attendanceEmpty": "沒有可登記的球員。",

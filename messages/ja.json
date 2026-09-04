@@ -618,7 +618,7 @@
     "debitOverrideTitle": "この回の減算例外",
     "noDebitFlag": "減算なし（種類の既定を上書き）",
     "debitOverride": "減算する単位数（空欄＝種類の既定）",
-    "debitOverrideHint": "通常練習の出席は既定 1。特別回の出席または無断欠席は 2。カップ／リーグの出場選手は1日 1。U6・リザーブ・成人は減算しません。",
+    "debitOverrideHint": "通常練習の出席は既定 1、無断欠席は減算しません。特別回の出席または無断欠席は 2。カップ／リーグの出場選手は1日 1。U6・リザーブ・成人は減算しません。",
     "saveDebitOverride": "減算設定を保存",
     "attendanceTitle": "出欠",
     "attendanceEmpty": "記録できる選手がいません。",
