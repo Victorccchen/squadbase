@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { PageHeader } from "@/components/page-header";
+import { LeaveRequestForm } from "@/components/credits/leave-request-form";
 import { ParentNoteForm } from "@/components/sessions/parent-note-form";
 import {
   RegistrationStatusBadge,
@@ -18,6 +19,7 @@ import {
 } from "@/lib/org/session-queries";
 import { localizedPlayerName } from "@/lib/org/display-name";
 import { formatClubDateTimeRange, isSessionOpenForSignup } from "@/lib/org/session-time";
+import { listLeaveRequestsForRegistrations } from "@/lib/credits/queries";
 import { creditsApplyToAgeBand, defaultNoticeDebit } from "@/lib/credits/debit-rules";
 
 type ParentSessionDetailPageProps = {
@@ -53,6 +55,15 @@ export default async function ParentSessionDetailPage({
   const openOnThisSession = registrations.filter(
     (row) => row.session_id === session.id && row.status === "registered",
   );
+  const leaveRequests = await listLeaveRequestsForRegistrations(
+    openOnThisSession.map((row) => row.id),
+  );
+  const leaveByRegistration = new Map<string, (typeof leaveRequests)[number]>();
+  for (const row of leaveRequests) {
+    if (!leaveByRegistration.has(row.registration_id)) {
+      leaveByRegistration.set(row.registration_id, row);
+    }
+  }
   const canSignup = isSessionOpenForSignup(session);
   const belongsToFamily = children.some((child) => child.teamId === session.team_id);
   const hasOwnRegistration = openOnThisSession.length > 0;
@@ -152,6 +163,20 @@ export default async function ParentSessionDetailPage({
               sessionId={session.id}
               initialNote={row.parent_note}
             />
+            {(() => {
+              const leave = leaveByRegistration.get(row.id);
+              if (leave?.status === "pending") {
+                return <p className="text-sm text-zinc-500">{creditsT("leavePending")}</p>;
+              }
+              if (leave?.status === "approved") {
+                return (
+                  <p className="text-sm text-emerald-800 dark:text-emerald-200">
+                    {creditsT("leaveApproved")}
+                  </p>
+                );
+              }
+              return <LeaveRequestForm registrationId={row.id} sessionId={session.id} />;
+            })()}
           </section>
         ))}
 
