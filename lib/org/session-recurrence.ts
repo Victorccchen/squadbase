@@ -103,6 +103,9 @@ export function addDaysToOffsetIso(iso: string, days: number): string | null {
 }
 
 function occurrenceAtWeek(startsAt: string, endsAt: string, weekIndex: number): SessionOccurrence | null {
+  if (weekIndex === 0) {
+    return { startsAt, endsAt };
+  }
   const nextStart = addDaysToOffsetIso(startsAt, weekIndex * 7);
   const nextEnd = addDaysToOffsetIso(endsAt, weekIndex * 7);
   if (!nextStart || !nextEnd) {
