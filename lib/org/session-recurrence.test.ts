@@ -1,11 +1,15 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  clubCalendarDate,
+  firstWeekdayOnOrAfter,
   generateSessionOccurrences,
+  isoWeekdayFromCalendarDate,
   MAX_SERIES_OCCURRENCES,
   parseSessionKind,
   parseUntilDate,
   parseWeekCount,
+  parseWeekdays,
 } from "./session-recurrence.ts";
 
 const FIRST_START = "2026-09-10T18:00:00+08:00";
@@ -241,6 +245,220 @@ describe("generateSessionOccurrences", () => {
     assert.equal(result.ok, false);
     if (!result.ok) {
       assert.equal(result.errorKey, "untilBeforeStart");
+    }
+  });
+});
+
+describe("ISO weekdays", () => {
+  it("uses 1=Monday … 7=Sunday", () => {
+    assert.equal(isoWeekdayFromCalendarDate("2026-09-07"), 1);
+    assert.equal(isoWeekdayFromCalendarDate("2026-09-08"), 2);
+    assert.equal(isoWeekdayFromCalendarDate("2026-09-10"), 4);
+    assert.equal(isoWeekdayFromCalendarDate("2026-09-13"), 7);
+  });
+
+  it("finds the first selected weekday on or after the series start", () => {
+    assert.equal(firstWeekdayOnOrAfter("2026-09-10", 4), "2026-09-10");
+    assert.equal(firstWeekdayOnOrAfter("2026-09-10", 2), "2026-09-15");
+    assert.equal(firstWeekdayOnOrAfter("2026-09-10", 7), "2026-09-13");
+  });
+});
+
+describe("parseWeekdays", () => {
+  it("accepts ISO numbers, de-duplicates, and sorts", () => {
+    assert.deepEqual(parseWeekdays(["4", "2", "4"]), [2, 4]);
+    assert.deepEqual(parseWeekdays(["2,4", "7"]), [2, 4, 7]);
+    assert.deepEqual(parseWeekdays([]), []);
+    assert.equal(parseWeekdays(["0"]), null);
+    assert.equal(parseWeekdays(["8"]), null);
+    assert.equal(parseWeekdays(["tue"]), null);
+  });
+});
+
+describe("generateSessionOccurrences multi-weekday (4A.1)", () => {
+  it("B1: Tue+Thu + week count 4 yields 4 per weekday (8 total)", () => {
+    const result = generateSessionOccurrences({
+      kind: "regular",
+      startsAt: FIRST_START,
+      endsAt: FIRST_END,
+      untilDate: null,
+      weekCount: 4,
+      weekdays: [2, 4],
+    });
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.equal(result.occurrences.length, 8);
+      const dates = result.occurrences.map((row) => clubCalendarDate(row.startsAt));
+      assert.deepEqual(dates, [
+        "2026-09-10",
+        "2026-09-15",
+        "2026-09-17",
+        "2026-09-22",
+        "2026-09-24",
+        "2026-09-29",
+        "2026-10-01",
+        "2026-10-06",
+      ]);
+      assert.equal(result.occurrences[0].startsAt, FIRST_START);
+      assert.equal(result.occurrences[0].endsAt, FIRST_END);
+    }
+  });
+
+  it("B2: Wednesday + until date yields every Wednesday in range", () => {
+    const result = generateSessionOccurrences({
+      kind: "regular",
+      startsAt: "2026-09-09T18:00:00+08:00",
+      endsAt: "2026-09-09T19:30:00+08:00",
+      untilDate: "2026-09-30",
+      weekCount: null,
+      weekdays: [3],
+    });
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.equal(result.occurrences.length, 4);
+      assert.equal(result.occurrences[0].startsAt, "2026-09-09T18:00:00+08:00");
+      assert.equal(result.occurrences[1].startsAt, "2026-09-16T10:00:00.000Z");
+      assert.equal(result.occurrences[2].startsAt, "2026-09-23T10:00:00.000Z");
+      assert.equal(result.occurrences[3].startsAt, "2026-09-30T10:00:00.000Z");
+    }
+  });
+
+  it("B2: until-date with Tue+Thu includes every matching calendar day", () => {
+    const result = generateSessionOccurrences({
+      kind: "cup",
+      startsAt: FIRST_START,
+      endsAt: FIRST_END,
+      untilDate: "2026-09-24",
+      weekCount: null,
+      weekdays: [2, 4],
+    });
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.equal(result.occurrences.length, 5);
+      const dates = result.occurrences.map((row) => clubCalendarDate(row.startsAt));
+      assert.deepEqual(dates, [
+        "2026-09-10",
+        "2026-09-15",
+        "2026-09-17",
+        "2026-09-22",
+        "2026-09-24",
+      ]);
+    }
+  });
+
+  it("B3: recurring kind with no weekday selected is a validation error", () => {
+    const result = generateSessionOccurrences({
+      kind: "regular",
+      startsAt: FIRST_START,
+      endsAt: FIRST_END,
+      untilDate: null,
+      weekCount: 4,
+      weekdays: [],
+    });
+    assert.equal(result.ok, false);
+    if (!result.ok) {
+      assert.equal(result.errorKey, "weekdayRequired");
+    }
+  });
+
+  it("rejects invalid weekday numbers", () => {
+    const result = generateSessionOccurrences({
+      kind: "regular",
+      startsAt: FIRST_START,
+      endsAt: FIRST_END,
+      untilDate: null,
+      weekCount: 4,
+      weekdays: [2, 8],
+    });
+    assert.equal(result.ok, false);
+    if (!result.ok) {
+      assert.equal(result.errorKey, "invalidWeekdays");
+    }
+  });
+
+  it("rejects multi-weekday week count whose total exceeds 52", () => {
+    const result = generateSessionOccurrences({
+      kind: "league",
+      startsAt: FIRST_START,
+      endsAt: FIRST_END,
+      untilDate: null,
+      weekCount: 27,
+      weekdays: [2, 4],
+    });
+    assert.equal(result.ok, false);
+    if (!result.ok) {
+      assert.equal(result.errorKey, "tooManyOccurrences");
+    }
+  });
+
+  it("rejects an until-date range with more than 52 matching days", () => {
+    const result = generateSessionOccurrences({
+      kind: "regular",
+      startsAt: FIRST_START,
+      endsAt: FIRST_END,
+      untilDate: "2027-09-10",
+      weekCount: null,
+      weekdays: [1, 2, 3, 4, 5],
+    });
+    assert.equal(result.ok, false);
+    if (!result.ok) {
+      assert.equal(result.errorKey, "tooManyOccurrences");
+    }
+  });
+
+  it("does not infer a single weekday from startsAt when weekdays are selected", () => {
+    const result = generateSessionOccurrences({
+      kind: "regular",
+      startsAt: FIRST_START,
+      endsAt: FIRST_END,
+      untilDate: null,
+      weekCount: 1,
+      weekdays: [2],
+    });
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.equal(result.occurrences.length, 1);
+      assert.equal(result.occurrences[0].startsAt, "2026-09-15T10:00:00.000Z");
+    }
+  });
+
+  it("maps omitted weekdays to the startsAt weekday (legacy single-weekday)", () => {
+    const omitted = generateSessionOccurrences({
+      kind: "regular",
+      startsAt: FIRST_START,
+      endsAt: FIRST_END,
+      untilDate: null,
+      weekCount: 4,
+    });
+    const explicit = generateSessionOccurrences({
+      kind: "regular",
+      startsAt: FIRST_START,
+      endsAt: FIRST_END,
+      untilDate: null,
+      weekCount: 4,
+      weekdays: [4],
+    });
+    assert.equal(omitted.ok, true);
+    assert.equal(explicit.ok, true);
+    if (omitted.ok && explicit.ok) {
+      assert.deepEqual(omitted.occurrences, explicit.occurrences);
+      assert.equal(omitted.occurrences.length, 4);
+    }
+  });
+
+  it("special still yields exactly one occurrence even with weekdays and bounds", () => {
+    const result = generateSessionOccurrences({
+      kind: "special",
+      startsAt: FIRST_START,
+      endsAt: FIRST_END,
+      untilDate: "2026-12-01",
+      weekCount: 8,
+      weekdays: [1, 3, 5],
+    });
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.equal(result.occurrences.length, 1);
+      assert.equal(result.occurrences[0].startsAt, FIRST_START);
     }
   });
 });

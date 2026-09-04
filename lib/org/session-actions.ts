@@ -12,6 +12,7 @@ import {
   parseOrgStatus,
   parseRequiredBoundedText,
   parseUuid,
+  readAllStrings,
   readString,
   sessionRpcErrorKey,
 } from "@/lib/org/parse";
@@ -31,6 +32,7 @@ import {
   parseSessionKind,
   parseUntilDate,
   parseWeekCount,
+  parseWeekdays,
 } from "@/lib/org/session-recurrence";
 import { type OrgActionState, type OrgErrorKey } from "@/lib/org/errors";
 
@@ -84,9 +86,54 @@ async function requireAdminActor(): Promise<AdminActorResult> {
   return { ok: true, user, supabase };
 }
 
-function parseSessionSchedule(formData: FormData):
+function parseTimeOfDay(value: string): string | null {
+  const trimmed = value.trim();
+  if (!/^\d{2}:\d{2}(?::\d{2})?$/.test(trimmed)) {
+    return null;
+  }
+  return trimmed.length === 5 ? `${trimmed}:00` : trimmed;
+}
+
+function parseSessionSchedule(formData: FormData, recurring: boolean):
   | { ok: true; startsAt: string; endsAt: string }
   | { ok: false; errorKey: OrgErrorKey } {
+  if (recurring) {
+    const seriesDate = parseUntilDate(readString(formData, "series_start_date"));
+    const startTime = parseTimeOfDay(readString(formData, "start_time"));
+    if (!seriesDate || !startTime) {
+      return { ok: false, errorKey: "invalidSessionTime" };
+    }
+    const startsAt = parseClubDateTimeLocal(`${seriesDate}T${startTime}`);
+    if (!startsAt) {
+      return { ok: false, errorKey: "invalidSessionTime" };
+    }
+
+    const endTimeRaw = readString(formData, "end_time");
+    const durationRaw = readString(formData, "duration_minutes");
+    let endsAt: string | null = null;
+    if (endTimeRaw) {
+      const endTime = parseTimeOfDay(endTimeRaw);
+      if (!endTime) {
+        return { ok: false, errorKey: "invalidSessionTime" };
+      }
+      endsAt = parseClubDateTimeLocal(`${seriesDate}T${endTime}`);
+    } else if (durationRaw) {
+      const duration = parseDurationMinutes(durationRaw);
+      if (!duration) {
+        return { ok: false, errorKey: "invalidDuration" };
+      }
+      endsAt = addMinutesToOffsetIso(startsAt, duration);
+    }
+
+    if (!endsAt) {
+      return { ok: false, errorKey: "invalidSessionTime" };
+    }
+    if (!isEndsAfterStart(startsAt, endsAt)) {
+      return { ok: false, errorKey: "endsBeforeStart" };
+    }
+    return { ok: true, startsAt, endsAt };
+  }
+
   const startsAt = parseClubDateTimeLocal(readString(formData, "starts_at"));
   if (!startsAt) {
     return { ok: false, errorKey: "invalidSessionTime" };
@@ -128,7 +175,12 @@ export async function createSession(
     return fail("missingTeam");
   }
 
-  const schedule = parseSessionSchedule(formData);
+  const kind = parseSessionKind(readString(formData, "kind"));
+  if (!kind) {
+    return fail("invalidSessionKind");
+  }
+
+  const schedule = parseSessionSchedule(formData, isRecurringSessionKind(kind));
   if (!schedule.ok) {
     return fail(schedule.errorKey);
   }
@@ -141,17 +193,22 @@ export async function createSession(
     return fail("missingTitle");
   }
 
-  const kind = parseSessionKind(readString(formData, "kind"));
-  if (!kind) {
-    return fail("invalidSessionKind");
-  }
-
   const untilRaw = readString(formData, "until_date");
   const weekRaw = readString(formData, "week_count");
   let untilDate: string | null = null;
   let weekCount: number | null = null;
+  let weekdays: number[] | null = null;
 
   if (isRecurringSessionKind(kind)) {
+    const parsedWeekdays = parseWeekdays(readAllStrings(formData, "weekdays"));
+    if (parsedWeekdays === null) {
+      return fail("invalidWeekdays");
+    }
+    if (parsedWeekdays.length === 0) {
+      return fail("weekdayRequired");
+    }
+    weekdays = parsedWeekdays;
+
     if (untilRaw && weekRaw) {
       return fail("recurrenceMutex");
     }
@@ -174,6 +231,7 @@ export async function createSession(
       endsAt: schedule.endsAt,
       untilDate,
       weekCount,
+      weekdays,
     });
     if (!generated.ok) {
       return fail(generated.errorKey);
@@ -191,6 +249,7 @@ export async function createSession(
     p_status: status,
     p_until_date: untilDate,
     p_week_count: weekCount,
+    p_weekdays: weekdays,
   });
 
   if (error) {
@@ -213,7 +272,7 @@ export async function updateSession(
     return fail(actor.errorKey);
   }
 
-  const schedule = parseSessionSchedule(formData);
+  const schedule = parseSessionSchedule(formData, false);
   if (!schedule.ok) {
     return fail(schedule.errorKey);
   }

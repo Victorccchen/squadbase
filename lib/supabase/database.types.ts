@@ -116,6 +116,7 @@ export type SessionSeries = {
   location: string | null;
   notes: string | null;
   status: OrgStatus;
+  weekdays: number[] | null;
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
@@ -400,6 +401,7 @@ export type Database = {
           location?: string | null;
           notes?: string | null;
           status?: OrgStatus;
+          weekdays?: number[] | null;
           deleted_at?: string | null;
         } & TimestampInsert;
         Update: {
@@ -409,6 +411,7 @@ export type Database = {
           location?: string | null;
           notes?: string | null;
           status?: OrgStatus;
+          weekdays?: number[] | null;
           deleted_at?: string | null;
           updated_at?: string;
           updated_by?: string | null;
@@ -653,6 +656,7 @@ export type Database = {
           p_status?: OrgStatus;
           p_until_date?: string | null;
           p_week_count?: number | null;
+          p_weekdays?: number[] | null;
         };
         Returns: string;
       };

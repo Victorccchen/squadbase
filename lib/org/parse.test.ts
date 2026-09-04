@@ -369,6 +369,8 @@ describe("sessionRpcErrorKey", () => {
       "recurrenceBoundRequired",
     );
     assert.equal(sessionRpcErrorKey({ message: "too many occurrences" }), "tooManyOccurrences");
+    assert.equal(sessionRpcErrorKey({ message: "weekdays required" }), "weekdayRequired");
+    assert.equal(sessionRpcErrorKey({ message: "invalid weekdays" }), "invalidWeekdays");
   });
 });
 

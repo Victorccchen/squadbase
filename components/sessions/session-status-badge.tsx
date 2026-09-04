@@ -1,4 +1,5 @@
 import type { OrgStatus, SessionKind, SessionRegistrationStatus } from "@/lib/supabase/database.types";
+import { SESSION_KIND_BADGE_CLASS } from "@/lib/org/session-kind-colors";
 
 const SESSION_STATUS_CLASS: Record<OrgStatus, string> = {
   active: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100",
@@ -10,12 +11,7 @@ const REGISTRATION_STATUS_CLASS: Record<SessionRegistrationStatus, string> = {
   cancelled: "bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100",
 };
 
-const KIND_CLASS: Record<SessionKind, string> = {
-  regular: "bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-100",
-  special: "bg-violet-100 text-violet-900 dark:bg-violet-950 dark:text-violet-100",
-  cup: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-100",
-  league: "bg-indigo-100 text-indigo-900 dark:bg-indigo-950 dark:text-indigo-100",
-};
+const KIND_CLASS = SESSION_KIND_BADGE_CLASS;
 
 export function SessionStatusBadge({
   status,

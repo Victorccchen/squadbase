@@ -7,6 +7,14 @@ export function readString(formData: FormData, key: string): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+export function readAllStrings(formData: FormData, key: string): string[] {
+  return formData
+    .getAll(key)
+    .filter((value): value is string => typeof value === "string")
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
 export function parseOrgStatus(value: string): OrgStatus | null {
   if (value === "active" || value === "inactive") {
     return value;
@@ -300,6 +308,8 @@ type SessionRpcErrorKey =
   | "invalidUntilDate"
   | "untilBeforeStart"
   | "tooManyOccurrences"
+  | "weekdayRequired"
+  | "invalidWeekdays"
   | "endsBeforeStart"
   | "teamNotFound"
   | "generic";
@@ -353,6 +363,12 @@ export function sessionRpcErrorKey(error: PgLikeError): SessionRpcErrorKey {
   }
   if (text.includes("too many occurrences")) {
     return "tooManyOccurrences";
+  }
+  if (text.includes("weekdays required")) {
+    return "weekdayRequired";
+  }
+  if (text.includes("invalid weekdays")) {
+    return "invalidWeekdays";
   }
   if (text.includes("end time must be after start time")) {
     return "endsBeforeStart";
