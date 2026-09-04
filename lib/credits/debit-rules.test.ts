@@ -44,15 +44,15 @@ describe("computeSessionDebit C2 regular", () => {
     });
   });
 
-  it("debits 1 on unexcused (no-show)", () => {
+  it("debits 0 on unexcused (no-show)", () => {
     const result = computeSessionDebit({
       ...base,
       kind: "regular",
       teamAgeBand: "U10",
       attendanceStatus: "unexcused_absent",
     });
-    assert.equal(result.credits, 1);
-    assert.equal(result.entryType, "no_show_debit");
+    assert.equal(result.credits, 0);
+    assert.equal(result.entryType, null);
   });
 
   it("debits 0 on excused", () => {
