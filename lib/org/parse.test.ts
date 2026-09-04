@@ -301,6 +301,15 @@ describe("isOpenGuardianLinkViolation", () => {
       true,
     );
   });
+
+  it("matches the admin-review RPC when another open link exists", () => {
+    assert.equal(
+      isOpenGuardianLinkViolation({
+        message: "open guardian link already exists",
+      }),
+      true,
+    );
+  });
 });
 
 describe("isLinkNotApprovedViolation", () => {
@@ -354,11 +363,31 @@ describe("sessionRpcErrorKey", () => {
     );
     assert.equal(sessionRpcErrorKey({ message: "already registered" }), "alreadyRegistered");
     assert.equal(
+      sessionRpcErrorKey({ message: "cannot cancel within 24 hours of session start" }),
+      "cannotCancelWithin24h",
+    );
+    assert.equal(
+      sessionRpcErrorKey({ message: "cannot cancel registration" }),
+      "cannotCancelRegistration",
+    );
+    assert.equal(
       sessionRpcErrorKey({ message: "cannot switch to the same session" }),
       "cannotSwitchSession",
     );
     assert.equal(sessionRpcErrorKey({ message: "message body required" }), "messageBodyRequired");
     assert.equal(sessionRpcErrorKey({ message: "not authorized" }), "forbidden");
+    assert.equal(sessionRpcErrorKey({ message: "title required" }), "missingTitle");
+    assert.equal(
+      sessionRpcErrorKey({ message: "recurrence cannot use both end date and week count" }),
+      "recurrenceMutex",
+    );
+    assert.equal(
+      sessionRpcErrorKey({ message: "recurrence requires an end date or a week count" }),
+      "recurrenceBoundRequired",
+    );
+    assert.equal(sessionRpcErrorKey({ message: "too many occurrences" }), "tooManyOccurrences");
+    assert.equal(sessionRpcErrorKey({ message: "weekdays required" }), "weekdayRequired");
+    assert.equal(sessionRpcErrorKey({ message: "invalid weekdays" }), "invalidWeekdays");
   });
 });
 

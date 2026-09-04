@@ -41,7 +41,7 @@ export function ChangeSessionForm({
           <option value="">{t("changeTo")}</option>
           {options.map((session) => (
             <option key={session.id} value={session.id}>
-              {session.team?.name ?? ""} · {formatClubDateTimeRange(session.starts_at, session.ends_at, locale)}
+              {session.title} · {session.team?.name ?? ""} · {formatClubDateTimeRange(session.starts_at, session.ends_at, locale)}
             </option>
           ))}
         </select>

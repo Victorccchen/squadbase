@@ -21,3 +21,24 @@ export function getPublicAppEnv(): PublicAppEnv {
   }
   return "unknown";
 }
+
+/**
+ * Server-only transfer instructions. Never commit a real account number.
+ * Prefer admin-saved `club_runtime_settings.bank_transfer_hint` at runtime.
+ */
+export function getEnvBankTransferHint(): string {
+  return process.env.BANK_TRANSFER_HINT?.trim() ?? "";
+}
+
+/** Public origin for LINE signup links. Placeholder host only in git. */
+export function getAppOrigin(): string {
+  const explicit = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (explicit) {
+    return explicit.replace(/\/$/, "");
+  }
+  const vercel = process.env.VERCEL_URL?.trim();
+  if (vercel) {
+    return `https://${vercel.replace(/\/$/, "")}`;
+  }
+  return "";
+}

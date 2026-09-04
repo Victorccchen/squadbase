@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type {
+  AgeBand,
   Player,
   SessionRegistration,
   SessionRegistrationMessage,
@@ -7,7 +8,10 @@ import type {
   TrainingSession,
 } from "@/lib/supabase/database.types";
 import type { GuardianLinkWithPlayer } from "@/lib/org/queries";
+import { uniqueApprovedLinksByPlayerId } from "@/lib/org/guardian-links";
 import { isSessionOpenForSignup } from "@/lib/org/session-time";
+import { parseSessionKind } from "@/lib/org/session-recurrence";
+import { parseUuid } from "@/lib/org/parse";
 
 export type TrainingSessionWithTeam = TrainingSession & {
   team: Team | null;
@@ -65,30 +69,68 @@ function mapRegistrationRow(row: Record<string, unknown>): SessionRegistrationWi
   };
 }
 
-export async function listSessionsForAdmin(): Promise<TrainingSessionAdminRow[]> {
+export type AdminSessionListFilters = {
+  kinds?: string[];
+  teamIds?: string[];
+  includeDeleted?: boolean;
+  startsFrom?: string;
+  startsToExclusive?: string;
+};
+
+export async function listSessionsForAdmin(
+  filters: AdminSessionListFilters = {},
+): Promise<TrainingSessionAdminRow[]> {
   const supabase = await createClient();
-  const [sessionsResult, countsResult] = await Promise.all([
-    supabase
-      .from("training_sessions")
-      .select("*, teams(*)")
-      .order("starts_at", { ascending: false }),
-    supabase.from("session_registrations").select("session_id, status"),
-  ]);
+  let sessionsQuery = supabase
+    .from("training_sessions")
+    .select("*, teams(*)")
+    .order("starts_at", { ascending: true });
+
+  const kinds = (filters.kinds ?? [])
+    .map((value) => parseSessionKind(value))
+    .filter((kind): kind is NonNullable<typeof kind> => kind !== null);
+  if (kinds.length > 0) {
+    sessionsQuery = sessionsQuery.in("kind", kinds);
+  }
+  const teamIds = (filters.teamIds ?? [])
+    .map((value) => parseUuid(value))
+    .filter((id): id is string => id !== null);
+  if (teamIds.length > 0) {
+    sessionsQuery = sessionsQuery.in("team_id", teamIds);
+  }
+  if (!filters.includeDeleted) {
+    sessionsQuery = sessionsQuery.is("deleted_at", null);
+  }
+  if (filters.startsFrom) {
+    sessionsQuery = sessionsQuery.gte("starts_at", filters.startsFrom);
+  }
+  if (filters.startsToExclusive) {
+    sessionsQuery = sessionsQuery.lt("starts_at", filters.startsToExclusive);
+  }
+
+  const sessionsResult = await sessionsQuery;
 
   if (sessionsResult.error) {
     console.error("listSessionsForAdmin", sessionsResult.error.message);
     return [];
   }
-  if (countsResult.error) {
-    console.error("listSessionsForAdmin counts", countsResult.error.message);
-  }
 
+  const sessionIds = (sessionsResult.data ?? []).map((row) => row.id as string);
   const registeredBySession = new Map<string, number>();
-  for (const row of countsResult.data ?? []) {
-    if (row.status !== "registered") {
-      continue;
+  if (sessionIds.length > 0) {
+    const countsResult = await supabase
+      .from("session_registrations")
+      .select("session_id, status")
+      .in("session_id", sessionIds);
+    if (countsResult.error) {
+      console.error("listSessionsForAdmin counts", countsResult.error.message);
     }
-    registeredBySession.set(row.session_id, (registeredBySession.get(row.session_id) ?? 0) + 1);
+    for (const row of countsResult.data ?? []) {
+      if (row.status !== "registered") {
+        continue;
+      }
+      registeredBySession.set(row.session_id, (registeredBySession.get(row.session_id) ?? 0) + 1);
+    }
   }
 
   return (sessionsResult.data ?? []).map((row) => {
@@ -148,6 +190,7 @@ export async function listOpenSessionsForParent(
     .from("training_sessions")
     .select("*, teams(*)")
     .eq("status", "active")
+    .is("deleted_at", null)
     .in("team_id", teamIds)
     .order("starts_at");
 
@@ -236,10 +279,12 @@ export async function listCoachRegisteredPlayers(): Promise<SessionRegistrationW
 }
 
 export type EligibleChild = {
+  linkId: string;
   player: Player;
   teamId: string;
   teamName: string;
   jerseyNumber: number;
+  teamAgeBand: AgeBand;
 };
 
 export function eligibleChildrenForSession(
@@ -257,6 +302,26 @@ export function eligibleChildrenForSession(
   );
 }
 
+export function childrenOnSessionTeam(
+  children: EligibleChild[],
+  teamId: string,
+): EligibleChild[] {
+  return children.filter((child) => child.teamId === teamId);
+}
+
+export function openRegistrationForPlayer(
+  registrations: SessionRegistrationWithDetails[],
+  sessionId: string,
+  playerId: string,
+): SessionRegistrationWithDetails | undefined {
+  return registrations.find(
+    (row) =>
+      row.session_id === sessionId &&
+      row.player_id === playerId &&
+      row.status === "registered",
+  );
+}
+
 export function openSessionsForChildTeam(
   sessions: TrainingSessionWithTeam[],
   teamId: string,
@@ -271,19 +336,26 @@ export function approvedChildrenFromLinks(
   links: GuardianLinkWithPlayer[],
 ): EligibleChild[] {
   const result: EligibleChild[] = [];
-  for (const link of links) {
-    if (link.status !== "approved" || !link.player) {
+  const seenPlayers = new Set<string>();
+  for (const link of uniqueApprovedLinksByPlayerId(links)) {
+    if (!link.player) {
+      continue;
+    }
+    if (seenPlayers.has(link.player.id)) {
       continue;
     }
     const membership = link.player.membership;
     if (!membership?.team || membership.status !== "active") {
       continue;
     }
+    seenPlayers.add(link.player.id);
     result.push({
+      linkId: link.id,
       player: link.player,
       teamId: membership.team_id,
       teamName: membership.team.name,
       jerseyNumber: membership.jersey_number,
+      teamAgeBand: membership.team.age_band,
     });
   }
   return result;

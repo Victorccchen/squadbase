@@ -3,7 +3,9 @@ import { describe, it } from "node:test";
 import {
   addMinutesToOffsetIso,
   formatClubDateTime,
+  formatClubTime,
   isEndsAfterStart,
+  isGuardianCancelLocked,
   isSessionOpenForSignup,
   parseClubDateTimeLocal,
   parseDurationMinutes,
@@ -83,6 +85,34 @@ describe("isSessionOpenForSignup", () => {
       ),
       false,
     );
+    assert.equal(
+      isSessionOpenForSignup(
+        {
+          status: "active",
+          ends_at: "2026-09-10T12:00:00.000Z",
+          deleted_at: "2026-09-09T00:00:00.000Z",
+        },
+        now,
+      ),
+      false,
+    );
+  });
+});
+
+describe("isGuardianCancelLocked", () => {
+  const now = new Date("2026-09-10T10:00:00.000Z");
+
+  it("locks at or inside 24 hours of starts_at, matching timestamptz now()+24h", () => {
+    assert.equal(isGuardianCancelLocked("2026-09-11T10:00:00.000Z", now), true);
+    assert.equal(isGuardianCancelLocked("2026-09-11T09:59:59.000Z", now), true);
+    assert.equal(isGuardianCancelLocked("2026-09-10T09:00:00.000Z", now), true);
+    assert.equal(isGuardianCancelLocked("2026-09-11T10:00:01.000Z", now), false);
+    assert.equal(isGuardianCancelLocked("2026-09-12T10:00:00.000Z", now), false);
+  });
+
+  it("locks invalid timestamps (fail closed)", () => {
+    assert.equal(isGuardianCancelLocked("", now), true);
+    assert.equal(isGuardianCancelLocked("not-a-date", now), true);
   });
 });
 
@@ -96,5 +126,13 @@ describe("formatClubDateTime", () => {
   it("formats in the club time zone", () => {
     const text = formatClubDateTime("2026-09-10T10:00:00.000Z", "en");
     assert.match(text, /18:00/);
+  });
+});
+
+describe("formatClubTime", () => {
+  it("formats clock time only in Taipei", () => {
+    const text = formatClubTime("2026-09-10T10:00:00.000Z", "en");
+    assert.match(text, /18:00/);
+    assert.equal(text.includes("Sep"), false);
   });
 });

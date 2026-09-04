@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { canAccessAdmin, canAccessRoster } from "./roles.ts";
+import {
+  canAccessAdmin,
+  canAccessRoster,
+  canReviewPayments,
+  canTakeAttendance,
+} from "./roles.ts";
 
 describe("canAccessAdmin", () => {
   it("is false for parent-only, coach-only, player-only, and empty roles", () => {
@@ -23,5 +28,20 @@ describe("canAccessRoster", () => {
     assert.equal(canAccessRoster(["admin"]), true);
     assert.equal(canAccessRoster(["parent"]), false);
     assert.equal(canAccessRoster([]), false);
+  });
+});
+
+describe("payment vs attendance roles (C7)", () => {
+  it("only admin can review payment claims", () => {
+    assert.equal(canReviewPayments(["admin"]), true);
+    assert.equal(canReviewPayments(["coach"]), false);
+    assert.equal(canReviewPayments(["parent"]), false);
+    assert.equal(canReviewPayments(["parent", "coach"]), false);
+  });
+
+  it("coach and admin may take attendance; parent may not", () => {
+    assert.equal(canTakeAttendance(["coach"]), true);
+    assert.equal(canTakeAttendance(["admin"]), true);
+    assert.equal(canTakeAttendance(["parent"]), false);
   });
 });

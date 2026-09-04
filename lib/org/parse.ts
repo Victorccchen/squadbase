@@ -7,6 +7,14 @@ export function readString(formData: FormData, key: string): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+export function readAllStrings(formData: FormData, key: string): string[] {
+  return formData
+    .getAll(key)
+    .filter((value): value is string => typeof value === "string")
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
 export function parseOrgStatus(value: string): OrgStatus | null {
   if (value === "active" || value === "inactive") {
     return value;
@@ -258,10 +266,16 @@ export function parseLinkNote(value: string): string | null {
 }
 
 export function isOpenGuardianLinkViolation(error: PgLikeError): boolean {
-  if (!isUniqueViolation(error)) {
+  if (!error) {
     return false;
   }
   const text = errorBlob(error);
+  if (text.includes("open guardian link already exists")) {
+    return true;
+  }
+  if (!isUniqueViolation(error)) {
+    return false;
+  }
   return (
     text.includes("guardian_player_links_open_pair") ||
     text.includes("(guardian_user_id, player_id)")
@@ -290,8 +304,21 @@ type SessionRpcErrorKey =
   | "playerNotOnSessionTeam"
   | "alreadyRegistered"
   | "cannotCancelRegistration"
+  | "cannotCancelWithin24h"
   | "cannotSwitchSession"
   | "messageBodyRequired"
+  | "missingTitle"
+  | "invalidSessionKind"
+  | "recurrenceMutex"
+  | "recurrenceBoundRequired"
+  | "invalidWeekCount"
+  | "invalidUntilDate"
+  | "untilBeforeStart"
+  | "tooManyOccurrences"
+  | "weekdayRequired"
+  | "invalidWeekdays"
+  | "endsBeforeStart"
+  | "teamNotFound"
   | "generic";
 
 export function sessionRpcErrorKey(error: PgLikeError): SessionRpcErrorKey {
@@ -302,7 +329,7 @@ export function sessionRpcErrorKey(error: PgLikeError): SessionRpcErrorKey {
   if (text.includes("session is not active")) {
     return "sessionNotActive";
   }
-  if (text.includes("session not found")) {
+  if (text.includes("session series not found") || text.includes("session not found")) {
     return "sessionNotFound";
   }
   if (text.includes("player is not on this session team")) {
@@ -310,6 +337,9 @@ export function sessionRpcErrorKey(error: PgLikeError): SessionRpcErrorKey {
   }
   if (text.includes("already registered") || isOpenSessionRegistrationViolation(error)) {
     return "alreadyRegistered";
+  }
+  if (text.includes("cannot cancel within 24 hours")) {
+    return "cannotCancelWithin24h";
   }
   if (text.includes("cannot cancel registration") || text.includes("registration not found")) {
     return "cannotCancelRegistration";
@@ -322,6 +352,119 @@ export function sessionRpcErrorKey(error: PgLikeError): SessionRpcErrorKey {
   }
   if (text.includes("message body required")) {
     return "messageBodyRequired";
+  }
+  if (text.includes("title required")) {
+    return "missingTitle";
+  }
+  if (text.includes("invalid session kind")) {
+    return "invalidSessionKind";
+  }
+  if (text.includes("recurrence cannot use both")) {
+    return "recurrenceMutex";
+  }
+  if (text.includes("recurrence requires an end date or a week count")) {
+    return "recurrenceBoundRequired";
+  }
+  if (text.includes("invalid week count")) {
+    return "invalidWeekCount";
+  }
+  if (text.includes("until date is before the first start")) {
+    return "untilBeforeStart";
+  }
+  if (text.includes("too many occurrences")) {
+    return "tooManyOccurrences";
+  }
+  if (text.includes("weekdays required")) {
+    return "weekdayRequired";
+  }
+  if (text.includes("invalid weekdays")) {
+    return "invalidWeekdays";
+  }
+  if (text.includes("end time must be after start time")) {
+    return "endsBeforeStart";
+  }
+  if (text.includes("team not found")) {
+    return "teamNotFound";
+  }
+  if (text.includes("not authorized")) {
+    return "forbidden";
+  }
+  return "generic";
+}
+
+type CreditRpcErrorKey =
+  | "forbidden"
+  | "invalidLast5"
+  | "notApprovedGuardian"
+  | "packageNotFound"
+  | "packageBandMismatch"
+  | "creditsNotApplicable"
+  | "pendingClaimExists"
+  | "claimNotFound"
+  | "insufficientCredits"
+  | "reasonRequired"
+  | "invalidCreditAmount"
+  | "invalidPrice"
+  | "adjustWouldBeNegative"
+  | "pendingLeaveExists"
+  | "leaveNotFound"
+  | "sessionNotFound"
+  | "playerNotOnSessionTeam"
+  | "invalidDecision"
+  | "generic";
+
+export function creditRpcErrorKey(error: PgLikeError): CreditRpcErrorKey {
+  const text = errorBlob(error);
+  if (text.includes("invalid last5")) {
+    return "invalidLast5";
+  }
+  if (text.includes("not an approved guardian")) {
+    return "notApprovedGuardian";
+  }
+  if (text.includes("package band mismatch")) {
+    return "packageBandMismatch";
+  }
+  if (text.includes("credits do not apply to this age band")) {
+    return "creditsNotApplicable";
+  }
+  if (text.includes("package not found")) {
+    return "packageNotFound";
+  }
+  if (text.includes("already has a pending leave request")) {
+    return "pendingLeaveExists";
+  }
+  if (text.includes("already has a pending claim")) {
+    return "pendingClaimExists";
+  }
+  if (text.includes("claim not found")) {
+    return "claimNotFound";
+  }
+  if (text.includes("insufficient credits")) {
+    return "insufficientCredits";
+  }
+  if (text.includes("reason required")) {
+    return "reasonRequired";
+  }
+  if (text.includes("invalid credit amount")) {
+    return "invalidCreditAmount";
+  }
+  if (text.includes("invalid price")) {
+    return "invalidPrice";
+  }
+  if (text.includes("adjust would be negative")) {
+    return "adjustWouldBeNegative";
+  }
+  if (text.includes("leave request not found")) {
+    return "leaveNotFound";
+  }
+  if (text.includes("session not found")) {
+    return "sessionNotFound";
+  }
+  if (text.includes("player is not on this session team")) {
+    return "playerNotOnSessionTeam";
+  }
+  if (text.includes("invalid decision")) {
+    return "invalidDecision";
   }
   if (text.includes("not authorized")) {
     return "forbidden";

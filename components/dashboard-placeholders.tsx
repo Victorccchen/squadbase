@@ -8,7 +8,7 @@ type DashboardPlaceholdersProps = {
 };
 
 const PARENT_COMING = ["courses"] as const;
-const COACH_COMING = ["attendance", "assessments"] as const;
+const COACH_COMING = ["assessments"] as const;
 
 function PlaceholderCard({
   title,
@@ -47,7 +47,10 @@ function LinkCard({
     | "/app/admin/bindings"
     | "/app/admin/sessions"
     | "/app/children"
-    | "/app/sessions";
+    | "/app/sessions"
+    | "/app/credits"
+    | "/app/admin/claims"
+    | "/app/admin/credits";
   title: string;
   body: string;
   action: string;
@@ -99,6 +102,12 @@ export async function DashboardPlaceholders({ roles }: DashboardPlaceholdersProp
               body={t("placeholders.sessions.body")}
               action={t("openSessions")}
             />
+            <LinkCard
+              href="/app/credits"
+              title={t("placeholders.credits.title")}
+              body={t("placeholders.credits.body")}
+              action={t("openCredits")}
+            />
             {PARENT_COMING.map((key) => (
               <PlaceholderCard
                 key={key}
@@ -121,6 +130,12 @@ export async function DashboardPlaceholders({ roles }: DashboardPlaceholdersProp
               href="/app/roster"
               title={t("placeholders.squads.title")}
               body={t("placeholders.squads.body")}
+              action={t("openRoster")}
+            />
+            <LinkCard
+              href="/app/roster"
+              title={t("placeholders.attendance.title")}
+              body={t("placeholders.attendance.body")}
               action={t("openRoster")}
             />
             {COACH_COMING.map((key) => (
@@ -169,6 +184,18 @@ export async function DashboardPlaceholders({ roles }: DashboardPlaceholdersProp
               href="/app/admin/sessions"
               title={t("placeholders.adminSessions.title")}
               body={t("placeholders.adminSessions.body")}
+              action={t("openAdmin")}
+            />
+            <LinkCard
+              href="/app/admin/claims"
+              title={t("placeholders.claims.title")}
+              body={t("placeholders.claims.body")}
+              action={t("openAdmin")}
+            />
+            <LinkCard
+              href="/app/admin/credits"
+              title={t("placeholders.creditsAdmin.title")}
+              body={t("placeholders.creditsAdmin.body")}
               action={t("openAdmin")}
             />
             <PlaceholderCard
