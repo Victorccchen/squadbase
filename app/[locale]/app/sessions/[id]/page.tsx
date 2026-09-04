@@ -50,7 +50,7 @@ export default async function ParentSessionDetailPage({
   const links = await listOwnGuardianLinks();
   const children = approvedChildrenFromLinks(links);
   const teamIds = [...new Set(children.map((child) => child.teamId))];
-  const playerIds = children.map((child) => child.player.id);
+  const playerIds = [...new Set(children.map((child) => child.player.id))];
   const [openSessions, registrations] = await Promise.all([
     listOpenSessionsForParent(teamIds),
     listOwnSessionRegistrations(playerIds),

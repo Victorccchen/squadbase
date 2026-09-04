@@ -3,12 +3,17 @@ import { describe, it } from "node:test";
 import {
   adminSessionsHref,
   defaultDayForMonth,
+  groupSessionsByClubDate,
   groupSessionsByTeam,
+  isDateInClubWeek,
   monthGrid,
   parseAdminSessionsQuery,
+  sessionsInWeek,
+  shiftClubDate,
   uniqueAgeBandAbbrevsOnDate,
   uniqueKindsOnDate,
   visibleMonthRange,
+  weekRangeForDate,
 } from "./session-calendar.ts";
 import type { CalendarSession } from "./session-calendar.ts";
 
@@ -144,6 +149,89 @@ describe("calendar day dots and agenda grouping", () => {
         ["senior", "Adults", ["c"]],
       ],
     );
+  });
+});
+
+describe("club week (Monday–Sunday, Asia/Taipei)", () => {
+  it("selects the ISO week that contains the clicked day", () => {
+    // Friday 4 Sep 2026 → Mon 31 Aug … Sun 6 Sep
+    assert.deepEqual(weekRangeForDate("2026-09-04"), {
+      from: "2026-08-31",
+      to: "2026-09-06",
+    });
+    assert.deepEqual(weekRangeForDate("2026-08-31"), {
+      from: "2026-08-31",
+      to: "2026-09-06",
+    });
+    assert.deepEqual(weekRangeForDate("2026-09-06"), {
+      from: "2026-08-31",
+      to: "2026-09-06",
+    });
+    assert.equal(isDateInClubWeek("2026-09-04", "2026-09-01"), true);
+    assert.equal(isDateInClubWeek("2026-09-07", "2026-09-04"), false);
+  });
+
+  it("lists the week’s sessions in starts_at order, not only the clicked day", () => {
+    const weekRows: CalendarSession[] = [
+      session({
+        id: "sun-prev",
+        starts_at: "2026-08-30T18:00:00+08:00",
+        kind: "regular",
+      }),
+      session({
+        id: "mon",
+        starts_at: "2026-08-31T18:00:00+08:00",
+        kind: "regular",
+      }),
+      session({
+        id: "fri-late",
+        starts_at: "2026-09-04T19:00:00+08:00",
+        kind: "cup",
+      }),
+      session({
+        id: "fri-early",
+        starts_at: "2026-09-04T17:00:00+08:00",
+        kind: "special",
+      }),
+      session({
+        id: "sun",
+        starts_at: "2026-09-06T09:00:00+08:00",
+        kind: "league",
+      }),
+      session({
+        id: "next-mon",
+        starts_at: "2026-09-07T18:00:00+08:00",
+        kind: "regular",
+      }),
+    ];
+    assert.deepEqual(
+      sessionsInWeek(weekRows, "2026-09-04").map((row) => row.id),
+      ["mon", "fri-early", "fri-late", "sun"],
+    );
+    assert.deepEqual(
+      groupSessionsByClubDate(sessionsInWeek(weekRows, "2026-09-04")).map((group) => [
+        group.date,
+        group.sessions.map((row) => row.id),
+      ]),
+      [
+        ["2026-08-31", ["mon"]],
+        ["2026-09-04", ["fri-early", "fri-late"]],
+        ["2026-09-06", ["sun"]],
+      ],
+    );
+  });
+
+  it("shifts the selected day by a week and updates the month", () => {
+    assert.deepEqual(shiftClubDate("2026-09-04", -7), {
+      year: 2026,
+      month: 8,
+      day: "2026-08-28",
+    });
+    assert.deepEqual(shiftClubDate("2026-09-04", 7), {
+      year: 2026,
+      month: 9,
+      day: "2026-09-11",
+    });
   });
 });
 

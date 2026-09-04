@@ -47,7 +47,7 @@ export function ClaimForm({
         >
           {childrenOptions.length > 1 ? <option value="">{t("selectChild")}</option> : null}
           {childrenOptions.map((child) => (
-            <option key={child.player.id} value={child.player.id}>
+            <option key={child.linkId} value={child.player.id}>
               {localizedPlayerName(child.player, locale)} · {child.teamName} · #{child.jerseyNumber}
             </option>
           ))}

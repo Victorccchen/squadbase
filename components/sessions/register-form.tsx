@@ -4,7 +4,10 @@ import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { LocaleHiddenField } from "@/components/admin/locale-hidden-field";
 import { registerForSession } from "@/lib/org/session-actions";
-import { INITIAL_ORG_ACTION_STATE } from "@/lib/org/errors";
+import {
+  INITIAL_ORG_ACTION_STATE,
+  type OrgActionState,
+} from "@/lib/org/errors";
 import type { EligibleChild } from "@/lib/org/session-queries";
 import { localizedPlayerName } from "@/lib/org/display-name";
 import { inputClassName, primaryButtonClassName } from "@/lib/ui";
@@ -13,15 +16,45 @@ type RegisterFormProps = {
   sessionId: string;
   childrenOptions: EligibleChild[];
   locale: string;
+  returnTo?: "list" | "detail";
 };
 
-export function RegisterForm({ sessionId, childrenOptions, locale }: RegisterFormProps) {
-  const t = useTranslations("sessions");
-  const org = useTranslations("org");
+type RegisterFormFieldsProps = RegisterFormProps & {
+  formId?: string;
+  hideSubmit?: boolean;
+  formAction: (payload: FormData) => void;
+  state: OrgActionState;
+  pending: boolean;
+};
+
+export function RegisterForm(props: RegisterFormProps) {
   const [state, formAction, pending] = useActionState(
     registerForSession,
     INITIAL_ORG_ACTION_STATE,
   );
+  return (
+    <RegisterFormFields
+      {...props}
+      formAction={formAction}
+      state={state}
+      pending={pending}
+    />
+  );
+}
+
+export function RegisterFormFields({
+  sessionId,
+  childrenOptions,
+  locale,
+  returnTo = "detail",
+  formId,
+  hideSubmit = false,
+  formAction,
+  state,
+  pending,
+}: RegisterFormFieldsProps) {
+  const t = useTranslations("sessions");
+  const org = useTranslations("org");
 
   if (childrenOptions.length === 0) {
     return (
@@ -30,9 +63,10 @@ export function RegisterForm({ sessionId, childrenOptions, locale }: RegisterFor
   }
 
   return (
-    <form action={formAction} className="flex max-w-xl flex-col gap-4">
+    <form id={formId} action={formAction} className="flex max-w-xl flex-col gap-4">
       <LocaleHiddenField />
       <input type="hidden" name="session_id" value={sessionId} />
+      {returnTo === "list" ? <input type="hidden" name="return_to" value="list" /> : null}
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         {t("selectChild")}
         <select
@@ -43,7 +77,7 @@ export function RegisterForm({ sessionId, childrenOptions, locale }: RegisterFor
         >
           {childrenOptions.length > 1 ? <option value="">{t("selectChild")}</option> : null}
           {childrenOptions.map((child) => (
-            <option key={child.player.id} value={child.player.id}>
+            <option key={child.linkId} value={child.player.id}>
               {localizedPlayerName(child.player, locale)} · {child.teamName} · #{child.jerseyNumber}
             </option>
           ))}
@@ -64,9 +98,11 @@ export function RegisterForm({ sessionId, childrenOptions, locale }: RegisterFor
           {org(`errors.${state.errorKey}`)}
         </p>
       ) : null}
-      <button type="submit" disabled={pending} className={primaryButtonClassName}>
-        {pending ? t("registering") : t("register")}
-      </button>
+      {hideSubmit ? null : (
+        <button type="submit" disabled={pending} className={primaryButtonClassName}>
+          {pending ? t("registering") : t("register")}
+        </button>
+      )}
     </form>
   );
 }

@@ -246,6 +246,78 @@ export function sessionsOnDate<T extends { starts_at: string }>(
   return sessions.filter((session) => clubCalendarDate(session.starts_at) === date);
 }
 
+/** Monday–Sunday club week that contains `date` (Taiwan / ISO week). */
+export function weekRangeForDate(date: string): { from: string; to: string } | null {
+  const weekday = isoWeekdayFromCalendarDate(date);
+  if (weekday === null) {
+    return null;
+  }
+  const from = addCalendarDays(date, 1 - weekday);
+  const to = addCalendarDays(date, 7 - weekday);
+  if (!from || !to) {
+    return null;
+  }
+  return { from, to };
+}
+
+export function isDateInClubWeek(date: string, weekDate: string): boolean {
+  const range = weekRangeForDate(weekDate);
+  if (!range) {
+    return false;
+  }
+  return date >= range.from && date <= range.to;
+}
+
+export function sessionsInWeek<T extends { starts_at: string }>(
+  sessions: readonly T[],
+  date: string,
+): T[] {
+  const range = weekRangeForDate(date);
+  if (!range) {
+    return [];
+  }
+  return sessions
+    .filter((session) => {
+      const day = clubCalendarDate(session.starts_at);
+      return day >= range.from && day <= range.to;
+    })
+    .slice()
+    .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at));
+}
+
+export function groupSessionsByClubDate<T extends { starts_at: string }>(
+  sessions: readonly T[],
+): { date: string; sessions: T[] }[] {
+  const buckets = new Map<string, T[]>();
+  for (const session of sessions) {
+    const day = clubCalendarDate(session.starts_at);
+    const list = buckets.get(day) ?? [];
+    list.push(session);
+    buckets.set(day, list);
+  }
+  return [...buckets.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([day, rows]) => ({
+      date: day,
+      sessions: rows.sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at)),
+    }));
+}
+
+export function shiftClubDate(
+  date: string,
+  deltaDays: number,
+): { year: number; month: number; day: string } | null {
+  const next = addCalendarDays(date, deltaDays);
+  if (!next) {
+    return null;
+  }
+  const parts = parseCalendarDateParts(next);
+  if (!parts) {
+    return null;
+  }
+  return { year: parts.year, month: parts.month, day: next };
+}
+
 export function uniqueKindsOnDate(sessions: readonly CalendarSession[], date: string): SessionKind[] {
   const present = new Set<SessionKind>();
   for (const session of sessionsOnDate(sessions, date)) {
