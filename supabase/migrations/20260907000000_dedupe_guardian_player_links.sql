@@ -1,6 +1,17 @@
 -- Deduplicate open guardian–player links and re-assert the unique partial index.
 -- Staging SQL Editor only. Do not run against production.
 --
+-- STEP 2 OF 2. Do not paste this until step 1 has committed in a
+-- SEPARATE SQL Editor Run. PostgreSQL cannot ADD VALUE and USE the new
+-- enum in the same transaction. If you paste this first you get:
+--   ERROR: 22P02: invalid input value for enum link_status: "revoked"
+--
+-- Step 1 (pick one; both are ADD VALUE IF NOT EXISTS 'revoked'):
+--   * supabase/migrations/20260906600000_ensure_link_status_revoked.sql
+--     (this PR; preferred)
+--   * supabase/migrations/20260902200000_link_status_add_revoked.sql
+--     (lifecycle enum file; equivalent)
+--
 -- Product rule (unchanged): at most one pending or approved row per
 -- (guardian_user_id, player_id). rejected / revoked rows stay as history.
 --
@@ -18,6 +29,7 @@
 --   4. Replaces admin_review_guardian_link so approving cannot open a
 --      second pending/approved pair; raises a clear error instead.
 --
+-- This file does NOT add the enum value. Never concatenate it with step 1.
 -- Idempotent: a second paste finds no extras and recreates the same index.
 -- Does not change Stage 4B credit debit / payment rules or RLS.
 

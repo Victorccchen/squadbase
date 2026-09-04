@@ -1,6 +1,9 @@
 -- Dedup / unique open-link verification (staging SQL Editor only).
--- Do not run against production. Optional after
--- 20260907000000_dedupe_guardian_player_links.sql.
+-- Do not run against production. Optional after BOTH:
+--   1. 20260906600000_ensure_link_status_revoked.sql
+--      (or 20260902200000_link_status_add_revoked.sql)
+--   2. 20260907000000_dedupe_guardian_player_links.sql
+-- in two separate SQL Editor Runs. Do not run step 2 until step 1 committed.
 --
 -- Victor: paste this file's CONTENTS (not the path) into the staging SQL Editor.
 -- The unique-index block rolls back so staging data stays unchanged.
