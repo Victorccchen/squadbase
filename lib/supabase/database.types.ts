@@ -13,6 +13,7 @@ export type GuardianRelation = "parent" | "guardian" | "other";
 export type LinkStatus = "pending" | "approved" | "rejected" | "revoked";
 export type SessionRegistrationStatus = "registered" | "cancelled";
 export type SessionMessageAuthorRole = "parent" | "admin";
+export type SessionKind = "regular" | "special" | "cup" | "league";
 
 export type Profile = {
   id: string;
@@ -107,14 +108,35 @@ export type GuardianPlayerLink = {
   updated_by: string | null;
 };
 
+export type SessionSeries = {
+  id: string;
+  team_id: string;
+  title: string;
+  kind: SessionKind;
+  location: string | null;
+  notes: string | null;
+  status: OrgStatus;
+  weekdays: number[] | null;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+};
+
 export type TrainingSession = {
   id: string;
   team_id: string;
+  title: string;
+  kind: SessionKind;
+  series_id: string | null;
   starts_at: string;
   ends_at: string;
   location: string | null;
   status: OrgStatus;
   notes: string | null;
+  deleted_at: string | null;
+  is_playoff: boolean;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -369,24 +391,69 @@ export type Database = {
           },
         ];
       };
+      session_series: {
+        Row: SessionSeries;
+        Insert: {
+          id?: string;
+          team_id: string;
+          title: string;
+          kind: SessionKind;
+          location?: string | null;
+          notes?: string | null;
+          status?: OrgStatus;
+          weekdays?: number[] | null;
+          deleted_at?: string | null;
+        } & TimestampInsert;
+        Update: {
+          team_id?: string;
+          title?: string;
+          kind?: SessionKind;
+          location?: string | null;
+          notes?: string | null;
+          status?: OrgStatus;
+          weekdays?: number[] | null;
+          deleted_at?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "session_series_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       training_sessions: {
         Row: TrainingSession;
         Insert: {
           id?: string;
           team_id: string;
+          title: string;
+          kind?: SessionKind;
+          series_id?: string | null;
           starts_at: string;
           ends_at: string;
           location?: string | null;
           status?: OrgStatus;
           notes?: string | null;
+          deleted_at?: string | null;
+          is_playoff?: boolean;
         } & TimestampInsert;
         Update: {
           team_id?: string;
+          title?: string;
+          kind?: SessionKind;
+          series_id?: string | null;
           starts_at?: string;
           ends_at?: string;
           location?: string | null;
           status?: OrgStatus;
           notes?: string | null;
+          deleted_at?: string | null;
+          is_playoff?: boolean;
           updated_at?: string;
           updated_by?: string | null;
         };
@@ -396,6 +463,13 @@ export type Database = {
             columns: ["team_id"];
             isOneToOne: false;
             referencedRelation: "teams";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "training_sessions_series_id_fkey";
+            columns: ["series_id"];
+            isOneToOne: false;
+            referencedRelation: "session_series";
             referencedColumns: ["id"];
           },
         ];
@@ -570,6 +644,30 @@ export type Database = {
         };
         Returns: string;
       };
+      admin_create_session_series: {
+        Args: {
+          p_team_id: string;
+          p_title: string;
+          p_kind: SessionKind;
+          p_starts_at: string;
+          p_ends_at: string;
+          p_location?: string | null;
+          p_notes?: string | null;
+          p_status?: OrgStatus;
+          p_until_date?: string | null;
+          p_week_count?: number | null;
+          p_weekdays?: number[] | null;
+        };
+        Returns: string;
+      };
+      admin_soft_delete_session: {
+        Args: { p_session_id: string };
+        Returns: string;
+      };
+      admin_soft_delete_session_series: {
+        Args: { p_series_id: string };
+        Returns: string;
+      };
     };
     Enums: {
       app_role: AppRole;
@@ -579,6 +677,7 @@ export type Database = {
       link_status: LinkStatus;
       session_registration_status: SessionRegistrationStatus;
       session_message_author_role: SessionMessageAuthorRole;
+      session_kind: SessionKind;
     };
     CompositeTypes: Record<string, never>;
   };

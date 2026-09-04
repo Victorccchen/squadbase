@@ -12,6 +12,7 @@ import {
   parseOrgStatus,
   parseRequiredBoundedText,
   parseUuid,
+  readAllStrings,
   readString,
   sessionRpcErrorKey,
 } from "@/lib/org/parse";
@@ -21,9 +22,18 @@ import {
   MAX_SESSION_LOCATION,
   MAX_SESSION_MESSAGE,
   MAX_SESSION_NOTES,
+  MAX_SESSION_TITLE,
   parseClubDateTimeLocal,
   parseDurationMinutes,
 } from "@/lib/org/session-time";
+import {
+  generateSessionOccurrences,
+  isRecurringSessionKind,
+  parseSessionKind,
+  parseUntilDate,
+  parseWeekCount,
+  parseWeekdays,
+} from "@/lib/org/session-recurrence";
 import { type OrgActionState, type OrgErrorKey } from "@/lib/org/errors";
 
 function fail(errorKey: OrgErrorKey): OrgActionState {
@@ -76,9 +86,54 @@ async function requireAdminActor(): Promise<AdminActorResult> {
   return { ok: true, user, supabase };
 }
 
-function parseSessionSchedule(formData: FormData):
+function parseTimeOfDay(value: string): string | null {
+  const trimmed = value.trim();
+  if (!/^\d{2}:\d{2}(?::\d{2})?$/.test(trimmed)) {
+    return null;
+  }
+  return trimmed.length === 5 ? `${trimmed}:00` : trimmed;
+}
+
+function parseSessionSchedule(formData: FormData, recurring: boolean):
   | { ok: true; startsAt: string; endsAt: string }
   | { ok: false; errorKey: OrgErrorKey } {
+  if (recurring) {
+    const seriesDate = parseUntilDate(readString(formData, "series_start_date"));
+    const startTime = parseTimeOfDay(readString(formData, "start_time"));
+    if (!seriesDate || !startTime) {
+      return { ok: false, errorKey: "invalidSessionTime" };
+    }
+    const startsAt = parseClubDateTimeLocal(`${seriesDate}T${startTime}`);
+    if (!startsAt) {
+      return { ok: false, errorKey: "invalidSessionTime" };
+    }
+
+    const endTimeRaw = readString(formData, "end_time");
+    const durationRaw = readString(formData, "duration_minutes");
+    let endsAt: string | null = null;
+    if (endTimeRaw) {
+      const endTime = parseTimeOfDay(endTimeRaw);
+      if (!endTime) {
+        return { ok: false, errorKey: "invalidSessionTime" };
+      }
+      endsAt = parseClubDateTimeLocal(`${seriesDate}T${endTime}`);
+    } else if (durationRaw) {
+      const duration = parseDurationMinutes(durationRaw);
+      if (!duration) {
+        return { ok: false, errorKey: "invalidDuration" };
+      }
+      endsAt = addMinutesToOffsetIso(startsAt, duration);
+    }
+
+    if (!endsAt) {
+      return { ok: false, errorKey: "invalidSessionTime" };
+    }
+    if (!isEndsAfterStart(startsAt, endsAt)) {
+      return { ok: false, errorKey: "endsBeforeStart" };
+    }
+    return { ok: true, startsAt, endsAt };
+  }
+
   const startsAt = parseClubDateTimeLocal(readString(formData, "starts_at"));
   if (!startsAt) {
     return { ok: false, errorKey: "invalidSessionTime" };
@@ -120,7 +175,12 @@ export async function createSession(
     return fail("missingTeam");
   }
 
-  const schedule = parseSessionSchedule(formData);
+  const kind = parseSessionKind(readString(formData, "kind"));
+  if (!kind) {
+    return fail("invalidSessionKind");
+  }
+
+  const schedule = parseSessionSchedule(formData, isRecurringSessionKind(kind));
   if (!schedule.ok) {
     return fail(schedule.errorKey);
   }
@@ -128,21 +188,73 @@ export async function createSession(
   const location = parseOptionalBoundedText(readString(formData, "location"), MAX_SESSION_LOCATION);
   const notes = parseOptionalBoundedText(readString(formData, "notes"), MAX_SESSION_NOTES);
   const status = parseOrgStatus(readString(formData, "status")) ?? "active";
+  const title = parseRequiredBoundedText(readString(formData, "title"), MAX_SESSION_TITLE);
+  if (!title) {
+    return fail("missingTitle");
+  }
 
-  const { error } = await actor.supabase.from("training_sessions").insert({
-    team_id: teamId,
-    starts_at: schedule.startsAt,
-    ends_at: schedule.endsAt,
-    location,
-    notes,
-    status,
-    created_by: actor.user.id,
-    updated_by: actor.user.id,
+  const untilRaw = readString(formData, "until_date");
+  const weekRaw = readString(formData, "week_count");
+  let untilDate: string | null = null;
+  let weekCount: number | null = null;
+  let weekdays: number[] | null = null;
+
+  if (isRecurringSessionKind(kind)) {
+    const parsedWeekdays = parseWeekdays(readAllStrings(formData, "weekdays"));
+    if (parsedWeekdays === null) {
+      return fail("invalidWeekdays");
+    }
+    if (parsedWeekdays.length === 0) {
+      return fail("weekdayRequired");
+    }
+    weekdays = parsedWeekdays;
+
+    if (untilRaw && weekRaw) {
+      return fail("recurrenceMutex");
+    }
+    if (untilRaw) {
+      untilDate = parseUntilDate(untilRaw);
+      if (!untilDate) {
+        return fail("invalidUntilDate");
+      }
+    }
+    if (weekRaw) {
+      weekCount = parseWeekCount(weekRaw);
+      if (weekCount === null) {
+        return fail("invalidWeekCount");
+      }
+    }
+
+    const generated = generateSessionOccurrences({
+      kind,
+      startsAt: schedule.startsAt,
+      endsAt: schedule.endsAt,
+      untilDate,
+      weekCount,
+      weekdays,
+    });
+    if (!generated.ok) {
+      return fail(generated.errorKey);
+    }
+  }
+
+  const { error } = await actor.supabase.rpc("admin_create_session_series", {
+    p_team_id: teamId,
+    p_title: title,
+    p_kind: kind,
+    p_starts_at: schedule.startsAt,
+    p_ends_at: schedule.endsAt,
+    p_location: location,
+    p_notes: notes,
+    p_status: status,
+    p_until_date: untilDate,
+    p_week_count: weekCount,
+    p_weekdays: weekdays,
   });
 
   if (error) {
     console.error("createSession", error.message);
-    return fail("generic");
+    return fail(sessionRpcErrorKey(error));
   }
 
   revalidateSessions();
@@ -160,7 +272,7 @@ export async function updateSession(
     return fail(actor.errorKey);
   }
 
-  const schedule = parseSessionSchedule(formData);
+  const schedule = parseSessionSchedule(formData, false);
   if (!schedule.ok) {
     return fail(schedule.errorKey);
   }
@@ -172,14 +284,37 @@ export async function updateSession(
     return fail("invalidStatus");
   }
 
+  const title = parseRequiredBoundedText(readString(formData, "title"), MAX_SESSION_TITLE);
+  if (!title) {
+    return fail("missingTitle");
+  }
+
+  const existing = await actor.supabase
+    .from("training_sessions")
+    .select("kind")
+    .eq("id", sessionId)
+    .maybeSingle();
+  if (existing.error) {
+    console.error("updateSession kind", existing.error.message);
+    return fail("generic");
+  }
+  if (!existing.data) {
+    return fail("sessionNotFound");
+  }
+
+  const isPlayoff =
+    existing.data.kind === "league" && readString(formData, "is_playoff") === "true";
+
   const { data, error } = await actor.supabase
     .from("training_sessions")
     .update({
+      title,
       starts_at: schedule.startsAt,
       ends_at: schedule.endsAt,
       location,
       notes,
       status,
+      is_playoff: isPlayoff,
       updated_by: actor.user.id,
     })
     .eq("id", sessionId)
@@ -230,6 +365,63 @@ export async function setSessionStatus(
   }
   if (!data) {
     return fail("sessionNotFound");
+  }
+
+  revalidateSessions();
+  if (readString(formData, "next") === "list") {
+    redirectAdmin("/app/admin/sessions", formData);
+  } else {
+    redirectAdmin(`/app/admin/sessions/${sessionId}`, formData);
+  }
+  return ok();
+}
+
+export async function softDeleteSession(
+  sessionId: string,
+  _prev: OrgActionState,
+  formData: FormData,
+): Promise<OrgActionState> {
+  const actor = await requireAdminActor();
+  if (!actor.ok) {
+    return fail(actor.errorKey);
+  }
+
+  const { error } = await actor.supabase.rpc("admin_soft_delete_session", {
+    p_session_id: sessionId,
+  });
+
+  if (error) {
+    console.error("softDeleteSession", error.message);
+    return fail(sessionRpcErrorKey(error));
+  }
+
+  revalidateSessions();
+  if (readString(formData, "next") === "list") {
+    redirectAdmin("/app/admin/sessions", formData);
+  } else {
+    redirectAdmin(`/app/admin/sessions/${sessionId}`, formData);
+  }
+  return ok();
+}
+
+export async function softDeleteSessionSeries(
+  seriesId: string,
+  sessionId: string,
+  _prev: OrgActionState,
+  formData: FormData,
+): Promise<OrgActionState> {
+  const actor = await requireAdminActor();
+  if (!actor.ok) {
+    return fail(actor.errorKey);
+  }
+
+  const { error } = await actor.supabase.rpc("admin_soft_delete_session_series", {
+    p_series_id: seriesId,
+  });
+
+  if (error) {
+    console.error("softDeleteSessionSeries", error.message);
+    return fail(sessionRpcErrorKey(error));
   }
 
   revalidateSessions();

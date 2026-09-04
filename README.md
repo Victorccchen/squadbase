@@ -2,7 +2,7 @@
 
 Responsive web + PWA for a football **Club** (球團) operations app: training squads, courses, attendance, assessments, and matches/events.
 
-This repository is currently **Stage 4**: Stage 1 phone OTP login, Stage 2 admin-managed organization master data (teams, players, coaches, coach↔team assignments) and a read-only coach roster, **guardian–player binding with admin approval**, parent withdraw of a pending link, admin revoke of an approved link, admin team deactivate / hard-delete of empty squads, and **training sessions hung under a team** with parent registration (auto-approved), optional note, cancel/switch, and parent↔admin Q&A. Prepaid sessions, payments, attendance, assessments, and match management are not included.
+This repository is currently **Stage 4A.1**: Stage 1 phone OTP login, Stage 2 admin-managed organization master data (teams, players, coaches, coach↔team assignments) and a read-only coach roster, **guardian–player binding with admin approval**, parent withdraw of a pending link, admin revoke of an approved link, admin team deactivate / hard-delete of empty squads, **training sessions hung under a team** with parent registration (auto-approved), optional note, cancel/switch, and parent↔admin Q&A, plus **session title, kind, multi-weekday series generation, soft-delete, and an admin month calendar**. Prepaid sessions, payments, attendance, assessments, and match management are not included.
 
 Parents can request a link to an **existing** player (the club creates the player record first). Until an admin approves, the parent cannot read that player’s private fields. After approval, the parent sees a basic “my children” list (names, birth date, team, jersey) and may **register that child for training sessions** on the child’s team. The parent may **withdraw a pending request**; only an **admin** may revoke an **approved** link. After revoke or withdraw, `is_approved_guardian_for_player` is false and the same pair may apply again. Session signup checks `guardian_player_links.status = approved`.
 
@@ -128,6 +128,43 @@ Parents never receive a full session or roster dump: they only see sessions on t
 
 Out of scope: payments / prepaid sessions / LINE OA, attendance, assessments, hard capacity / waitlist, production deploy.
 
+## Schema choice (Stage 4A)
+
+Stage 4A extends sessions with a required **title**, a **kind**, optional **series**, and **soft-delete**. Parent auto-approve, no capacity limit, notes, and Q&A stay as in Stage 4.
+
+| Addition | Purpose |
+| --- | --- |
+| `session_kind` | `regular` / `special` / `cup` / `league` |
+| `session_series` | Shared title/kind/location/notes for generated occurrences. `deleted_at` for series soft-delete |
+| `training_sessions.title` | Required. Parents see this on signup lists |
+| `training_sessions.kind` | Copied from the series at create |
+| `training_sessions.series_id` | Nullable FK to `session_series` |
+| `training_sessions.deleted_at` | Admin soft-delete. Hidden from new parent signup. Registrations and Q&A stay |
+| `training_sessions.is_playoff` | Per-occurrence flag; only allowed when `kind = league`. No auto playoff bracket |
+
+**Hypothesis (locked for this stage):** `admin_create_session_series` generates occurrences in one security-definer RPC (safer than a client loop). `special` creates exactly one occurrence. Recurring kinds (`regular`, `cup`, `league`) require **end date XOR week count**. **N weeks = N occurrences including the first.** Maximum 52 occurrences per create; over that is an error and no write. Inactive status still temporarily hides a session from new signup without deleting it.
+
+`guardian_can_read_session` lets parents read active **non-deleted** sessions on teams of approved children, **or** any session they already registered for (including after a later soft-delete). New signup RPCs reject deleted or inactive sessions.
+
+Writes for create and soft-delete are admin-only RPCs. Coaches keep read on assigned-team sessions (including history). Parents keep register/cancel/Q&A only.
+
+Out of scope for 4A (Stage 4B): payments, prepaid packages, attendance deduction, LINE OA/group copy, push notifications. No auto-generated playoff bracket.
+
+## Schema choice (Stage 4A.1)
+
+Stage 4A.1 extends recurrence so a regular/cup/league series can meet on **more than one weekday**, and replaces the admin sessions long list with a **month calendar + day agenda**.
+
+| Addition | Purpose |
+| --- | --- |
+| `session_series.weekdays` | `smallint[]`, ISO-8601 **1=Monday … 7=Sunday**. Null for `special` / legacy series |
+| `admin_create_session_series(..., p_weekdays)` | Optional last argument. `NULL` infers a one-element array from `p_starts_at`’s Taipei weekday (Stage 4A callers). `{}` is rejected |
+
+**Hypothesis (locked):** week-count **N means N occurrences per selected weekday**, including the first of that weekday on or after the series start date. Total occurrences = sum across weekdays, still **max 52** (reject the entire create if over). Until-date: every calendar date in `[startDate, untilDate]` whose weekday is selected, at the chosen time of day. `special` is unchanged (exactly one occurrence; weekday multi-select is hidden). Parent `/app/sessions` stays a list. No drag-reschedule, no parent calendar, no restore-from-soft-delete UI.
+
+Calendar dots use CSS tokens: regular=blue (`--session-kind-regular`), special=amber (`--session-kind-special`), cup=purple (`--session-kind-cup`), league=green (`--session-kind-league`). The right-hand day panel groups by team (U bands / reserve / adult / ungrouped).
+
+Out of scope remains Stage 4B (payments, credits, LINE/push) and Stage 4 parent registration rules.
+
 ### Player discovery (search UX)
 
 Parents must **not** receive a full roster dump. They never `SELECT` from `players` until an approved link exists.
@@ -160,6 +197,10 @@ Apply in order:
 9. [`supabase/migrations/20260902260000_admin_delete_team_active_only.sql`](supabase/migrations/20260902260000_admin_delete_team_active_only.sql) (**paste this so delete works** — `admin_delete_team` blocks only on **active** memberships; inactive memberships and coach assignments are removed in the same transaction. Also re-grants `teams` / memberships / assignments.)
 10. [`supabase/migrations/20260903000000_stage4_training_sessions.sql`](supabase/migrations/20260903000000_stage4_training_sessions.sql) (**Stage 4; paste this file on staging** — sessions, registrations, Q&A, RPCs/RLS. Also replaces `admin_delete_team` so hard-delete removes sessions.)
 11. [`supabase/migrations/20260903020000_regrant_stage4_privileges.sql`](supabase/migrations/20260903020000_regrant_stage4_privileges.sql) (**paste if parents/admins see `permission denied` on `training_sessions` or Stage 4 RPCs** — re-grants tables/functions to `authenticated`. Does not change RLS.)
+12. [`supabase/migrations/20260904000000_stage4a_session_kinds_series.sql`](supabase/migrations/20260904000000_stage4a_session_kinds_series.sql) (**Stage 4A; paste this file on staging** — `session_kind`, `session_series`, session `title` / `kind` / `series_id` / `deleted_at` / `is_playoff`, `admin_create_session_series`, `admin_soft_delete_session`, `admin_soft_delete_session_series`. Also updates `guardian_can_read_session`, `register_player_for_session`, and `admin_delete_team`.)
+13. [`supabase/migrations/20260904020000_regrant_stage4a_privileges.sql`](supabase/migrations/20260904020000_regrant_stage4a_privileges.sql) (**paste if admins see `permission denied` on `session_series` or Stage 4A RPCs** — re-grants tables/functions to `authenticated`. Does not change RLS.)
+14. [`supabase/migrations/20260905000000_stage4a1_multi_weekday_series.sql`](supabase/migrations/20260905000000_stage4a1_multi_weekday_series.sql) (**Stage 4A.1; paste this file on staging** — `session_series.weekdays`, replaces `admin_create_session_series` with `p_weekdays smallint[]` ISO 1=Mon … 7=Sun.)
+15. [`supabase/migrations/20260905020000_regrant_stage4a1_privileges.sql`](supabase/migrations/20260905020000_regrant_stage4a1_privileges.sql) (**paste if admins see `permission denied` after the 4A.1 RPC signature change** — re-grants the new `admin_create_session_series` overload. Does not change RLS.)
 
 Steps:
 
@@ -167,7 +208,7 @@ Steps:
 2. Go to **SQL Editor** → **New query**.
 3. Paste the full contents of the migration file.
 4. Run the query.
-5. In **Table Editor**, confirm `teams`, `players`, `team_memberships`, `coaches`, `coach_team_assignments`, `guardian_player_links`, and (after Stage 4) `training_sessions`, `session_registrations`, `session_registration_messages` exist.
+5. In **Table Editor**, confirm `teams`, `players`, `team_memberships`, `coaches`, `coach_team_assignments`, `guardian_player_links`, and (after Stage 4) `training_sessions`, `session_registrations`, `session_registration_messages` exist. After Stage 4A, also confirm `session_series` and that `training_sessions` has `title`, `kind`, `series_id`, `deleted_at`, and `is_playoff`. After Stage 4A.1, confirm `session_series.weekdays`.
 
 If you use the Supabase CLI and it is linked to **staging** (never production):
 
@@ -191,6 +232,10 @@ If Delete on a deactivated team does nothing useful (or fails because ended memb
 
 Stage 4 (`20260903000000_stage4_training_sessions.sql`) is written to be re-runnable (`create table if not exists`, `create or replace function`, `drop policy if exists`). Apply it on **staging only**. After it runs, `admin_delete_team` also removes `training_sessions` for that team (registrations and messages cascade). The privilege follow-up (`20260903020000_regrant_stage4_privileges.sql`) is also re-runnable and does not change RLS.
 
+Stage 4A.1 (`20260905000000_stage4a1_multi_weekday_series.sql`) replaces `admin_create_session_series` (drops the old 10-argument signature, adds `p_weekdays`). Apply it on **staging only**, after Stage 4A. The privilege follow-up (`20260905020000_regrant_stage4a1_privileges.sql`) is re-runnable and does not change RLS.
+
+**How to apply on staging:** open the staging project SQL Editor, then paste the **file contents** of each migration (not the path string) and run. Do not run these files against production.
+
 ### How to verify the migration
 
 - Table Editor shows the five Stage 2 tables above, with RLS enabled, plus `guardian_player_links` after Stage 3.
@@ -199,6 +244,8 @@ Stage 4 (`20260903000000_stage4_training_sessions.sql`) is written to be re-runn
 - Optional: paste [`supabase/stage3_verification.sql`](supabase/stage3_verification.sql) after substituting real profile UUIDs. The unique-index block asserts re-apply-after-reject and rolls back. The RLS block documents T3-4 / T3-5.
 - Optional: paste [`supabase/lifecycle_verification.sql`](supabase/lifecycle_verification.sql) after substituting real profile UUIDs. Asserts re-apply-after-revoke, empty-team delete, and that active memberships block delete. Rolls back.
 - Optional: paste [`supabase/stage4_verification.sql`](supabase/stage4_verification.sql). The unique-index block asserts re-register-after-cancel and rolls back. The RLS notes document T4-5 / T4-6.
+- Optional: paste [`supabase/stage4a_verification.sql`](supabase/stage4a_verification.sql) after Stage 4A. Asserts title/kind insert, re-register-after-cancel, and that soft-delete keeps registration rows. Rolls back.
+- Optional: paste [`supabase/stage4a1_verification.sql`](supabase/stage4a1_verification.sql) after Stage 4A.1. Asserts `session_series.weekdays` and the `p_weekdays` RPC signature exist. Rolls back.
 - Optional: the RLS block at the bottom of the Stage 2 file, with real user UUIDs.
 
 There is **no seed data** and no real PII in the repo.
@@ -288,7 +335,7 @@ Do not grant extra roles from the browser except through this admin action. RLS 
   - Insert own **pending** links only. Cannot set `approved` / `rejected` (T3-4). Can update **own pending** rows only to `revoked` (withdraw). Cannot revoke `approved`.
 - `coach`: read assigned teams, memberships, and those players (including `birth_date`, needed to show age band on the roster). No insert/update/delete on org tables. Same parent-link rules if they also have the parent role (default).
 - `admin`: full CRUD on org tables and `training_sessions`; can `select` all `profiles` in order to link coaches (phone is PII; admins can see it); can select all guardian links and call `admin_review_guardian_link` / `admin_revoke_guardian_link` / `admin_delete_team`. Team hard-delete refuses while **active** `team_memberships` remain; inactive memberships, coach assignments, and training sessions are removed with the team. Admins can reply on `session_registration_messages`.
-- Training sessions: parents `SELECT` only sessions they can read via approved children (or existing registrations). `register_player_for_session` requires an approved guardian, an **active** session, and an active membership of that player on the session’s team. Parents cannot dump another family’s roster. Coaches `SELECT` sessions/registrations/messages on assigned teams. `anon` has no GRANT.
+- Training sessions: parents `SELECT` only sessions they can read via approved children (or existing registrations, including after soft-delete). `register_player_for_session` requires an approved guardian, an **active non-deleted** session, and an active membership of that player on the session’s team. Parents cannot dump another family’s roster. Coaches `SELECT` sessions/registrations/messages on assigned teams. `anon` has no GRANT. Create and soft-delete go through admin-only RPCs.
 
 Public match pages that show names without dates of birth are a later stage. This stage does not expose player rows to unauthenticated users.
 
@@ -360,6 +407,36 @@ Use **one admin account** and **one parent account** with an **approved** guardi
 
 Locale check: switch zh-Hant / en / ja on sessions, admin sessions, and roster session blocks.
 
+### Stage 4A
+
+Use an admin account. Recurrence math is also covered by `npm test` (`lib/org/session-recurrence.test.ts`).
+
+| ID | Check |
+| --- | --- |
+| T4A-1 | Admin creates a **special** session with a title → exactly 1 row. Parent signup list shows the title. |
+| T4A-2 | Admin creates **regular** with an end date (not week count) → weekly same weekday/time through that date. |
+| T4A-3 | Admin creates **regular** with week count 4 only → exactly 4 sessions including the first. Filling both end date and weeks is rejected. |
+| T4A-4 | Recurring kind with neither end date nor weeks → validation error, no rows written. |
+| T4A-5 | Admin creates **cup** and **league** series. Editing a league occurrence can set **playoff**; parent and admin lists show the playoff badge. No bracket is generated. |
+| T4A-6 | Admin soft-deletes a session. It disappears from parent `/app/sessions`. Admin list with “Include deleted” still shows it. Registrations and Q&A remain on the admin detail. |
+| T4A-7 | Signed-in non-admin cannot open create/soft-delete (access denied). Parent JWT cannot call `admin_create_session_series` / `admin_soft_delete_session`. |
+
+Locale check: switch zh-Hant / en / ja on create form validation, kind badges, filters, and soft-delete confirm.
+
+### Stage 4A.1
+
+Use an admin account. Multi-weekday math is covered by `npm test` (`lib/org/session-recurrence.test.ts`). Calendar grouping is covered by `lib/org/session-calendar.test.ts`.
+
+| ID | Check |
+| --- | --- |
+| T4A1-1 | Admin creates **regular** with Tue+Thu and week count 4 → 4 Tuesdays + 4 Thursdays (8 total, same series/title). Start date’s weekday is not the only generator. |
+| T4A1-2 | Admin creates **regular** with Wednesday + until date (no week count) → every Wednesday in `[start, until]` at the chosen time. |
+| T4A1-3 | Recurring kind with no weekday selected → validation error, no rows written. Over 52 total occurrences is rejected. |
+| T4A1-4 | Admin `/app/admin/sessions` defaults to month calendar. Click a day → right panel shows only that day. Kind-colored dots + legend. Same-day multi-team rows group by team (U bands / reserve / adult). Kind and team filters and include-deleted work. |
+| T4A1-5 | **special** still creates exactly one occurrence (no weekday multi-select). Parent `/app/sessions` stays a list. |
+
+Locale check: weekdays, calendar legend, empty day, and validation (no weekday / over 52) in zh-Hant / en / ja.
+
 ## Staging vs production
 
 | Environment | Use |
@@ -391,15 +468,19 @@ Auth uses the official `@supabase/ssr` cookie pattern for Next.js, composed in `
 
 ## PWA
 
-`app/manifest.ts` publishes a web app manifest. Placeholder icons live in `public/icons/`. Installability and offline caching are not Stage 4 goals.
+`app/manifest.ts` publishes a web app manifest. Placeholder icons live in `public/icons/`. Installability and offline caching are not Stage 4A goals.
 
-## Out of scope (Stage 4)
+## Out of scope (Stage 4 / 4A / 4A.1)
 
 - Prepaid sessions / payments / bank transfer / LINE OA (Stage 4B)
 - Attendance / session deduction
 - Assessments / schedule public announcements
 - Hard capacity limits / waitlist
 - Public match pages
+- Auto-generated playoff brackets
+- Changing auto-approve registration or adding capacity limits
+- Parent session calendar (admin calendar only)
+- Drag-reschedule or restore-from-soft-delete UI
 - Production deploys, merging this work to `main` from an agent, or modifying a production database
 - Service role keys in the repo or in client code
 - In-app admin backdoors or phone whitelists

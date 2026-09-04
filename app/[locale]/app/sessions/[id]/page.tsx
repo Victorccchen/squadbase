@@ -9,6 +9,9 @@ import { QuestionForm } from "@/components/sessions/question-form";
 import { MessageThread } from "@/components/sessions/message-thread";
 import {
   RegistrationStatusBadge,
+  SessionDeletedBadge,
+  SessionKindBadge,
+  SessionPlayoffBadge,
   SessionStatusBadge,
 } from "@/components/sessions/session-status-badge";
 import { listOwnGuardianLinks } from "@/lib/org/queries";
@@ -63,8 +66,8 @@ export default async function ParentSessionDetailPage({
     <>
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-6 py-12">
         <PageHeader
-          title={session.team?.name ?? org("unknownTeam")}
-          description={formatClubDateTimeRange(session.starts_at, session.ends_at, locale)}
+          title={session.title}
+          description={`${session.team?.name ?? org("unknownTeam")} · ${formatClubDateTimeRange(session.starts_at, session.ends_at, locale)}`}
           actions={
             <Link
               href="/app/sessions"
@@ -76,12 +79,23 @@ export default async function ParentSessionDetailPage({
         />
         <dl className="grid gap-3 rounded-2xl border border-zinc-200 bg-white p-6 text-sm dark:border-zinc-800 dark:bg-zinc-900">
           <div className="flex justify-between gap-4">
+            <dt className="text-zinc-500">{t("kind")}</dt>
+            <dd className="flex flex-wrap justify-end gap-2">
+              <SessionKindBadge kind={session.kind} label={t(`kinds.${session.kind}`)} />
+              {session.is_playoff ? <SessionPlayoffBadge label={t("playoff")} /> : null}
+            </dd>
+          </div>
+          <div className="flex justify-between gap-4">
             <dt className="text-zinc-500">{org("status")}</dt>
             <dd>
-              <SessionStatusBadge
-                status={session.status}
-                label={org(session.status === "active" ? "statusActive" : "statusInactive")}
-              />
+              {session.deleted_at ? (
+                <SessionDeletedBadge label={t("deleted")} />
+              ) : (
+                <SessionStatusBadge
+                  status={session.status}
+                  label={org(session.status === "active" ? "statusActive" : "statusInactive")}
+                />
+              )}
             </dd>
           </div>
           <div className="flex justify-between gap-4">

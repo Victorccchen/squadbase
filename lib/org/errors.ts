@@ -39,6 +39,16 @@ export type OrgErrorKey =
   | "messageBodyRequired"
   | "missingPlayer"
   | "missingSession"
+  | "missingTitle"
+  | "invalidSessionKind"
+  | "recurrenceMutex"
+  | "recurrenceBoundRequired"
+  | "invalidWeekCount"
+  | "invalidUntilDate"
+  | "untilBeforeStart"
+  | "tooManyOccurrences"
+  | "weekdayRequired"
+  | "invalidWeekdays"
   | "generic";
 
 export type OrgActionState = {

@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   addMinutesToOffsetIso,
   formatClubDateTime,
+  formatClubTime,
   isEndsAfterStart,
   isSessionOpenForSignup,
   parseClubDateTimeLocal,
@@ -83,6 +84,17 @@ describe("isSessionOpenForSignup", () => {
       ),
       false,
     );
+    assert.equal(
+      isSessionOpenForSignup(
+        {
+          status: "active",
+          ends_at: "2026-09-10T12:00:00.000Z",
+          deleted_at: "2026-09-09T00:00:00.000Z",
+        },
+        now,
+      ),
+      false,
+    );
   });
 });
 
@@ -96,5 +108,13 @@ describe("formatClubDateTime", () => {
   it("formats in the club time zone", () => {
     const text = formatClubDateTime("2026-09-10T10:00:00.000Z", "en");
     assert.match(text, /18:00/);
+  });
+});
+
+describe("formatClubTime", () => {
+  it("formats clock time only in Taipei", () => {
+    const text = formatClubTime("2026-09-10T10:00:00.000Z", "en");
+    assert.match(text, /18:00/);
+    assert.equal(text.includes("Sep"), false);
   });
 });

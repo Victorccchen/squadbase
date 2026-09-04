@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --experimental-default-type=module --test lib/age-band.test.ts lib/org/parse.test.ts lib/org/session-time.test.ts lib/org/display-name.test.ts lib/auth/roles.test.ts i18n/routing.test.ts"
+    "test": "node --experimental-strip-types --experimental-default-type=module --test lib/age-band.test.ts lib/org/parse.test.ts lib/org/session-time.test.ts lib/org/session-recurrence.test.ts lib/org/session-calendar.test.ts lib/org/display-name.test.ts lib/auth/roles.test.ts i18n/routing.test.ts"
   },
   "engines": {
     "node": ">=20.9.0"

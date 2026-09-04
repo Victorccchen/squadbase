@@ -3,11 +3,19 @@
 :root {
   --background: #f4f1ea;
   --foreground: #0b1f33;
+  --session-kind-regular: #2563eb;
+  --session-kind-special: #f59e0b;
+  --session-kind-cup: #7c3aed;
+  --session-kind-league: #16a34a;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-session-regular: var(--session-kind-regular);
+  --color-session-special: var(--session-kind-special);
+  --color-session-cup: var(--session-kind-cup);
+  --color-session-league: var(--session-kind-league);
   --font-sans: ui-sans-serif, system-ui, "Noto Sans TC", "Noto Sans JP",
     "PingFang TC", "Hiragino Sans", sans-serif;
 }

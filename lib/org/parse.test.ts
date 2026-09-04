@@ -359,6 +359,18 @@ describe("sessionRpcErrorKey", () => {
     );
     assert.equal(sessionRpcErrorKey({ message: "message body required" }), "messageBodyRequired");
     assert.equal(sessionRpcErrorKey({ message: "not authorized" }), "forbidden");
+    assert.equal(sessionRpcErrorKey({ message: "title required" }), "missingTitle");
+    assert.equal(
+      sessionRpcErrorKey({ message: "recurrence cannot use both end date and week count" }),
+      "recurrenceMutex",
+    );
+    assert.equal(
+      sessionRpcErrorKey({ message: "recurrence requires an end date or a week count" }),
+      "recurrenceBoundRequired",
+    );
+    assert.equal(sessionRpcErrorKey({ message: "too many occurrences" }), "tooManyOccurrences");
+    assert.equal(sessionRpcErrorKey({ message: "weekdays required" }), "weekdayRequired");
+    assert.equal(sessionRpcErrorKey({ message: "invalid weekdays" }), "invalidWeekdays");
   });
 });
 

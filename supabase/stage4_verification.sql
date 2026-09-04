@@ -22,8 +22,8 @@ begin
     return;
   end if;
 
-  insert into public.training_sessions (team_id, starts_at, ends_at, status)
-  values (team_id, now() + interval '1 day', now() + interval '1 day 90 minutes', 'active')
+  insert into public.training_sessions (team_id, title, kind, starts_at, ends_at, status)
+  values (team_id, 'Stage 4 verification', 'special', now() + interval '1 day', now() + interval '1 day 90 minutes', 'active')
   returning id into session_id;
 
   insert into public.session_registrations (
