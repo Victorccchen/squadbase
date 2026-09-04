@@ -13,12 +13,14 @@ type ChangeSessionFormProps = {
   registrationId: string;
   options: TrainingSessionWithTeam[];
   locale: string;
+  locked?: boolean;
 };
 
 export function ChangeSessionForm({
   registrationId,
   options,
   locale,
+  locked = false,
 }: ChangeSessionFormProps) {
   const t = useTranslations("sessions");
   const org = useTranslations("org");
@@ -28,6 +30,10 @@ export function ChangeSessionForm({
   );
 
   if (options.length === 0) {
+    return null;
+  }
+
+  if (locked) {
     return null;
   }
 

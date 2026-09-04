@@ -6,6 +6,7 @@ import {
   formatClubTime,
   isEndsAfterStart,
   isSessionOpenForSignup,
+  canCancelSessionRegistration,
   parseClubDateTimeLocal,
   parseDurationMinutes,
   toDateTimeLocalInput,
@@ -54,6 +55,32 @@ describe("addMinutesToOffsetIso / isEndsAfterStart", () => {
     );
     assert.equal(
       isEndsAfterStart("2026-09-10T19:00:00+08:00", "2026-09-10T18:00:00+08:00"),
+      false,
+    );
+  });
+});
+
+describe("canCancelSessionRegistration", () => {
+  const startsAt = "2026-09-10T18:00:00+08:00";
+
+  it("allows cancel when start is more than 24 hours away", () => {
+    assert.equal(
+      canCancelSessionRegistration(startsAt, new Date("2026-09-09T09:59:59.000Z")),
+      true,
+    );
+  });
+
+  it("blocks cancel at exactly 24 hours and inside the window", () => {
+    assert.equal(
+      canCancelSessionRegistration(startsAt, new Date("2026-09-09T10:00:00.000Z")),
+      false,
+    );
+    assert.equal(
+      canCancelSessionRegistration(startsAt, new Date("2026-09-10T01:00:00.000Z")),
+      false,
+    );
+    assert.equal(
+      canCancelSessionRegistration(startsAt, new Date("2026-09-10T11:00:00.000Z")),
       false,
     );
   });

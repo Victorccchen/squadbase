@@ -3,6 +3,7 @@ import { Link } from "@/i18n/navigation";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { AvailableSessionCard } from "@/components/sessions/available-session-card";
+import { CancelRegistrationForm } from "@/components/sessions/cancel-registration-form";
 import {
   RegistrationStatusBadge,
   SessionKindBadge,
@@ -16,7 +17,7 @@ import {
   listOwnSessionRegistrations,
 } from "@/lib/org/session-queries";
 import { localizedPlayerName } from "@/lib/org/display-name";
-import { formatClubDateTimeRange } from "@/lib/org/session-time";
+import { canCancelSessionRegistration, formatClubDateTimeRange } from "@/lib/org/session-time";
 
 type ParentSessionsPageProps = {
   searchParams: Promise<{
@@ -125,18 +126,24 @@ export default async function ParentSessionsPage({ searchParams }: ParentSession
                       ? formatClubDateTimeRange(row.session.starts_at, row.session.ends_at, locale)
                       : ""}
                   </p>
-                  {row.parent_note ? (
-                    <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">
-                      {t("parentNote")}: {row.parent_note}
-                    </p>
-                  ) : null}
+                  <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">
+                    {t("parentNote")}: {row.parent_note || t("parentNoteEmpty")}
+                  </p>
                   {row.session ? (
-                    <Link
-                      href={`/app/sessions/${row.session.id}`}
-                      className="text-sm font-medium underline underline-offset-2"
-                    >
-                      {t("viewSession")}
-                    </Link>
+                    <div className="flex flex-col gap-2">
+                      <Link
+                        href={`/app/sessions/${row.session.id}`}
+                        className="text-sm font-medium underline underline-offset-2"
+                      >
+                        {t("viewSession")}
+                      </Link>
+                      <CancelRegistrationForm
+                        registrationId={row.id}
+                        sessionId={row.session.id}
+                        locked={!canCancelSessionRegistration(row.session.starts_at)}
+                        returnTo="list"
+                      />
+                    </div>
                   ) : null}
                 </li>
               ))}

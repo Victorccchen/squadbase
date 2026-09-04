@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { RegisterFormFields } from "@/components/sessions/register-form";
@@ -43,7 +43,6 @@ export function AvailableSessionCard({
 }: AvailableSessionCardProps) {
   const t = useTranslations("sessions");
   const org = useTranslations("org");
-  const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState(
     registerForSession,
     INITIAL_ORG_ACTION_STATE,
@@ -76,44 +75,26 @@ export function AvailableSessionCard({
             {t("viewSession")}
           </Link>
         </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
-          {open ? (
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              disabled={pending}
-              className="inline-flex items-center justify-center rounded-full px-3 py-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-            >
-              {t("cancelInline")}
-            </button>
-          ) : null}
-          <button
-            type={open && canSubmit ? "submit" : "button"}
-            form={open && canSubmit ? formId : undefined}
-            aria-expanded={open}
-            disabled={pending || (open && !canSubmit)}
-            onClick={open ? undefined : () => setOpen(true)}
-            className={primaryButtonClassName}
-          >
-            {pending ? t("registering") : t("register")}
-          </button>
-        </div>
+        <button
+          type="submit"
+          form={canSubmit ? formId : undefined}
+          disabled={pending || !canSubmit}
+          className={primaryButtonClassName}
+        >
+          {pending ? t("registering") : t("register")}
+        </button>
       </div>
-      {open ? (
-        <div className="border-t border-zinc-200 pt-4 dark:border-zinc-800">
-          <RegisterFormFields
-            sessionId={sessionId}
-            childrenOptions={childrenOptions}
-            locale={locale}
-            returnTo="list"
-            formId={formId}
-            hideSubmit
-            formAction={formAction}
-            state={state}
-            pending={pending}
-          />
-        </div>
-      ) : null}
+      <RegisterFormFields
+        sessionId={sessionId}
+        childrenOptions={childrenOptions}
+        locale={locale}
+        returnTo="list"
+        formId={formId}
+        hideSubmit
+        formAction={formAction}
+        state={state}
+        pending={pending}
+      />
     </li>
   );
 }

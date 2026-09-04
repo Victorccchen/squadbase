@@ -62,27 +62,28 @@ export function RegisterFormFields({
     );
   }
 
+  const onlyChild = childrenOptions.length === 1 ? childrenOptions[0] : null;
+
   return (
     <form id={formId} action={formAction} className="flex max-w-xl flex-col gap-4">
       <LocaleHiddenField />
       <input type="hidden" name="session_id" value={sessionId} />
       {returnTo === "list" ? <input type="hidden" name="return_to" value="list" /> : null}
-      <label className="flex flex-col gap-1.5 text-sm font-medium">
-        {t("selectChild")}
-        <select
-          name="player_id"
-          required
-          defaultValue={childrenOptions.length === 1 ? childrenOptions[0].player.id : ""}
-          className={inputClassName}
-        >
-          {childrenOptions.length > 1 ? <option value="">{t("selectChild")}</option> : null}
-          {childrenOptions.map((child) => (
-            <option key={child.linkId} value={child.player.id}>
-              {localizedPlayerName(child.player, locale)} · {child.teamName} · #{child.jerseyNumber}
-            </option>
-          ))}
-        </select>
-      </label>
+      {onlyChild ? (
+        <input type="hidden" name="player_id" value={onlyChild.player.id} />
+      ) : (
+        <label className="flex flex-col gap-1.5 text-sm font-medium">
+          {t("selectChild")}
+          <select name="player_id" required defaultValue="" className={inputClassName}>
+            <option value="">{t("selectChild")}</option>
+            {childrenOptions.map((child) => (
+              <option key={child.linkId} value={child.player.id}>
+                {localizedPlayerName(child.player, locale)} · {child.teamName} · #{child.jerseyNumber}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         {t("parentNote")}
         <textarea

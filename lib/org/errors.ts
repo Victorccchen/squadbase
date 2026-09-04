@@ -31,6 +31,7 @@ export type OrgErrorKey =
   | "playerNotOnSessionTeam"
   | "alreadyRegistered"
   | "cannotCancelRegistration"
+  | "cannotCancelWithin24h"
   | "cannotSwitchSession"
   | "invalidSessionTime"
   | "endsBeforeStart"

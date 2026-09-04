@@ -25,7 +25,7 @@ import {
   openSessionsForChildTeam,
 } from "@/lib/org/session-queries";
 import { localizedPlayerName } from "@/lib/org/display-name";
-import { formatClubDateTimeRange, isSessionOpenForSignup } from "@/lib/org/session-time";
+import { canCancelSessionRegistration, formatClubDateTimeRange, isSessionOpenForSignup } from "@/lib/org/session-time";
 import { listLeaveRequestsForRegistrations } from "@/lib/credits/queries";
 import { creditsApplyToAgeBand, defaultNoticeDebit } from "@/lib/credits/debit-rules";
 
@@ -147,18 +147,23 @@ export default async function ParentSessionDetailPage({
                 {t("confirmation")}
               </p>
             ) : null}
-            {row.parent_note ? (
+            {row.status === "registered" || row.parent_note ? (
               <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">
-                {t("parentNote")}: {row.parent_note}
+                {t("parentNote")}: {row.parent_note || t("parentNoteEmpty")}
               </p>
             ) : null}
             {row.status === "registered" ? (
               <>
-                <CancelRegistrationForm registrationId={row.id} sessionId={session.id} />
+                <CancelRegistrationForm
+                  registrationId={row.id}
+                  sessionId={session.id}
+                  locked={!canCancelSessionRegistration(session.starts_at)}
+                />
                 <ChangeSessionForm
                   registrationId={row.id}
                   options={openSessionsForChildTeam(openSessions, session.team_id, session.id)}
                   locale={locale}
+                  locked={!canCancelSessionRegistration(session.starts_at)}
                 />
                 {(() => {
                   const leave = leaveByRegistration.get(row.id);

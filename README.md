@@ -231,6 +231,7 @@ Apply in order:
 17. [`supabase/migrations/20260906020000_regrant_stage4b_privileges.sql`](supabase/migrations/20260906020000_regrant_stage4b_privileges.sql) (**paste if parents/admins/coaches see `permission denied` on credit tables or Stage 4B RPCs** — re-grants to `authenticated`. Does not change RLS. Safe to re-run.)
 18. [`supabase/migrations/20260906600000_ensure_link_status_revoked.sql`](supabase/migrations/20260906600000_ensure_link_status_revoked.sql) (**duplicate-link cleanup step 1; paste this file’s CONTENTS alone and wait** — `alter type link_status add value if not exists 'revoked'`. Same statement as item 6. Required if staging never applied the lifecycle enum file. PostgreSQL cannot ADD VALUE and USE it in one transaction.)
 19. [`supabase/migrations/20260907000000_dedupe_guardian_player_links.sql`](supabase/migrations/20260907000000_dedupe_guardian_player_links.sql) (**duplicate-link cleanup step 2; paste only after step 1 committed** — revokes extra pending/approved `guardian_player_links` for the same guardian×player, then recreates the unique partial index. History rows stay as `revoked` with `admin_note` `deduped by migration`. Does not change RLS or Stage 4B debit rules.)
+20. [`supabase/migrations/20260907010000_session_cancel_lock_24h.sql`](supabase/migrations/20260907010000_session_cancel_lock_24h.sql) (**paste this file’s CONTENTS on staging** — `cancel_session_registration` refuses when `now` is within 24 hours before `training_sessions.starts_at`. Does not change RLS or Stage 4B debit rules.)
 
 Steps:
 
@@ -269,6 +270,8 @@ Stage 4A.1 (`20260905000000_stage4a1_multi_weekday_series.sql`) replaces `admin_
 Stage 4B (`20260906000000_stage4b_session_credits.sql`) is written to be re-runnable. **Victor: paste the SQL file contents into the staging SQL Editor, not a path string.** Then paste the regrant file. Do not run them on production. Do not put real bank account numbers, LINE tokens, or service-role keys in git.
 
 Duplicate approved children on `/app/children` (same player twice, duplicate React keys on register/credits): **two separate SQL Editor Runs** on **staging only**. First paste contents of [`supabase/migrations/20260906600000_ensure_link_status_revoked.sql`](supabase/migrations/20260906600000_ensure_link_status_revoked.sql) (or [`supabase/migrations/20260902200000_link_status_add_revoked.sql`](supabase/migrations/20260902200000_link_status_add_revoked.sql) — same `ADD VALUE IF NOT EXISTS`). After that succeeds, paste contents of [`supabase/migrations/20260907000000_dedupe_guardian_player_links.sql`](supabase/migrations/20260907000000_dedupe_guardian_player_links.sql). Do not concatenate them. Optional check: paste [`supabase/guardian_link_dedupe_verification.sql`](supabase/guardian_link_dedupe_verification.sql) contents. Do not run on production. If you skip step 1, step 2 fails with `invalid input value for enum link_status: "revoked"`.
+
+Parent cancel lock (24 hours before `starts_at`): after the dedupe pair, paste contents of [`supabase/migrations/20260907010000_session_cancel_lock_24h.sql`](supabase/migrations/20260907010000_session_cancel_lock_24h.sql) on **staging only**.
 
 ### How to verify the migration
 

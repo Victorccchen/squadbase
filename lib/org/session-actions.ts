@@ -25,6 +25,7 @@ import {
   MAX_SESSION_TITLE,
   parseClubDateTimeLocal,
   parseDurationMinutes,
+  canCancelSessionRegistration,
 } from "@/lib/org/session-time";
 import {
   generateSessionOccurrences,
@@ -504,6 +505,26 @@ export async function cancelSessionRegistration(
   }
 
   const supabase = await createClient();
+  const { data: existing, error: loadError } = await supabase
+    .from("session_registrations")
+    .select("id, training_sessions(starts_at)")
+    .eq("id", registrationId)
+    .maybeSingle();
+
+  if (loadError) {
+    console.error("cancelSessionRegistration load", loadError.message);
+    return fail("generic");
+  }
+  const nested = existing?.training_sessions as
+    | { starts_at?: string }
+    | { starts_at?: string }[]
+    | null
+    | undefined;
+  const startsAt = Array.isArray(nested) ? nested[0]?.starts_at : nested?.starts_at;
+  if (startsAt && !canCancelSessionRegistration(startsAt)) {
+    return fail("cannotCancelWithin24h");
+  }
+
   const { error } = await supabase.rpc("cancel_session_registration", {
     p_registration_id: registrationId,
   });
@@ -514,7 +535,14 @@ export async function cancelSessionRegistration(
   }
 
   revalidateSessions();
-  redirectParent(sessionId ? `/app/sessions/${sessionId}` : "/app/sessions", formData);
+  if (readString(formData, "return_to") === "list") {
+    redirect({
+      href: "/app/sessions",
+      locale: localeFromForm(formData),
+    });
+  } else {
+    redirectParent(sessionId ? `/app/sessions/${sessionId}` : "/app/sessions", formData);
+  }
   return ok();
 }
 

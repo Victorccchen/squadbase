@@ -144,6 +144,20 @@ export function isSessionOpenForSignup(
   return session.status === "active" && Date.parse(session.ends_at) > now.getTime();
 }
 
+/** Absolute 24-hour window before session start; cancel is blocked at or inside it. */
+export const SESSION_CANCEL_LOCK_MS = 24 * 60 * 60 * 1000;
+
+export function canCancelSessionRegistration(
+  startsAt: string,
+  now = new Date(),
+): boolean {
+  const start = Date.parse(startsAt);
+  if (Number.isNaN(start)) {
+    return false;
+  }
+  return start - now.getTime() > SESSION_CANCEL_LOCK_MS;
+}
+
 function partValue(
   parts: Intl.DateTimeFormatPart[],
   type: Intl.DateTimeFormatPartTypes,
