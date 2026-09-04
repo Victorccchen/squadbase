@@ -12,6 +12,7 @@ export const DATETIME_LOCAL_RE =
 export const MAX_SESSION_LOCATION = 200;
 export const MAX_SESSION_NOTES = 1000;
 export const MAX_SESSION_MESSAGE = 2000;
+export const MAX_SESSION_TITLE = 200;
 export const MIN_DURATION_MINUTES = 15;
 export const MAX_DURATION_MINUTES = 480;
 
@@ -134,9 +135,12 @@ export function isEndsAfterStart(startsAt: string, endsAt: string): boolean {
 }
 
 export function isSessionOpenForSignup(
-  session: { status: string; ends_at: string },
+  session: { status: string; ends_at: string; deleted_at?: string | null },
   now = new Date(),
 ): boolean {
+  if (session.deleted_at) {
+    return false;
+  }
   return session.status === "active" && Date.parse(session.ends_at) > now.getTime();
 }
 

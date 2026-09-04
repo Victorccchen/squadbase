@@ -292,6 +292,16 @@ type SessionRpcErrorKey =
   | "cannotCancelRegistration"
   | "cannotSwitchSession"
   | "messageBodyRequired"
+  | "missingTitle"
+  | "invalidSessionKind"
+  | "recurrenceMutex"
+  | "recurrenceBoundRequired"
+  | "invalidWeekCount"
+  | "invalidUntilDate"
+  | "untilBeforeStart"
+  | "tooManyOccurrences"
+  | "endsBeforeStart"
+  | "teamNotFound"
   | "generic";
 
 export function sessionRpcErrorKey(error: PgLikeError): SessionRpcErrorKey {
@@ -302,7 +312,7 @@ export function sessionRpcErrorKey(error: PgLikeError): SessionRpcErrorKey {
   if (text.includes("session is not active")) {
     return "sessionNotActive";
   }
-  if (text.includes("session not found")) {
+  if (text.includes("session series not found") || text.includes("session not found")) {
     return "sessionNotFound";
   }
   if (text.includes("player is not on this session team")) {
@@ -322,6 +332,33 @@ export function sessionRpcErrorKey(error: PgLikeError): SessionRpcErrorKey {
   }
   if (text.includes("message body required")) {
     return "messageBodyRequired";
+  }
+  if (text.includes("title required")) {
+    return "missingTitle";
+  }
+  if (text.includes("invalid session kind")) {
+    return "invalidSessionKind";
+  }
+  if (text.includes("recurrence cannot use both")) {
+    return "recurrenceMutex";
+  }
+  if (text.includes("recurrence requires an end date or a week count")) {
+    return "recurrenceBoundRequired";
+  }
+  if (text.includes("invalid week count")) {
+    return "invalidWeekCount";
+  }
+  if (text.includes("until date is before the first start")) {
+    return "untilBeforeStart";
+  }
+  if (text.includes("too many occurrences")) {
+    return "tooManyOccurrences";
+  }
+  if (text.includes("end time must be after start time")) {
+    return "endsBeforeStart";
+  }
+  if (text.includes("team not found")) {
+    return "teamNotFound";
   }
   if (text.includes("not authorized")) {
     return "forbidden";

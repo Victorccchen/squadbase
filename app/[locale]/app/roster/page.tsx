@@ -2,7 +2,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { AccessDenied } from "@/components/access-denied";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
-import { SessionStatusBadge } from "@/components/sessions/session-status-badge";
+import { SessionDeletedBadge, SessionKindBadge, SessionPlayoffBadge, SessionStatusBadge } from "@/components/sessions/session-status-badge";
 import { loadSignedInAccount } from "@/lib/auth/session";
 import { canAccessRoster } from "@/lib/auth/roles";
 import { listRoster } from "@/lib/org/queries";
@@ -99,10 +99,10 @@ export default async function RosterPage() {
                   >
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div className="flex flex-col gap-1">
-                        <span className="font-semibold">
-                          {session.team?.name ?? org("unknownTeam")}
-                        </span>
+                        <span className="font-semibold">{session.title}</span>
                         <span className="text-sm text-zinc-500">
+                          {session.team?.name ?? org("unknownTeam")}
+                          {" · "}
                           {formatClubDateTimeRange(session.starts_at, session.ends_at, locale)}
                         </span>
                         {session.location ? (
@@ -110,10 +110,21 @@ export default async function RosterPage() {
                         ) : null}
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <SessionStatusBadge
-                          status={session.status}
-                          label={org(session.status === "active" ? "statusActive" : "statusInactive")}
+                        <SessionKindBadge
+                          kind={session.kind}
+                          label={sessionsT(`kinds.${session.kind}`)}
                         />
+                        {session.is_playoff ? (
+                          <SessionPlayoffBadge label={sessionsT("playoff")} />
+                        ) : null}
+                        {session.deleted_at ? (
+                          <SessionDeletedBadge label={sessionsT("deleted")} />
+                        ) : (
+                          <SessionStatusBadge
+                            status={session.status}
+                            label={org(session.status === "active" ? "statusActive" : "statusInactive")}
+                          />
+                        )}
                         <span className="text-sm text-zinc-500">
                           {adminT("rosterCount", { count: session.registeredCount })}
                         </span>
