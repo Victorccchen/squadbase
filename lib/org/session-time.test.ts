@@ -5,6 +5,7 @@ import {
   formatClubDateTime,
   formatClubTime,
   isEndsAfterStart,
+  isGuardianCancelLocked,
   isSessionOpenForSignup,
   parseClubDateTimeLocal,
   parseDurationMinutes,
@@ -95,6 +96,23 @@ describe("isSessionOpenForSignup", () => {
       ),
       false,
     );
+  });
+});
+
+describe("isGuardianCancelLocked", () => {
+  const now = new Date("2026-09-10T10:00:00.000Z");
+
+  it("locks at or inside 24 hours of starts_at, matching timestamptz now()+24h", () => {
+    assert.equal(isGuardianCancelLocked("2026-09-11T10:00:00.000Z", now), true);
+    assert.equal(isGuardianCancelLocked("2026-09-11T09:59:59.000Z", now), true);
+    assert.equal(isGuardianCancelLocked("2026-09-10T09:00:00.000Z", now), true);
+    assert.equal(isGuardianCancelLocked("2026-09-11T10:00:01.000Z", now), false);
+    assert.equal(isGuardianCancelLocked("2026-09-12T10:00:00.000Z", now), false);
+  });
+
+  it("locks invalid timestamps (fail closed)", () => {
+    assert.equal(isGuardianCancelLocked("", now), true);
+    assert.equal(isGuardianCancelLocked("not-a-date", now), true);
   });
 });
 

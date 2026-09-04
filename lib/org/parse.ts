@@ -304,6 +304,7 @@ type SessionRpcErrorKey =
   | "playerNotOnSessionTeam"
   | "alreadyRegistered"
   | "cannotCancelRegistration"
+  | "cannotCancelWithin24h"
   | "cannotSwitchSession"
   | "messageBodyRequired"
   | "missingTitle"
@@ -336,6 +337,9 @@ export function sessionRpcErrorKey(error: PgLikeError): SessionRpcErrorKey {
   }
   if (text.includes("already registered") || isOpenSessionRegistrationViolation(error)) {
     return "alreadyRegistered";
+  }
+  if (text.includes("cannot cancel within 24 hours")) {
+    return "cannotCancelWithin24h";
   }
   if (text.includes("cannot cancel registration") || text.includes("registration not found")) {
     return "cannotCancelRegistration";

@@ -144,6 +144,17 @@ export function isSessionOpenForSignup(
   return session.status === "active" && Date.parse(session.ends_at) > now.getTime();
 }
 
+/** Matches `cancel_session_registration`: lock when starts_at <= now() + 24 hours. */
+export const GUARDIAN_CANCEL_LOCK_MS = 24 * 60 * 60 * 1000;
+
+export function isGuardianCancelLocked(startsAt: string, now = new Date()): boolean {
+  const start = Date.parse(startsAt);
+  if (Number.isNaN(start)) {
+    return true;
+  }
+  return start <= now.getTime() + GUARDIAN_CANCEL_LOCK_MS;
+}
+
 function partValue(
   parts: Intl.DateTimeFormatPart[],
   type: Intl.DateTimeFormatPartTypes,

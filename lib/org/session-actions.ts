@@ -514,7 +514,56 @@ export async function cancelSessionRegistration(
   }
 
   revalidateSessions();
-  redirectParent(sessionId ? `/app/sessions/${sessionId}` : "/app/sessions", formData);
+  if (readString(formData, "return_to") === "list" || !sessionId) {
+    redirectParent("/app/sessions", formData);
+  } else {
+    redirectParent(`/app/sessions/${sessionId}`, formData);
+  }
+  return ok();
+}
+
+export async function updateSessionRegistrationNote(
+  _prev: OrgActionState,
+  formData: FormData,
+): Promise<OrgActionState> {
+  if (!getPublicSupabaseEnv().isConfigured) {
+    return fail("notConfigured");
+  }
+
+  const { user } = await loadSignedInAccount();
+  if (!user) {
+    return fail("forbidden");
+  }
+
+  const registrationId = parseUuid(readString(formData, "registration_id"));
+  const sessionId = parseUuid(readString(formData, "session_id"));
+  const parentNote = parseOptionalBoundedText(readString(formData, "parent_note"), 1000);
+  if (!registrationId) {
+    return fail("generic");
+  }
+  if (!sessionId) {
+    return fail("missingSession");
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("update_session_registration_parent_note", {
+    p_registration_id: registrationId,
+    p_parent_note: parentNote,
+  });
+
+  if (error) {
+    console.error("updateSessionRegistrationNote", error.message);
+    return fail(sessionRpcErrorKey(error));
+  }
+
+  revalidateSessions();
+  redirect({
+    href: {
+      pathname: `/app/sessions/${sessionId}`,
+      query: { note: "1" },
+    },
+    locale: localeFromForm(formData),
+  });
   return ok();
 }
 

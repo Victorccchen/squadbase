@@ -302,6 +302,26 @@ export function eligibleChildrenForSession(
   );
 }
 
+export function childrenOnSessionTeam(
+  children: EligibleChild[],
+  teamId: string,
+): EligibleChild[] {
+  return children.filter((child) => child.teamId === teamId);
+}
+
+export function openRegistrationForPlayer(
+  registrations: SessionRegistrationWithDetails[],
+  sessionId: string,
+  playerId: string,
+): SessionRegistrationWithDetails | undefined {
+  return registrations.find(
+    (row) =>
+      row.session_id === sessionId &&
+      row.player_id === playerId &&
+      row.status === "registered",
+  );
+}
+
 export function openSessionsForChildTeam(
   sessions: TrainingSessionWithTeam[],
   teamId: string,

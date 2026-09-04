@@ -363,6 +363,14 @@ describe("sessionRpcErrorKey", () => {
     );
     assert.equal(sessionRpcErrorKey({ message: "already registered" }), "alreadyRegistered");
     assert.equal(
+      sessionRpcErrorKey({ message: "cannot cancel within 24 hours of session start" }),
+      "cannotCancelWithin24h",
+    );
+    assert.equal(
+      sessionRpcErrorKey({ message: "cannot cancel registration" }),
+      "cannotCancelRegistration",
+    );
+    assert.equal(
       sessionRpcErrorKey({ message: "cannot switch to the same session" }),
       "cannotSwitchSession",
     );

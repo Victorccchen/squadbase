@@ -1,20 +1,19 @@
-"use client";
-
-import { useActionState, useState } from "react";
-import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { RegisterFormFields } from "@/components/sessions/register-form";
+import { getTranslations } from "next-intl/server";
+import { SessionListActions } from "@/components/sessions/session-list-actions";
 import {
   SessionKindBadge,
   SessionPlayoffBadge,
   SessionStatusBadge,
 } from "@/components/sessions/session-status-badge";
-import { registerForSession } from "@/lib/org/session-actions";
-import { INITIAL_ORG_ACTION_STATE } from "@/lib/org/errors";
-import type { EligibleChild } from "@/lib/org/session-queries";
 import type { SessionKind } from "@/lib/supabase/database.types";
 import { formatClubDateTimeRange } from "@/lib/org/session-time";
-import { primaryButtonClassName } from "@/lib/ui";
+
+export type SessionCardChild = {
+  playerId: string;
+  playerName: string;
+  registrationId: string | null;
+};
 
 type AvailableSessionCardProps = {
   sessionId: string;
@@ -25,11 +24,11 @@ type AvailableSessionCardProps = {
   endsAt: string;
   kind: SessionKind;
   isPlayoff: boolean;
-  childrenOptions: EligibleChild[];
+  childrenOnTeam: SessionCardChild[];
   locale: string;
 };
 
-export function AvailableSessionCard({
+export async function AvailableSessionCard({
   sessionId,
   title,
   teamName,
@@ -38,18 +37,12 @@ export function AvailableSessionCard({
   endsAt,
   kind,
   isPlayoff,
-  childrenOptions,
+  childrenOnTeam,
   locale,
 }: AvailableSessionCardProps) {
-  const t = useTranslations("sessions");
-  const org = useTranslations("org");
-  const [open, setOpen] = useState(false);
-  const [state, formAction, pending] = useActionState(
-    registerForSession,
-    INITIAL_ORG_ACTION_STATE,
-  );
-  const formId = `register-${sessionId}`;
-  const canSubmit = childrenOptions.length > 0;
+  const t = await getTranslations("sessions");
+  const org = await getTranslations("org");
+  const singleChild = childrenOnTeam.length === 1 ? childrenOnTeam[0] : null;
 
   return (
     <li className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
@@ -76,43 +69,34 @@ export function AvailableSessionCard({
             {t("viewSession")}
           </Link>
         </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
-          {open ? (
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              disabled={pending}
-              className="inline-flex items-center justify-center rounded-full px-3 py-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-            >
-              {t("cancelInline")}
-            </button>
-          ) : null}
-          <button
-            type={open && canSubmit ? "submit" : "button"}
-            form={open && canSubmit ? formId : undefined}
-            aria-expanded={open}
-            disabled={pending || (open && !canSubmit)}
-            onClick={open ? undefined : () => setOpen(true)}
-            className={primaryButtonClassName}
-          >
-            {pending ? t("registering") : t("register")}
-          </button>
-        </div>
+        {singleChild ? (
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+            <SessionListActions
+              sessionId={sessionId}
+              playerId={singleChild.playerId}
+              startsAt={startsAt}
+              registrationId={singleChild.registrationId}
+            />
+          </div>
+        ) : null}
       </div>
-      {open ? (
-        <div className="border-t border-zinc-200 pt-4 dark:border-zinc-800">
-          <RegisterFormFields
-            sessionId={sessionId}
-            childrenOptions={childrenOptions}
-            locale={locale}
-            returnTo="list"
-            formId={formId}
-            hideSubmit
-            formAction={formAction}
-            state={state}
-            pending={pending}
-          />
-        </div>
+      {childrenOnTeam.length > 1 ? (
+        <ul className="flex flex-col gap-2 border-t border-zinc-200 pt-3 dark:border-zinc-800">
+          {childrenOnTeam.map((child) => (
+            <li
+              key={child.playerId}
+              className="flex flex-wrap items-center justify-between gap-2"
+            >
+              <span className="text-sm font-medium">{child.playerName}</span>
+              <SessionListActions
+                sessionId={sessionId}
+                playerId={child.playerId}
+                startsAt={startsAt}
+                registrationId={child.registrationId}
+              />
+            </li>
+          ))}
+        </ul>
       ) : null}
     </li>
   );

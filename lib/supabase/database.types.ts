@@ -918,6 +918,13 @@ export type Database = {
         Args: { p_registration_id: string };
         Returns: string;
       };
+      update_session_registration_parent_note: {
+        Args: {
+          p_registration_id: string;
+          p_parent_note?: string | null;
+        };
+        Returns: string;
+      };
       switch_session_registration: {
         Args: {
           p_registration_id: string;
