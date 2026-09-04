@@ -1,4 +1,5 @@
 import { getLocale, getTranslations } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import { AccessDenied } from "@/components/access-denied";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
@@ -128,6 +129,14 @@ export default async function RosterPage() {
                         <span className="text-sm text-zinc-500">
                           {adminT("rosterCount", { count: session.registeredCount })}
                         </span>
+                        {session.deleted_at ? null : (
+                          <Link
+                            href={`/app/roster/sessions/${session.id}`}
+                            className="text-sm font-medium underline underline-offset-2"
+                          >
+                            {sessionsT("takeAttendance")}
+                          </Link>
+                        )}
                       </div>
                     </div>
                     {roster.length === 0 ? (

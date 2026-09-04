@@ -78,6 +78,9 @@ export default async function ChildrenPage() {
                       {band ? ` · ${org(`ageBands.${band}`)}` : ""}
                       {` · ${t(`relations.${link.relation}`)}`}
                     </span>
+                    <Link href="/app/credits" className="mt-2 text-sm font-medium underline underline-offset-2">
+                      {t("openCredits")}
+                    </Link>
                   </li>
                 );
               })}

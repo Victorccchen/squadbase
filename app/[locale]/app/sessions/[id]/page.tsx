@@ -14,6 +14,7 @@ import {
   SessionPlayoffBadge,
   SessionStatusBadge,
 } from "@/components/sessions/session-status-badge";
+import { LeaveRequestForm } from "@/components/credits/leave-request-form";
 import { listOwnGuardianLinks } from "@/lib/org/queries";
 import {
   approvedChildrenFromLinks,
@@ -25,6 +26,8 @@ import {
 } from "@/lib/org/session-queries";
 import { localizedPlayerName } from "@/lib/org/display-name";
 import { formatClubDateTimeRange, isSessionOpenForSignup } from "@/lib/org/session-time";
+import { listLeaveRequestsForRegistrations } from "@/lib/credits/queries";
+import { creditsApplyToAgeBand, defaultNoticeDebit } from "@/lib/credits/debit-rules";
 
 type ParentSessionDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -40,6 +43,7 @@ export default async function ParentSessionDetailPage({
   }
 
   const t = await getTranslations("sessions");
+  const creditsT = await getTranslations("credits");
   const org = await getTranslations("org");
   const common = await getTranslations("common");
   const locale = await getLocale();
@@ -53,10 +57,19 @@ export default async function ParentSessionDetailPage({
   ]);
 
   const onThisSession = registrations.filter((row) => row.session_id === session.id);
+  const leaveRequests = await listLeaveRequestsForRegistrations(onThisSession.map((row) => row.id));
+  const leaveByRegistration = new Map(leaveRequests.map((row) => [row.registration_id, row]));
   const eligible = eligibleChildrenForSession(children, session, registrations);
   const canSignup = isSessionOpenForSignup(session);
   const belongsToFamily = children.some((child) => child.teamId === session.team_id);
   const hasOwnRegistration = onThisSession.length > 0;
+  const teamBand = session.team?.age_band ?? "U8";
+  const noticeDebit = defaultNoticeDebit(
+    session.kind,
+    teamBand,
+    session.no_debit,
+    session.debit_override_n,
+  );
 
   if (!belongsToFamily && !hasOwnRegistration) {
     notFound();
@@ -108,6 +121,14 @@ export default async function ParentSessionDetailPage({
               <dd className="text-right">{session.notes}</dd>
             </div>
           ) : null}
+          <div className="flex justify-between gap-4">
+            <dt className="text-zinc-500">{creditsT("debitLabel")}</dt>
+            <dd className="font-medium">
+              {noticeDebit.noDebitLabel || !creditsApplyToAgeBand(teamBand)
+                ? creditsT("noDebit")
+                : creditsT("creditsCount", { count: noticeDebit.credits })}
+            </dd>
+          </div>
         </dl>
 
         {onThisSession.map((row) => (
@@ -139,6 +160,16 @@ export default async function ParentSessionDetailPage({
                   options={openSessionsForChildTeam(openSessions, session.team_id, session.id)}
                   locale={locale}
                 />
+                {(() => {
+                  const leave = leaveByRegistration.get(row.id);
+                  if (leave?.status === "pending") {
+                    return <p className="text-sm text-zinc-500">{creditsT("leavePending")}</p>;
+                  }
+                  if (leave?.status === "approved") {
+                    return <p className="text-sm text-emerald-800 dark:text-emerald-200">{creditsT("leaveApproved")}</p>;
+                  }
+                  return <LeaveRequestForm registrationId={row.id} sessionId={session.id} />;
+                })()}
               </>
             ) : null}
             <div className="flex flex-col gap-3">

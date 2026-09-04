@@ -19,8 +19,21 @@ import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { getSession, listSessionRegistrations } from "@/lib/org/session-queries";
 import { setSessionStatus, softDeleteSession, softDeleteSessionSeries } from "@/lib/org/session-actions";
 import { localizedPlayerName, playerNameList } from "@/lib/org/display-name";
-import { formatClubDateTimeRange } from "@/lib/org/session-time";
+import { formatClubDateTime, formatClubDateTimeRange } from "@/lib/org/session-time";
 import { secondaryButtonClassName } from "@/lib/ui";
+import { AttendancePanel } from "@/components/credits/attendance-panel";
+import { DebitOverrideForm } from "@/components/credits/debit-override-form";
+import { LeaveReviewForm } from "@/components/credits/leave-review-form";
+import { NoticeCopyPanel } from "@/components/credits/notice-copy-panel";
+import {
+  listActiveRosterForTeam,
+  listAttendanceForSession,
+  listBalancesForPlayers,
+  listLeaveRequestsForSession,
+  publicAppOrigin,
+} from "@/lib/credits/queries";
+import { creditsApplyToAgeBand, defaultNoticeDebit } from "@/lib/credits/debit-rules";
+import { sessionSignupUrl } from "@/lib/credits/notice";
 
 type SessionDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -39,13 +52,45 @@ export default async function AdminSessionDetailPage({ params }: SessionDetailPa
 
   const t = await getTranslations("admin");
   const sessionsT = await getTranslations("sessions");
+  const creditsT = await getTranslations("credits");
   const org = await getTranslations("org");
   const common = await getTranslations("common");
   const locale = await getLocale();
-  const registrations = await listSessionRegistrations(session.id);
+  const [registrations, attendance, roster, leaveRequests] = await Promise.all([
+    listSessionRegistrations(session.id),
+    listAttendanceForSession(session.id),
+    session.team_id ? listActiveRosterForTeam(session.team_id) : Promise.resolve([]),
+    listLeaveRequestsForSession(session.id),
+  ]);
   const open = registrations.filter((row) => row.status === "registered");
   const history = registrations.filter((row) => row.status !== "registered");
   const isDeleted = Boolean(session.deleted_at);
+  const teamBand = session.team?.age_band ?? "U8";
+  const noDebitLabel = !creditsApplyToAgeBand(teamBand) || session.no_debit;
+  const noticeDebit = defaultNoticeDebit(
+    session.kind,
+    teamBand,
+    session.no_debit,
+    session.debit_override_n,
+  );
+  const origin = publicAppOrigin();
+  const signupUrl = origin
+    ? sessionSignupUrl(origin, "zh-Hant", session.id)
+    : `/zh-Hant/app/sessions/${session.id}`;
+  const useRoster = session.kind === "cup" || session.kind === "league";
+  const attendancePlayers = useRoster
+    ? roster.map((row) => ({ player: row.player, jerseyNumber: row.membership.jersey_number }))
+    : open
+        .filter((row) => row.player)
+        .map((row) => ({
+          player: row.player!,
+          jerseyNumber:
+            roster.find((item) => item.player.id === row.player_id)?.membership.jersey_number ?? null,
+        }));
+  const balances = await listBalancesForPlayers(attendancePlayers.map((row) => row.player.id));
+  const balanceByPlayer = new Map(balances.map((row) => [row.player_id, row.credits_available]));
+  const attendanceByPlayer = new Map(attendance.map((row) => [row.player_id, row]));
+  const pendingLeave = leaveRequests.filter((row) => row.status === "pending");
 
   return (
     <>
@@ -101,7 +146,88 @@ export default async function AdminSessionDetailPage({ params }: SessionDetailPa
             <dt className="text-zinc-500">{t("rosterTitle")}</dt>
             <dd className="font-medium">{t("rosterCount", { count: open.length })}</dd>
           </div>
+          <div className="flex justify-between gap-4">
+            <dt className="text-zinc-500">{creditsT("debitLabel")}</dt>
+            <dd className="font-medium">
+              {noticeDebit.noDebitLabel
+                ? creditsT("noDebit")
+                : creditsT("creditsCount", { count: noticeDebit.credits })}
+            </dd>
+          </div>
         </dl>
+        {isDeleted ? null : (
+          <NoticeCopyPanel
+            fields={{
+              title: session.title,
+              timeRange: formatClubDateTimeRange(session.starts_at, session.ends_at, locale),
+              location: session.location || "—",
+              team: session.team?.name ?? org("unknownTeam"),
+              debitLabel: noticeDebit.noDebitLabel
+                ? creditsT("noDebit")
+                : String(noticeDebit.credits),
+              signupUrl,
+              deadline: formatClubDateTime(session.starts_at, locale),
+              registeredCount: open.length,
+            }}
+          />
+        )}
+        {isDeleted ? null : (
+          <section className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+              {creditsT("debitOverrideTitle")}
+            </h2>
+            <DebitOverrideForm
+              sessionId={session.id}
+              noDebit={session.no_debit}
+              debitOverrideN={session.debit_override_n}
+            />
+          </section>
+        )}
+        {isDeleted ? null : (
+          <section className="flex flex-col gap-3">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+              {creditsT("attendanceTitle")}
+            </h2>
+            <AttendancePanel
+              sessionId={session.id}
+              next="admin"
+              locale={locale}
+              showCredits
+              candidates={attendancePlayers.map((row) => {
+                const marked = attendanceByPlayer.get(row.player.id);
+                return {
+                  player: row.player,
+                  jerseyNumber: row.jerseyNumber,
+                  creditsAvailable: balanceByPlayer.get(row.player.id) ?? 0,
+                  attendanceStatus: marked?.status ?? null,
+                  creditsDebited: marked?.credits_debited ?? 0,
+                  noDebitLabel,
+                };
+              })}
+            />
+          </section>
+        )}
+        {pendingLeave.length > 0 ? (
+          <section className="flex flex-col gap-3">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+              {creditsT("leaveQueueTitle")}
+            </h2>
+            <ul className="grid gap-3">
+              {pendingLeave.map((row) => (
+                <li
+                  key={row.id}
+                  className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900"
+                >
+                  <p className="text-sm">
+                    {creditsT("leavePending")}
+                    {row.parent_note ? ` · ${row.parent_note}` : ""}
+                  </p>
+                  <LeaveReviewForm requestId={row.id} sessionId={session.id} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
         {isDeleted ? null : (
           <SessionStatusForm
             status={session.status}

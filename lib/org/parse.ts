@@ -382,6 +382,86 @@ export function sessionRpcErrorKey(error: PgLikeError): SessionRpcErrorKey {
   return "generic";
 }
 
+type CreditRpcErrorKey =
+  | "forbidden"
+  | "invalidLast5"
+  | "notApprovedGuardian"
+  | "packageNotFound"
+  | "packageBandMismatch"
+  | "creditsNotApplicable"
+  | "pendingClaimExists"
+  | "claimNotFound"
+  | "insufficientCredits"
+  | "reasonRequired"
+  | "invalidCreditAmount"
+  | "invalidPrice"
+  | "adjustWouldBeNegative"
+  | "pendingLeaveExists"
+  | "leaveNotFound"
+  | "sessionNotFound"
+  | "playerNotOnSessionTeam"
+  | "invalidDecision"
+  | "generic";
+
+export function creditRpcErrorKey(error: PgLikeError): CreditRpcErrorKey {
+  const text = errorBlob(error);
+  if (text.includes("invalid last5")) {
+    return "invalidLast5";
+  }
+  if (text.includes("not an approved guardian")) {
+    return "notApprovedGuardian";
+  }
+  if (text.includes("package band mismatch")) {
+    return "packageBandMismatch";
+  }
+  if (text.includes("credits do not apply to this age band")) {
+    return "creditsNotApplicable";
+  }
+  if (text.includes("package not found")) {
+    return "packageNotFound";
+  }
+  if (text.includes("already has a pending leave request")) {
+    return "pendingLeaveExists";
+  }
+  if (text.includes("already has a pending claim")) {
+    return "pendingClaimExists";
+  }
+  if (text.includes("claim not found")) {
+    return "claimNotFound";
+  }
+  if (text.includes("insufficient credits")) {
+    return "insufficientCredits";
+  }
+  if (text.includes("reason required")) {
+    return "reasonRequired";
+  }
+  if (text.includes("invalid credit amount")) {
+    return "invalidCreditAmount";
+  }
+  if (text.includes("invalid price")) {
+    return "invalidPrice";
+  }
+  if (text.includes("adjust would be negative")) {
+    return "adjustWouldBeNegative";
+  }
+  if (text.includes("leave request not found")) {
+    return "leaveNotFound";
+  }
+  if (text.includes("session not found")) {
+    return "sessionNotFound";
+  }
+  if (text.includes("player is not on this session team")) {
+    return "playerNotOnSessionTeam";
+  }
+  if (text.includes("invalid decision")) {
+    return "invalidDecision";
+  }
+  if (text.includes("not authorized")) {
+    return "forbidden";
+  }
+  return "generic";
+}
+
 export function parseOptionalBoundedText(
   value: string,
   maxLength: number,

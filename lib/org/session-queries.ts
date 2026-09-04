@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type {
+  AgeBand,
   Player,
   SessionRegistration,
   SessionRegistrationMessage,
@@ -281,6 +282,7 @@ export type EligibleChild = {
   teamId: string;
   teamName: string;
   jerseyNumber: number;
+  teamAgeBand: AgeBand;
 };
 
 export function eligibleChildrenForSession(
@@ -325,6 +327,7 @@ export function approvedChildrenFromLinks(
       teamId: membership.team_id,
       teamName: membership.team.name,
       jerseyNumber: membership.jersey_number,
+      teamAgeBand: membership.team.age_band,
     });
   }
   return result;

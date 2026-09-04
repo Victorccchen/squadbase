@@ -11,16 +11,16 @@
     "footer": "生產環境部署需人工核准，請勿自動發佈到 production。"
   },
   "home": {
-    "eyebrow": "階段 4 · 訓練場次報名",
+    "eyebrow": "階段 4B · 預付堂數與出缺席",
     "headline": "歡迎使用球團管理系統",
-    "lead": "以手機簡訊驗證碼登入。家長可申請連結既有球員，管理員核准後可為子女報名訓練場次、取消或改期，並向球團提問。管理員可建立場次與查看出賽名單。",
+    "lead": "以手機簡訊驗證碼登入。家長可申請連結既有球員，管理員核准後可為子女報名訓練場次、提交匯款堂數申請、請假，並向球團提問。管理員可審核匯款、出缺席扣堂，並複製三語 LINE 社團通知（需手動貼到既有群組）。",
     "openDashboard": "進入儀表板",
     "sampleLabel": "範例文案",
     "sampleBody": "目前語言：繁體中文。切換上方語言後，標題與說明應改為英文或日文。",
     "stackTitle": "技術堆疊",
     "stackNext": "Next.js App Router + TypeScript",
     "stackI18n": "next-intl（繁中 / English / 日本語）",
-    "stackSupabase": "Supabase Phone OTP、profiles、多角色、組織主檔、家長連結、訓練場次與 RLS",
+    "stackSupabase": "Supabase Phone OTP、profiles、多角色、組織主檔、家長連結、訓練場次、預付堂數與 RLS",
     "stackPwa": "PWA：網頁應用程式資訊清單與基本 meta",
     "envTitle": "環境",
     "envConfigured": "已讀取公開 Supabase 變數。登入會連線到此專案（僅使用 anon key）。",
@@ -58,7 +58,7 @@
   "app": {
     "eyebrow": "儀表板",
     "title": "球團儀表板",
-    "welcome": "家長可申請連結子女，並為已核准的子女報名訓練場次。管理員可管理隊伍、球員、教練、連結審核與場次。教練可開啟被指派的名單與場次報名。其他營運功能仍屬後續階段。",
+    "welcome": "家長可申請連結子女，為已核准的子女報名訓練場次，並查看預付堂數餘額。管理員可管理隊伍、球員、教練、連結審核、場次與匯款申請。教練可開啟被指派的名單並登記出缺席。其他營運功能仍屬後續階段。",
     "accountTitle": "帳號",
     "phoneLabel": "手機",
     "rolesLabel": "角色",
@@ -77,6 +77,7 @@
     "openAdmin": "開啟管理",
     "openChildren": "開啟我的子女",
     "openSessions": "開啟訓練場次",
+    "openCredits": "開啟堂數",
     "roles": {
       "parent": "家長",
       "coach": "教練",
@@ -114,7 +115,7 @@
       },
       "attendance": {
         "title": "出缺席",
-        "body": "出缺席紀錄尚未開放。"
+        "body": "在被指派隊伍的場次登記出席、請假或缺席。餘額不足時無法記出席。"
       },
       "assessments": {
         "title": "評核",
@@ -132,6 +133,18 @@
         "title": "訓練場次",
         "body": "依種類建立有標題的場次。例行訓練、盃賽與聯賽可產生每週系列。軟刪除會保留報名紀錄。"
       },
+      "credits": {
+        "title": "堂數與儲值",
+        "body": "查看已核准子女的剩餘堂數，並提交銀行匯款申請。"
+      },
+      "claims": {
+        "title": "匯款申請",
+        "body": "審核家長的銀行匯款申請。核准後會把堂數記入該球員餘額。"
+      },
+      "creditsAdmin": {
+        "title": "堂數與方案",
+        "body": "維護堂數方案、調整餘額，並填寫匯款說明（請勿把真實帳號寫進 git）。"
+      },
       "adminNote": {
         "title": "角色升級",
         "body": "應用程式內沒有後門。請在 Dashboard 的 user_roles 資料表為使用者新增 admin 角色。連結教練時也會授予 coach 角色。"
@@ -148,7 +161,10 @@
     "teams": "隊伍",
     "players": "球員",
     "coaches": "教練",
-    "bindings": "連結審核"
+    "bindings": "連結審核",
+    "credits": "堂數",
+    "claims": "匯款申請",
+    "creditsAdmin": "堂數管理"
   },
   "access": {
     "deniedTitle": "你沒有權限開啟此頁",
@@ -352,6 +368,20 @@
       "tooManyOccurrences": "一次最多只能產生 52 場。",
       "weekdayRequired": "例行訓練、盃賽或聯賽請至少選擇一個星期幾。",
       "invalidWeekdays": "星期必須是週一到週日（ISO 1–7）。",
+      "invalidLast5": "請輸入匯款帳號後五碼（五位數字）。",
+      "packageNotFound": "找不到這個方案，或方案已停用。",
+      "packageBandMismatch": "此方案不符合該球員目前隊伍的年齡組。",
+      "creditsNotApplicable": "此年齡組目前不使用預付堂數（不扣堂）。",
+      "pendingClaimExists": "此球員已有待審的匯款申請。",
+      "claimNotFound": "找不到這筆匯款申請，或它已審核。",
+      "insufficientCredits": "餘額不足，無法完成此次扣堂。請先儲值或由管理員調整堂數。",
+      "reasonRequired": "調整堂數必須填寫原因。",
+      "invalidCreditAmount": "請輸入有效的堂數（非零整數）。",
+      "invalidPrice": "請輸入有效的價格（新台幣，不可為負）。",
+      "adjustWouldBeNegative": "這次調整會讓餘額變成負數，已拒絕。",
+      "pendingLeaveExists": "此報名已有待審或已核准的請假。",
+      "leaveNotFound": "找不到這筆請假申請，或它已審核。",
+      "invalidPackageBand": "請選擇有效的方案年齡組。",
       "generic": "無法儲存，請再試一次。"
     }
   },
@@ -399,7 +429,8 @@
     "playerNames": "姓名",
     "playerTeam": "隊伍 / 背號",
     "playerBirth": "出生日期",
-    "openSessions": "報名訓練場次"
+    "openSessions": "報名訓練場次",
+    "openCredits": "查看堂數"
   },
   "sessions": {
     "title": "訓練場次",
@@ -483,9 +514,115 @@
     "unknownPlayer": "未知球員",
     "emptyRoster": "尚無報名。",
     "deleted": "已刪除",
+    "takeAttendance": "出缺席",
     "statuses": {
       "registered": "已報名",
       "cancelled": "已取消"
     }
+  },
+  "credits": {
+    "title": "堂數",
+    "lead": "查看已核准子女的剩餘堂數與出席次數。繳費梯隊可選擇 10／20／30 堂方案，依匯款說明轉帳後填寫帳號後五碼。管理員核准後才入帳。家長看不到完整金流明細。",
+    "openSessions": "開啟訓練場次",
+    "balancesTitle": "剩餘堂數",
+    "emptyChildrenTitle": "尚無已核准子女",
+    "emptyChildrenBody": "管理員核准家長連結後，才能看到該子女的堂數。",
+    "remainingCredits": "剩餘 {count} 堂",
+    "attendedCount": "已出席 {count} 次",
+    "lowBalance": "堂數即將用完（≤1）。請盡快續購，並複製匯款說明。",
+    "copyTransferHint": "複製匯款說明",
+    "copied": "已複製",
+    "noDebitBand": "此隊伍目前不扣堂（U6、預備隊或成人）。",
+    "noDebit": "不扣堂",
+    "buyTitle": "購買堂數",
+    "buyLead": "請選擇方案與子女，依說明匯款後填寫帳號後五碼。不會在應用程式內進行線上刷卡。",
+    "buyEmpty": "沒有可購買堂數的已核准子女，或目前沒有適用方案。U6、預備隊與成人不使用預付堂數。",
+    "selectChild": "選擇子女",
+    "selectPackage": "選擇方案",
+    "packageHint": "主要方案為 10／20／30 堂。單堂價格僅供對照與貢獻度計算。",
+    "transferTitle": "匯款說明",
+    "transferHintMissing": "請向球團索取匯款帳號（不會寫在程式碼裡）。可請管理員在堂數管理頁填寫 BANK_TRANSFER_HINT 說明。",
+    "last5": "匯款帳號後五碼",
+    "last5Hint": "請輸入五位數字，例如 12345。",
+    "last5Value": "後五碼 {last5}",
+    "submitClaim": "送出匯款申請",
+    "submitting": "送出中…",
+    "claimsTitle": "我的匯款申請",
+    "emptyClaimsTitle": "尚無匯款申請",
+    "emptyClaimsBody": "送出申請後會顯示在這裡。核准後堂數才會入帳。",
+    "adminNote": "管理員備註",
+    "unknownPlayer": "未知球員",
+    "creditsCount": "{count} 堂",
+    "priceTwd": "NT$ {amount}",
+    "priceTwdLabel": "價格（新台幣）",
+    "bands": {
+      "U8": "U8",
+      "U10_U18": "U10–U18"
+    },
+    "claimStatuses": {
+      "pending": "待審",
+      "approved": "已入帳",
+      "rejected": "已拒絕"
+    },
+    "adminClaimsTitle": "匯款申請",
+    "adminClaimsLead": "核准後會把方案堂數記入該球員餘額並寫入帳本。教練看不到匯款金額與後五碼。請勿把真實帳號寫進 git。",
+    "pendingClaims": "待審申請",
+    "emptyPendingClaimsTitle": "目前沒有待審匯款",
+    "emptyPendingClaimsBody": "家長送出後五碼申請後會出現在這裡。",
+    "claimHistory": "已審核紀錄",
+    "approveClaim": "核准入帳",
+    "rejectClaim": "拒絕",
+    "adminCreditsTitle": "堂數與方案",
+    "adminCreditsLead": "維護 2026-09-01 起的堂數價目、調整餘額，並填寫給家長看的匯款說明。真實銀行帳號只放在本機 .env.local、Supabase secrets 或此管理欄位，不要提交到 git。",
+    "parentContribution": "家長貢獻（已核准申請金額）NT$ {amount} · {count} 筆",
+    "playerContribution": "球員貢獻（扣堂 × 單堂成本）NT$ {amount} · {count} 筆扣堂",
+    "transferHintTitle": "匯款說明（給家長）",
+    "transferHintLabel": "匯款說明",
+    "transferHintAdminHelp": "可放銀行代碼與帳號提示。請勿把 LINE token 或服務角色金鑰貼在這裡。環境變數 BANK_TRANSFER_HINT 會在此欄空白時當作備援。",
+    "saveTransferHint": "儲存匯款說明",
+    "adjustTitle": "手動調整堂數",
+    "selectPlayer": "選擇球員",
+    "adjustAmount": "調整堂數",
+    "adjustAmountHint": "正數為補堂，負數為扣堂。不可讓餘額變負。",
+    "adjustReason": "原因（必填）",
+    "saveAdjust": "儲存調整",
+    "packagesTitle": "方案目錄",
+    "savePackage": "儲存方案",
+    "addPackageTitle": "新增方案",
+    "addPackage": "新增",
+    "catalogBand": "方案年齡組",
+    "packageCredits": "堂數",
+    "noticeTitle": "複製通知",
+    "noticeLead": "複製後請手動貼到既有 LINE 社團。應用程式不會自動發送 LINE 或推播。",
+    "copyNotice": "複製",
+    "noticeBlocks": {
+      "zh": "繁中",
+      "en": "English",
+      "ja": "日本語",
+      "all": "三語合併"
+    },
+    "debitLabel": "扣堂",
+    "debitOverrideTitle": "此場扣堂例外",
+    "noDebitFlag": "不扣堂（覆蓋預設規則）",
+    "debitOverride": "指定扣堂數（空白＝依種類預設）",
+    "debitOverrideHint": "例行訓練預設出席扣 1；特別場次出席或無故缺席扣 2；盃賽／聯賽出賽每人每天扣 1。U6、預備隊、成人永不扣堂。",
+    "saveDebitOverride": "儲存扣堂設定",
+    "attendanceTitle": "出缺席",
+    "attendanceEmpty": "沒有可登記的球員。",
+    "attendanceUnmarked": "尚未登記",
+    "debitedCredits": "已扣 {count} 堂",
+    "attendance": {
+      "present": "出席",
+      "excused_absent": "請假缺席",
+      "unexcused_absent": "無故缺席"
+    },
+    "leaveNote": "請假說明（選填）",
+    "requestLeave": "申請請假（待審）",
+    "leavePending": "請假申請待審",
+    "leaveApproved": "請假已核准（此場不扣堂）",
+    "leaveQueueTitle": "請假待審",
+    "approveLeave": "核准請假",
+    "rejectLeave": "拒絕請假",
+    "backToRoster": "返回名單"
   }
 }

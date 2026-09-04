@@ -12,6 +12,7 @@
 - [ ] Stage 4 training sessions / parent registration / Q&A
 - [ ] Stage 4A session title, kind, weekly series, soft-delete
 - [ ] Stage 4A.1 multi-weekday series + admin calendar
+- [ ] Stage 4B prepaid credits, bank-transfer claims, attendance debit, LINE copy
 
 ## Verification
 

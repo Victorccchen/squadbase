@@ -22,3 +22,11 @@ export function canAccessAdmin(roles: AppRole[]): boolean {
 export function canAccessRoster(roles: AppRole[]): boolean {
   return hasRole(roles, "coach") || hasRole(roles, "admin");
 }
+
+export function canReviewPayments(roles: AppRole[]): boolean {
+  return hasRole(roles, "admin");
+}
+
+export function canTakeAttendance(roles: AppRole[]): boolean {
+  return hasRole(roles, "coach") || hasRole(roles, "admin");
+}

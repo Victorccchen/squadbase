@@ -2,7 +2,7 @@
 
 Responsive web + PWA for a football **Club** (球團) operations app: training squads, courses, attendance, assessments, and matches/events.
 
-This repository is currently **Stage 4A.1**: Stage 1 phone OTP login, Stage 2 admin-managed organization master data (teams, players, coaches, coach↔team assignments) and a read-only coach roster, **guardian–player binding with admin approval**, parent withdraw of a pending link, admin revoke of an approved link, admin team deactivate / hard-delete of empty squads, **training sessions hung under a team** with parent registration (auto-approved), optional note, cancel/switch, and parent↔admin Q&A, plus **session title, kind, multi-weekday series generation, soft-delete, and an admin month calendar**. Prepaid sessions, payments, attendance, assessments, and match management are not included.
+This repository is currently **Stage 4B**: Stage 1–4A.1 plus **prepaid session credits** for fee-paying youth bands (U8 and U10–U18). Parents submit bank-transfer claims with the last five account digits; an admin approves to credit the player balance. Attendance marking deducts credits under locked kind rules. Admins can copy a trilingual LINE-group notice (manual paste into existing groups — no LINE Messaging API). U6, reserve, and adult sessions do not debit (UI label 不扣堂 / No debit).
 
 Parents can request a link to an **existing** player (the club creates the player record first). Until an admin approves, the parent cannot read that player’s private fields. After approval, the parent sees a basic “my children” list (names, birth date, team, jersey) and may **register that child for training sessions** on the child’s team. The parent may **withdraw a pending request**; only an **admin** may revoke an **approved** link. After revoke or withdraw, `is_approved_guardian_for_player` is false and the same pair may apply again. Session signup checks `guardian_player_links.status = approved`.
 
@@ -32,6 +32,8 @@ In `.env.local` (not git):
 NEXT_PUBLIC_SUPABASE_URL=https://ffksqfgscuezjwdbktcd.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<Dashboard → Project Settings → API Keys → anon / publishable>
 NEXT_PUBLIC_APP_ENV=local
+NEXT_PUBLIC_APP_URL=https://YOUR_APP_HOST
+BANK_TRANSFER_HINT=
 ```
 
 Then:
@@ -55,9 +57,10 @@ Routes:
 | `/[locale]/login` | Phone OTP sign-in |
 | `/[locale]/app` | Signed-in dashboard |
 | `/[locale]/app/children` | Parent: linked children, request status, constrained search form |
-| `/[locale]/app/sessions` | Parent: upcoming sessions for linked children’s teams, register / cancel / switch, Q&A |
-| `/[locale]/app/admin/*` | Admin CRUD (teams, players, coaches, sessions) and binding approvals. Parents/coaches without admin see an access-denied page. |
-| `/[locale]/app/roster` | Coach (or admin) read-only roster of assigned teams and session signups |
+| `/[locale]/app/sessions` | Parent: upcoming sessions for linked children’s teams, register / cancel / switch, Q&A, excused leave |
+| `/[locale]/app/credits` | Parent: remaining credits, 10/20/30 pack claim with last-5 digits |
+| `/[locale]/app/admin/*` | Admin CRUD (teams, players, coaches, sessions), binding approvals, payment claims, packages. Parents/coaches without admin see an access-denied page. |
+| `/[locale]/app/roster` | Coach (or admin) roster of assigned teams, session signups, and attendance |
 
 ## Checks (CI)
 
@@ -163,7 +166,30 @@ Stage 4A.1 extends recurrence so a regular/cup/league series can meet on **more 
 
 Calendar dots use CSS tokens: regular=blue (`--session-kind-regular`), special=amber (`--session-kind-special`), cup=purple (`--session-kind-cup`), league=green (`--session-kind-league`). The right-hand day panel groups by team (U bands / reserve / adult / ungrouped).
 
-Out of scope remains Stage 4B (payments, credits, LINE/push) and Stage 4 parent registration rules.
+Out of scope remains Stage 4 parent registration rules. Stage 4B adds credits without changing calendar/multi-weekday behaviour.
+
+## Schema choice (Stage 4B)
+
+Prepaid credits for fee-paying youth bands. Signup still does **not** pre-debit. Cancel before attendance: no debit.
+
+| Object | Purpose |
+| --- | --- |
+| `session_packages` | Catalog by `U8` / `U10_U18`, credits, TWD price, active. Seeded from 2026-09-01 |
+| `player_session_balances` | Remaining credits + weighted average unit cost |
+| `session_credit_ledger` | Immutable entries: purchase, attend_debit, no_show_debit, match_debit, admin_adjust, reversal |
+| `payment_claims` | Parent last-5 claim; pending → approved (credits the balance) or rejected |
+| `session_attendance` | Unique `(session_id, player_id)`; present / excused_absent / unexcused_absent |
+| `session_leave_requests` | Excused leave on a registration; pending until admin approves (0 debit) |
+| `training_sessions.no_debit` / `debit_override_n` | Admin per-session edge cases |
+| `club_runtime_settings.bank_transfer_hint` | Admin-editable transfer copy. Fallback: `BANK_TRANSFER_HINT` env. Never commit a real account |
+
+**Who pays:** U8 and U10–U18 (package from the player’s current team age band). **No credit MVP:** U6, reserve, adult/senior — attendance does not debit; UI label 不扣堂.
+
+**Kind defaults:** regular present/unexcused −1; special present or unexcused −2 (excused leave 0); cup/league competing player −1 per club calendar day; reserve/adult/U6/no_debit 0. Insufficient balance blocks present and debiting unexcused outcomes.
+
+**RLS (conservative):** parents see own claims and balances for approved-linked players only (not the money ledger). Admins see all. Coaches may read remaining credits and write attendance on assigned teams; they cannot approve claims or select ledger/last-5. Writes for approve/adjust/attendance debit go through security-definer RPCs in one transaction.
+
+Out of scope: online card gateways, LINE Messaging API auto-send, personal LINE binding, push notifications, merging to main from an agent, production deploy.
 
 ### Player discovery (search UX)
 
@@ -201,6 +227,8 @@ Apply in order:
 13. [`supabase/migrations/20260904020000_regrant_stage4a_privileges.sql`](supabase/migrations/20260904020000_regrant_stage4a_privileges.sql) (**paste if admins see `permission denied` on `session_series` or Stage 4A RPCs** — re-grants tables/functions to `authenticated`. Does not change RLS.)
 14. [`supabase/migrations/20260905000000_stage4a1_multi_weekday_series.sql`](supabase/migrations/20260905000000_stage4a1_multi_weekday_series.sql) (**Stage 4A.1; paste this file on staging** — `session_series.weekdays`, replaces `admin_create_session_series` with `p_weekdays smallint[]` ISO 1=Mon … 7=Sun.)
 15. [`supabase/migrations/20260905020000_regrant_stage4a1_privileges.sql`](supabase/migrations/20260905020000_regrant_stage4a1_privileges.sql) (**paste if admins see `permission denied` after the 4A.1 RPC signature change** — re-grants the new `admin_create_session_series` overload. Does not change RLS.)
+16. [`supabase/migrations/20260906000000_stage4b_session_credits.sql`](supabase/migrations/20260906000000_stage4b_session_credits.sql) (**Stage 4B; paste this file’s CONTENTS on staging** — packages, balances, immutable ledger, payment claims, attendance, leave requests, debit RPCs. Seeds the 2026-09-01 TWD catalog. Does not change 4A/4A.1 recurrence.)
+17. [`supabase/migrations/20260906020000_regrant_stage4b_privileges.sql`](supabase/migrations/20260906020000_regrant_stage4b_privileges.sql) (**paste if parents/admins/coaches see `permission denied` on credit tables or Stage 4B RPCs** — re-grants to `authenticated`. Does not change RLS. Safe to re-run.)
 
 Steps:
 
@@ -208,7 +236,7 @@ Steps:
 2. Go to **SQL Editor** → **New query**.
 3. Paste the full contents of the migration file.
 4. Run the query.
-5. In **Table Editor**, confirm `teams`, `players`, `team_memberships`, `coaches`, `coach_team_assignments`, `guardian_player_links`, and (after Stage 4) `training_sessions`, `session_registrations`, `session_registration_messages` exist. After Stage 4A, also confirm `session_series` and that `training_sessions` has `title`, `kind`, `series_id`, `deleted_at`, and `is_playoff`. After Stage 4A.1, confirm `session_series.weekdays`.
+5. In **Table Editor**, confirm `teams`, `players`, `team_memberships`, `coaches`, `coach_team_assignments`, `guardian_player_links`, and (after Stage 4) `training_sessions`, `session_registrations`, `session_registration_messages` exist. After Stage 4A, also confirm `session_series` and that `training_sessions` has `title`, `kind`, `series_id`, `deleted_at`, and `is_playoff`. After Stage 4A.1, confirm `session_series.weekdays`. After Stage 4B, confirm `session_packages`, `player_session_balances`, `payment_claims`, `session_credit_ledger`, `session_attendance`, `session_leave_requests`, and `club_runtime_settings`.
 
 If you use the Supabase CLI and it is linked to **staging** (never production):
 
@@ -236,6 +264,8 @@ Stage 4A.1 (`20260905000000_stage4a1_multi_weekday_series.sql`) replaces `admin_
 
 **How to apply on staging:** open the staging project SQL Editor, then paste the **file contents** of each migration (not the path string) and run. Do not run these files against production.
 
+Stage 4B (`20260906000000_stage4b_session_credits.sql`) is written to be re-runnable. **Victor: paste the SQL file contents into the staging SQL Editor, not a path string.** Then paste the regrant file. Do not run them on production. Do not put real bank account numbers, LINE tokens, or service-role keys in git.
+
 ### How to verify the migration
 
 - Table Editor shows the five Stage 2 tables above, with RLS enabled, plus `guardian_player_links` after Stage 3.
@@ -246,9 +276,10 @@ Stage 4A.1 (`20260905000000_stage4a1_multi_weekday_series.sql`) replaces `admin_
 - Optional: paste [`supabase/stage4_verification.sql`](supabase/stage4_verification.sql). The unique-index block asserts re-register-after-cancel and rolls back. The RLS notes document T4-5 / T4-6.
 - Optional: paste [`supabase/stage4a_verification.sql`](supabase/stage4a_verification.sql) after Stage 4A. Asserts title/kind insert, re-register-after-cancel, and that soft-delete keeps registration rows. Rolls back.
 - Optional: paste [`supabase/stage4a1_verification.sql`](supabase/stage4a1_verification.sql) after Stage 4A.1. Asserts `session_series.weekdays` and the `p_weekdays` RPC signature exist. Rolls back.
+- Optional: paste [`supabase/stage4b_verification.sql`](supabase/stage4b_verification.sql) after Stage 4B. Asserts debit-plan C2–C5 (regular 1, special unexcused 2 / excused 0, cup 1/day, U6/reserve/senior 0). Rolls back.
 - Optional: the RLS block at the bottom of the Stage 2 file, with real user UUIDs.
 
-There is **no seed data** and no real PII in the repo.
+The package catalog is **seeded with TWD prices from 2026-09-01** (no personal data, no bank account numbers). There is **no real PII** in the repo.
 
 ## Age band (15 August season start)
 
@@ -437,6 +468,24 @@ Use an admin account. Multi-weekday math is covered by `npm test` (`lib/org/sess
 
 Locale check: weekdays, calendar legend, empty day, and validation (no weekday / over 52) in zh-Hant / en / ja.
 
+### Stage 4B
+
+Use **one admin**, **one non-admin parent** (approved guardian of a U8 or U10–U18 child), and optionally a **coach** on that team. Debit math is also covered by `npm test` (`lib/credits/debit-rules.test.ts`). LINE copy is covered by `lib/credits/notice.test.ts`.
+
+Paste Stage 4B SQL **file contents** (not path strings) on **staging only** before UI checks.
+
+| ID | Check |
+| --- | --- |
+| C1 | Parent submits a **10-pack** claim with last-5 → admin approves on `/app/admin/claims` → that child’s balance is **+10**. Parent `/app/credits` shows remaining credits, not the full ledger. |
+| C2 | Admin/coach marks **regular present** → **−1**. With balance 0, marking present is blocked (`insufficientCredits`). |
+| C3 | **special** unexcused → **−2**. Approved excused leave → **0** debit. |
+| C4 | **cup** or **league** competing player → **−1 per day** (second same-day match does not double-debit). |
+| C5 | **reserve** / **adult** / **U6** sessions show 不扣堂 / No debit; attendance does **not** debit prepaid credits. |
+| C6 | Admin session detail **複製通知** includes a signup URL in zh-Hant, en, ja, and the combined block. Copy buttons only — no LINE API. |
+| C7 | Non-admin cannot approve claims (`/app/admin/claims` access denied; RPC `not authorized`). Coach can take attendance on assigned teams but cannot see claim last-5 / amounts. Parent cannot see another family’s child balances. Diff has no secrets, bank numbers, LINE tokens, or service-role keys. |
+
+Locale check: packages, claims, attendance, last-5 error, leave, notice templates, empty states in zh-Hant / en / ja.
+
 ## Staging vs production
 
 | Environment | Use |
@@ -452,10 +501,11 @@ CI on pull requests does **not** deploy.
 ## Project layout
 
 ```text
-app/[locale]/          Public home, /login, gated /app, /app/children, /app/sessions, /app/admin, /app/roster
+app/[locale]/          Public home, /login, gated /app, /app/children, /app/sessions, /app/credits, /app/admin, /app/roster
 components/            Header, forms, dashboard cards, access denied
 i18n/                  next-intl routing, navigation, request config
 lib/age-band.ts        Season-start age band helper
+lib/credits/           Debit rules, packages, LINE notice copy, credit queries/actions
 lib/org/               Server actions, queries, display-name helper, binding actions
 lib/auth/              Phone helpers, session/role guards
 lib/supabase/          Browser, server, and proxy (cookie) clients
@@ -470,22 +520,17 @@ Auth uses the official `@supabase/ssr` cookie pattern for Next.js, composed in `
 
 `app/manifest.ts` publishes a web app manifest. Placeholder icons live in `public/icons/`. Installability and offline caching are not Stage 4A goals.
 
-## Out of scope (Stage 4 / 4A / 4A.1)
+## Out of scope (Stage 4B)
 
-- Prepaid sessions / payments / bank transfer / LINE OA (Stage 4B)
-- Attendance / session deduction
-- Assessments / schedule public announcements
-- Hard capacity limits / waitlist
-- Public match pages
-- Auto-generated playoff brackets
-- Changing auto-approve registration or adding capacity limits
-- Parent session calendar (admin calendar only)
-- Drag-reschedule or restore-from-soft-delete UI
+- Online card / payment gateways
+- LINE Messaging API auto-send, official account binding, or push notifications
+- Changing Stage 4/4A/4A.1 calendar, multi-weekday series, soft-delete, or auto-approve registration
+- Full contribution report UI beyond admin totals on `/app/admin/credits`
 - Production deploys, merging this work to `main` from an agent, or modifying a production database
-- Service role keys in the repo or in client code
+- Service role keys, real bank account numbers, or LINE tokens in the repo or in client code
 - In-app admin backdoors or phone whitelists
 - Seeding real personal data
 
 ## Later stages
 
-Add attendance, assessments, matches, and (Stage 4B) prepaid session payments on this folder structure. Gate parent-proxy on `guardian_player_links.status = 'approved'`. Keep staging and production isolated, and keep production releases behind human approval.
+Keep staging and production isolated, and keep production releases behind human approval. Assessments, public match pages, and richer contribution reports can follow on this folder structure.

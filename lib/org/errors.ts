@@ -49,6 +49,20 @@ export type OrgErrorKey =
   | "tooManyOccurrences"
   | "weekdayRequired"
   | "invalidWeekdays"
+  | "invalidLast5"
+  | "packageNotFound"
+  | "packageBandMismatch"
+  | "creditsNotApplicable"
+  | "pendingClaimExists"
+  | "claimNotFound"
+  | "insufficientCredits"
+  | "reasonRequired"
+  | "invalidCreditAmount"
+  | "invalidPrice"
+  | "adjustWouldBeNegative"
+  | "pendingLeaveExists"
+  | "leaveNotFound"
+  | "invalidPackageBand"
   | "generic";
 
 export type OrgActionState = {
