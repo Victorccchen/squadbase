@@ -4,7 +4,9 @@ import {
   isJerseyUniqueViolation,
   isLinkNotApprovedViolation,
   isOpenGuardianLinkViolation,
+  isOpenSessionRegistrationViolation,
   isPlayersCjkNameCheckViolation,
+  sessionRpcErrorKey,
   canAdminRevokeLink,
   canParentCancelLink,
   parseBirthDate,
@@ -315,6 +317,48 @@ describe("isLinkNotApprovedViolation", () => {
       }),
       false,
     );
+  });
+});
+
+describe("isOpenSessionRegistrationViolation", () => {
+  it("matches the open-pair unique index and RPC already-registered message", () => {
+    assert.equal(
+      isOpenSessionRegistrationViolation({
+        code: "23505",
+        message:
+          'duplicate key value violates unique constraint "session_registrations_open_pair_idx"',
+        details: "Key (session_id, player_id)=(abc, def) already exists.",
+      }),
+      true,
+    );
+    assert.equal(
+      isOpenSessionRegistrationViolation({
+        code: "23505",
+        message: "already registered",
+      }),
+      true,
+    );
+  });
+});
+
+describe("sessionRpcErrorKey", () => {
+  it("maps Stage 4 RPC exceptions to org error keys", () => {
+    assert.equal(
+      sessionRpcErrorKey({ message: "not an approved guardian for this player" }),
+      "notApprovedGuardian",
+    );
+    assert.equal(sessionRpcErrorKey({ message: "session is not active" }), "sessionNotActive");
+    assert.equal(
+      sessionRpcErrorKey({ message: "player is not on this session team" }),
+      "playerNotOnSessionTeam",
+    );
+    assert.equal(sessionRpcErrorKey({ message: "already registered" }), "alreadyRegistered");
+    assert.equal(
+      sessionRpcErrorKey({ message: "cannot switch to the same session" }),
+      "cannotSwitchSession",
+    );
+    assert.equal(sessionRpcErrorKey({ message: "message body required" }), "messageBodyRequired");
+    assert.equal(sessionRpcErrorKey({ message: "not authorized" }), "forbidden");
   });
 });
 

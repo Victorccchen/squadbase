@@ -11,16 +11,16 @@
     "footer": "Production deploys require human approval. Do not publish to production automatically."
   },
   "home": {
-    "eyebrow": "Stage 3 · guardian links and team lifecycle",
+    "eyebrow": "Stage 4 · training session signup",
     "headline": "Welcome to the Club management system",
-    "lead": "Sign in with a phone SMS one-time code. Parents can request a link to an existing player; admins approve. Admins can revoke approved links, deactivate or delete empty squads, and manage players and coaches.",
+    "lead": "Sign in with a phone SMS one-time code. Parents request a link to an existing player; after admin approval they can register a child for training sessions, cancel or switch, and ask the club questions. Admins create sessions and view rosters.",
     "openDashboard": "Open dashboard",
     "sampleLabel": "Sample copy",
     "sampleBody": "Current language: English. Use the language switcher above to see Traditional Chinese or Japanese strings.",
     "stackTitle": "Stack",
     "stackNext": "Next.js App Router + TypeScript",
     "stackI18n": "next-intl (Traditional Chinese / English / Japanese)",
-    "stackSupabase": "Supabase phone OTP, profiles, multi-role, org master data, guardian links, and RLS",
+    "stackSupabase": "Supabase phone OTP, profiles, multi-role, org master data, guardian links, training sessions, and RLS",
     "stackPwa": "PWA: web app manifest and basic meta",
     "envTitle": "Environment",
     "envConfigured": "Public Supabase variables are present. Sign-in talks to this project (anon key only).",
@@ -58,7 +58,7 @@
   "app": {
     "eyebrow": "Dashboard",
     "title": "Club dashboard",
-    "welcome": "Parents can request a link to a child and withdraw a pending request. Admins manage teams, players, coaches, and binding approval or revoke. Coaches can open assigned rosters. Other operations features are still later stages.",
+    "welcome": "Parents can request a link to a child and register approved children for training sessions. Admins manage teams, players, coaches, bindings, and sessions. Coaches can open assigned rosters and session signups. Other operations features are still later stages.",
     "accountTitle": "Account",
     "phoneLabel": "Phone",
     "rolesLabel": "Roles",
@@ -76,6 +76,7 @@
     "openRoster": "Open roster",
     "openAdmin": "Open admin",
     "openChildren": "Open my children",
+    "openSessions": "Open sessions",
     "roles": {
       "parent": "Parent",
       "coach": "Coach",
@@ -86,6 +87,10 @@
       "children": {
         "title": "Players / children",
         "body": "Request a link to an existing player. After an admin approves, they appear here."
+      },
+      "sessions": {
+        "title": "Training sessions",
+        "body": "Register an approved child for a session, cancel or switch, and ask the club a question."
       },
       "courses": {
         "title": "Courses",
@@ -123,6 +128,10 @@
         "title": "Guardian bindings",
         "body": "Approve, reject, or revoke parent requests to link to a player."
       },
+      "adminSessions": {
+        "title": "Training sessions",
+        "body": "Create sessions under a team, deactivate them, and view rosters and parent questions."
+      },
       "adminNote": {
         "title": "Role promotion",
         "body": "There is no in-app backdoor. Add an admin row for the user in the Dashboard user_roles table. Linking a coach also grants the coach role."
@@ -133,6 +142,7 @@
     "label": "App sections",
     "dashboard": "Dashboard",
     "children": "Children",
+    "sessions": "Sessions",
     "roster": "Roster",
     "admin": "Admin",
     "teams": "Teams",
@@ -157,6 +167,8 @@
     "coachesBody": "The person must sign in once so a profile exists. Then you link them here and assign teams. That also grants the coach role.",
     "bindingsTitle": "Guardian bindings",
     "bindingsBody": "Parents search for an existing player with team + jersey or birth date + name, then request a link. Approve, reject, or revoke an approved link here. Pending, rejected, and revoked parents cannot read that child’s record.",
+    "sessionsTitle": "Training sessions",
+    "sessionsBody": "Create training sessions under an existing team. Inactive sessions are not offered for new parent signup. Registration is auto-approved. There is no capacity limit in this stage.",
     "createTeam": "Create team",
     "editTeam": "Edit team",
     "createPlayer": "Create player",
@@ -196,13 +208,27 @@
     "deleteTeamConfirm": "Permanently delete “{name}”? This also removes {inactive} ended memberships and {coaches} coach assignments. Player records are not deleted. This cannot be undone.",
     "deleteTeamBlockedConfirm": "Cannot delete “{name}”: {count} active players remain. Move them to another team or end those memberships first.",
     "deleteBlockedActive": "This team still has {count} active players, so it cannot be deleted. Move them to another team or end those memberships first.",
-    "openTeamRoster": "Open roster"
+    "openTeamRoster": "Open roster",
+    "createSession": "Create session",
+    "editSession": "Edit session",
+    "deactivateSession": "Deactivate session",
+    "reactivateSession": "Reactivate session",
+    "rosterCount": "{count} registered",
+    "rosterTitle": "Session roster",
+    "rosterEmptyTitle": "No registrations yet",
+    "rosterEmptyBody": "When a parent registers an approved child, they appear here.",
+    "sessionsEmptyTitle": "No sessions yet",
+    "sessionsEmptyBody": "Create a team first, then add a training session."
   },
   "roster": {
     "title": "Roster",
     "lead": "Players on teams assigned to you. This list is read-only.",
     "emptyTitle": "No assigned players",
-    "emptyBody": "When an admin assigns you to a team that has players, they will show up here."
+    "emptyBody": "When an admin assigns you to a team that has players, they will show up here.",
+    "sessionsTitle": "Session signups",
+    "sessionsLead": "Read-only list of sessions on teams assigned to you, including who registered.",
+    "sessionsEmptyTitle": "No assigned sessions",
+    "sessionsEmptyBody": "When an admin creates a session on a team assigned to you, it will show up here."
   },
   "org": {
     "teamName": "Team name",
@@ -278,12 +304,26 @@
       "teamHasActiveMemberships": "This team still has active memberships. End or inactivate them first, or deactivate the team instead.",
       "teamHasMemberships": "This team still has membership rows. Remove them before deleting, or deactivate the team instead.",
       "teamHasCoachAssignments": "This team still has coach assignments. Unassign coaches first, or deactivate the team instead.",
+      "sessionNotFound": "That session was not found.",
+      "sessionNotActive": "This session is inactive, so it is not open for new signup.",
+      "notApprovedGuardian": "Only an approved guardian can register this child.",
+      "playerNotOnSessionTeam": "That player is not on this session’s team.",
+      "alreadyRegistered": "That player is already registered for this session.",
+      "cannotCancelRegistration": "This registration cannot be cancelled.",
+      "cannotSwitchSession": "Could not switch to that session. Check that it is still open.",
+      "invalidSessionTime": "Enter a valid start and end time (or start plus duration).",
+      "endsBeforeStart": "The end time must be after the start time.",
+      "invalidDuration": "Duration must be a whole number of minutes from 15 to 480.",
+      "invalidLocation": "Location is too long.",
+      "messageBodyRequired": "Enter a question or reply.",
+      "missingPlayer": "Choose the child to register.",
+      "missingSession": "Choose a session.",
       "generic": "Could not save. Please try again."
     }
   },
   "children": {
     "title": "My children",
-    "lead": "Request a link to a player the club already created. An admin must approve before you can see their details here. Later stages will use this link so a parent can register for courses or mark attendance.",
+    "lead": "Request a link to a player the club already created. An admin must approve before you can see their details here and register them for training sessions.",
     "myChildren": "Linked children",
     "requests": "Requests",
     "emptyChildrenTitle": "No linked children yet",
@@ -324,6 +364,52 @@
     "player": "Player",
     "playerNames": "Names",
     "playerTeam": "Team / jersey",
-    "playerBirth": "Date of birth"
+    "playerBirth": "Date of birth",
+    "openSessions": "Register for sessions"
+  },
+  "sessions": {
+    "title": "Training sessions",
+    "lead": "Register an approved child for training sessions on their team. Signup is auto-approved. Inactive sessions are not listed. After you cancel, you may re-register for the same session while it stays active.",
+    "upcomingTitle": "Open sessions",
+    "myRegistrations": "My registrations",
+    "emptyUpcomingTitle": "No sessions to register",
+    "emptyUpcomingBody": "When an admin creates a session for your child’s team, it appears here. Inactive or ended sessions are hidden.",
+    "needApprovedChild": "Link a child and wait for admin approval before you can register for sessions.",
+    "emptyRegistrationsTitle": "No registrations yet",
+    "emptyRegistrationsBody": "Pick a session above and register a child.",
+    "register": "Register",
+    "registering": "Registering…",
+    "cancel": "Cancel registration",
+    "change": "Switch session",
+    "changeTo": "Switch to this session",
+    "parentNote": "Note to the club",
+    "parentNoteHint": "Optional. One-way to the club — for example pickup or a health reminder.",
+    "selectChild": "Choose a child",
+    "location": "Location",
+    "notes": "Session notes",
+    "askQuestion": "Ask the club a question",
+    "questionHint": "The question is attached to this registration. You will see the admin reply here.",
+    "sendQuestion": "Send question",
+    "sendReply": "Send reply",
+    "reply": "Reply to parent",
+    "noMessages": "No questions or replies yet.",
+    "qaTitle": "Q&A",
+    "confirmation": "This child is registered for the session.",
+    "noEligibleChild": "There is no approved child who can register, or they are already registered.",
+    "viewSession": "View session",
+    "backToList": "Back to sessions",
+    "timeZoneHint": "Times are in the club time zone Asia/Taipei. Enter start and end, or start plus duration in minutes.",
+    "startsAt": "Starts",
+    "endsAt": "Ends",
+    "durationMinutes": "Duration (minutes, if end is empty)",
+    "closedSignup": "This session is inactive or has ended, so it is not open for new signup.",
+    "authorParent": "Parent",
+    "authorAdmin": "Admin",
+    "unknownPlayer": "Unknown player",
+    "emptyRoster": "No registrations yet.",
+    "statuses": {
+      "registered": "Registered",
+      "cancelled": "Cancelled"
+    }
   }
 }

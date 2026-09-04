@@ -267,3 +267,86 @@ export function isOpenGuardianLinkViolation(error: PgLikeError): boolean {
     text.includes("(guardian_user_id, player_id)")
   );
 }
+
+export function isOpenSessionRegistrationViolation(error: PgLikeError): boolean {
+  const text = errorBlob(error);
+  if (text.includes("already registered")) {
+    return true;
+  }
+  if (!isUniqueViolation(error)) {
+    return false;
+  }
+  return (
+    text.includes("session_registrations_open_pair") ||
+    text.includes("(session_id, player_id)")
+  );
+}
+
+type SessionRpcErrorKey =
+  | "forbidden"
+  | "sessionNotFound"
+  | "sessionNotActive"
+  | "notApprovedGuardian"
+  | "playerNotOnSessionTeam"
+  | "alreadyRegistered"
+  | "cannotCancelRegistration"
+  | "cannotSwitchSession"
+  | "messageBodyRequired"
+  | "generic";
+
+export function sessionRpcErrorKey(error: PgLikeError): SessionRpcErrorKey {
+  const text = errorBlob(error);
+  if (text.includes("not an approved guardian")) {
+    return "notApprovedGuardian";
+  }
+  if (text.includes("session is not active")) {
+    return "sessionNotActive";
+  }
+  if (text.includes("session not found")) {
+    return "sessionNotFound";
+  }
+  if (text.includes("player is not on this session team")) {
+    return "playerNotOnSessionTeam";
+  }
+  if (text.includes("already registered") || isOpenSessionRegistrationViolation(error)) {
+    return "alreadyRegistered";
+  }
+  if (text.includes("cannot cancel registration") || text.includes("registration not found")) {
+    return "cannotCancelRegistration";
+  }
+  if (
+    text.includes("cannot switch") ||
+    text.includes("cannot switch to the same session")
+  ) {
+    return "cannotSwitchSession";
+  }
+  if (text.includes("message body required")) {
+    return "messageBodyRequired";
+  }
+  if (text.includes("not authorized")) {
+    return "forbidden";
+  }
+  return "generic";
+}
+
+export function parseOptionalBoundedText(
+  value: string,
+  maxLength: number,
+): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  return trimmed.slice(0, maxLength);
+}
+
+export function parseRequiredBoundedText(
+  value: string,
+  maxLength: number,
+): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  return trimmed.slice(0, maxLength);
+}

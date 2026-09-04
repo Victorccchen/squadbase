@@ -9,6 +9,7 @@
 - [ ] Stage 2 org master data (teams, players, coaches, roster read)
 - [ ] Stage 3 guardian–player binding with admin approval
 - [ ] Lifecycle: revoke/cancel links + team deactivate/hard-delete
+- [ ] Stage 4 training sessions / parent registration / Q&A
 
 ## Verification
 

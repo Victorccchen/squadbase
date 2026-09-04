@@ -25,6 +25,20 @@ export type OrgErrorKey =
   | "teamHasActiveMemberships"
   | "teamHasMemberships"
   | "teamHasCoachAssignments"
+  | "sessionNotFound"
+  | "sessionNotActive"
+  | "notApprovedGuardian"
+  | "playerNotOnSessionTeam"
+  | "alreadyRegistered"
+  | "cannotCancelRegistration"
+  | "cannotSwitchSession"
+  | "invalidSessionTime"
+  | "endsBeforeStart"
+  | "invalidDuration"
+  | "invalidLocation"
+  | "messageBodyRequired"
+  | "missingPlayer"
+  | "missingSession"
   | "generic";
 
 export type OrgActionState = {

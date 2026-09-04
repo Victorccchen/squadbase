@@ -11,6 +11,8 @@ export type AgeBand =
 export type OrgStatus = "active" | "inactive";
 export type GuardianRelation = "parent" | "guardian" | "other";
 export type LinkStatus = "pending" | "approved" | "rejected" | "revoked";
+export type SessionRegistrationStatus = "registered" | "cancelled";
+export type SessionMessageAuthorRole = "parent" | "admin";
 
 export type Profile = {
   id: string;
@@ -103,6 +105,42 @@ export type GuardianPlayerLink = {
   updated_at: string;
   created_by: string | null;
   updated_by: string | null;
+};
+
+export type TrainingSession = {
+  id: string;
+  team_id: string;
+  starts_at: string;
+  ends_at: string;
+  location: string | null;
+  status: OrgStatus;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+};
+
+export type SessionRegistration = {
+  id: string;
+  session_id: string;
+  player_id: string;
+  guardian_user_id: string;
+  status: SessionRegistrationStatus;
+  parent_note: string | null;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+};
+
+export type SessionRegistrationMessage = {
+  id: string;
+  registration_id: string;
+  author_user_id: string;
+  author_role: SessionMessageAuthorRole;
+  body: string;
+  created_at: string;
 };
 
 export type PlayerSearchMatch = {
@@ -331,6 +369,103 @@ export type Database = {
           },
         ];
       };
+      training_sessions: {
+        Row: TrainingSession;
+        Insert: {
+          id?: string;
+          team_id: string;
+          starts_at: string;
+          ends_at: string;
+          location?: string | null;
+          status?: OrgStatus;
+          notes?: string | null;
+        } & TimestampInsert;
+        Update: {
+          team_id?: string;
+          starts_at?: string;
+          ends_at?: string;
+          location?: string | null;
+          status?: OrgStatus;
+          notes?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "training_sessions_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      session_registrations: {
+        Row: SessionRegistration;
+        Insert: {
+          id?: string;
+          session_id: string;
+          player_id: string;
+          guardian_user_id: string;
+          status?: SessionRegistrationStatus;
+          parent_note?: string | null;
+        } & TimestampInsert;
+        Update: {
+          session_id?: string;
+          player_id?: string;
+          guardian_user_id?: string;
+          status?: SessionRegistrationStatus;
+          parent_note?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "session_registrations_session_id_fkey";
+            columns: ["session_id"];
+            isOneToOne: false;
+            referencedRelation: "training_sessions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "session_registrations_player_id_fkey";
+            columns: ["player_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "session_registrations_guardian_user_id_fkey";
+            columns: ["guardian_user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      session_registration_messages: {
+        Row: SessionRegistrationMessage;
+        Insert: {
+          id?: string;
+          registration_id: string;
+          author_user_id: string;
+          author_role: SessionMessageAuthorRole;
+          body: string;
+          created_at?: string;
+        };
+        Update: {
+          body?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "session_registration_messages_registration_id_fkey";
+            columns: ["registration_id"];
+            isOneToOne: false;
+            referencedRelation: "session_registrations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -400,6 +535,41 @@ export type Database = {
         };
         Returns: string;
       };
+      guardian_can_read_session: {
+        Args: { p_session_id: string };
+        Returns: boolean;
+      };
+      coach_can_read_session: {
+        Args: { p_session_id: string };
+        Returns: boolean;
+      };
+      register_player_for_session: {
+        Args: {
+          p_session_id: string;
+          p_player_id: string;
+          p_parent_note?: string | null;
+        };
+        Returns: string;
+      };
+      cancel_session_registration: {
+        Args: { p_registration_id: string };
+        Returns: string;
+      };
+      switch_session_registration: {
+        Args: {
+          p_registration_id: string;
+          p_new_session_id: string;
+        };
+        Returns: string;
+      };
+      post_session_registration_message: {
+        Args: {
+          p_registration_id: string;
+          p_body: string;
+          p_author_role: SessionMessageAuthorRole;
+        };
+        Returns: string;
+      };
     };
     Enums: {
       app_role: AppRole;
@@ -407,6 +577,8 @@ export type Database = {
       org_status: OrgStatus;
       guardian_relation: GuardianRelation;
       link_status: LinkStatus;
+      session_registration_status: SessionRegistrationStatus;
+      session_message_author_role: SessionMessageAuthorRole;
     };
     CompositeTypes: Record<string, never>;
   };

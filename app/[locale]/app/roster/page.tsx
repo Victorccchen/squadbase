@@ -2,11 +2,14 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { AccessDenied } from "@/components/access-denied";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { SessionStatusBadge } from "@/components/sessions/session-status-badge";
 import { loadSignedInAccount } from "@/lib/auth/session";
 import { canAccessRoster } from "@/lib/auth/roles";
 import { listRoster } from "@/lib/org/queries";
+import { listCoachSessions, listCoachRegisteredPlayers } from "@/lib/org/session-queries";
 import { localizedPlayerName, playerNameList } from "@/lib/org/display-name";
 import { ageBandFromBirthDate } from "@/lib/age-band";
+import { formatClubDateTimeRange } from "@/lib/org/session-time";
 
 export default async function RosterPage() {
   const { roles } = await loadSignedInAccount();
@@ -15,10 +18,16 @@ export default async function RosterPage() {
   }
 
   const t = await getTranslations("roster");
+  const sessionsT = await getTranslations("sessions");
+  const adminT = await getTranslations("admin");
   const org = await getTranslations("org");
   const common = await getTranslations("common");
   const locale = await getLocale();
-  const rows = await listRoster();
+  const [rows, coachSessions, registrations] = await Promise.all([
+    listRoster(),
+    listCoachSessions(),
+    listCoachRegisteredPlayers(),
+  ]);
 
   const byTeam = new Map<string, typeof rows>();
   for (const row of rows) {
@@ -69,6 +78,65 @@ export default async function RosterPage() {
             </section>
           ))
         )}
+
+        <section className="flex flex-col gap-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+            {t("sessionsTitle")}
+          </h2>
+          <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">{t("sessionsLead")}</p>
+          {coachSessions.length === 0 ? (
+            <EmptyState title={t("sessionsEmptyTitle")} body={t("sessionsEmptyBody")} />
+          ) : (
+            <ul className="grid gap-3">
+              {coachSessions.map((session) => {
+                const roster = registrations.filter(
+                  (row) => row.session_id === session.id && row.status === "registered",
+                );
+                return (
+                  <li
+                    key={session.id}
+                    className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="flex flex-col gap-1">
+                        <span className="font-semibold">
+                          {session.team?.name ?? org("unknownTeam")}
+                        </span>
+                        <span className="text-sm text-zinc-500">
+                          {formatClubDateTimeRange(session.starts_at, session.ends_at, locale)}
+                        </span>
+                        {session.location ? (
+                          <span className="text-sm text-zinc-500">{session.location}</span>
+                        ) : null}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <SessionStatusBadge
+                          status={session.status}
+                          label={org(session.status === "active" ? "statusActive" : "statusInactive")}
+                        />
+                        <span className="text-sm text-zinc-500">
+                          {adminT("rosterCount", { count: session.registeredCount })}
+                        </span>
+                      </div>
+                    </div>
+                    {roster.length === 0 ? (
+                      <p className="text-sm text-zinc-500">{sessionsT("emptyRoster")}</p>
+                    ) : (
+                      <ul className="grid gap-1 text-sm">
+                        {roster.map((row) => (
+                          <li key={row.id}>
+                            {row.player ? localizedPlayerName(row.player, locale) : sessionsT("unknownPlayer")}
+                            {row.parent_note ? ` · ${row.parent_note}` : ""}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
       </main>
       <footer className="border-t border-zinc-200 px-6 py-4 pb-10 text-sm text-zinc-500 dark:border-zinc-800">
         {common("footer")}

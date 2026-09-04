@@ -1,0 +1,404 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "@/i18n/navigation";
+import { parseAppLocale } from "@/i18n/routing";
+import { getPublicSupabaseEnv } from "@/lib/env";
+import { loadSignedInAccount } from "@/lib/auth/session";
+import { canAccessAdmin } from "@/lib/auth/roles";
+import { createClient } from "@/lib/supabase/server";
+import {
+  parseOptionalBoundedText,
+  parseOrgStatus,
+  parseRequiredBoundedText,
+  parseUuid,
+  readString,
+  sessionRpcErrorKey,
+} from "@/lib/org/parse";
+import {
+  addMinutesToOffsetIso,
+  isEndsAfterStart,
+  MAX_SESSION_LOCATION,
+  MAX_SESSION_MESSAGE,
+  MAX_SESSION_NOTES,
+  parseClubDateTimeLocal,
+  parseDurationMinutes,
+} from "@/lib/org/session-time";
+import { type OrgActionState, type OrgErrorKey } from "@/lib/org/errors";
+
+function fail(errorKey: OrgErrorKey): OrgActionState {
+  return { ok: false, errorKey };
+}
+
+function ok(): OrgActionState {
+  return { ok: true, errorKey: null };
+}
+
+function localeFromForm(formData: FormData) {
+  return parseAppLocale(readString(formData, "locale"));
+}
+
+function revalidateSessions() {
+  revalidatePath("/", "layout");
+}
+
+type AdminHref =
+  | "/app/admin/sessions"
+  | `/app/admin/sessions/${string}`;
+
+type ParentHref = "/app/sessions" | `/app/sessions/${string}`;
+
+function redirectAdmin(href: AdminHref, formData: FormData) {
+  redirect({ href, locale: localeFromForm(formData) });
+}
+
+function redirectParent(href: ParentHref, formData: FormData) {
+  redirect({ href, locale: localeFromForm(formData) });
+}
+
+type AdminClient = Awaited<ReturnType<typeof createClient>>;
+type AuthUser = Awaited<ReturnType<typeof loadSignedInAccount>>["user"];
+type AdminActorResult =
+  | { ok: true; user: AuthUser; supabase: AdminClient }
+  | { ok: false; errorKey: "notConfigured" | "forbidden" };
+
+async function requireAdminActor(): Promise<AdminActorResult> {
+  if (!getPublicSupabaseEnv().isConfigured) {
+    return { ok: false, errorKey: "notConfigured" };
+  }
+
+  const { user, roles } = await loadSignedInAccount();
+  if (!canAccessAdmin(roles)) {
+    return { ok: false, errorKey: "forbidden" };
+  }
+
+  const supabase = await createClient();
+  return { ok: true, user, supabase };
+}
+
+function parseSessionSchedule(formData: FormData):
+  | { ok: true; startsAt: string; endsAt: string }
+  | { ok: false; errorKey: OrgErrorKey } {
+  const startsAt = parseClubDateTimeLocal(readString(formData, "starts_at"));
+  if (!startsAt) {
+    return { ok: false, errorKey: "invalidSessionTime" };
+  }
+
+  const endsRaw = readString(formData, "ends_at");
+  const durationRaw = readString(formData, "duration_minutes");
+  let endsAt = endsRaw ? parseClubDateTimeLocal(endsRaw) : null;
+
+  if (!endsAt && durationRaw) {
+    const duration = parseDurationMinutes(durationRaw);
+    if (!duration) {
+      return { ok: false, errorKey: "invalidDuration" };
+    }
+    endsAt = addMinutesToOffsetIso(startsAt, duration);
+  }
+
+  if (!endsAt) {
+    return { ok: false, errorKey: "invalidSessionTime" };
+  }
+  if (!isEndsAfterStart(startsAt, endsAt)) {
+    return { ok: false, errorKey: "endsBeforeStart" };
+  }
+
+  return { ok: true, startsAt, endsAt };
+}
+
+export async function createSession(
+  _prev: OrgActionState,
+  formData: FormData,
+): Promise<OrgActionState> {
+  const actor = await requireAdminActor();
+  if (!actor.ok) {
+    return fail(actor.errorKey);
+  }
+
+  const teamId = parseUuid(readString(formData, "team_id"));
+  if (!teamId) {
+    return fail("missingTeam");
+  }
+
+  const schedule = parseSessionSchedule(formData);
+  if (!schedule.ok) {
+    return fail(schedule.errorKey);
+  }
+
+  const location = parseOptionalBoundedText(readString(formData, "location"), MAX_SESSION_LOCATION);
+  const notes = parseOptionalBoundedText(readString(formData, "notes"), MAX_SESSION_NOTES);
+  const status = parseOrgStatus(readString(formData, "status")) ?? "active";
+
+  const { error } = await actor.supabase.from("training_sessions").insert({
+    team_id: teamId,
+    starts_at: schedule.startsAt,
+    ends_at: schedule.endsAt,
+    location,
+    notes,
+    status,
+    created_by: actor.user.id,
+    updated_by: actor.user.id,
+  });
+
+  if (error) {
+    console.error("createSession", error.message);
+    return fail("generic");
+  }
+
+  revalidateSessions();
+  redirectAdmin("/app/admin/sessions", formData);
+  return ok();
+}
+
+export async function updateSession(
+  sessionId: string,
+  _prev: OrgActionState,
+  formData: FormData,
+): Promise<OrgActionState> {
+  const actor = await requireAdminActor();
+  if (!actor.ok) {
+    return fail(actor.errorKey);
+  }
+
+  const schedule = parseSessionSchedule(formData);
+  if (!schedule.ok) {
+    return fail(schedule.errorKey);
+  }
+
+  const location = parseOptionalBoundedText(readString(formData, "location"), MAX_SESSION_LOCATION);
+  const notes = parseOptionalBoundedText(readString(formData, "notes"), MAX_SESSION_NOTES);
+  const status = parseOrgStatus(readString(formData, "status"));
+  if (!status) {
+    return fail("invalidStatus");
+  }
+
+  const { data, error } = await actor.supabase
+    .from("training_sessions")
+    .update({
+      starts_at: schedule.startsAt,
+      ends_at: schedule.endsAt,
+      location,
+      notes,
+      status,
+      updated_by: actor.user.id,
+    })
+    .eq("id", sessionId)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    console.error("updateSession", error.message);
+    return fail("generic");
+  }
+  if (!data) {
+    return fail("sessionNotFound");
+  }
+
+  revalidateSessions();
+  redirectAdmin(`/app/admin/sessions/${sessionId}`, formData);
+  return ok();
+}
+
+export async function setSessionStatus(
+  sessionId: string,
+  _prev: OrgActionState,
+  formData: FormData,
+): Promise<OrgActionState> {
+  const actor = await requireAdminActor();
+  if (!actor.ok) {
+    return fail(actor.errorKey);
+  }
+
+  const status = parseOrgStatus(readString(formData, "status"));
+  if (!status) {
+    return fail("invalidStatus");
+  }
+
+  const { data, error } = await actor.supabase
+    .from("training_sessions")
+    .update({
+      status,
+      updated_by: actor.user.id,
+    })
+    .eq("id", sessionId)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    console.error("setSessionStatus", error.message);
+    return fail("generic");
+  }
+  if (!data) {
+    return fail("sessionNotFound");
+  }
+
+  revalidateSessions();
+  if (readString(formData, "next") === "list") {
+    redirectAdmin("/app/admin/sessions", formData);
+  } else {
+    redirectAdmin(`/app/admin/sessions/${sessionId}`, formData);
+  }
+  return ok();
+}
+
+export async function registerForSession(
+  _prev: OrgActionState,
+  formData: FormData,
+): Promise<OrgActionState> {
+  if (!getPublicSupabaseEnv().isConfigured) {
+    return fail("notConfigured");
+  }
+
+  const { user } = await loadSignedInAccount();
+  if (!user) {
+    return fail("forbidden");
+  }
+
+  const sessionId = parseUuid(readString(formData, "session_id"));
+  const playerId = parseUuid(readString(formData, "player_id"));
+  const parentNote = parseOptionalBoundedText(readString(formData, "parent_note"), 1000);
+
+  if (!sessionId) {
+    return fail("missingSession");
+  }
+  if (!playerId) {
+    return fail("missingPlayer");
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("register_player_for_session", {
+    p_session_id: sessionId,
+    p_player_id: playerId,
+    p_parent_note: parentNote,
+  });
+
+  if (error) {
+    console.error("registerForSession", error.message);
+    return fail(sessionRpcErrorKey(error));
+  }
+
+  revalidateSessions();
+  redirectParent(`/app/sessions/${sessionId}`, formData);
+  return ok();
+}
+
+export async function cancelSessionRegistration(
+  _prev: OrgActionState,
+  formData: FormData,
+): Promise<OrgActionState> {
+  if (!getPublicSupabaseEnv().isConfigured) {
+    return fail("notConfigured");
+  }
+
+  const { user } = await loadSignedInAccount();
+  if (!user) {
+    return fail("forbidden");
+  }
+
+  const registrationId = parseUuid(readString(formData, "registration_id"));
+  const sessionId = parseUuid(readString(formData, "session_id"));
+  if (!registrationId) {
+    return fail("generic");
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("cancel_session_registration", {
+    p_registration_id: registrationId,
+  });
+
+  if (error) {
+    console.error("cancelSessionRegistration", error.message);
+    return fail(sessionRpcErrorKey(error));
+  }
+
+  revalidateSessions();
+  redirectParent(sessionId ? `/app/sessions/${sessionId}` : "/app/sessions", formData);
+  return ok();
+}
+
+export async function switchSessionRegistration(
+  _prev: OrgActionState,
+  formData: FormData,
+): Promise<OrgActionState> {
+  if (!getPublicSupabaseEnv().isConfigured) {
+    return fail("notConfigured");
+  }
+
+  const { user } = await loadSignedInAccount();
+  if (!user) {
+    return fail("forbidden");
+  }
+
+  const registrationId = parseUuid(readString(formData, "registration_id"));
+  const newSessionId = parseUuid(readString(formData, "new_session_id"));
+  if (!registrationId) {
+    return fail("generic");
+  }
+  if (!newSessionId) {
+    return fail("missingSession");
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("switch_session_registration", {
+    p_registration_id: registrationId,
+    p_new_session_id: newSessionId,
+  });
+
+  if (error) {
+    console.error("switchSessionRegistration", error.message);
+    return fail(sessionRpcErrorKey(error));
+  }
+
+  revalidateSessions();
+  redirectParent(`/app/sessions/${newSessionId}`, formData);
+  return ok();
+}
+
+export async function postSessionMessage(
+  _prev: OrgActionState,
+  formData: FormData,
+): Promise<OrgActionState> {
+  if (!getPublicSupabaseEnv().isConfigured) {
+    return fail("notConfigured");
+  }
+
+  const { user, roles } = await loadSignedInAccount();
+  if (!user) {
+    return fail("forbidden");
+  }
+
+  const registrationId = parseUuid(readString(formData, "registration_id"));
+  const sessionId = parseUuid(readString(formData, "session_id"));
+  const body = parseRequiredBoundedText(readString(formData, "body"), MAX_SESSION_MESSAGE);
+  const requestedRole = readString(formData, "author_role");
+  const authorRole = requestedRole === "admin" && canAccessAdmin(roles) ? "admin" : "parent";
+
+  if (!registrationId) {
+    return fail("generic");
+  }
+  if (!body) {
+    return fail("messageBodyRequired");
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("post_session_registration_message", {
+    p_registration_id: registrationId,
+    p_body: body,
+    p_author_role: authorRole,
+  });
+
+  if (error) {
+    console.error("postSessionMessage", error.message);
+    return fail(sessionRpcErrorKey(error));
+  }
+
+  revalidateSessions();
+  if (authorRole === "admin" && sessionId) {
+    redirectAdmin(`/app/admin/sessions/${sessionId}`, formData);
+  } else if (sessionId) {
+    redirectParent(`/app/sessions/${sessionId}`, formData);
+  } else {
+    redirectParent("/app/sessions", formData);
+  }
+  return ok();
+}

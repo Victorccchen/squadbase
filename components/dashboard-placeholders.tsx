@@ -38,7 +38,16 @@ function LinkCard({
   body,
   action,
 }: {
-  href: "/app/roster" | "/app/admin" | "/app/admin/teams" | "/app/admin/players" | "/app/admin/coaches" | "/app/admin/bindings" | "/app/children";
+  href:
+    | "/app/roster"
+    | "/app/admin"
+    | "/app/admin/teams"
+    | "/app/admin/players"
+    | "/app/admin/coaches"
+    | "/app/admin/bindings"
+    | "/app/admin/sessions"
+    | "/app/children"
+    | "/app/sessions";
   title: string;
   body: string;
   action: string;
@@ -83,6 +92,12 @@ export async function DashboardPlaceholders({ roles }: DashboardPlaceholdersProp
               title={t("placeholders.children.title")}
               body={t("placeholders.children.body")}
               action={t("openChildren")}
+            />
+            <LinkCard
+              href="/app/sessions"
+              title={t("placeholders.sessions.title")}
+              body={t("placeholders.sessions.body")}
+              action={t("openSessions")}
             />
             {PARENT_COMING.map((key) => (
               <PlaceholderCard
@@ -148,6 +163,12 @@ export async function DashboardPlaceholders({ roles }: DashboardPlaceholdersProp
               href="/app/admin/bindings"
               title={t("placeholders.bindings.title")}
               body={t("placeholders.bindings.body")}
+              action={t("openAdmin")}
+            />
+            <LinkCard
+              href="/app/admin/sessions"
+              title={t("placeholders.adminSessions.title")}
+              body={t("placeholders.adminSessions.body")}
               action={t("openAdmin")}
             />
             <PlaceholderCard
