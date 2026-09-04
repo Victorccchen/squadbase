@@ -6,6 +6,7 @@ import { RequestLinkForm } from "@/components/children/request-link-form";
 import { CancelLinkForm } from "@/components/children/cancel-link-form";
 import { LinkStatusBadge } from "@/components/bindings/link-status-badge";
 import { listActiveTeamsForLink, listOwnGuardianLinks } from "@/lib/org/queries";
+import { uniqueApprovedLinksByPlayerId } from "@/lib/org/guardian-links";
 import { localizedPlayerName, playerNameList } from "@/lib/org/display-name";
 import { canParentCancelLink } from "@/lib/org/parse";
 import { ageBandFromBirthDate } from "@/lib/age-band";
@@ -21,7 +22,9 @@ export default async function ChildrenPage() {
     listActiveTeamsForLink(),
   ]);
 
-  const approved = links.filter((link) => link.status === "approved");
+  const approved = uniqueApprovedLinksByPlayerId(
+    links.filter((link) => link.status === "approved"),
+  );
   const requests = links.filter((link) => link.status !== "approved");
 
   return (

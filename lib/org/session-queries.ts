@@ -8,6 +8,7 @@ import type {
   TrainingSession,
 } from "@/lib/supabase/database.types";
 import type { GuardianLinkWithPlayer } from "@/lib/org/queries";
+import { uniqueApprovedLinksByPlayerId } from "@/lib/org/guardian-links";
 import { isSessionOpenForSignup } from "@/lib/org/session-time";
 import { parseSessionKind } from "@/lib/org/session-recurrence";
 import { parseUuid } from "@/lib/org/parse";
@@ -278,6 +279,7 @@ export async function listCoachRegisteredPlayers(): Promise<SessionRegistrationW
 }
 
 export type EligibleChild = {
+  linkId: string;
   player: Player;
   teamId: string;
   teamName: string;
@@ -314,15 +316,21 @@ export function approvedChildrenFromLinks(
   links: GuardianLinkWithPlayer[],
 ): EligibleChild[] {
   const result: EligibleChild[] = [];
-  for (const link of links) {
-    if (link.status !== "approved" || !link.player) {
+  const seenPlayers = new Set<string>();
+  for (const link of uniqueApprovedLinksByPlayerId(links)) {
+    if (!link.player) {
+      continue;
+    }
+    if (seenPlayers.has(link.player.id)) {
       continue;
     }
     const membership = link.player.membership;
     if (!membership?.team || membership.status !== "active") {
       continue;
     }
+    seenPlayers.add(link.player.id);
     result.push({
+      linkId: link.id,
       player: link.player,
       teamId: membership.team_id,
       teamName: membership.team.name,

@@ -266,10 +266,16 @@ export function parseLinkNote(value: string): string | null {
 }
 
 export function isOpenGuardianLinkViolation(error: PgLikeError): boolean {
-  if (!isUniqueViolation(error)) {
+  if (!error) {
     return false;
   }
   const text = errorBlob(error);
+  if (text.includes("open guardian link already exists")) {
+    return true;
+  }
+  if (!isUniqueViolation(error)) {
+    return false;
+  }
   return (
     text.includes("guardian_player_links_open_pair") ||
     text.includes("(guardian_user_id, player_id)")

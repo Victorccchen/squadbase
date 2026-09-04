@@ -10,6 +10,7 @@ import {
   shiftYearMonth,
   uniqueAgeBandAbbrevsOnDate,
   uniqueKindsOnDate,
+  isDateInClubWeek,
   type AdminSessionsQuery,
   type CalendarSession,
 } from "@/lib/org/session-calendar";
@@ -79,6 +80,7 @@ export async function SessionMonthCalendar({
           const kinds = uniqueKindsOnDate(sessions, cell.date);
           const abbrevs = uniqueAgeBandAbbrevsOnDate(sessions, cell.date);
           const selected = cell.date === query.day;
+          const inSelectedWeek = isDateInClubWeek(cell.date, query.day);
           const isToday = cell.date === today;
           const parts = cell.date.split("-");
           const href = adminSessionsHref({
@@ -97,7 +99,9 @@ export async function SessionMonthCalendar({
               className={`flex min-h-16 flex-col items-center gap-1 rounded-xl border px-1 py-1.5 text-sm ${
                 selected
                   ? "border-foreground bg-zinc-100 dark:bg-zinc-800"
-                  : "border-transparent hover:border-zinc-300 dark:hover:border-zinc-700"
+                  : inSelectedWeek
+                    ? "border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800/60"
+                    : "border-transparent hover:border-zinc-300 dark:hover:border-zinc-700"
               } ${cell.inMonth ? "" : "opacity-45"}`}
             >
               <span

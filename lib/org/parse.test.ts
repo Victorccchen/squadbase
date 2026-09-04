@@ -301,6 +301,15 @@ describe("isOpenGuardianLinkViolation", () => {
       true,
     );
   });
+
+  it("matches the admin-review RPC when another open link exists", () => {
+    assert.equal(
+      isOpenGuardianLinkViolation({
+        message: "open guardian link already exists",
+      }),
+      true,
+    );
+  });
 });
 
 describe("isLinkNotApprovedViolation", () => {

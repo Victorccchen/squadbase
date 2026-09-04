@@ -92,6 +92,9 @@ export async function requestGuardianLink(
   }
 
   const { user } = await loadSignedInAccount();
+  if (!user) {
+    return fail("forbidden");
+  }
   const playerId = parseUuid(readString(formData, "player_id"));
   const relation = parseGuardianRelation(readString(formData, "relation"));
   const parentNote = parseLinkNote(readString(formData, "parent_note"));
@@ -104,6 +107,23 @@ export async function requestGuardianLink(
   }
 
   const supabase = await createClient();
+  const { data: openLink, error: openError } = await supabase
+    .from("guardian_player_links")
+    .select("id")
+    .eq("guardian_user_id", user.id)
+    .eq("player_id", playerId)
+    .in("status", ["pending", "approved"])
+    .limit(1)
+    .maybeSingle();
+
+  if (openError) {
+    console.error("requestGuardianLink open check", openError.message);
+    return fail("generic");
+  }
+  if (openLink) {
+    return fail("linkAlreadyOpen");
+  }
+
   const { error } = await supabase.from("guardian_player_links").insert({
     guardian_user_id: user.id,
     player_id: playerId,
@@ -159,6 +179,9 @@ export async function reviewGuardianLink(
   });
 
   if (error) {
+    if (isOpenGuardianLinkViolation(error)) {
+      return fail("linkAlreadyOpen");
+    }
     console.error("reviewGuardianLink", error.message);
     return fail("generic");
   }

@@ -13,9 +13,15 @@ type RegisterFormProps = {
   sessionId: string;
   childrenOptions: EligibleChild[];
   locale: string;
+  returnTo?: "list" | "detail";
 };
 
-export function RegisterForm({ sessionId, childrenOptions, locale }: RegisterFormProps) {
+export function RegisterForm({
+  sessionId,
+  childrenOptions,
+  locale,
+  returnTo = "detail",
+}: RegisterFormProps) {
   const t = useTranslations("sessions");
   const org = useTranslations("org");
   const [state, formAction, pending] = useActionState(
@@ -33,6 +39,7 @@ export function RegisterForm({ sessionId, childrenOptions, locale }: RegisterFor
     <form action={formAction} className="flex max-w-xl flex-col gap-4">
       <LocaleHiddenField />
       <input type="hidden" name="session_id" value={sessionId} />
+      {returnTo === "list" ? <input type="hidden" name="return_to" value="list" /> : null}
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         {t("selectChild")}
         <select
@@ -43,7 +50,7 @@ export function RegisterForm({ sessionId, childrenOptions, locale }: RegisterFor
         >
           {childrenOptions.length > 1 ? <option value="">{t("selectChild")}</option> : null}
           {childrenOptions.map((child) => (
-            <option key={child.player.id} value={child.player.id}>
+            <option key={child.linkId} value={child.player.id}>
               {localizedPlayerName(child.player, locale)} · {child.teamName} · #{child.jerseyNumber}
             </option>
           ))}

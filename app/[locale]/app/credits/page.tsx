@@ -28,7 +28,7 @@ export default async function ParentCreditsPage() {
   const locale = await getLocale();
   const links = await listOwnGuardianLinks();
   const children = approvedChildrenFromLinks(links);
-  const playerIds = children.map((child) => child.player.id);
+  const playerIds = [...new Set(children.map((child) => child.player.id))];
   const [balances, attended, packages, claims, transferHint] = await Promise.all([
     listBalancesForPlayers(playerIds),
     listAttendedCounts(playerIds),
@@ -71,7 +71,7 @@ export default async function ParentCreditsPage() {
                 const low = applies && isLowBalance(remaining);
                 return (
                   <li
-                    key={child.player.id}
+                    key={child.linkId}
                     className="flex flex-col gap-2 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900"
                   >
                     <span className="font-semibold">

@@ -470,7 +470,17 @@ export async function registerForSession(
   }
 
   revalidateSessions();
-  redirectParent(`/app/sessions/${sessionId}`, formData);
+  if (readString(formData, "return_to") === "list") {
+    redirect({
+      href: {
+        pathname: "/app/sessions",
+        query: { registered: "1" },
+      },
+      locale: localeFromForm(formData),
+    });
+  } else {
+    redirectParent(`/app/sessions/${sessionId}`, formData);
+  }
   return ok();
 }
 
