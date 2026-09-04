@@ -8,6 +8,7 @@ import type {
 } from "@/lib/supabase/database.types";
 import type { GuardianLinkWithPlayer } from "@/lib/org/queries";
 import { isSessionOpenForSignup } from "@/lib/org/session-time";
+import { parseSessionKind } from "@/lib/org/session-recurrence";
 
 export type TrainingSessionWithTeam = TrainingSession & {
   team: Team | null;
@@ -65,13 +66,30 @@ function mapRegistrationRow(row: Record<string, unknown>): SessionRegistrationWi
   };
 }
 
-export async function listSessionsForAdmin(): Promise<TrainingSessionAdminRow[]> {
+export type AdminSessionListFilters = {
+  kind?: string;
+  includeDeleted?: boolean;
+};
+
+export async function listSessionsForAdmin(
+  filters: AdminSessionListFilters = {},
+): Promise<TrainingSessionAdminRow[]> {
   const supabase = await createClient();
+  let sessionsQuery = supabase
+    .from("training_sessions")
+    .select("*, teams(*)")
+    .order("starts_at", { ascending: false });
+
+  const kind = parseSessionKind(filters.kind ?? "");
+  if (kind) {
+    sessionsQuery = sessionsQuery.eq("kind", kind);
+  }
+  if (!filters.includeDeleted) {
+    sessionsQuery = sessionsQuery.is("deleted_at", null);
+  }
+
   const [sessionsResult, countsResult] = await Promise.all([
-    supabase
-      .from("training_sessions")
-      .select("*, teams(*)")
-      .order("starts_at", { ascending: false }),
+    sessionsQuery,
     supabase.from("session_registrations").select("session_id, status"),
   ]);
 
@@ -148,6 +166,7 @@ export async function listOpenSessionsForParent(
     .from("training_sessions")
     .select("*, teams(*)")
     .eq("status", "active")
+    .is("deleted_at", null)
     .in("team_id", teamIds)
     .order("starts_at");
 
