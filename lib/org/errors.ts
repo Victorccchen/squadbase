@@ -47,6 +47,8 @@ export type OrgErrorKey =
   | "invalidUntilDate"
   | "untilBeforeStart"
   | "tooManyOccurrences"
+  | "weekdayRequired"
+  | "invalidWeekdays"
   | "generic";
 
 export type OrgActionState = {

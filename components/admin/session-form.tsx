@@ -6,7 +6,11 @@ import { LocaleHiddenField } from "@/components/admin/locale-hidden-field";
 import { INITIAL_ORG_ACTION_STATE } from "@/lib/org/errors";
 import type { OrgActionState } from "@/lib/org/errors";
 import type { SessionKind, Team, TrainingSession } from "@/lib/supabase/database.types";
-import { SESSION_KINDS, isRecurringSessionKind } from "@/lib/org/session-recurrence";
+import {
+  ISO_WEEKDAYS,
+  SESSION_KINDS,
+  isRecurringSessionKind,
+} from "@/lib/org/session-recurrence";
 import { toDateTimeLocalInput } from "@/lib/org/session-time";
 import { inputClassName, primaryButtonClassName } from "@/lib/ui";
 
@@ -43,8 +47,17 @@ export function SessionForm({
   const [kind, setKind] = useState<SessionKind>(session?.kind ?? "regular");
   const [untilDate, setUntilDate] = useState("");
   const [weekCount, setWeekCount] = useState("");
+  const [weekdays, setWeekdays] = useState<number[]>([]);
   const activeTeams = teams.filter((team) => team.status === "active" || team.id === session?.team_id);
   const showRecurrence = !isEdit && isRecurringSessionKind(kind);
+
+  function toggleWeekday(value: number) {
+    setWeekdays((current) =>
+      current.includes(value)
+        ? current.filter((day) => day !== value)
+        : [...current, value].sort((a, b) => a - b),
+    );
+  }
 
   return (
     <form action={formAction} className="flex max-w-xl flex-col gap-4">
@@ -119,26 +132,47 @@ export function SessionForm({
       {!isEdit && kind === "league" ? (
         <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">{t("playoffCreateHint")}</p>
       ) : null}
-      <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">{t("timeZoneHint")}</p>
-      <label className="flex flex-col gap-1.5 text-sm font-medium">
-        {t("startsAt")}
-        <input
-          type="datetime-local"
-          name="starts_at"
-          required
-          defaultValue={session ? toDateTimeLocalInput(session.starts_at) : ""}
-          className={inputClassName}
-        />
-      </label>
-      <label className="flex flex-col gap-1.5 text-sm font-medium">
-        {t("endsAt")}
-        <input
-          type="datetime-local"
-          name="ends_at"
-          defaultValue={session ? toDateTimeLocalInput(session.ends_at) : ""}
-          className={inputClassName}
-        />
-      </label>
+      <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">
+        {showRecurrence ? t("seriesTimeHint") : t("timeZoneHint")}
+      </p>
+      {showRecurrence ? (
+        <>
+          <label className="flex flex-col gap-1.5 text-sm font-medium">
+            {t("seriesStartDate")}
+            <input type="date" name="series_start_date" required className={inputClassName} />
+          </label>
+          <label className="flex flex-col gap-1.5 text-sm font-medium">
+            {t("startTime")}
+            <input type="time" name="start_time" required className={inputClassName} />
+          </label>
+          <label className="flex flex-col gap-1.5 text-sm font-medium">
+            {t("endTime")}
+            <input type="time" name="end_time" className={inputClassName} />
+          </label>
+        </>
+      ) : (
+        <>
+          <label className="flex flex-col gap-1.5 text-sm font-medium">
+            {t("startsAt")}
+            <input
+              type="datetime-local"
+              name="starts_at"
+              required
+              defaultValue={session ? toDateTimeLocalInput(session.starts_at) : ""}
+              className={inputClassName}
+            />
+          </label>
+          <label className="flex flex-col gap-1.5 text-sm font-medium">
+            {t("endsAt")}
+            <input
+              type="datetime-local"
+              name="ends_at"
+              defaultValue={session ? toDateTimeLocalInput(session.ends_at) : ""}
+              className={inputClassName}
+            />
+          </label>
+        </>
+      )}
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         {t("durationMinutes")}
         <input
@@ -148,6 +182,26 @@ export function SessionForm({
           className={inputClassName}
         />
       </label>
+      {showRecurrence ? (
+        <fieldset className="flex flex-col gap-3 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
+          <legend className="px-1 text-sm font-medium">{t("weekdaysLegend")}</legend>
+          <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">{t("weekdaysHint")}</p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {ISO_WEEKDAYS.map((value) => (
+              <label key={value} className="flex items-center gap-2 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  name="weekdays"
+                  value={value}
+                  checked={weekdays.includes(value)}
+                  onChange={() => toggleWeekday(value)}
+                />
+                {t(`weekdays.${value}`)}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      ) : null}
       {showRecurrence ? (
         <fieldset className="flex flex-col gap-3 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
           <legend className="px-1 text-sm font-medium">{t("recurrenceLegend")}</legend>

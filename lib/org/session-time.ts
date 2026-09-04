@@ -183,6 +183,10 @@ export function toDateTimeLocalInput(
   return `${year}-${month}-${day}T${hour.padStart(2, "0")}:${minute}`;
 }
 
+function intlLocale(locale: string): string {
+  return locale === "zh-Hant" ? "zh-TW" : locale === "ja" ? "ja-JP" : "en-US";
+}
+
 export function formatClubDateTime(
   iso: string,
   locale: string,
@@ -192,9 +196,7 @@ export function formatClubDateTime(
   if (Number.isNaN(instant.getTime())) {
     return iso;
   }
-  const intlLocale =
-    locale === "zh-Hant" ? "zh-TW" : locale === "ja" ? "ja-JP" : "en-US";
-  return new Intl.DateTimeFormat(intlLocale, {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     timeZone,
     year: "numeric",
     month: "short",
@@ -212,4 +214,56 @@ export function formatClubDateTimeRange(
   locale: string,
 ): string {
   return `${formatClubDateTime(startsAt, locale)} – ${formatClubDateTime(endsAt, locale)}`;
+}
+
+/** Clock time only (Asia/Taipei), for calendar agenda rows. */
+export function formatClubTime(
+  iso: string,
+  locale: string,
+  timeZone = CLUB_TIME_ZONE,
+): string {
+  const instant = new Date(iso);
+  if (Number.isNaN(instant.getTime())) {
+    return iso;
+  }
+  return new Intl.DateTimeFormat(intlLocale(locale), {
+    timeZone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(instant);
+}
+
+/** Club calendar date heading (Asia/Taipei). Accepts a timestamptz or YYYY-MM-DD. */
+export function formatClubDate(
+  isoOrDate: string,
+  locale: string,
+  timeZone = CLUB_TIME_ZONE,
+): string {
+  const instant = isoOrDate.includes("T")
+    ? new Date(isoOrDate)
+    : new Date(`${isoOrDate}T00:00:00+08:00`);
+  if (Number.isNaN(instant.getTime())) {
+    return isoOrDate;
+  }
+  return new Intl.DateTimeFormat(intlLocale(locale), {
+    timeZone,
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "long",
+  }).format(instant);
+}
+
+export function formatClubMonth(
+  year: number,
+  month: number,
+  locale: string,
+): string {
+  const instant = new Date(Date.UTC(year, month - 1, 1, 4));
+  return new Intl.DateTimeFormat(intlLocale(locale), {
+    timeZone: CLUB_TIME_ZONE,
+    year: "numeric",
+    month: "long",
+  }).format(instant);
 }
