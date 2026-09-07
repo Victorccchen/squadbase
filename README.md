@@ -185,7 +185,7 @@ Prepaid credits for fee-paying youth bands. Signup still does **not** pre-debit.
 
 **Who pays:** U8 and U10–U18 (package from the player’s current team age band). **No credit MVP:** U6, reserve, adult/senior — attendance does not debit; UI label 不扣堂.
 
-**Kind defaults:** regular present/unexcused −1; special present or unexcused −2 (excused leave 0); cup/league competing player −1 per club calendar day; reserve/adult/U6/no_debit 0. Insufficient balance blocks present and debiting unexcused outcomes.
+**Kind defaults (Victor 2026-09-05):** regular present −1; regular unexcused (無故缺席) **0** (do not debit); regular excused 0; special present or unexcused −2 (excused leave 0); cup/league competing player −1 per club calendar day (`match_debit`; skip if already match-debited that Asia/Taipei calendar day); reserve/adult/U6/`no_debit` 0. Admin override still wins. Insufficient balance blocks outcomes that would debit (regular unexcused is not blocked because it does not debit).
 
 **RLS (conservative):** parents see own claims and balances for approved-linked players only (not the money ledger). Admins see all. Coaches may read remaining credits and write attendance on assigned teams; they cannot approve claims or select ledger/last-5. Writes for approve/adjust/attendance debit go through security-definer RPCs in one transaction.
 
@@ -232,6 +232,7 @@ Apply in order:
 18. [`supabase/migrations/20260906600000_ensure_link_status_revoked.sql`](supabase/migrations/20260906600000_ensure_link_status_revoked.sql) (**duplicate-link cleanup step 1; paste this file’s CONTENTS alone and wait** — `alter type link_status add value if not exists 'revoked'`. Same statement as item 6. Required if staging never applied the lifecycle enum file. PostgreSQL cannot ADD VALUE and USE it in one transaction.)
 19. [`supabase/migrations/20260907000000_dedupe_guardian_player_links.sql`](supabase/migrations/20260907000000_dedupe_guardian_player_links.sql) (**duplicate-link cleanup step 2; paste only after step 1 committed** — revokes extra pending/approved `guardian_player_links` for the same guardian×player, then recreates the unique partial index. History rows stay as `revoked` with `admin_note` `deduped by migration`. Does not change RLS or Stage 4B debit rules.)
 20. [`supabase/migrations/20260907010000_session_cancel_lock_24h.sql`](supabase/migrations/20260907010000_session_cancel_lock_24h.sql) (**parent list 取消 lock; paste this file’s CONTENTS on staging** — guardians cannot cancel within 24 hours of `starts_at`; admins remain exempt. Also adds `update_session_registration_parent_note`. Does not change Stage 4B debit rules.)
+21. [`supabase/migrations/20260908000000_regular_unexcused_debit_zero.sql`](supabase/migrations/20260908000000_regular_unexcused_debit_zero.sql) (**Stage 4B debit-rule follow-up; paste this file’s CONTENTS on staging** — `CREATE OR REPLACE` of `compute_session_debit_plan` so **regular unexcused = 0**. Regular present stays −1; special unexcused stays −2. Does not rewrite the original 4B migration. Staging only. Do not run on production.)
 
 Steps:
 
@@ -273,6 +274,8 @@ Duplicate approved children on `/app/children` (same player twice, duplicate Rea
 
 Parent list 取消 within 24 hours of session start: paste contents of [`supabase/migrations/20260907010000_session_cancel_lock_24h.sql`](supabase/migrations/20260907010000_session_cancel_lock_24h.sql) on **staging only**. Admins can still cancel. Also adds the parent-detail note RPC. Do not run on production.
 
+Regular unexcused must not debit: paste contents of [`supabase/migrations/20260908000000_regular_unexcused_debit_zero.sql`](supabase/migrations/20260908000000_regular_unexcused_debit_zero.sql) on **staging only** after Stage 4B. Replaces `compute_session_debit_plan` only. Do not run on production.
+
 ### How to verify the migration
 
 - Table Editor shows the five Stage 2 tables above, with RLS enabled, plus `guardian_player_links` after Stage 3.
@@ -283,7 +286,7 @@ Parent list 取消 within 24 hours of session start: paste contents of [`supabas
 - Optional: paste [`supabase/stage4_verification.sql`](supabase/stage4_verification.sql). The unique-index block asserts re-register-after-cancel and rolls back. The RLS notes document T4-5 / T4-6.
 - Optional: paste [`supabase/stage4a_verification.sql`](supabase/stage4a_verification.sql) after Stage 4A. Asserts title/kind insert, re-register-after-cancel, and that soft-delete keeps registration rows. Rolls back.
 - Optional: paste [`supabase/stage4a1_verification.sql`](supabase/stage4a1_verification.sql) after Stage 4A.1. Asserts `session_series.weekdays` and the `p_weekdays` RPC signature exist. Rolls back.
-- Optional: paste [`supabase/stage4b_verification.sql`](supabase/stage4b_verification.sql) after Stage 4B. Asserts debit-plan C2–C5 (regular 1, special unexcused 2 / excused 0, cup 1/day, U6/reserve/senior 0). Rolls back.
+- Optional: paste [`supabase/stage4b_verification.sql`](supabase/stage4b_verification.sql) after Stage 4B **and** the regular-unexcused follow-up. Asserts debit-plan C2–C5 (regular present 1, regular unexcused 0, special unexcused 2 / excused 0, cup 1/day, U6/reserve/senior 0). Rolls back.
 - Optional: paste [`supabase/guardian_link_dedupe_verification.sql`](supabase/guardian_link_dedupe_verification.sql) after **both** cleanup files (enum `revoked` in one Run, then the dedupe UPDATE in a second Run). Lists remaining open duplicates (expect none), asserts the unique index, and has a commented unique-insert check that rolls back.
 - Optional: the RLS block at the bottom of the Stage 2 file, with real user UUIDs.
 
@@ -485,7 +488,7 @@ Paste Stage 4B SQL **file contents** (not path strings) on **staging only** befo
 | ID | Check |
 | --- | --- |
 | C1 | Parent submits a **10-pack** claim with last-5 → admin approves on `/app/admin/claims` → that child’s balance is **+10**. Parent `/app/credits` shows remaining credits, not the full ledger. |
-| C2 | Admin/coach marks **regular present** → **−1**. With balance 0, marking present is blocked (`insufficientCredits`). |
+| C2 | Admin/coach marks **regular present** → **−1**. **regular unexcused** (無故缺席) → **0** (do not debit). With balance 0, marking present is blocked (`insufficientCredits`); regular unexcused is not blocked. |
 | C3 | **special** unexcused → **−2**. Approved excused leave → **0** debit. |
 | C4 | **cup** or **league** competing player → **−1 per day** (second same-day match does not double-debit). |
 | C5 | **reserve** / **adult** / **U6** sessions show 不扣堂 / No debit; attendance does **not** debit prepaid credits. |

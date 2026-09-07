@@ -618,7 +618,7 @@
     "debitOverrideTitle": "This session’s debit override",
     "noDebitFlag": "No debit (overrides kind defaults)",
     "debitOverride": "Debit this many credits (blank = kind default)",
-    "debitOverrideHint": "Regular present defaults to 1; special present or unexcused is 2; cup/league competing players debit 1 per day. U6, reserve, and adult never debit.",
+    "debitOverrideHint": "Regular present defaults to 1; regular unexcused does not debit. Special present or unexcused is 2; cup/league competing players debit 1 per day. U6, reserve, and adult never debit.",
     "saveDebitOverride": "Save debit settings",
     "attendanceTitle": "Attendance",
     "attendanceEmpty": "No players to mark.",
