@@ -1,13 +1,15 @@
 import { Link } from "@/i18n/navigation";
 import { getTranslations } from "next-intl/server";
+import { AddToCalendar } from "@/components/calendar/add-to-calendar";
 import { SessionListActions } from "@/components/sessions/session-list-actions";
 import {
   SessionKindBadge,
   SessionPlayoffBadge,
   SessionStatusBadge,
 } from "@/components/sessions/session-status-badge";
+import { calendarEventFromPublicFields } from "@/lib/org/calendar-export";
 import type { SessionKind } from "@/lib/supabase/database.types";
-import { formatClubDateTimeRange } from "@/lib/org/session-time";
+import { formatParentVisibleDateTimeRange } from "@/lib/org/session-time";
 
 export type SessionCardChild = {
   playerId: string;
@@ -26,6 +28,11 @@ type AvailableSessionCardProps = {
   isPlayoff: boolean;
   childrenOnTeam: SessionCardChild[];
   locale: string;
+  detailHref?: string;
+  returnTo?: string;
+  seriesId?: string;
+  groupKey?: string;
+  opponent?: string | null;
 };
 
 export async function AvailableSessionCard({
@@ -39,10 +46,29 @@ export async function AvailableSessionCard({
   isPlayoff,
   childrenOnTeam,
   locale,
+  detailHref,
+  returnTo = "sessions",
+  seriesId,
+  groupKey,
+  opponent = null,
 }: AvailableSessionCardProps) {
   const t = await getTranslations("sessions");
   const org = await getTranslations("org");
+  const matchesT = await getTranslations("matches");
+  const href = detailHref ?? `/app/sessions/${sessionId}`;
   const singleChild = childrenOnTeam.length === 1 ? childrenOnTeam[0] : null;
+  const event = calendarEventFromPublicFields(
+    {
+      id: sessionId,
+      title,
+      starts_at: startsAt,
+      ends_at: endsAt,
+      location,
+      kind,
+      opponent,
+    },
+    { kindLabel: t(`kinds.${kind}`), opponentTbd: matchesT("opponentTbd") },
+  );
 
   return (
     <li className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
@@ -59,15 +85,13 @@ export async function AvailableSessionCard({
           <p className="text-sm text-zinc-500">
             {teamName}
             {" · "}
-            {formatClubDateTimeRange(startsAt, endsAt, locale)}
+            {formatParentVisibleDateTimeRange(startsAt, endsAt, locale)}
           </p>
           {location ? <p className="text-sm text-zinc-500">{location}</p> : null}
-          <Link
-            href={`/app/sessions/${sessionId}`}
-            className="text-sm font-medium underline underline-offset-2"
-          >
+          <Link href={href} className="text-sm font-medium underline underline-offset-2">
             {t("viewSession")}
           </Link>
+          <AddToCalendar event={event} />
         </div>
         {singleChild ? (
           <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
@@ -76,6 +100,9 @@ export async function AvailableSessionCard({
               playerId={singleChild.playerId}
               startsAt={startsAt}
               registrationId={singleChild.registrationId}
+              returnTo={returnTo}
+              seriesId={seriesId}
+              groupKey={groupKey}
             />
           </div>
         ) : null}
@@ -93,6 +120,9 @@ export async function AvailableSessionCard({
                 playerId={child.playerId}
                 startsAt={startsAt}
                 registrationId={child.registrationId}
+                returnTo={returnTo}
+                seriesId={seriesId}
+                groupKey={groupKey}
               />
             </li>
           ))}

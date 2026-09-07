@@ -47,6 +47,7 @@ function LinkCard({
     | "/app/admin/sessions"
     | "/app/children"
     | "/app/sessions"
+    | "/app/competitions"
     | "/app/credits"
     | "/app/assessments"
     | "/app/admin/claims"
@@ -103,6 +104,12 @@ export async function DashboardPlaceholders({ roles }: DashboardPlaceholdersProp
               title={t("placeholders.sessions.title")}
               body={t("placeholders.sessions.body")}
               action={t("openSessions")}
+            />
+            <LinkCard
+              href="/app/competitions"
+              title={t("placeholders.competitions.title")}
+              body={t("placeholders.competitions.body")}
+              action={t("openCompetitions")}
             />
             <LinkCard
               href="/app/credits"

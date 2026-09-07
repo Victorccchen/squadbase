@@ -10,7 +10,9 @@ import { getAuthUser } from "@/lib/auth/session";
 import { getPublishedMatch, listPublishedMatchRoster } from "@/lib/org/match-queries";
 import { formatMatchScore, publicOpponentLabel } from "@/lib/org/match";
 import { localizedPlayerName } from "@/lib/org/display-name";
-import { formatClubDateTimeRange } from "@/lib/org/session-time";
+import { formatParentVisibleDateTimeRange } from "@/lib/org/session-time";
+import { AddToCalendar } from "@/components/calendar/add-to-calendar";
+import { calendarEventFromPublicFields } from "@/lib/org/calendar-export";
 import { secondaryButtonClassName } from "@/lib/ui";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +35,18 @@ export default async function PublicMatchDetailPage({ params }: PublicMatchDetai
   const user = await getAuthUser();
   const roster = await listPublishedMatchRoster(match.id);
   const score = formatMatchScore(match.club_score, match.opponent_score);
+  const event = calendarEventFromPublicFields(
+    {
+      id: match.id,
+      title: match.title,
+      starts_at: match.starts_at,
+      ends_at: match.ends_at,
+      location: match.location,
+      kind: match.kind,
+      opponent: match.opponent,
+    },
+    { kindLabel: sessionsT(`kinds.${match.kind}`), opponentTbd: t("opponentTbd") },
+  );
 
   return (
     <div className="flex min-h-full flex-1 flex-col bg-zinc-50 text-zinc-950 dark:bg-zinc-950 dark:text-zinc-50">
@@ -40,7 +54,7 @@ export default async function PublicMatchDetailPage({ params }: PublicMatchDetai
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-6 py-12">
         <PageHeader
           title={match.title}
-          description={`${match.team_name} · ${formatClubDateTimeRange(match.starts_at, match.ends_at, locale)}`}
+          description={`${match.team_name} · ${formatParentVisibleDateTimeRange(match.starts_at, match.ends_at, locale)}`}
           actions={
             <Link href="/matches" className={secondaryButtonClassName}>
               {t("backToSchedule")}
@@ -70,7 +84,7 @@ export default async function PublicMatchDetailPage({ params }: PublicMatchDetai
           <div className="flex justify-between gap-4">
             <dt className="text-zinc-500">{t("kickoff")}</dt>
             <dd className="font-medium">
-              {formatClubDateTimeRange(match.starts_at, match.ends_at, locale)}
+              {formatParentVisibleDateTimeRange(match.starts_at, match.ends_at, locale)}
             </dd>
           </div>
           <div className="flex justify-between gap-4">
@@ -90,6 +104,7 @@ export default async function PublicMatchDetailPage({ params }: PublicMatchDetai
             </div>
           ) : null}
         </dl>
+        <AddToCalendar event={event} />
         <section className="flex flex-col gap-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
             {t("lineupTitle")}

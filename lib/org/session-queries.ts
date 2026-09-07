@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import type {
   AgeBand,
   Player,
+  SessionKind,
   SessionRegistration,
   SessionRegistrationMessage,
   Team,
@@ -12,6 +13,11 @@ import { uniqueApprovedLinksByPlayerId } from "@/lib/org/guardian-links";
 import { isSessionOpenForSignup } from "@/lib/org/session-time";
 import { parseSessionKind } from "@/lib/org/session-recurrence";
 import { parseUuid } from "@/lib/org/parse";
+import {
+  COMPETITION_SESSION_KINDS,
+  TRAINING_SESSION_KINDS,
+  type MatchGroupKey,
+} from "@/lib/org/parent-series";
 
 export type TrainingSessionWithTeam = TrainingSession & {
   team: Team | null;
@@ -180,13 +186,14 @@ export async function listSessionRegistrations(
 
 export async function listOpenSessionsForParent(
   teamIds: string[],
+  kinds?: readonly SessionKind[],
 ): Promise<TrainingSessionWithTeam[]> {
   if (teamIds.length === 0) {
     return [];
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("training_sessions")
     .select("*, teams(*)")
     .eq("status", "active")
@@ -194,8 +201,86 @@ export async function listOpenSessionsForParent(
     .in("team_id", teamIds)
     .order("starts_at");
 
+  if (kinds && kinds.length > 0) {
+    query = query.in("kind", kinds);
+  }
+
+  const { data, error } = await query;
+
   if (error) {
     console.error("listOpenSessionsForParent", error.message);
+    return [];
+  }
+
+  const now = new Date();
+  return (data ?? [])
+    .map((row) => mapSessionRow(row as unknown as Record<string, unknown>))
+    .filter((session) => isSessionOpenForSignup(session, now));
+}
+
+export async function listOpenTrainingSessionsForParent(
+  teamIds: string[],
+): Promise<TrainingSessionWithTeam[]> {
+  return listOpenSessionsForParent(teamIds, TRAINING_SESSION_KINDS);
+}
+
+export async function listOpenCompetitionSessionsForParent(
+  teamIds: string[],
+): Promise<TrainingSessionWithTeam[]> {
+  return listOpenSessionsForParent(teamIds, COMPETITION_SESSION_KINDS);
+}
+
+export async function listOpenSessionsForParentSeries(
+  seriesId: string,
+  teamIds: string[],
+): Promise<TrainingSessionWithTeam[]> {
+  if (!parseUuid(seriesId) || teamIds.length === 0) {
+    return [];
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("training_sessions")
+    .select("*, teams(*)")
+    .eq("series_id", seriesId)
+    .eq("status", "active")
+    .is("deleted_at", null)
+    .in("team_id", teamIds)
+    .in("kind", TRAINING_SESSION_KINDS)
+    .order("starts_at");
+
+  if (error) {
+    console.error("listOpenSessionsForParentSeries", error.message);
+    return [];
+  }
+
+  const now = new Date();
+  return (data ?? [])
+    .map((row) => mapSessionRow(row as unknown as Record<string, unknown>))
+    .filter((session) => isSessionOpenForSignup(session, now));
+}
+
+export async function listOpenSessionsForMatchGroup(
+  group: MatchGroupKey,
+  teamIds: string[],
+): Promise<TrainingSessionWithTeam[]> {
+  if (!teamIds.includes(group.teamId)) {
+    return [];
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("training_sessions")
+    .select("*, teams(*)")
+    .eq("team_id", group.teamId)
+    .eq("kind", group.kind)
+    .eq("title", group.title)
+    .eq("status", "active")
+    .is("deleted_at", null)
+    .order("starts_at");
+
+  if (error) {
+    console.error("listOpenSessionsForMatchGroup", error.message);
     return [];
   }
 

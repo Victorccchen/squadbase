@@ -91,7 +91,9 @@ export function sessionSignupUrl(
   origin: string,
   locale: NoticeLocale,
   sessionId: string,
+  kind?: string,
 ): string {
   const base = origin.replace(/\/$/, "");
-  return `${base}/${locale}/app/sessions/${sessionId}`;
+  const surface = kind === "cup" || kind === "league" ? "competitions" : "sessions";
+  return `${base}/${locale}/app/${surface}/${sessionId}`;
 }

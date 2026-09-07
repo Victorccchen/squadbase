@@ -82,8 +82,10 @@ export default async function AdminSessionDetailPage({ params }: SessionDetailPa
   );
   const origin = publicAppOrigin();
   const signupUrl = origin
-    ? sessionSignupUrl(origin, "zh-Hant", session.id)
-    : `/zh-Hant/app/sessions/${session.id}`;
+    ? sessionSignupUrl(origin, "zh-Hant", session.id, session.kind)
+    : session.kind === "cup" || session.kind === "league"
+      ? `/zh-Hant/app/competitions/${session.id}`
+      : `/zh-Hant/app/sessions/${session.id}`;
   const useRoster = session.kind === "cup" || session.kind === "league";
   const attendancePlayers = useRoster
     ? roster.map((row) => ({ player: row.player, jerseyNumber: row.membership.jersey_number }))

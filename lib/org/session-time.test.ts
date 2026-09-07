@@ -3,7 +3,9 @@ import { describe, it } from "node:test";
 import {
   addMinutesToOffsetIso,
   formatClubDateTime,
+  formatClubDateWithWeekday,
   formatClubTime,
+  formatParentVisibleDateTimeRange,
   isEndsAfterStart,
   isGuardianCancelLocked,
   isSessionOpenForSignup,
@@ -134,5 +136,34 @@ describe("formatClubTime", () => {
     const text = formatClubTime("2026-09-10T10:00:00.000Z", "en");
     assert.match(text, /18:00/);
     assert.equal(text.includes("Sep"), false);
+  });
+});
+
+describe("T6P-3 weekday labels three locales", () => {
+  const sunday = "2026-09-20T00:00:00+08:00";
+  const monday = "2026-09-21T18:00:00+08:00";
+
+  it("appends locale weekday after the Asia/Taipei calendar date", () => {
+    assert.equal(formatClubDateWithWeekday(sunday, "zh-Hant"), "2026-09-20（週日）");
+    assert.equal(formatClubDateWithWeekday(sunday, "en"), "2026-09-20 (Sun)");
+    assert.equal(formatClubDateWithWeekday(sunday, "ja"), "2026-09-20（日曜）");
+    assert.equal(formatClubDateWithWeekday(monday, "zh-Hant"), "2026-09-21（週一）");
+    assert.equal(formatClubDateWithWeekday(monday, "en"), "2026-09-21 (Mon)");
+    assert.equal(formatClubDateWithWeekday(monday, "ja"), "2026-09-21（月曜）");
+  });
+
+  it("keeps weekday when a UTC instant falls on the next Taipei calendar day", () => {
+    assert.equal(formatClubDateWithWeekday("2026-09-19T16:00:00.000Z", "zh-Hant"), "2026-09-20（週日）");
+  });
+
+  it("includes weekday in parent-visible ranges", () => {
+    const range = formatParentVisibleDateTimeRange(
+      "2026-09-20T10:00:00+08:00",
+      "2026-09-20T11:30:00+08:00",
+      "zh-Hant",
+    );
+    assert.match(range, /2026-09-20（週日）/);
+    assert.match(range, /10:00/);
+    assert.match(range, /11:30/);
   });
 });

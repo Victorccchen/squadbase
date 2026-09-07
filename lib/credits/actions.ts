@@ -22,6 +22,7 @@ import {
 } from "@/lib/credits/packages";
 import { parseAttendanceStatus } from "@/lib/credits/debit-rules";
 import type { LeaveRequestStatus, PaymentClaimStatus } from "@/lib/supabase/database.types";
+import { parentReturnPath } from "@/lib/org/parent-series";
 
 function fail(errorKey: OrgErrorKey): OrgActionState {
   return { ok: false, errorKey };
@@ -362,7 +363,10 @@ export async function requestExcusedLeave(
 
   revalidateCredits();
   redirect({
-    href: sessionId ? `/app/sessions/${sessionId}` : "/app/sessions",
+    href: parentReturnPath({
+      returnTo: readString(formData, "return_to") || "session",
+      sessionId,
+    }),
     locale: localeFromForm(formData),
   });
   return ok();

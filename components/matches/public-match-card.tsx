@@ -1,7 +1,7 @@
 import { Link } from "@/i18n/navigation";
 import { SessionKindBadge, SessionPlayoffBadge } from "@/components/sessions/session-status-badge";
 import { MatchSideBadge, MatchStatusBadge } from "@/components/matches/match-status-badge";
-import { formatClubDateTime } from "@/lib/org/session-time";
+import { formatParentVisibleDateTimeRange } from "@/lib/org/session-time";
 import { formatMatchScore, publicOpponentLabel } from "@/lib/org/match";
 import type { PublishedMatch } from "@/lib/supabase/database.types";
 
@@ -45,7 +45,9 @@ export function PublicMatchCard({
           {match.team_name} {vsLabel} {publicOpponentLabel(match.opponent, opponentTbdLabel)}
         </p>
       </div>
-      <p className="text-sm text-zinc-500">{formatClubDateTime(match.starts_at, locale)}</p>
+      <p className="text-sm text-zinc-500">
+        {formatParentVisibleDateTimeRange(match.starts_at, match.ends_at, locale)}
+      </p>
       {match.location ? <p className="text-sm text-zinc-500">{match.location}</p> : null}
       {score ? <p className="text-sm font-medium">{score}</p> : null}
     </Link>

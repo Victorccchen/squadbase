@@ -24,7 +24,37 @@ function ActionError({ errorKey }: { errorKey: OrgErrorKey }) {
   );
 }
 
-function RegisterButton({ sessionId, playerId }: { sessionId: string; playerId: string }) {
+function ReturnFields({
+  returnTo,
+  seriesId,
+  groupKey,
+}: {
+  returnTo: string;
+  seriesId?: string;
+  groupKey?: string;
+}) {
+  return (
+    <>
+      <input type="hidden" name="return_to" value={returnTo} />
+      {seriesId ? <input type="hidden" name="series_id" value={seriesId} /> : null}
+      {groupKey ? <input type="hidden" name="group_key" value={groupKey} /> : null}
+    </>
+  );
+}
+
+function RegisterButton({
+  sessionId,
+  playerId,
+  returnTo,
+  seriesId,
+  groupKey,
+}: {
+  sessionId: string;
+  playerId: string;
+  returnTo: string;
+  seriesId?: string;
+  groupKey?: string;
+}) {
   const t = useTranslations("sessions");
   const [state, formAction, pending] = useActionState(
     registerForSession,
@@ -34,9 +64,9 @@ function RegisterButton({ sessionId, playerId }: { sessionId: string; playerId: 
   return (
     <form action={formAction} className="flex flex-col items-end gap-2">
       <LocaleHiddenField />
+      <ReturnFields returnTo={returnTo} seriesId={seriesId} groupKey={groupKey} />
       <input type="hidden" name="session_id" value={sessionId} />
       <input type="hidden" name="player_id" value={playerId} />
-      <input type="hidden" name="return_to" value="list" />
       <button type="submit" disabled={pending} className={primaryButtonClassName}>
         {pending ? t("registering") : t("register")}
       </button>
@@ -48,9 +78,15 @@ function RegisterButton({ sessionId, playerId }: { sessionId: string; playerId: 
 function CancelButton({
   registrationId,
   sessionId,
+  returnTo,
+  seriesId,
+  groupKey,
 }: {
   registrationId: string;
   sessionId: string;
+  returnTo: string;
+  seriesId?: string;
+  groupKey?: string;
 }) {
   const t = useTranslations("sessions");
   const org = useTranslations("org");
@@ -62,9 +98,9 @@ function CancelButton({
   return (
     <form action={formAction} className="flex flex-col items-end gap-2">
       <LocaleHiddenField />
+      <ReturnFields returnTo={returnTo} seriesId={seriesId} groupKey={groupKey} />
       <input type="hidden" name="registration_id" value={registrationId} />
       <input type="hidden" name="session_id" value={sessionId} />
-      <input type="hidden" name="return_to" value="list" />
       <button type="submit" disabled={pending} className={quietButtonClassName}>
         {pending ? org("saving") : t("cancel")}
       </button>
@@ -79,6 +115,9 @@ type SessionListActionsProps = {
   startsAt: string;
   registrationId: string | null;
   showRegisteredLabel?: boolean;
+  returnTo?: string;
+  seriesId?: string;
+  groupKey?: string;
 };
 
 export function SessionListActions({
@@ -87,11 +126,22 @@ export function SessionListActions({
   startsAt,
   registrationId,
   showRegisteredLabel = true,
+  returnTo = "sessions",
+  seriesId,
+  groupKey,
 }: SessionListActionsProps) {
   const t = useTranslations("sessions");
 
   if (!registrationId) {
-    return <RegisterButton sessionId={sessionId} playerId={playerId} />;
+    return (
+      <RegisterButton
+        sessionId={sessionId}
+        playerId={playerId}
+        returnTo={returnTo}
+        seriesId={seriesId}
+        groupKey={groupKey}
+      />
+    );
   }
 
   const locked = isGuardianCancelLocked(startsAt);
@@ -104,7 +154,13 @@ export function SessionListActions({
       {locked ? (
         <span className={mutedLabelClassName}>{t("cannotCancel")}</span>
       ) : (
-        <CancelButton registrationId={registrationId} sessionId={sessionId} />
+        <CancelButton
+          registrationId={registrationId}
+          sessionId={sessionId}
+          returnTo={returnTo}
+          seriesId={seriesId}
+          groupKey={groupKey}
+        />
       )}
     </div>
   );

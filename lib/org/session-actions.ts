@@ -34,7 +34,22 @@ import {
   parseWeekCount,
   parseWeekdays,
 } from "@/lib/org/session-recurrence";
-import { type OrgActionState, type OrgErrorKey } from "@/lib/org/errors";
+import { type OrgActionState, type OrgErrorKey, type BulkRsvpState } from "@/lib/org/errors";
+import { listOwnGuardianLinks } from "@/lib/org/queries";
+import {
+  approvedChildrenFromLinks,
+  listOpenSessionsForMatchGroup,
+  listOpenSessionsForParentSeries,
+  openRegistrationForPlayer,
+  listOwnSessionRegistrations,
+} from "@/lib/org/session-queries";
+import {
+  decodeMatchGroupKey,
+  parentReturnPath,
+  parseParentReturnTo,
+  planBulkSeriesCancel,
+  planBulkSeriesRegister,
+} from "@/lib/org/parent-series";
 
 function fail(errorKey: OrgErrorKey): OrgActionState {
   return { ok: false, errorKey };
@@ -56,14 +71,29 @@ type AdminHref =
   | "/app/admin/sessions"
   | `/app/admin/sessions/${string}`;
 
-type ParentHref = "/app/sessions" | `/app/sessions/${string}`;
-
 function redirectAdmin(href: AdminHref, formData: FormData) {
   redirect({ href, locale: localeFromForm(formData) });
 }
 
-function redirectParent(href: ParentHref, formData: FormData) {
-  redirect({ href, locale: localeFromForm(formData) });
+function redirectParentFromForm(
+  formData: FormData,
+  extras?: { registered?: boolean },
+) {
+  const pathname = parentReturnPath({
+    returnTo: readString(formData, "return_to"),
+    sessionId: parseUuid(readString(formData, "session_id")),
+    seriesId: parseUuid(readString(formData, "series_id")),
+    groupKey: readString(formData, "group_key"),
+  });
+  const returnTo = parseParentReturnTo(readString(formData, "return_to"));
+  if (extras?.registered && (returnTo === "sessions" || returnTo === "competitions")) {
+    redirect({
+      href: { pathname, query: { registered: "1" } },
+      locale: localeFromForm(formData),
+    });
+    return;
+  }
+  redirect({ href: pathname, locale: localeFromForm(formData) });
 }
 
 type AdminClient = Awaited<ReturnType<typeof createClient>>;
@@ -470,17 +500,7 @@ export async function registerForSession(
   }
 
   revalidateSessions();
-  if (readString(formData, "return_to") === "list") {
-    redirect({
-      href: {
-        pathname: "/app/sessions",
-        query: { registered: "1" },
-      },
-      locale: localeFromForm(formData),
-    });
-  } else {
-    redirectParent(`/app/sessions/${sessionId}`, formData);
-  }
+  redirectParentFromForm(formData, { registered: true });
   return ok();
 }
 
@@ -498,7 +518,6 @@ export async function cancelSessionRegistration(
   }
 
   const registrationId = parseUuid(readString(formData, "registration_id"));
-  const sessionId = parseUuid(readString(formData, "session_id"));
   if (!registrationId) {
     return fail("generic");
   }
@@ -514,11 +533,7 @@ export async function cancelSessionRegistration(
   }
 
   revalidateSessions();
-  if (readString(formData, "return_to") === "list" || !sessionId) {
-    redirectParent("/app/sessions", formData);
-  } else {
-    redirectParent(`/app/sessions/${sessionId}`, formData);
-  }
+  redirectParentFromForm(formData);
   return ok();
 }
 
@@ -557,9 +572,15 @@ export async function updateSessionRegistrationNote(
   }
 
   revalidateSessions();
+  const notePath = parentReturnPath({
+    returnTo: readString(formData, "return_to") || "session",
+    sessionId,
+    seriesId: parseUuid(readString(formData, "series_id")),
+    groupKey: readString(formData, "group_key"),
+  });
   redirect({
     href: {
-      pathname: `/app/sessions/${sessionId}`,
+      pathname: notePath,
       query: { note: "1" },
     },
     locale: localeFromForm(formData),
@@ -601,7 +622,15 @@ export async function switchSessionRegistration(
   }
 
   revalidateSessions();
-  redirectParent(`/app/sessions/${newSessionId}`, formData);
+  redirect({
+    href: parentReturnPath({
+      returnTo: readString(formData, "return_to") || "session",
+      sessionId: newSessionId,
+      seriesId: parseUuid(readString(formData, "series_id")),
+      groupKey: readString(formData, "group_key"),
+    }),
+    locale: localeFromForm(formData),
+  });
   return ok();
 }
 
@@ -646,10 +675,199 @@ export async function postSessionMessage(
   revalidateSessions();
   if (authorRole === "admin" && sessionId) {
     redirectAdmin(`/app/admin/sessions/${sessionId}`, formData);
-  } else if (sessionId) {
-    redirectParent(`/app/sessions/${sessionId}`, formData);
   } else {
-    redirectParent("/app/sessions", formData);
+    redirectParentFromForm(formData);
   }
   return ok();
+}
+
+function bulkFail(errorKey: OrgErrorKey): BulkRsvpState {
+  return { ok: false, errorKey, results: [], attempted: true };
+}
+
+async function loadBulkTarget(formData: FormData) {
+  const links = await listOwnGuardianLinks();
+  const children = approvedChildrenFromLinks(links);
+  const teamIds = [...new Set(children.map((child) => child.teamId))];
+  const seriesId = parseUuid(readString(formData, "series_id"));
+  const group = decodeMatchGroupKey(readString(formData, "group_key"));
+  if (seriesId) {
+    return {
+      children,
+      sessions: await listOpenSessionsForParentSeries(seriesId, teamIds),
+    };
+  }
+  if (group) {
+    return {
+      children,
+      sessions: await listOpenSessionsForMatchGroup(group, teamIds),
+    };
+  }
+  return { children, sessions: [] };
+}
+
+export async function bulkRegisterForSeries(
+  _prev: BulkRsvpState,
+  formData: FormData,
+): Promise<BulkRsvpState> {
+  if (!getPublicSupabaseEnv().isConfigured) {
+    return bulkFail("notConfigured");
+  }
+
+  const { user } = await loadSignedInAccount();
+  if (!user) {
+    return bulkFail("forbidden");
+  }
+
+  const playerId = parseUuid(readString(formData, "player_id"));
+  if (!playerId) {
+    return bulkFail("missingPlayer");
+  }
+
+  const { children, sessions } = await loadBulkTarget(formData);
+  if (sessions.length === 0) {
+    return bulkFail("sessionNotFound");
+  }
+
+  const child = children.find((row) => row.player.id === playerId);
+  const registrations = await listOwnSessionRegistrations([playerId]);
+  const registeredSessionIds = new Set(
+    registrations.filter((row) => row.status === "registered").map((row) => row.session_id),
+  );
+  const plan = planBulkSeriesRegister({
+    sessions,
+    playerId,
+    approvedPlayerIds: children.map((row) => row.player.id),
+    playerTeamId: child?.teamId ?? null,
+    registeredSessionIds,
+  });
+  if (plan.guardianError) {
+    return bulkFail(plan.guardianError);
+  }
+
+  const supabase = await createClient();
+  const results: BulkRsvpState["results"] = [];
+  let anyOk = false;
+  for (const row of plan.rows) {
+    if (row.action !== "register") {
+      results.push({
+        sessionId: row.session.id,
+        startsAt: row.session.starts_at,
+        ok: false,
+        errorKey: row.reason,
+      });
+      continue;
+    }
+    const { error } = await supabase.rpc("register_player_for_session", {
+      p_session_id: row.session.id,
+      p_player_id: playerId,
+      p_parent_note: null,
+    });
+    if (error) {
+      console.error("bulkRegisterForSeries", error.message);
+      results.push({
+        sessionId: row.session.id,
+        startsAt: row.session.starts_at,
+        ok: false,
+        errorKey: sessionRpcErrorKey(error),
+      });
+    } else {
+      anyOk = true;
+      results.push({
+        sessionId: row.session.id,
+        startsAt: row.session.starts_at,
+        ok: true,
+        errorKey: null,
+      });
+    }
+  }
+
+  revalidateSessions();
+  return { ok: anyOk, errorKey: null, results, attempted: true };
+}
+
+export async function bulkCancelForSeries(
+  _prev: BulkRsvpState,
+  formData: FormData,
+): Promise<BulkRsvpState> {
+  if (!getPublicSupabaseEnv().isConfigured) {
+    return bulkFail("notConfigured");
+  }
+
+  const { user } = await loadSignedInAccount();
+  if (!user) {
+    return bulkFail("forbidden");
+  }
+
+  const playerId = parseUuid(readString(formData, "player_id"));
+  if (!playerId) {
+    return bulkFail("missingPlayer");
+  }
+
+  const { children, sessions } = await loadBulkTarget(formData);
+  if (sessions.length === 0) {
+    return bulkFail("sessionNotFound");
+  }
+
+  const registrations = await listOwnSessionRegistrations([playerId]);
+  const registeredSessionIds = new Set(
+    registrations.filter((row) => row.status === "registered").map((row) => row.session_id),
+  );
+  const plan = planBulkSeriesCancel({
+    sessions,
+    playerId,
+    approvedPlayerIds: children.map((row) => row.player.id),
+    registeredSessionIds,
+  });
+  if (plan.guardianError) {
+    return bulkFail(plan.guardianError);
+  }
+
+  const supabase = await createClient();
+  const results: BulkRsvpState["results"] = [];
+  let anyOk = false;
+  for (const row of plan.rows) {
+    if (row.action !== "cancel") {
+      results.push({
+        sessionId: row.session.id,
+        startsAt: row.session.starts_at,
+        ok: false,
+        errorKey: row.reason,
+      });
+      continue;
+    }
+    const open = openRegistrationForPlayer(registrations, row.session.id, playerId);
+    if (!open) {
+      results.push({
+        sessionId: row.session.id,
+        startsAt: row.session.starts_at,
+        ok: false,
+        errorKey: "cannotCancelRegistration",
+      });
+      continue;
+    }
+    const { error } = await supabase.rpc("cancel_session_registration", {
+      p_registration_id: open.id,
+    });
+    if (error) {
+      console.error("bulkCancelForSeries", error.message);
+      results.push({
+        sessionId: row.session.id,
+        startsAt: row.session.starts_at,
+        ok: false,
+        errorKey: sessionRpcErrorKey(error),
+      });
+    } else {
+      anyOk = true;
+      results.push({
+        sessionId: row.session.id,
+        startsAt: row.session.starts_at,
+        ok: true,
+        errorKey: null,
+      });
+    }
+  }
+
+  revalidateSessions();
+  return { ok: anyOk, errorKey: null, results, attempted: true };
 }

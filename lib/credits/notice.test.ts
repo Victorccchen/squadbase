@@ -24,6 +24,13 @@ describe("sessionSignupUrl", () => {
       "https://app.example/zh-Hant/app/sessions/sid-1",
     );
   });
+
+  it("uses the parent competitions path for cup and league", () => {
+    assert.equal(
+      sessionSignupUrl("https://app.example", "en", "mid-1", "league"),
+      "https://app.example/en/app/competitions/mid-1",
+    );
+  });
 });
 
 describe("LINE notice copy", () => {

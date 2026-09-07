@@ -41,9 +41,14 @@ export default async function ChildrenPage() {
           title={t("title")}
           description={t("lead")}
           actions={
-            <Link href="/app/sessions" className={secondaryButtonClassName}>
-              {t("openSessions")}
-            </Link>
+            <span className="flex flex-wrap gap-2">
+              <Link href="/app/sessions" className={secondaryButtonClassName}>
+                {t("openSessions")}
+              </Link>
+              <Link href="/app/competitions" className={secondaryButtonClassName}>
+                {t("openCompetitions")}
+              </Link>
+            </span>
           }
         />
 

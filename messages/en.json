@@ -11,9 +11,9 @@
     "footer": "Production deploys require human approval. Do not publish to production automatically."
   },
   "home": {
-    "eyebrow": "Stage 5B · public match schedule and ability assessments",
+    "eyebrow": "Stage 6P · split training and competitions, series RSVP, calendar add",
     "headline": "Welcome to the Club management system",
-    "lead": "Visitors can open the public match schedule without signing in. Parents sign in with a phone SMS code to link a child, register for training, manage prepaid credits, and read that child’s ability assessments. Admins and assigned coaches record 1–5 scores for match situations and player traits. Admins also publish cup and league matches, lineups, and results. Ability details are never shown on public pages.",
+    "lead": "Visitors can open the public match schedule without signing in and add a match to a calendar. After parents sign in, training and competitions are listed separately; the same series can be attended or declined in one tap. Admins and assigned coaches record 1–5 scores for match situations and player traits. Ability details and credits are never shown on public pages.",
     "openDashboard": "Open dashboard",
     "openMatches": "Match schedule",
     "sampleLabel": "Sample copy",
@@ -59,7 +59,7 @@
   "app": {
     "eyebrow": "Dashboard",
     "title": "Club dashboard",
-    "welcome": "Parents can request a link to a child, register approved children for training, see prepaid session credits, and read ability assessments for linked children. Anyone can open the public match schedule. Admins manage teams, players, coaches, bindings, sessions, matches, claims, and assessments. Coaches can open assigned rosters, take attendance, and record assessments for players on their teams.",
+    "welcome": "Parents can request a link to a child, register approved children for training or competitions, see prepaid session credits, and read ability assessments for linked children. Anyone can open the public match schedule and add it to a calendar. Admins manage teams, players, coaches, bindings, sessions, matches, claims, and assessments. Coaches can open assigned rosters, take attendance, and record assessments for players on their teams.",
     "accountTitle": "Account",
     "phoneLabel": "Phone",
     "rolesLabel": "Roles",
@@ -77,7 +77,8 @@
     "openRoster": "Open roster",
     "openAdmin": "Open admin",
     "openChildren": "Open my children",
-    "openSessions": "Open sessions",
+    "openSessions": "Open training",
+    "openCompetitions": "Open competitions",
     "openCredits": "Open credits",
     "openMatches": "Open match schedule",
     "roles": {
@@ -92,8 +93,12 @@
         "body": "Request a link to an existing player. After an admin approves, they appear here."
       },
       "sessions": {
-        "title": "Training sessions",
-        "body": "Register an approved child for a session, cancel or switch, and ask the club a question."
+        "title": "Training",
+        "body": "Register an approved child for regular or special training. Attend or decline a whole series in one tap."
+      },
+      "competitions": {
+        "title": "Competitions",
+        "body": "Register an approved child for cup and league matches. Same-title fixtures are grouped so you can RSVP the series together."
       },
       "courses": {
         "title": "Courses",
@@ -140,8 +145,8 @@
         "body": "Create cup and league matches, publish a lineup of display names and jersey numbers, and set the result."
       },
       "publicMatches": {
-        "title": "Match schedule",
-        "body": "Open the public cup and league schedule, results, and published lineups. No extra private match tools are required."
+        "title": "Public schedule",
+        "body": "Visitor schedule: published cup and league matches, results, and lineups. Parent signup is on Competitions."
       },
       "credits": {
         "title": "Credits and top-up",
@@ -166,7 +171,8 @@
     "label": "App sections",
     "dashboard": "Dashboard",
     "children": "Children",
-    "sessions": "Sessions",
+    "sessions": "Training",
+    "competitions": "Competitions",
     "roster": "Roster",
     "admin": "Admin",
     "teams": "Teams",
@@ -431,7 +437,7 @@
   },
   "children": {
     "title": "My children",
-    "lead": "Request a link to a player the club already created. An admin must approve before you can see their details here and register them for training sessions.",
+    "lead": "Request a link to a player the club already created. An admin must approve before you can see their details here and register them for training or competitions.",
     "myChildren": "Linked children",
     "requests": "Requests",
     "emptyChildrenTitle": "No linked children yet",
@@ -473,14 +479,15 @@
     "playerNames": "Names",
     "playerTeam": "Team / jersey",
     "playerBirth": "Date of birth",
-    "openSessions": "Register for sessions",
+    "openSessions": "Register for training",
+    "openCompetitions": "Register for competitions",
     "openCredits": "View credits",
     "openAssessments": "View assessments",
     "noAssessment": "No assessment recorded yet."
   },
   "sessions": {
-    "title": "Training sessions",
-    "lead": "Register an approved child for sessions on their team. Signup is auto-approved. Inactive or deleted sessions are not listed. You cannot cancel within 24 hours of the start. Add a note on the session detail page.",
+    "title": "Training",
+    "lead": "Register an approved child for regular and special training on their team. Cup and league signup is on Competitions. Signup is auto-approved. Inactive or deleted sessions are not listed. You cannot cancel within 24 hours of the start. Add a note on the session detail page.",
     "upcomingTitle": "Open sessions",
     "myRegistrations": "My registrations",
     "emptyUpcomingTitle": "No sessions to register",
@@ -571,6 +578,40 @@
       "registered": "Registered",
       "cancelled": "Cancelled"
     }
+  },
+  "competitions": {
+    "title": "Competitions",
+    "lead": "Register an approved child for cup and league matches on their team. Same team, kind, and title are grouped as a series so you can attend eligible fixtures or cancel cancellable ones together. The public visitor schedule stays on Matches. You cannot cancel within 24 hours of kickoff.",
+    "upcomingTitle": "Open competitions",
+    "myRegistrations": "My competition registrations",
+    "emptyUpcomingTitle": "No competitions to register",
+    "emptyUpcomingBody": "When an admin creates a cup or league match for your child’s team, it appears here.",
+    "needApprovedChild": "Link a child and wait for admin approval before you can register for competitions.",
+    "emptyRegistrationsTitle": "No competition registrations yet",
+    "emptyRegistrationsBody": "Open a series above and register a child.",
+    "viewSeries": "View series",
+    "viewMatch": "View match",
+    "nextOccurrence": "Next",
+    "occurrenceCount": "{count} matches",
+    "occurrencesTitle": "Fixtures",
+    "selectChild": "Choose a child",
+    "attendSeries": "Attend this series (eligible)",
+    "cancelSeries": "Cancel series registrations (cancellable)",
+    "cancellingSeries": "Cancelling…",
+    "bulkPartial": "Some fixtures were updated. Check each row.",
+    "bulkAllOk": "This series was updated.",
+    "bulkNone": "No fixtures were updated. Check each reason.",
+    "bulkRowOk": "Done",
+    "bulkRowSkipped": "Skipped",
+    "backToList": "Back to competitions",
+    "registerFromListHint": "Register from the series list first. After that you can add a note for the club here."
+  },
+  "calendar": {
+    "add": "Add to calendar",
+    "google": "Google Calendar",
+    "apple": "Apple Calendar",
+    "outlook": "Outlook",
+    "ics": "Download .ics"
   },
   "credits": {
     "title": "Credits",
