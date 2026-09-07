@@ -67,10 +67,18 @@ export default async function RosterPage() {
                       <span className="font-medium">
                         #{row.membership.jersey_number} {localizedPlayerName(row.player, locale)}
                       </span>
-                      <span className="text-sm text-zinc-500">
-                        {playerNameList(row.player)}
-                        {" · "}
-                        {band ? org(`ageBands.${band}`) : org("ageBandUnknown")}
+                      <span className="flex flex-col gap-1 text-sm text-zinc-500 sm:items-end">
+                        <span>
+                          {playerNameList(row.player)}
+                          {" · "}
+                          {band ? org(`ageBands.${band}`) : org("ageBandUnknown")}
+                        </span>
+                        <Link
+                          href={`/app/assessments/${row.player.id}`}
+                          className="font-medium text-zinc-800 underline underline-offset-2 dark:text-zinc-100"
+                        >
+                          {t("openAssessment")}
+                        </Link>
                       </span>
                     </li>
                   );

@@ -64,6 +64,11 @@ export type OrgErrorKey =
   | "pendingLeaveExists"
   | "leaveNotFound"
   | "invalidPackageBand"
+  | "invalidScore"
+  | "noteTooLong"
+  | "invalidAssessedOn"
+  | "futureAssessedOn"
+  | "assessmentNotFound"
   | "generic";
 
 export type OrgActionState = {

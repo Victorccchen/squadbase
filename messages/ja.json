@@ -11,16 +11,16 @@
     "footer": "本番環境へのデプロイには人による承認が必要です。自動で production へ公開しないでください。"
   },
   "home": {
-    "eyebrow": "ステージ 4B · 前払い単位と出欠",
+    "eyebrow": "ステージ 5 · 選手能力評価",
     "headline": "クラブ管理システムへようこそ",
-    "lead": "携帯電話のSMS認証コードでログインします。保護者は既存選手への紐付けを申請し、管理者が承認すると子どもを練習に申し込み、銀行振込の単位申請、欠席届、クラブへの質問ができます。管理者は振込審査、出欠（単位減算）、既存LINEグループへ手動で貼る三言語お知らせのコピーができます。",
+    "lead": "携帯電話のSMS認証コードでログインします。保護者は既存選手への紐付けを申請し、管理者が承認すると子どもを練習に申し込み、銀行振込の単位申請、欠席届、その子どもの能力評価の閲覧ができます。管理者と担当コーチは試合状況4項目と選手特性4項目を1–5で記録します。能力の詳細は公開ページに出ません。",
     "openDashboard": "ダッシュボードを開く",
     "sampleLabel": "サンプル文言",
     "sampleBody": "現在の言語：日本語。上の言語切替で繁体字中国語または英語の文言に変わります。",
     "stackTitle": "技術スタック",
     "stackNext": "Next.js App Router + TypeScript",
     "stackI18n": "next-intl（繁体字中国語 / English / 日本語）",
-    "stackSupabase": "Supabase の電話OTP、プロフィール、複数ロール、組織マスター、保護者紐付け、練習セッション、前払い単位、RLS",
+    "stackSupabase": "Supabase の電話OTP、プロフィール、複数ロール、組織マスター、保護者紐付け、練習セッション、前払い単位、選手評価、RLS",
     "stackPwa": "PWA：ウェブアプリマニフェストと基本メタ",
     "envTitle": "環境",
     "envConfigured": "公開用 Supabase 変数を検出しました。ログインはこのプロジェクトに接続します（anon key のみ）。",
@@ -58,7 +58,7 @@
   "app": {
     "eyebrow": "ダッシュボード",
     "title": "クラブ ダッシュボード",
-    "welcome": "保護者は子どもへの紐付けを申請し、承認済みの子どもを練習に申し込み、前払い単位の残高を確認できます。管理者はチーム・選手・コーチ・紐付け・セッション・振込申請を管理します。コーチは担当名簿を開き出欠を記録できます。その他の運営機能は後続ステージです。",
+    "welcome": "保護者は子どもへの紐付けを申請し、承認済みの子どもを練習に申し込み、前払い単位と能力評価を確認できます。管理者はチーム・選手・コーチ・紐付け・セッション・振込・評価を管理します。コーチは担当名簿を開き、出欠を記録し、担当チームの選手を評価できます。",
     "accountTitle": "アカウント",
     "phoneLabel": "電話",
     "rolesLabel": "ロール",
@@ -78,6 +78,7 @@
     "openChildren": "子どもを開く",
     "openSessions": "練習セッションを開く",
     "openCredits": "単位を開く",
+    "openAssessments": "能力評価を開く",
     "roles": {
       "parent": "保護者",
       "coach": "コーチ",
@@ -118,8 +119,8 @@
         "body": "担当チームのセッションで出席・欠席届・無断欠席を記録します。残高不足では出席にできません。"
       },
       "assessments": {
-        "title": "評価",
-        "body": "能力評価はまだありません。"
+        "title": "能力評価",
+        "body": "コーチと管理者は試合状況4項目と特性4項目を1–5で記録します。承認済みの保護者は紐付けた子どもだけを読めます。"
       },
       "members": {
         "title": "メンバー",
@@ -163,6 +164,7 @@
     "coaches": "コーチ",
     "bindings": "紐付け審査",
     "credits": "単位",
+    "assessments": "能力評価",
     "claims": "振込申請",
     "creditsAdmin": "単位管理"
   },
@@ -170,6 +172,7 @@
     "deniedTitle": "このページを開けません",
     "deniedBodyAdmin": "管理ページはクラブ管理者専用です。コーチは名簿を開けます。保護者は「子ども」から紐付けを申請できます。",
     "deniedBodyRoster": "名簿は割り当てられたコーチと管理者専用です。それらのロールがない保護者はダッシュボードに留まってください。",
+    "deniedBodyAssessments": "評価の作成・編集は担当コーチまたは管理者だけです。承認済みの保護者は子どもの履歴を読むだけです。",
     "backToDashboard": "ダッシュボードに戻る"
   },
   "admin": {
@@ -264,7 +267,8 @@
     "softDeleteSessionConfirm": "「{title}」を削除しますか？保護者の新規申込には出なくなります。申込とQ&Aは残ります。",
     "softDeleteSeries": "シリーズ全体を削除",
     "softDeleteSeriesConfirm": "「{title}」を含むシリーズの全回を削除しますか？保護者の新規申込には出なくなります。申込とQ&Aは残ります。",
-    "registrationHistoryTitle": "取消済みの申込"
+    "registrationHistoryTitle": "取消済みの申込",
+    "openAssessment": "能力評価"
   },
   "roster": {
     "title": "名簿",
@@ -274,7 +278,8 @@
     "sessionsTitle": "セッション申込",
     "sessionsLead": "割り当てられたチームのセッションと申込選手を読み取り専用で表示します。",
     "sessionsEmptyTitle": "担当セッションはありません",
-    "sessionsEmptyBody": "管理者が担当チームにセッションを作成すると、ここに表示されます。"
+    "sessionsEmptyBody": "管理者が担当チームにセッションを作成すると、ここに表示されます。",
+    "openAssessment": "能力評価"
   },
   "org": {
     "teamName": "チーム名",
@@ -389,6 +394,11 @@
       "pendingLeaveExists": "この申込には既に審査待ちまたは承認済みの欠席届があります。",
       "leaveNotFound": "その欠席届は見つからないか、既に審査済みです。",
       "invalidPackageBand": "有効なパック年齢帯を選んでください。",
+      "invalidScore": "各状況と特性に 1 から 5 の整数スコアが必要です。",
+      "noteTooLong": "メモは 1000 文字以内です。",
+      "invalidAssessedOn": "有効な評価日を入力してください。",
+      "futureAssessedOn": "評価日を未来にすることはできません。",
+      "assessmentNotFound": "その評価は見つかりませんでした。",
       "generic": "保存できませんでした。もう一度お試しください。"
     }
   },
@@ -437,7 +447,9 @@
     "playerTeam": "チーム / 背番号",
     "playerBirth": "生年月日",
     "openSessions": "練習セッションに申し込む",
-    "openCredits": "単位を見る"
+    "openCredits": "単位を見る",
+    "openAssessments": "能力評価を見る",
+    "noAssessment": "まだ評価はありません。"
   },
   "sessions": {
     "title": "練習セッション",
@@ -637,5 +649,87 @@
     "approveLeave": "欠席を承認",
     "rejectLeave": "欠席を却下",
     "backToRoster": "名簿に戻る"
+  },
+  "assessments": {
+    "title": "能力評価",
+    "lead": "コーチと管理者が選手の成長スコアを記録します。承認済みの保護者は紐付けた子どもだけを読めます。能力の詳細は公開されません。",
+    "staffListTitle": "評価できる選手",
+    "staffEmptyTitle": "評価できる選手はいません",
+    "staffEmptyBody": "管理者は全選手を見ます。コーチは担当チームの選手だけです。",
+    "parentListTitle": "紐付けた子ども",
+    "parentEmptyTitle": "紐付けた子どもはいません",
+    "parentEmptyBody": "管理者が保護者紐付けを承認すると、その子どもの評価がここに出ます。",
+    "noLatest": "まだ評価はありません。",
+    "openHistory": "履歴を見る",
+    "openDetail": "この評価を開く",
+    "create": "新しい評価",
+    "createTitle": "新しい評価 · {name}",
+    "createLead": "試合状況4項目と選手特性4項目を1から5で採点します。メモは任意です。CTFAの行動項目はヒントのみで、採点しません。",
+    "historyTitle": "能力評価 · {name}",
+    "historyLead": "保存するたびに履歴が残ります。選手ごとに複数の評価を持てます。",
+    "historyEmptyTitle": "まだ評価はありません",
+    "historyEmptyBody": "コーチまたは管理者が評価を記録すると、ここに表示されます。",
+    "detailTitle": "評価 · {name}",
+    "editLead": "これらのスコアを更新するか、この評価を削除できます。",
+    "readOnlyLead": "この画面は読み取り専用です。保護者は作成・編集できません。",
+    "backToList": "すべての評価",
+    "backToHistory": "履歴に戻る",
+    "submit": "評価を保存",
+    "save": "変更を保存",
+    "delete": "この評価を削除",
+    "deleteConfirm": "この評価を削除しますか？元に戻せません。",
+    "assessedOn": "評価日",
+    "assessedOnHint": "クラブの暦日（Asia/Taipei）。既定は今日です。",
+    "latestOn": "最新の評価",
+    "situationsTitle": "試合状況",
+    "situationsLead": "状況ごとに総合点を1つ。ヒントは案内であり、追加の採点欄ではありません。",
+    "traitsTitle": "選手の特性",
+    "traitsLead": "特性ごとに総合点を1つ。",
+    "hintsTitle": "案内（採点しません）",
+    "ctfaDisclaimer": "これらの短いヒントはユースの「完全な選手」という考え方に沿った案内です。公式のCTFA認定ではなく、採点項目でもありません。",
+    "note": "メモ（任意）",
+    "noteHint": "最大 1000 文字。",
+    "noNote": "メモなし",
+    "situations": {
+      "attack": "攻撃",
+      "defense": "守備",
+      "attack_to_defense": "攻から守へ",
+      "defense_to_attack": "守から攻へ"
+    },
+    "traits": {
+      "adaptability": "適応力",
+      "resilience": "回復力",
+      "coachability": "指導受容性",
+      "team_commitment": "チームへの投入"
+    },
+    "scores": {
+      "1": "発展途上",
+      "2": "芽生え",
+      "3": "安定",
+      "4": "良好",
+      "5": "優秀"
+    },
+    "hints": {
+      "attack": [
+        "受けるときのファーストタッチとコントロール",
+        "パス・ドリブル・シュートの判断",
+        "ボールを持たないときのスペースへの動き"
+      ],
+      "defense": [
+        "マークを外さずボールも見る",
+        "タックルのタイミング。不用意に飛び込まない",
+        "カバーに入り、声を出す"
+      ],
+      "attack_to_defense": [
+        "ボールを失ったらすぐプレスまたはリカバー",
+        "相手のファーストパスのコースを切る",
+        "ゴール側へコンパクトに戻る"
+      ],
+      "defense_to_attack": [
+        "奪ったあとのファーストパス",
+        "ボール前方へ素早くサポート",
+        "プレスをかわされたらサイドを変える"
+      ]
+    }
   }
 }

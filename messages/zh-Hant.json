@@ -11,16 +11,16 @@
     "footer": "生產環境部署需人工核准，請勿自動發佈到 production。"
   },
   "home": {
-    "eyebrow": "階段 4B · 預付堂數與出缺席",
+    "eyebrow": "階段 5 · 球員能力評量",
     "headline": "歡迎使用球團管理系統",
-    "lead": "以手機簡訊驗證碼登入。家長可申請連結既有球員，管理員核准後可為子女報名訓練場次、提交匯款堂數申請、請假，並向球團提問。管理員可審核匯款、出缺席扣堂，並複製三語 LINE 社團通知（需手動貼到既有群組）。",
+    "lead": "以手機簡訊驗證碼登入。家長可申請連結既有球員，管理員核准後可為子女報名訓練場次、提交匯款堂數申請、請假，並閱讀該子女的能力評量。管理員與被指派教練可為四個比賽情境與四項特質打 1–5 分。能力細節不會出現在公開頁面。",
     "openDashboard": "進入儀表板",
     "sampleLabel": "範例文案",
     "sampleBody": "目前語言：繁體中文。切換上方語言後，標題與說明應改為英文或日文。",
     "stackTitle": "技術堆疊",
     "stackNext": "Next.js App Router + TypeScript",
     "stackI18n": "next-intl（繁中 / English / 日本語）",
-    "stackSupabase": "Supabase Phone OTP、profiles、多角色、組織主檔、家長連結、訓練場次、預付堂數與 RLS",
+    "stackSupabase": "Supabase Phone OTP、profiles、多角色、組織主檔、家長連結、訓練場次、預付堂數、球員評量與 RLS",
     "stackPwa": "PWA：網頁應用程式資訊清單與基本 meta",
     "envTitle": "環境",
     "envConfigured": "已讀取公開 Supabase 變數。登入會連線到此專案（僅使用 anon key）。",
@@ -58,7 +58,7 @@
   "app": {
     "eyebrow": "儀表板",
     "title": "球團儀表板",
-    "welcome": "家長可申請連結子女，為已核准的子女報名訓練場次，並查看預付堂數餘額。管理員可管理隊伍、球員、教練、連結審核、場次與匯款申請。教練可開啟被指派的名單並登記出缺席。其他營運功能仍屬後續階段。",
+    "welcome": "家長可申請連結子女，為已核准的子女報名訓練場次、查看預付堂數，並閱讀已連結子女的能力評量。管理員可管理隊伍、球員、教練、連結、場次、匯款與評量。教練可開啟被指派名單、登記出缺席，並為該隊球員記錄評量。",
     "accountTitle": "帳號",
     "phoneLabel": "手機",
     "rolesLabel": "角色",
@@ -78,6 +78,7 @@
     "openChildren": "開啟我的子女",
     "openSessions": "開啟訓練場次",
     "openCredits": "開啟堂數",
+    "openAssessments": "開啟能力評量",
     "roles": {
       "parent": "家長",
       "coach": "教練",
@@ -118,8 +119,8 @@
         "body": "在被指派隊伍的場次登記出席、請假或缺席。餘額不足時無法記出席。"
       },
       "assessments": {
-        "title": "評核",
-        "body": "能力評核尚未開放。"
+        "title": "能力評量",
+        "body": "教練與管理員為四個比賽情境與四項特質打 1–5 分。已核准家長只能閱讀自己連結的子女。"
       },
       "members": {
         "title": "成員",
@@ -163,6 +164,7 @@
     "coaches": "教練",
     "bindings": "連結審核",
     "credits": "堂數",
+    "assessments": "能力評量",
     "claims": "匯款申請",
     "creditsAdmin": "堂數管理"
   },
@@ -170,6 +172,7 @@
     "deniedTitle": "你沒有權限開啟此頁",
     "deniedBodyAdmin": "管理頁僅限球團管理員。教練可開啟名單；家長可在「子女」申請連結球員。",
     "deniedBodyRoster": "名單僅限被指派的教練與管理員。沒有這些角色的家長請留在儀表板。",
+    "deniedBodyAssessments": "只有被指派教練或管理員可以新增或編輯評量。已核准家長只能閱讀自己子女的紀錄。",
     "backToDashboard": "返回儀表板"
   },
   "admin": {
@@ -264,7 +267,8 @@
     "softDeleteSessionConfirm": "確定刪除「{title}」？家長將無法新報名。報名與問答會保留。",
     "softDeleteSeries": "刪除整個系列",
     "softDeleteSeriesConfirm": "確定刪除「{title}」所屬系列的每一場？家長將無法新報名那些場次。報名與問答會保留。",
-    "registrationHistoryTitle": "已取消的報名"
+    "registrationHistoryTitle": "已取消的報名",
+    "openAssessment": "能力評量"
   },
   "roster": {
     "title": "名單",
@@ -274,7 +278,8 @@
     "sessionsTitle": "訓練場次報名",
     "sessionsLead": "唯讀檢視你被指派隊伍的場次與已報名球員。",
     "sessionsEmptyTitle": "沒有被指派的場次",
-    "sessionsEmptyBody": "管理員建立場次並把你指派到該隊伍後，會出現在這裡。"
+    "sessionsEmptyBody": "管理員建立場次並把你指派到該隊伍後，會出現在這裡。",
+    "openAssessment": "能力評量"
   },
   "org": {
     "teamName": "隊伍名稱",
@@ -389,6 +394,11 @@
       "pendingLeaveExists": "此報名已有待審或已核准的請假。",
       "leaveNotFound": "找不到這筆請假申請，或它已審核。",
       "invalidPackageBand": "請選擇有效的方案年齡組。",
+      "invalidScore": "每個情境與特質都需填寫 1 到 5 的整數分數。",
+      "noteTooLong": "備註不可超過 1000 字。",
+      "invalidAssessedOn": "請輸入有效的評量日期。",
+      "futureAssessedOn": "評量日期不可是未來。",
+      "assessmentNotFound": "找不到這筆評量。",
       "generic": "無法儲存，請再試一次。"
     }
   },
@@ -437,7 +447,9 @@
     "playerTeam": "隊伍 / 背號",
     "playerBirth": "出生日期",
     "openSessions": "報名訓練場次",
-    "openCredits": "查看堂數"
+    "openCredits": "查看堂數",
+    "openAssessments": "查看能力評量",
+    "noAssessment": "尚無評量紀錄。"
   },
   "sessions": {
     "title": "訓練場次",
@@ -637,5 +649,87 @@
     "approveLeave": "核准請假",
     "rejectLeave": "拒絕請假",
     "backToRoster": "返回名單"
+  },
+  "assessments": {
+    "title": "能力評量",
+    "lead": "教練與管理員為球員記錄發展評分。已核准家長只能閱讀自己連結的子女。能力細節不會公開。",
+    "staffListTitle": "可評量的球員",
+    "staffEmptyTitle": "目前沒有可評量的球員",
+    "staffEmptyBody": "管理員可看到所有球員。教練只看到被指派隊伍的球員。",
+    "parentListTitle": "已連結子女",
+    "parentEmptyTitle": "尚無已連結子女",
+    "parentEmptyBody": "管理員核准家長連結後，該子女的評量會出現在這裡。",
+    "noLatest": "尚無評量紀錄。",
+    "openHistory": "查看歷程",
+    "openDetail": "開啟這筆評量",
+    "create": "新增評量",
+    "createTitle": "新增評量 · {name}",
+    "createLead": "為四個比賽情境與四項特質各打 1 到 5 分。備註選填。CTFA 行為細項只是提示，不計分。",
+    "historyTitle": "能力評量 · {name}",
+    "historyLead": "每次儲存都是一筆歷程，同一球員可以有多筆評量。",
+    "historyEmptyTitle": "尚無評量",
+    "historyEmptyBody": "教練或管理員送出評量後，會出現在這裡。",
+    "detailTitle": "評量 · {name}",
+    "editLead": "你可以更新這些分數，或刪除這筆評量。",
+    "readOnlyLead": "此頁為唯讀。家長不能新增或編輯評量。",
+    "backToList": "所有評量",
+    "backToHistory": "返回歷程",
+    "submit": "儲存評量",
+    "save": "儲存變更",
+    "delete": "刪除這筆評量",
+    "deleteConfirm": "確定刪除這筆評量？此動作無法復原。",
+    "assessedOn": "評量日期",
+    "assessedOnHint": "球團日曆日期（Asia/Taipei）。預設為今天。",
+    "latestOn": "最近一次評量",
+    "situationsTitle": "比賽情境",
+    "situationsLead": "每個情境一個總分。提示只供參考，不是額外的計分欄位。",
+    "traitsTitle": "球員特質",
+    "traitsLead": "每項特質一個總分。",
+    "hintsTitle": "提示（不計分）",
+    "ctfaDisclaimer": "這些短提示參考青少年「完整球員」的發展方向，僅供指導，不是正式 CTFA 認證，也不計分。",
+    "note": "備註（選填）",
+    "noteHint": "最多 1000 字。",
+    "noNote": "沒有備註",
+    "situations": {
+      "attack": "進攻",
+      "defense": "防守",
+      "attack_to_defense": "由攻轉守",
+      "defense_to_attack": "由守轉攻"
+    },
+    "traits": {
+      "adaptability": "適應能力",
+      "resilience": "韌性",
+      "coachability": "可指導性",
+      "team_commitment": "對團隊的投入"
+    },
+    "scores": {
+      "1": "起步",
+      "2": "萌芽",
+      "3": "穩定",
+      "4": "良好",
+      "5": "優秀"
+    },
+    "hints": {
+      "attack": [
+        "接球時的第一腳與控球",
+        "選擇傳、帶或射",
+        "無球跑位進入空間"
+      ],
+      "defense": [
+        "盯人並同時看到球",
+        "掌握搶截時機，不要輕易撲上",
+        "補位並出聲提醒"
+      ],
+      "attack_to_defense": [
+        "失球後立刻壓迫或回追",
+        "切斷對手第一傳路線",
+        "向本方球門收縮隊形"
+      ],
+      "defense_to_attack": [
+        "搶下球後的第一傳",
+        "迅速前插支援持球者",
+        "壓迫被突破時轉移進攻"
+      ]
+    }
   }
 }

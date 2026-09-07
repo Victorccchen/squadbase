@@ -2,7 +2,7 @@
 
 Responsive web + PWA for a football **Club** (球團) operations app: training squads, courses, attendance, assessments, and matches/events.
 
-This repository is currently **Stage 4B**: Stage 1–4A.1 plus **prepaid session credits** for fee-paying youth bands (U8 and U10–U18). Parents submit bank-transfer claims with the last five account digits; an admin approves to credit the player balance. Attendance marking deducts credits under locked kind rules. Admins can copy a trilingual LINE-group notice (manual paste into existing groups — no LINE Messaging API). U6, reserve, and adult sessions do not debit (UI label 不扣堂 / No debit).
+This repository is currently **Stage 5**: Stage 1–4B plus **player ability assessments**. Coaches and admins record 1–5 scores for four match situations and four player traits (optional notes). Approved guardians can read assessments only for their linked children. Ability details are **never** shown on visitor/public pages.
 
 Parents can request a link to an **existing** player (the club creates the player record first). Until an admin approves, the parent cannot read that player’s private fields. After approval, the parent sees a basic “my children” list (names, birth date, team, jersey) and may **register that child for training sessions** on the child’s team. The parent may **withdraw a pending request**; only an **admin** may revoke an **approved** link. After revoke or withdraw, `is_approved_guardian_for_player` is false and the same pair may apply again. Session signup checks `guardian_player_links.status = approved`.
 
@@ -59,8 +59,9 @@ Routes:
 | `/[locale]/app/children` | Parent: linked children, request status, constrained search form |
 | `/[locale]/app/sessions` | Parent: upcoming sessions for linked children’s teams, register / cancel / switch, Q&A, excused leave |
 | `/[locale]/app/credits` | Parent: remaining credits, 10/20/30 pack claim with last-5 digits |
+| `/[locale]/app/assessments` | Ability assessments: staff create/edit; approved guardians read their children |
 | `/[locale]/app/admin/*` | Admin CRUD (teams, players, coaches, sessions), binding approvals, payment claims, packages. Parents/coaches without admin see an access-denied page. |
-| `/[locale]/app/roster` | Coach (or admin) roster of assigned teams, session signups, and attendance |
+| `/[locale]/app/roster` | Coach (or admin) roster of assigned teams, session signups, attendance, and assessment links |
 
 ## Checks (CI)
 
@@ -191,6 +192,29 @@ Prepaid credits for fee-paying youth bands. Signup still does **not** pre-debit.
 
 Out of scope: online card gateways, LINE Messaging API auto-send, personal LINE binding, push notifications, merging to main from an agent, production deploy.
 
+## Schema choice (Stage 5)
+
+Player ability assessments are **private development records**. One table, many rows per player over time (history; no unique constraint forcing a single row).
+
+| Object | Purpose |
+| --- | --- |
+| `player_assessments` | `player_id`, `assessed_on` (date, Asia/Taipei calendar), `assessor_user_id`, JSONB `situations` and `traits`, actor columns |
+
+**Locked scoring model (2026-09-07):** four match situations and four traits. Each has a required overall score **1–5** and an optional note (max 1000). Stable English keys:
+
+- Situations: `attack`, `defense`, `attack_to_defense`, `defense_to_attack`
+- Traits: `adaptability`, `resilience`, `coachability`, `team_commitment`
+
+JSONB shape per key: `{ "score": 1-5, "note": string|null }`. CHECK constraints plus `assessment_*_are_valid` helpers reject scores outside 1–5 and extra/missing keys.
+
+**Why JSONB (not child tables):** the score set is locked and always written as one snapshot. One row is easier to list as history and to validate in one RPC. CTFA fine-grained behaviour items are **UI hints only** (trilingual copy next to each situation). They are not scored and are not stored. The copy does **not** claim official CTFA certification.
+
+**Writes:** security-definer RPCs `create_player_assessment`, `update_player_assessment`, `delete_player_assessment`. Table GRANT is **SELECT only**. Insert/update/delete: `admin` **or** assigned coach for a team that currently has an **active** membership for that player (`coach_can_assess_player`).
+
+**SELECT:** admin (all); assigned coach via existing `coach_can_read_player`; approved guardian via `is_approved_guardian_for_player` (linked children only). `anon` has no GRANT. Public/visitor pages do not query this table.
+
+Out of scope for Stage 5: public match schedule/results, push / LINE personal binding, official CTFA PDF export, payments/credits changes, production deploy.
+
 ### Player discovery (search UX)
 
 Parents must **not** receive a full roster dump. They never `SELECT` from `players` until an approved link exists.
@@ -233,6 +257,8 @@ Apply in order:
 19. [`supabase/migrations/20260907000000_dedupe_guardian_player_links.sql`](supabase/migrations/20260907000000_dedupe_guardian_player_links.sql) (**duplicate-link cleanup step 2; paste only after step 1 committed** — revokes extra pending/approved `guardian_player_links` for the same guardian×player, then recreates the unique partial index. History rows stay as `revoked` with `admin_note` `deduped by migration`. Does not change RLS or Stage 4B debit rules.)
 20. [`supabase/migrations/20260907010000_session_cancel_lock_24h.sql`](supabase/migrations/20260907010000_session_cancel_lock_24h.sql) (**parent list 取消 lock; paste this file’s CONTENTS on staging** — guardians cannot cancel within 24 hours of `starts_at`; admins remain exempt. Also adds `update_session_registration_parent_note`. Does not change Stage 4B debit rules.)
 21. [`supabase/migrations/20260908000000_regular_unexcused_debit_zero.sql`](supabase/migrations/20260908000000_regular_unexcused_debit_zero.sql) (**Stage 4B debit-rule follow-up; paste this file’s CONTENTS on staging** — `CREATE OR REPLACE` of `compute_session_debit_plan` so **regular unexcused = 0**. Regular present stays −1; special unexcused stays −2. Does not rewrite the original 4B migration. Staging only. Do not run on production.)
+22. [`supabase/migrations/20260908010000_stage5_player_assessments.sql`](supabase/migrations/20260908010000_stage5_player_assessments.sql) (**Stage 5; paste this file’s CONTENTS on staging** — `player_assessments`, JSONB validators, RLS, write RPCs. Does not change credits or sessions.)
+23. [`supabase/migrations/20260908020000_regrant_stage5_privileges.sql`](supabase/migrations/20260908020000_regrant_stage5_privileges.sql) (**paste if staff/parents see `permission denied` on `player_assessments` or Stage 5 RPCs** — re-grants SELECT/execute to `authenticated`. Does not change RLS. Safe to re-run.)
 
 Steps:
 
@@ -240,7 +266,7 @@ Steps:
 2. Go to **SQL Editor** → **New query**.
 3. Paste the full contents of the migration file.
 4. Run the query.
-5. In **Table Editor**, confirm `teams`, `players`, `team_memberships`, `coaches`, `coach_team_assignments`, `guardian_player_links`, and (after Stage 4) `training_sessions`, `session_registrations`, `session_registration_messages` exist. After Stage 4A, also confirm `session_series` and that `training_sessions` has `title`, `kind`, `series_id`, `deleted_at`, and `is_playoff`. After Stage 4A.1, confirm `session_series.weekdays`. After Stage 4B, confirm `session_packages`, `player_session_balances`, `payment_claims`, `session_credit_ledger`, `session_attendance`, `session_leave_requests`, and `club_runtime_settings`.
+5. In **Table Editor**, confirm `teams`, `players`, `team_memberships`, `coaches`, `coach_team_assignments`, `guardian_player_links`, and (after Stage 4) `training_sessions`, `session_registrations`, `session_registration_messages` exist. After Stage 4A, also confirm `session_series` and that `training_sessions` has `title`, `kind`, `series_id`, `deleted_at`, and `is_playoff`. After Stage 4A.1, confirm `session_series.weekdays`. After Stage 4B, confirm `session_packages`, `player_session_balances`, `payment_claims`, `session_credit_ledger`, `session_attendance`, `session_leave_requests`, and `club_runtime_settings`. After Stage 5, confirm `player_assessments`.
 
 If you use the Supabase CLI and it is linked to **staging** (never production):
 
@@ -274,6 +300,8 @@ Duplicate approved children on `/app/children` (same player twice, duplicate Rea
 
 Parent list 取消 within 24 hours of session start: paste contents of [`supabase/migrations/20260907010000_session_cancel_lock_24h.sql`](supabase/migrations/20260907010000_session_cancel_lock_24h.sql) on **staging only**. Admins can still cancel. Also adds the parent-detail note RPC. Do not run on production.
 
+Stage 5 (`20260908010000_stage5_player_assessments.sql`): **Victor: paste the SQL file contents into the staging SQL Editor, not a path string.** Then paste the regrant file if you see permission denied. Do not run them on production. Do not put secrets, bank details, or service-role keys in git.
+
 Regular unexcused must not debit: paste contents of [`supabase/migrations/20260908000000_regular_unexcused_debit_zero.sql`](supabase/migrations/20260908000000_regular_unexcused_debit_zero.sql) on **staging only** after Stage 4B. Replaces `compute_session_debit_plan` only. Do not run on production.
 
 ### How to verify the migration
@@ -287,7 +315,7 @@ Regular unexcused must not debit: paste contents of [`supabase/migrations/202609
 - Optional: paste [`supabase/stage4a_verification.sql`](supabase/stage4a_verification.sql) after Stage 4A. Asserts title/kind insert, re-register-after-cancel, and that soft-delete keeps registration rows. Rolls back.
 - Optional: paste [`supabase/stage4a1_verification.sql`](supabase/stage4a1_verification.sql) after Stage 4A.1. Asserts `session_series.weekdays` and the `p_weekdays` RPC signature exist. Rolls back.
 - Optional: paste [`supabase/stage4b_verification.sql`](supabase/stage4b_verification.sql) after Stage 4B **and** the regular-unexcused follow-up. Asserts debit-plan C2–C5 (regular present 1, regular unexcused 0, special unexcused 2 / excused 0, cup 1/day, U6/reserve/senior 0). Rolls back.
-- Optional: paste [`supabase/guardian_link_dedupe_verification.sql`](supabase/guardian_link_dedupe_verification.sql) after **both** cleanup files (enum `revoked` in one Run, then the dedupe UPDATE in a second Run). Lists remaining open duplicates (expect none), asserts the unique index, and has a commented unique-insert check that rolls back.
+- Optional: paste [`supabase/stage5_verification.sql`](supabase/stage5_verification.sql) after Stage 5. Asserts JSONB 1–5 validators and write RPC signatures. Rolls back.
 - Optional: the RLS block at the bottom of the Stage 2 file, with real user UUIDs.
 
 The package catalog is **seeded with TWD prices from 2026-09-01** (no personal data, no bank account numbers). There is **no real PII** in the repo.
@@ -378,6 +406,7 @@ Do not grant extra roles from the browser except through this admin action. RLS 
 - `coach`: read assigned teams, memberships, and those players (including `birth_date`, needed to show age band on the roster). No insert/update/delete on org tables. Same parent-link rules if they also have the parent role (default).
 - `admin`: full CRUD on org tables and `training_sessions`; can `select` all `profiles` in order to link coaches (phone is PII; admins can see it); can select all guardian links and call `admin_review_guardian_link` / `admin_revoke_guardian_link` / `admin_delete_team`. Team hard-delete refuses while **active** `team_memberships` remain; inactive memberships, coach assignments, and training sessions are removed with the team. Admins can reply on `session_registration_messages`.
 - Training sessions: parents `SELECT` only sessions they can read via approved children (or existing registrations, including after soft-delete). `register_player_for_session` requires an approved guardian, an **active non-deleted** session, and an active membership of that player on the session’s team. Parents cannot dump another family’s roster. Coaches `SELECT` sessions/registrations/messages on assigned teams. `anon` has no GRANT. Create and soft-delete go through admin-only RPCs.
+- Ability assessments: `anon` has no GRANT on `player_assessments`. Parents `SELECT` only rows for approved-linked children and cannot call write RPCs successfully. Assigned coaches `SELECT` via `coach_can_read_player`; writes require an **active** membership on an assigned team (`coach_can_assess_player`) or admin. Public homepage and visitor routes never load assessment payloads.
 
 Public match pages that show names without dates of birth are a later stage. This stage does not expose player rows to unauthenticated users.
 
@@ -497,6 +526,23 @@ Paste Stage 4B SQL **file contents** (not path strings) on **staging only** befo
 
 Locale check: packages, claims, attendance, last-5 error, leave, notice templates, empty states in zh-Hant / en / ja.
 
+### Stage 5
+
+Use **one admin**, **one assigned coach**, **one approved guardian** of player A, and optionally a **guardian of player B** plus an **unassigned coach**. Score parse is also covered by `npm test` (`lib/assessments/parse.test.ts`).
+
+Paste Stage 5 SQL **file contents** (not path strings) on **staging only** before UI checks. `git checkout` the feature branch. Do not deploy production.
+
+| ID | Check |
+| --- | --- |
+| T5-1 | Admin or assigned coach opens `/zh-Hant/app/assessments/{playerId}/new` (or from player detail / roster), fills four situation scores and four trait scores (notes optional), submits. History at `/zh-Hant/app/assessments/{playerId}` shows the new row. |
+| T5-2 | Score outside 1–5 is rejected in the form (`invalidScore`). Optional: paste [`supabase/stage5_verification.sql`](supabase/stage5_verification.sql) — JSONB validators reject 0 and 6. |
+| T5-3 | Approved guardian of that child sees the latest summary on `/zh-Hant/app/children` and can open history. There is no create/edit form (read-only). |
+| T5-4 | Guardian of player B cannot open player A’s assessments (404 / empty). RLS returns no rows. |
+| T5-5 | Coach not assigned to the player’s team cannot create (RPC `not authorized`) and cannot read that player’s assessments (no SELECT). Admin still can. |
+| T5-6 | Logged-out `/zh-Hant` and `/zh-Hant/login` show no ability scores. Signed-out `/zh-Hant/app/assessments` redirects to login. |
+
+Locale check: situation/trait labels, CTFA hint blurbs, score words, empty states, and errors in zh-Hant / en / ja (`/zh-Hant/app/assessments`, `/en/app/assessments`, `/ja/app/assessments`).
+
 ## Staging vs production
 
 | Environment | Use |
@@ -512,10 +558,11 @@ CI on pull requests does **not** deploy.
 ## Project layout
 
 ```text
-app/[locale]/          Public home, /login, gated /app, /app/children, /app/sessions, /app/credits, /app/admin, /app/roster
+app/[locale]/          Public home, /login, gated /app, /app/children, /app/sessions, /app/credits, /app/assessments, /app/admin, /app/roster
 components/            Header, forms, dashboard cards, access denied
 i18n/                  next-intl routing, navigation, request config
 lib/age-band.ts        Season-start age band helper
+lib/assessments/       Assessment parse/validation, queries, server actions
 lib/credits/           Debit rules, packages, LINE notice copy, credit queries/actions
 lib/org/               Server actions, queries, display-name helper, binding actions
 lib/auth/              Phone helpers, session/role guards
@@ -531,12 +578,12 @@ Auth uses the official `@supabase/ssr` cookie pattern for Next.js, composed in `
 
 `app/manifest.ts` publishes a web app manifest. Placeholder icons live in `public/icons/`. Installability and offline caching are not Stage 4A goals.
 
-## Out of scope (Stage 4B)
+## Out of scope (Stage 5)
 
-- Online card / payment gateways
-- LINE Messaging API auto-send, official account binding, or push notifications
-- Changing Stage 4/4A/4A.1 calendar, multi-weekday series, soft-delete, or auto-approve registration
-- Full contribution report UI beyond admin totals on `/app/admin/credits`
+- Public match schedule / results (Stage 5B later)
+- Push notifications / LINE personal binding / LINE Messaging API auto-send
+- Official CTFA PDF export or claiming CTFA certification
+- Payments / credits changes
 - Production deploys, merging this work to `main` from an agent, or modifying a production database
 - Service role keys, real bank account numbers, or LINE tokens in the repo or in client code
 - In-app admin backdoors or phone whitelists
@@ -544,4 +591,4 @@ Auth uses the official `@supabase/ssr` cookie pattern for Next.js, composed in `
 
 ## Later stages
 
-Keep staging and production isolated, and keep production releases behind human approval. Assessments, public match pages, and richer contribution reports can follow on this folder structure.
+Keep staging and production isolated, and keep production releases behind human approval. Public match pages and richer contribution reports can follow on this folder structure.

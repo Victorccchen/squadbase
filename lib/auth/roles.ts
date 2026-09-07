@@ -30,3 +30,7 @@ export function canReviewPayments(roles: AppRole[]): boolean {
 export function canTakeAttendance(roles: AppRole[]): boolean {
   return hasRole(roles, "coach") || hasRole(roles, "admin");
 }
+
+export function canWriteAssessments(roles: AppRole[]): boolean {
+  return hasRole(roles, "coach") || hasRole(roles, "admin");
+}
