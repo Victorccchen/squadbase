@@ -2,7 +2,7 @@ import { Link } from "@/i18n/navigation";
 import { SessionKindBadge, SessionPlayoffBadge } from "@/components/sessions/session-status-badge";
 import { MatchSideBadge, MatchStatusBadge } from "@/components/matches/match-status-badge";
 import { formatClubDateTime } from "@/lib/org/session-time";
-import { formatMatchScore } from "@/lib/org/match";
+import { formatMatchScore, publicOpponentLabel } from "@/lib/org/match";
 import type { PublishedMatch } from "@/lib/supabase/database.types";
 
 type PublicMatchCardProps = {
@@ -13,6 +13,7 @@ type PublicMatchCardProps = {
   statusLabel: string;
   sideLabel: string;
   vsLabel: string;
+  opponentTbdLabel: string;
 };
 
 export function PublicMatchCard({
@@ -23,6 +24,7 @@ export function PublicMatchCard({
   statusLabel,
   sideLabel,
   vsLabel,
+  opponentTbdLabel,
 }: PublicMatchCardProps) {
   const score = formatMatchScore(match.club_score, match.opponent_score);
 
@@ -40,7 +42,7 @@ export function PublicMatchCard({
       <div className="flex flex-col gap-1">
         <h2 className="text-base font-semibold">{match.title}</h2>
         <p className="text-sm text-zinc-600 dark:text-zinc-300">
-          {match.team_name} {vsLabel} {match.opponent}
+          {match.team_name} {vsLabel} {publicOpponentLabel(match.opponent, opponentTbdLabel)}
         </p>
       </div>
       <p className="text-sm text-zinc-500">{formatClubDateTime(match.starts_at, locale)}</p>

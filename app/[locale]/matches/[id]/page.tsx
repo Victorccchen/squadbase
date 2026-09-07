@@ -8,7 +8,7 @@ import { SessionKindBadge, SessionPlayoffBadge } from "@/components/sessions/ses
 import { MatchSideBadge, MatchStatusBadge } from "@/components/matches/match-status-badge";
 import { getAuthUser } from "@/lib/auth/session";
 import { getPublishedMatch, listPublishedMatchRoster } from "@/lib/org/match-queries";
-import { formatMatchScore } from "@/lib/org/match";
+import { formatMatchScore, publicOpponentLabel } from "@/lib/org/match";
 import { localizedPlayerName } from "@/lib/org/display-name";
 import { formatClubDateTimeRange } from "@/lib/org/session-time";
 import { secondaryButtonClassName } from "@/lib/ui";
@@ -63,7 +63,9 @@ export default async function PublicMatchDetailPage({ params }: PublicMatchDetai
           </div>
           <div className="flex justify-between gap-4">
             <dt className="text-zinc-500">{t("opponent")}</dt>
-            <dd className="font-medium">{match.opponent}</dd>
+            <dd className="font-medium">
+              {publicOpponentLabel(match.opponent, t("opponentTbd"))}
+            </dd>
           </div>
           <div className="flex justify-between gap-4">
             <dt className="text-zinc-500">{t("kickoff")}</dt>

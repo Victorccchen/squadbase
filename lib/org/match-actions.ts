@@ -25,12 +25,13 @@ import {
 } from "@/lib/org/session-time";
 import {
   DEFAULT_MATCH_DURATION_MINUTES,
-  MAX_MATCH_OPPONENT,
   MAX_MATCH_RESULT_NOTE,
   matchRpcErrorKey,
   parseMatchKind,
+  parseMatchOpponent,
   parseMatchScore,
   parseMatchSide,
+  planBulkMatchCreates,
 } from "@/lib/org/match";
 import { type OrgActionState, type OrgErrorKey } from "@/lib/org/errors";
 
@@ -133,18 +134,12 @@ export async function createMatch(
     return fail("missingTitle");
   }
 
-  const opponent = parseRequiredBoundedText(
-    readString(formData, "opponent"),
-    MAX_MATCH_OPPONENT,
-  );
-  if (!opponent) {
+  const opponentParsed = parseMatchOpponent(readString(formData, "opponent"));
+  if (!opponentParsed.ok) {
     return fail("invalidOpponent");
   }
 
-  const side = parseMatchSide(readString(formData, "side"));
-  if (!side) {
-    return fail("invalidMatchSide");
-  }
+  const side = parseMatchSide(readString(formData, "side")) ?? "home";
 
   const schedule = parseMatchSchedule(formData);
   if (!schedule.ok) {
@@ -167,7 +162,7 @@ export async function createMatch(
     p_ends_at: schedule.endsAt,
     p_location: location,
     p_notes: notes,
-    p_opponent: opponent,
+    p_opponent: opponentParsed.opponent,
     p_side: side,
     p_is_playoff: isPlayoff,
     p_is_published: isPublished,
@@ -198,18 +193,12 @@ export async function updateMatch(
     return fail("missingTitle");
   }
 
-  const opponent = parseRequiredBoundedText(
-    readString(formData, "opponent"),
-    MAX_MATCH_OPPONENT,
-  );
-  if (!opponent) {
+  const opponentParsed = parseMatchOpponent(readString(formData, "opponent"));
+  if (!opponentParsed.ok) {
     return fail("invalidOpponent");
   }
 
-  const side = parseMatchSide(readString(formData, "side"));
-  if (!side) {
-    return fail("invalidMatchSide");
-  }
+  const side = parseMatchSide(readString(formData, "side")) ?? "home";
 
   const schedule = parseMatchSchedule(formData);
   if (!schedule.ok) {
@@ -230,7 +219,7 @@ export async function updateMatch(
     p_ends_at: schedule.endsAt,
     p_location: location,
     p_notes: notes,
-    p_opponent: opponent,
+    p_opponent: opponentParsed.opponent,
     p_side: side,
     p_is_playoff: isPlayoff,
   });
@@ -255,22 +244,16 @@ export async function attachMatchPublication(
     return fail(actor.errorKey);
   }
 
-  const opponent = parseRequiredBoundedText(
-    readString(formData, "opponent"),
-    MAX_MATCH_OPPONENT,
-  );
-  if (!opponent) {
+  const opponentParsed = parseMatchOpponent(readString(formData, "opponent"));
+  if (!opponentParsed.ok) {
     return fail("invalidOpponent");
   }
 
-  const side = parseMatchSide(readString(formData, "side"));
-  if (!side) {
-    return fail("invalidMatchSide");
-  }
+  const side = parseMatchSide(readString(formData, "side")) ?? "home";
 
   const { error } = await actor.supabase.rpc("admin_upsert_match_publication", {
     p_session_id: sessionId,
-    p_opponent: opponent,
+    p_opponent: opponentParsed.opponent,
     p_side: side,
     p_is_published: false,
   });
@@ -282,6 +265,76 @@ export async function attachMatchPublication(
 
   revalidateMatches();
   redirectAdmin(`/app/admin/matches/${sessionId}`, formData);
+  return ok();
+}
+
+export async function createMatchesBulk(
+  _prev: OrgActionState,
+  formData: FormData,
+): Promise<OrgActionState> {
+  const actor = await requireAdminActor();
+  if (!actor.ok) {
+    return fail(actor.errorKey);
+  }
+
+  const teamId = parseUuid(readString(formData, "team_id"));
+  if (!teamId) {
+    return fail("missingTeam");
+  }
+
+  const kind = parseMatchKind(readString(formData, "kind"));
+  if (!kind) {
+    return fail("matchKindRequired");
+  }
+
+  const title = parseRequiredBoundedText(readString(formData, "title"), MAX_SESSION_TITLE);
+  if (!title) {
+    return fail("missingTitle");
+  }
+
+  const opponentParsed = parseMatchOpponent(readString(formData, "opponent"));
+  if (!opponentParsed.ok) {
+    return fail("invalidOpponent");
+  }
+
+  const side = parseMatchSide(readString(formData, "side")) ?? "home";
+  const planned = planBulkMatchCreates({
+    kickoffLocals: readAllStrings(formData, "kickoffs"),
+    durationMinutes: readString(formData, "duration_minutes"),
+  });
+  if (!planned.ok) {
+    return fail(planned.errorKey);
+  }
+
+  const location = parseOptionalBoundedText(
+    readString(formData, "location"),
+    MAX_SESSION_LOCATION,
+  );
+  const notes = parseOptionalBoundedText(readString(formData, "notes"), MAX_SESSION_NOTES);
+  const isPlayoff = kind === "league" && readString(formData, "is_playoff") === "true";
+  const isPublished = readString(formData, "is_published") === "true";
+
+  const { data, error } = await actor.supabase.rpc("admin_create_matches", {
+    p_team_id: teamId,
+    p_title: title,
+    p_kind: kind,
+    p_starts_at: planned.rows.map((row) => row.startsAt),
+    p_ends_at: planned.rows.map((row) => row.endsAt),
+    p_location: location,
+    p_notes: notes,
+    p_opponent: opponentParsed.opponent,
+    p_side: side,
+    p_is_playoff: isPlayoff,
+    p_is_published: isPublished,
+  });
+
+  if (error || !data?.length) {
+    console.error("createMatchesBulk", error?.message);
+    return fail(matchRpcErrorKey(error));
+  }
+
+  revalidateMatches();
+  redirectAdmin("/app/admin/matches", formData);
   return ok();
 }
 

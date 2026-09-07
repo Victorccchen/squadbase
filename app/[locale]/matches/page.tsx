@@ -39,6 +39,7 @@ export default async function PublicMatchesPage() {
                     statusLabel={t(`statuses.${match.public_status}`)}
                     sideLabel={t(`sides.${match.side}`)}
                     vsLabel={t("versus")}
+                    opponentTbdLabel={t("opponentTbd")}
                   />
                 </li>
               ))}
@@ -63,6 +64,7 @@ export default async function PublicMatchesPage() {
                     statusLabel={t(`statuses.${match.public_status}`)}
                     sideLabel={t(`sides.${match.side}`)}
                     vsLabel={t("versus")}
+                    opponentTbdLabel={t("opponentTbd")}
                   />
                 </li>
               ))}

@@ -4,7 +4,15 @@
  * Cup/league training_sessions stay the debit source (Stage 4B). A 1:1
  * match_publications row is the public overlay. Cancelled matches are
  * omitted from the public list (T5B-5), not shown as cancelled.
+ * Opponent may be null (TBD) when the fixture is entered months ahead.
  */
+
+import {
+  addMinutesToOffsetIso,
+  isEndsAfterStart,
+  parseClubDateTimeLocal,
+  parseDurationMinutes,
+} from "./session-time.ts";
 
 export const MATCH_SIDES = ["home", "away"] as const;
 export type MatchSide = (typeof MATCH_SIDES)[number];
@@ -19,6 +27,7 @@ export const DEFAULT_MATCH_DURATION_MINUTES = 90;
 export const MAX_MATCH_OPPONENT = 200;
 export const MAX_MATCH_RESULT_NOTE = 200;
 export const MAX_MATCH_SCORE = 99;
+export const MAX_BULK_MATCHES = 40;
 export const RECENT_PAST_MS = 90 * 24 * 60 * 60 * 1000;
 
 export const PUBLIC_MATCH_FIELDS = [
@@ -84,6 +93,95 @@ export function isMatchKind(value: string): value is MatchKind {
 
 export function parseMatchKind(value: string): MatchKind | null {
   return isMatchKind(value) ? value : null;
+}
+
+export function parseMatchOpponent(value: string): { ok: true; opponent: string | null } | { ok: false } {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return { ok: true, opponent: null };
+  }
+  if (trimmed.length > MAX_MATCH_OPPONENT) {
+    return { ok: false };
+  }
+  return { ok: true, opponent: trimmed };
+}
+
+export function publicOpponentLabel(
+  opponent: string | null | undefined,
+  tbdLabel: string,
+): string {
+  const trimmed = opponent?.trim() ?? "";
+  return trimmed.length > 0 ? trimmed : tbdLabel;
+}
+
+export type BulkMatchKickoff = {
+  startsAt: string;
+  endsAt: string;
+};
+
+export type BulkMatchPlanErrorKey =
+  | "invalidSessionTime"
+  | "invalidDuration"
+  | "endsBeforeStart"
+  | "tooManyMatches"
+  | "matchKickoffRequired";
+
+export function planBulkMatchCreates(input: {
+  kickoffLocals: readonly string[];
+  durationMinutes?: string | number | null;
+}):
+  | { ok: true; rows: BulkMatchKickoff[] }
+  | { ok: false; errorKey: BulkMatchPlanErrorKey } {
+  const locals = input.kickoffLocals.map((value) => value.trim()).filter(Boolean);
+  if (locals.length === 0) {
+    return { ok: false, errorKey: "matchKickoffRequired" };
+  }
+  if (locals.length > MAX_BULK_MATCHES) {
+    return { ok: false, errorKey: "tooManyMatches" };
+  }
+
+  let duration = DEFAULT_MATCH_DURATION_MINUTES;
+  if (input.durationMinutes != null && String(input.durationMinutes).trim() !== "") {
+    const parsed =
+      typeof input.durationMinutes === "number"
+        ? parseDurationMinutes(String(input.durationMinutes))
+        : parseDurationMinutes(input.durationMinutes);
+    if (!parsed) {
+      return { ok: false, errorKey: "invalidDuration" };
+    }
+    duration = parsed;
+  }
+
+  const rows: BulkMatchKickoff[] = [];
+  const seen = new Set<string>();
+  for (const local of locals) {
+    const startsAt = parseClubDateTimeLocal(local);
+    if (!startsAt) {
+      return { ok: false, errorKey: "invalidSessionTime" };
+    }
+    if (seen.has(startsAt)) {
+      continue;
+    }
+    const endsAt = addMinutesToOffsetIso(startsAt, duration);
+    if (!endsAt) {
+      return { ok: false, errorKey: "invalidSessionTime" };
+    }
+    if (!isEndsAfterStart(startsAt, endsAt)) {
+      return { ok: false, errorKey: "endsBeforeStart" };
+    }
+    seen.add(startsAt);
+    rows.push({ startsAt, endsAt });
+  }
+
+  if (rows.length === 0) {
+    return { ok: false, errorKey: "matchKickoffRequired" };
+  }
+  if (rows.length > MAX_BULK_MATCHES) {
+    return { ok: false, errorKey: "tooManyMatches" };
+  }
+
+  rows.sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+  return { ok: true, rows };
 }
 
 export function parseMatchScore(value: string): number | null {
@@ -199,6 +297,9 @@ export type MatchRpcErrorKey =
   | "missingTitle"
   | "endsBeforeStart"
   | "teamNotFound"
+  | "tooManyMatches"
+  | "matchKickoffRequired"
+  | "invalidSessionTime"
   | "generic";
 
 export function matchRpcErrorKey(error: PgLikeError): MatchRpcErrorKey {
@@ -206,8 +307,17 @@ export function matchRpcErrorKey(error: PgLikeError): MatchRpcErrorKey {
   if (text.includes("match kind must be cup or league")) {
     return "matchKindRequired";
   }
-  if (text.includes("opponent required")) {
+  if (text.includes("opponent required") || text.includes("invalid opponent")) {
     return "invalidOpponent";
+  }
+  if (text.includes("too many matches")) {
+    return "tooManyMatches";
+  }
+  if (text.includes("kickoff required")) {
+    return "matchKickoffRequired";
+  }
+  if (text.includes("kickoff and end arrays must match")) {
+    return "invalidSessionTime";
   }
   if (text.includes("invalid match side")) {
     return "invalidMatchSide";

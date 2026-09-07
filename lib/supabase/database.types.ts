@@ -262,7 +262,7 @@ export type ClubRuntimeSetting = {
 
 export type MatchPublication = {
   session_id: string;
-  opponent: string;
+  opponent: string | null;
   side: MatchSide;
   is_published: boolean;
   public_status: MatchPublicStatus;
@@ -297,7 +297,7 @@ export type PublishedMatch = {
   starts_at: string;
   ends_at: string;
   location: string | null;
-  opponent: string;
+  opponent: string | null;
   side: MatchSide;
   public_status: MatchPublicStatus;
   club_score: number | null;
@@ -889,7 +889,7 @@ export type Database = {
         Row: MatchPublication;
         Insert: {
           session_id: string;
-          opponent: string;
+          opponent?: string | null;
           side: MatchSide;
           is_published?: boolean;
           public_status?: MatchPublicStatus;
@@ -899,7 +899,7 @@ export type Database = {
           published_at?: string | null;
         } & TimestampInsert;
         Update: {
-          opponent?: string;
+          opponent?: string | null;
           side?: MatchSide;
           is_published?: boolean;
           public_status?: MatchPublicStatus;
@@ -1194,7 +1194,7 @@ export type Database = {
       admin_upsert_match_publication: {
         Args: {
           p_session_id: string;
-          p_opponent: string;
+          p_opponent?: string | null;
           p_side: MatchSide;
           p_is_published?: boolean;
         };
@@ -1244,6 +1244,22 @@ export type Database = {
           p_player_ids: string[];
         };
         Returns: string;
+      };
+      admin_create_matches: {
+        Args: {
+          p_team_id: string;
+          p_title: string;
+          p_kind: SessionKind;
+          p_starts_at: string[];
+          p_ends_at: string[];
+          p_location?: string | null;
+          p_notes?: string | null;
+          p_opponent?: string | null;
+          p_side?: MatchSide;
+          p_is_playoff?: boolean;
+          p_is_published?: boolean;
+        };
+        Returns: string[];
       };
     };
     Enums: {

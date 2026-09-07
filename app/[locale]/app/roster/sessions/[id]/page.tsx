@@ -21,6 +21,7 @@ import {
   listBalancesForPlayers,
 } from "@/lib/credits/queries";
 import { creditsApplyToAgeBand } from "@/lib/credits/debit-rules";
+import { publicOpponentLabel } from "@/lib/org/match";
 import { formatClubDateTimeRange } from "@/lib/org/session-time";
 import { secondaryButtonClassName } from "@/lib/ui";
 
@@ -120,7 +121,7 @@ export default async function CoachSessionAttendancePage({
             </div>
             <p>
               {match.team?.name ?? org("unknownTeam")} {matchesT("versus")}{" "}
-              {match.publication.opponent}
+              {publicOpponentLabel(match.publication.opponent, matchesT("opponentTbd"))}
             </p>
             {match.publication.is_published ? (
               <Link href={`/matches/${session.id}`} className={secondaryButtonClassName}>

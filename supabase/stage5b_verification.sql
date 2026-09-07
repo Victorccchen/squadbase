@@ -34,6 +34,22 @@ begin
   if to_regprocedure('public.admin_set_match_roster(uuid, uuid[])') is null then
     raise exception 'T5B schema failed: admin_set_match_roster missing';
   end if;
+  if to_regprocedure(
+    'public.admin_create_matches(uuid, text, public.session_kind, timestamptz[], timestamptz[], text, text, text, public.match_side, boolean, boolean)'
+  ) is null then
+    raise exception 'T5B schema failed: admin_create_matches missing';
+  end if;
+
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'match_publications'
+      and column_name = 'opponent'
+      and is_nullable = 'NO'
+  ) then
+    raise exception 'T5B follow-up failed: opponent should be nullable';
+  end if;
 
   -- Stage 4B C4 must still hold after Stage 5B (debit rules untouched).
   select credits, entry_type

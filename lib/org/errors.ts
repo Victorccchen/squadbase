@@ -71,6 +71,8 @@ export type OrgErrorKey =
   | "matchNotFound"
   | "matchCancelled"
   | "matchRosterPlayerInvalid"
+  | "tooManyMatches"
+  | "matchKickoffRequired"
   | "generic";
 
 export type OrgActionState = {

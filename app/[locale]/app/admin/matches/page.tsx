@@ -7,9 +7,9 @@ import { SessionKindBadge, SessionPlayoffBadge } from "@/components/sessions/ses
 import { MatchSideBadge, MatchStatusBadge } from "@/components/matches/match-status-badge";
 import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { listMatchesForAdmin } from "@/lib/org/match-queries";
-import { formatMatchScore } from "@/lib/org/match";
+import { primaryButtonClassName, secondaryButtonClassName } from "@/lib/ui";
+import { formatMatchScore, publicOpponentLabel } from "@/lib/org/match";
 import { formatClubDateTime } from "@/lib/org/session-time";
-import { primaryButtonClassName } from "@/lib/ui";
 
 export default async function AdminMatchesPage() {
   if (!(await canRenderAdminPage())) {
@@ -31,9 +31,14 @@ export default async function AdminMatchesPage() {
           title={t("matchesTitle")}
           description={t("matchesBody")}
           actions={
-            <Link href="/app/admin/matches/new" className={primaryButtonClassName}>
-              {t("createMatch")}
-            </Link>
+            <span className="flex flex-wrap gap-2">
+              <Link href="/app/admin/matches/new" className={primaryButtonClassName}>
+                {t("createMatch")}
+              </Link>
+              <Link href="/app/admin/matches/bulk" className={secondaryButtonClassName}>
+                {t("bulkCreateMatch")}
+              </Link>
+            </span>
           }
         />
         {matches.length === 0 ? (
@@ -71,7 +76,7 @@ export default async function AdminMatchesPage() {
                       <h2 className="text-base font-semibold">{row.title}</h2>
                       <p className="text-sm text-zinc-600 dark:text-zinc-300">
                         {row.team?.name ?? org("unknownTeam")} {matchesT("versus")}{" "}
-                        {row.publication.opponent}
+                        {publicOpponentLabel(row.publication.opponent, matchesT("opponentTbd"))}
                       </p>
                     </div>
                     <p className="text-sm text-zinc-500">

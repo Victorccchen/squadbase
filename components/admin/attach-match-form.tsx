@@ -22,11 +22,17 @@ export function AttachMatchForm({ action }: AttachMatchFormProps) {
       <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">{t("attachLead")}</p>
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         {t("opponent")}
-        <input name="opponent" required maxLength={200} className={inputClassName} />
+        <input
+          name="opponent"
+          maxLength={200}
+          placeholder={t("opponentTbd")}
+          className={inputClassName}
+        />
       </label>
+      <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">{t("opponentHint")}</p>
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         {t("side")}
-        <select name="side" required defaultValue="home" className={inputClassName}>
+        <select name="side" defaultValue="home" className={inputClassName}>
           <option value="home">{t("sides.home")}</option>
           <option value="away">{t("sides.away")}</option>
         </select>

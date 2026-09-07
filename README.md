@@ -199,14 +199,14 @@ Public cup/league matches reuse `training_sessions` so Stage 4B debit (`match_de
 
 | Object | Purpose |
 | --- | --- |
-| `match_publications` | 1:1 with `training_sessions`. Opponent, home/away (`side`), `is_published`, `public_status` (`scheduled` / `completed` / `cancelled`), scores, optional result note |
+| `match_publications` | 1:1 with `training_sessions`. Opponent (optional / TBD), home/away (`side`), `is_published`, `public_status` (`scheduled` / `completed` / `cancelled`), scores, optional result note |
 | `match_roster` | Published lineup: `player_id` + jersey snapshot from active `team_memberships` |
 
 **Public visibility (anon + authenticated via security-definer RPCs):** `is_published` and `public_status` in `scheduled`/`completed` and session `active`, not soft-deleted, kind `cup` or `league`. **T5B-5:** cancelled matches are **omitted** from the public list (not shown as cancelled). Soft-deleted or inactive sessions are also omitted. Unpublished matches are hidden from anon (T5B-2).
 
 Public RPCs (`list_published_matches`, `get_published_match`, `list_published_match_roster`) return title, kickoff, venue, opponent, side, status, score, team name, and lineup **display-name fields + jersey** only. No phones, emails, guardian info, credits, claims, staff notes, or birth dates. Public pages live under `/[locale]/matches` and do **not** call `ensure_own_profile`.
 
-Writes (`admin_create_match`, `admin_update_match`, `admin_set_match_roster`, `admin_set_match_published`, `admin_set_match_result`, `admin_cancel_match`) are admin-only. Coaches may **read** publications on assigned teams (roster session page). Cancelling a match unpublishes it; it does **not** soft-delete the training session (attendance/debit path stays).
+Writes (`admin_create_match`, `admin_create_matches`, `admin_update_match`, `admin_set_match_roster`, `admin_set_match_published`, `admin_set_match_result`, `admin_cancel_match`) are admin-only. Opponent may be **null** (shown as TBD). Coaches may **read** publications on assigned teams (roster session page). Cancelling a match unpublishes it; it does **not** soft-delete the training session (attendance/debit path stays).
 
 Out of scope: live scores, federation feeds, tickets, push/LINE, assessment changes, production deploy.
 
@@ -253,6 +253,7 @@ Apply in order:
 20. [`supabase/migrations/20260907010000_session_cancel_lock_24h.sql`](supabase/migrations/20260907010000_session_cancel_lock_24h.sql) (**parent list 取消 lock; paste this file’s CONTENTS on staging** — guardians cannot cancel within 24 hours of `starts_at`; admins remain exempt. Also adds `update_session_registration_parent_note`. Does not change Stage 4B debit rules.)
 21. [`supabase/migrations/20260907120000_stage5b_public_matches.sql`](supabase/migrations/20260907120000_stage5b_public_matches.sql) (**Stage 5B; paste this file’s CONTENTS on staging** — `match_publications`, `match_roster`, public RPCs for anon, admin write RPCs. Does not change Stage 4B debit rules.)
 22. [`supabase/migrations/20260907140000_regrant_stage5b_privileges.sql`](supabase/migrations/20260907140000_regrant_stage5b_privileges.sql) (**paste if anon/admins see `permission denied` on public match RPCs** — re-grants to `anon`/`authenticated`. Does not change RLS. Safe to re-run.)
+23. [`supabase/migrations/20260907180000_stage5b_optional_opponent_bulk.sql`](supabase/migrations/20260907180000_stage5b_optional_opponent_bulk.sql) (**Stage 5B follow-up; paste this file’s CONTENTS on staging after 21** — makes `match_publications.opponent` nullable, allows blank opponent on create/update, adds `admin_create_matches` for bulk unpublished cup/league shells. Does not change Stage 4B debit rules.)
 
 Steps:
 
@@ -294,7 +295,7 @@ Duplicate approved children on `/app/children` (same player twice, duplicate Rea
 
 Parent list 取消 within 24 hours of session start: paste contents of [`supabase/migrations/20260907010000_session_cancel_lock_24h.sql`](supabase/migrations/20260907010000_session_cancel_lock_24h.sql) on **staging only**. Admins can still cancel. Also adds the parent-detail note RPC. Do not run on production.
 
-Stage 5B (`20260907120000_stage5b_public_matches.sql`): **Victor: paste the SQL file contents into the staging SQL Editor, not a path string.** Then paste the regrant file. Do not run them on production. Do not put secrets in git. Public match RPCs are granted to `anon`; org tables stay revoked from `anon`.
+Stage 5B (`20260907120000_stage5b_public_matches.sql`): **Victor: paste the SQL file contents into the staging SQL Editor, not a path string.** Then paste the regrant file. Then paste [`supabase/migrations/20260907180000_stage5b_optional_opponent_bulk.sql`](supabase/migrations/20260907180000_stage5b_optional_opponent_bulk.sql) so opponent can be blank and bulk create works. Do not run them on production. Do not put secrets in git. Public match RPCs are granted to `anon`; org tables stay revoked from `anon`.
 
 ### How to verify the migration
 
@@ -532,6 +533,8 @@ Use an admin account for writes. Public checks must be **signed out** (or a priv
 | T5B-5 | Admin cancels a match → it is **not listed** publicly (not shown as cancelled). Soft-delete of the session also hides it. |
 | T5B-6 | `/zh-Hant/matches`, `/en/matches`, and `/ja/matches` render with locale copy. Header and home link to the schedule. |
 | T5B-7 | Signed-in non-admin cannot open `/app/admin/matches` (access denied). Parent JWT cannot call `admin_create_match`. `npm run lint`, `npm run typecheck`, and `npm test` pass. |
+| T5B-8 | Admin can create/update a match with a **blank opponent**. Public list/detail shows TBD (zh-Hant 對手未定 / en TBD / ja 対戦相手未定), never a fake club name. Existing admin edit can fill the opponent later. |
+| T5B-9 | Admin bulk-creates N unpublished cup/league shells from `/app/admin/matches/bulk` with blank opponent → N `training_sessions` + `match_publications` rows. |
 
 Locale check: schedule empty states, status/side badges, admin forms, and errors in zh-Hant / en / ja.
 

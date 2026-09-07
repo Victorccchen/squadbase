@@ -153,17 +153,17 @@ export function MatchForm({
         {t("opponent")}
         <input
           name="opponent"
-          required
           maxLength={200}
           defaultValue={publication?.opponent ?? ""}
+          placeholder={t("opponentTbd")}
           className={inputClassName}
         />
       </label>
+      <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">{t("opponentHint")}</p>
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         {t("side")}
         <select
           name="side"
-          required
           defaultValue={publication?.side ?? "home"}
           className={inputClassName}
         >

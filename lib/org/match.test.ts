@@ -9,11 +9,71 @@ import {
   isUpcomingMatch,
   matchRpcErrorKey,
   parseMatchKind,
+  parseMatchOpponent,
   parseMatchScore,
   parseMatchSide,
   partitionPublicMatches,
+  planBulkMatchCreates,
+  publicOpponentLabel,
   publicPayloadHasForbiddenKeys,
 } from "./match.ts";
+
+describe("parseMatchOpponent / publicOpponentLabel", () => {
+  it("treats blank opponent as null on create/update", () => {
+    assert.deepEqual(parseMatchOpponent(""), { ok: true, opponent: null });
+    assert.deepEqual(parseMatchOpponent("   "), { ok: true, opponent: null });
+    assert.deepEqual(parseMatchOpponent("Rivals"), { ok: true, opponent: "Rivals" });
+  });
+
+  it("rejects opponent names over 200 characters", () => {
+    assert.equal(parseMatchOpponent("x".repeat(201)).ok, false);
+  });
+
+  it("shows TBD when the opponent is missing (never a fake club name)", () => {
+    assert.equal(publicOpponentLabel(null, "TBD"), "TBD");
+    assert.equal(publicOpponentLabel("", "對手未定"), "對手未定");
+    assert.equal(publicOpponentLabel("  ", "対戦相手未定"), "対戦相手未定");
+    assert.equal(publicOpponentLabel("Rivals", "TBD"), "Rivals");
+  });
+});
+
+describe("planBulkMatchCreates", () => {
+  it("produces N sessions from kickoff locals and default 90 minutes", () => {
+    const planned = planBulkMatchCreates({
+      kickoffLocals: [
+        "2026-10-04T15:00",
+        "2026-10-11T15:00",
+        "2026-10-18T15:00",
+        "",
+      ],
+    });
+    assert.equal(planned.ok, true);
+    if (!planned.ok) {
+      return;
+    }
+    assert.equal(planned.rows.length, 3);
+    assert.equal(planned.rows[0]?.startsAt, "2026-10-04T15:00:00+08:00");
+    assert.equal(planned.rows[0]?.endsAt, "2026-10-04T08:30:00.000Z");
+    assert.equal(planned.rows[2]?.startsAt, "2026-10-18T15:00:00+08:00");
+  });
+
+  it("requires at least one kickoff and caps bulk size", () => {
+    assert.equal(planBulkMatchCreates({ kickoffLocals: ["", "  "] }).ok, false);
+    if (planBulkMatchCreates({ kickoffLocals: ["", "  "] }).ok === false) {
+      assert.equal(
+        planBulkMatchCreates({ kickoffLocals: ["", "  "] }).errorKey,
+        "matchKickoffRequired",
+      );
+    }
+    const tooMany = planBulkMatchCreates({
+      kickoffLocals: Array.from({ length: 41 }, (_, i) => `2026-10-01T15:${String(i).padStart(2, "0")}`),
+    });
+    assert.equal(tooMany.ok, false);
+    if (!tooMany.ok) {
+      assert.equal(tooMany.errorKey, "tooManyMatches");
+    }
+  });
+});
 
 describe("parseMatchSide / parseMatchKind", () => {
   it("accepts home and away", () => {
@@ -185,6 +245,8 @@ describe("matchRpcErrorKey", () => {
       "matchKindRequired",
     );
     assert.equal(matchRpcErrorKey({ message: "opponent required" }), "invalidOpponent");
+    assert.equal(matchRpcErrorKey({ message: "kickoff required" }), "matchKickoffRequired");
+    assert.equal(matchRpcErrorKey({ message: "too many matches" }), "tooManyMatches");
     assert.equal(matchRpcErrorKey({ message: "match is cancelled" }), "matchCancelled");
     assert.equal(
       matchRpcErrorKey({ message: "match roster player is not on this team" }),
