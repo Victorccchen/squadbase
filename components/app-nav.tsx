@@ -39,6 +39,12 @@ export function AppNav({ isAdmin, canRoster }: AppNavProps) {
       match: (path: string) => path.startsWith("/app/credits"),
     },
     {
+      href: "/matches",
+      label: t("matches"),
+      show: true,
+      match: (path: string) => path.startsWith("/matches"),
+    },
+    {
       href: "/app/roster",
       label: t("roster"),
       show: canRoster,

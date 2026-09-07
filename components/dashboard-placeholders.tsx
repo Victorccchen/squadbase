@@ -50,7 +50,9 @@ function LinkCard({
     | "/app/sessions"
     | "/app/credits"
     | "/app/admin/claims"
-    | "/app/admin/credits";
+    | "/app/admin/credits"
+    | "/app/admin/matches"
+    | "/matches";
   title: string;
   body: string;
   action: string;
@@ -107,6 +109,12 @@ export async function DashboardPlaceholders({ roles }: DashboardPlaceholdersProp
               title={t("placeholders.credits.title")}
               body={t("placeholders.credits.body")}
               action={t("openCredits")}
+            />
+            <LinkCard
+              href="/matches"
+              title={t("placeholders.publicMatches.title")}
+              body={t("placeholders.publicMatches.body")}
+              action={t("openMatches")}
             />
             {PARENT_COMING.map((key) => (
               <PlaceholderCard
@@ -184,6 +192,12 @@ export async function DashboardPlaceholders({ roles }: DashboardPlaceholdersProp
               href="/app/admin/sessions"
               title={t("placeholders.adminSessions.title")}
               body={t("placeholders.adminSessions.body")}
+              action={t("openAdmin")}
+            />
+            <LinkCard
+              href="/app/admin/matches"
+              title={t("placeholders.adminMatches.title")}
+              body={t("placeholders.adminMatches.body")}
               action={t("openAdmin")}
             />
             <LinkCard

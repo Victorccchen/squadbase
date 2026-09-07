@@ -13,6 +13,7 @@
 - [ ] Stage 4A session title, kind, weekly series, soft-delete
 - [ ] Stage 4A.1 multi-weekday series + admin calendar
 - [ ] Stage 4B prepaid credits, bank-transfer claims, attendance debit, LINE copy
+- [ ] Stage 5B public match schedule, results, published rosters
 
 ## Verification
 

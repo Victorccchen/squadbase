@@ -11,16 +11,17 @@
     "footer": "本番環境へのデプロイには人による承認が必要です。自動で production へ公開しないでください。"
   },
   "home": {
-    "eyebrow": "ステージ 4B · 前払い単位と出欠",
+    "eyebrow": "ステージ 5B · 公開試合日程",
     "headline": "クラブ管理システムへようこそ",
-    "lead": "携帯電話のSMS認証コードでログインします。保護者は既存選手への紐付けを申請し、管理者が承認すると子どもを練習に申し込み、銀行振込の単位申請、欠席届、クラブへの質問ができます。管理者は振込審査、出欠（単位減算）、既存LINEグループへ手動で貼る三言語お知らせのコピーができます。",
+    "lead": "来場者はログインなしで公開日程を見られます。保護者は携帯電話のSMS認証でログインし、子どもへの紐付け、練習申込、前払い単位を扱います。管理者はカップ・リーグ戦、メンバー、結果を公開します。",
     "openDashboard": "ダッシュボードを開く",
+    "openMatches": "試合日程",
     "sampleLabel": "サンプル文言",
     "sampleBody": "現在の言語：日本語。上の言語切替で繁体字中国語または英語の文言に変わります。",
     "stackTitle": "技術スタック",
     "stackNext": "Next.js App Router + TypeScript",
     "stackI18n": "next-intl（繁体字中国語 / English / 日本語）",
-    "stackSupabase": "Supabase の電話OTP、プロフィール、複数ロール、組織マスター、保護者紐付け、練習セッション、前払い単位、RLS",
+    "stackSupabase": "Supabase の電話OTP、プロフィール、複数ロール、組織マスター、保護者紐付け、練習セッション、前払い単位、公開試合、RLS",
     "stackPwa": "PWA：ウェブアプリマニフェストと基本メタ",
     "envTitle": "環境",
     "envConfigured": "公開用 Supabase 変数を検出しました。ログインはこのプロジェクトに接続します（anon key のみ）。",
@@ -58,7 +59,7 @@
   "app": {
     "eyebrow": "ダッシュボード",
     "title": "クラブ ダッシュボード",
-    "welcome": "保護者は子どもへの紐付けを申請し、承認済みの子どもを練習に申し込み、前払い単位の残高を確認できます。管理者はチーム・選手・コーチ・紐付け・セッション・振込申請を管理します。コーチは担当名簿を開き出欠を記録できます。その他の運営機能は後続ステージです。",
+    "welcome": "保護者は子どもへの紐付けを申請し、承認済みの子どもを練習に申し込み、前払い単位の残高を確認できます。公開試合日程は誰でも開けます。管理者はチーム・選手・コーチ・紐付け・セッション・試合・振込申請を管理します。コーチは担当名簿を開き出欠を記録できます。",
     "accountTitle": "アカウント",
     "phoneLabel": "電話",
     "rolesLabel": "ロール",
@@ -78,6 +79,7 @@
     "openChildren": "子どもを開く",
     "openSessions": "練習セッションを開く",
     "openCredits": "単位を開く",
+    "openMatches": "試合日程を開く",
     "roles": {
       "parent": "保護者",
       "coach": "コーチ",
@@ -133,6 +135,14 @@
         "title": "練習セッション",
         "body": "種類とタイトルを付けてセッションを作成します。通常練習・カップ・リーグは週次シリーズを生成できます。論理削除でも申込履歴は残ります。"
       },
+      "adminMatches": {
+        "title": "公開試合",
+        "body": "カップとリーグ戦を作成し、表示名と背番号だけのメンバーを公開し、結果を記録します。"
+      },
+      "publicMatches": {
+        "title": "試合日程",
+        "body": "公開のカップ・リーグ日程、結果、メンバーを開きます。追加の非公開試合画面は不要です。"
+      },
       "credits": {
         "title": "単位とチャージ",
         "body": "承認済みの子どもの残り単位を確認し、銀行振込申請を送ります。"
@@ -164,7 +174,8 @@
     "bindings": "紐付け審査",
     "credits": "単位",
     "claims": "振込申請",
-    "creditsAdmin": "単位管理"
+    "creditsAdmin": "単位管理",
+    "matches": "試合"
   },
   "access": {
     "deniedTitle": "このページを開けません",
@@ -185,6 +196,8 @@
     "bindingsBody": "保護者はチームと背番号、または生年月日と氏名の一部で既存選手を検索して申請します。ここで承認、却下、または承認済み紐付けの取り消しができます。保留・却下・取消済みの保護者はその選手データを読めません。",
     "sessionsTitle": "練習セッション",
     "sessionsBody": "既存チーム配下にタイトル付きセッションを作成します。特別は1回のみ。通常練習・カップ・リーグは選択した曜日と、終了日または曜日ごとの回数で発生します。管理画面の初期表示は月カレンダーです。無効化は新規申込を一時的に隠し、論理削除は申込とQ&Aを残します。申込は自動承認です。このステージに定員はありません。",
+    "matchesTitle": "公開試合",
+    "matchesBody": "公開日程にカップとリーグ戦を載せます。公開メンバーに出す選手を選びます（表示名と背番号のみ）。中止した試合は来場者一覧に出ません。書き込みは管理者のみです。",
     "createTeam": "チームを作成",
     "editTeam": "チームを編集",
     "createPlayer": "選手を作成",
@@ -226,6 +239,7 @@
     "deleteBlockedActive": "このチームには有効な所属が {count} 件あるため削除できません。先に他チームへ移すか所属を終了してください。",
     "openTeamRoster": "名簿を開く",
     "createSession": "セッションを作成",
+    "createMatch": "試合を作成",
     "editSession": "セッションを編集",
     "deactivateSession": "セッションを無効化",
     "reactivateSession": "セッションを再有効化",
@@ -235,6 +249,8 @@
     "rosterEmptyBody": "保護者が承認済みの子どもを申し込むと、ここに表示されます。",
     "sessionsEmptyTitle": "セッションはまだありません",
     "sessionsEmptyBody": "先にチームを作成してからセッションを追加してください。",
+    "matchesEmptyTitle": "公開試合はまだありません",
+    "matchesEmptyBody": "カップまたはリーグ戦を作成するか、既存のカップ／リーグ回に公開ページを付けてください。",
     "sessionsFilterEmptyTitle": "該当するセッションはありません",
     "sessionsFilterEmptyBody": "種類やチームを変えるか、削除済みを含めて履歴を表示してください。",
     "filterAllKinds": "すべての種類",
@@ -389,6 +405,13 @@
       "pendingLeaveExists": "この申込には既に審査待ちまたは承認済みの欠席届があります。",
       "leaveNotFound": "その欠席届は見つからないか、既に審査済みです。",
       "invalidPackageBand": "有効なパック年齢帯を選んでください。",
+      "invalidOpponent": "対戦相手名を入力してください。",
+      "invalidMatchSide": "ホームかアウェイを選んでください。",
+      "invalidMatchScore": "スコアは 0〜99 の整数です。",
+      "matchKindRequired": "公開試合はカップまたはリーグである必要があります。",
+      "matchNotFound": "その試合は見つかりません。",
+      "matchCancelled": "この試合は中止です。公開や結果入力の前に予定へ戻してください。",
+      "matchRosterPlayerInvalid": "選んだ選手はすべてこのチームの在籍メンバーである必要があります。",
       "generic": "保存できませんでした。もう一度お試しください。"
     }
   },
@@ -637,5 +660,62 @@
     "approveLeave": "欠席を承認",
     "rejectLeave": "欠席を却下",
     "backToRoster": "名簿に戻る"
+  },
+  "matches": {
+    "title": "試合日程",
+    "lead": "今後と直近のカップ・リーグ戦です。公開メンバーは表示名と背番号のみです。",
+    "upcomingTitle": "今後の試合",
+    "recentTitle": "直近の結果",
+    "upcomingEmptyTitle": "今後の試合はありません",
+    "upcomingEmptyBody": "クラブがカップまたはリーグ戦を公開するとここに表示されます。未公開と中止の試合は公開されません。",
+    "recentEmptyTitle": "直近の結果はありません",
+    "recentEmptyBody": "公開済みの終了試合は、過去90日分がここに表示されます。",
+    "backToSchedule": "日程に戻る",
+    "titleLabel": "試合タイトル",
+    "kickoff": "キックオフ",
+    "venue": "会場",
+    "opponent": "対戦相手",
+    "side": "ホーム／アウェイ",
+    "team": "チーム",
+    "versus": "対",
+    "score": "スコア",
+    "clubScore": "自チーム得点",
+    "opponentScore": "相手得点",
+    "resultNote": "結果メモ（任意）",
+    "lineupTitle": "公開メンバー",
+    "lineupEmptyTitle": "メンバーは未公開です",
+    "lineupEmptyBody": "この試合の公開メンバーはまだありません。",
+    "notesPrivateHint": "スタッフメモはセッション側に残り、公開試合ページには出ません。",
+    "publishNow": "すぐに公開する",
+    "publish": "公開する",
+    "unpublish": "非公開にする",
+    "published": "公開中",
+    "unpublished": "未公開",
+    "saveRoster": "公開メンバーを保存",
+    "saveResult": "結果を保存",
+    "cancelMatch": "試合を中止",
+    "restoreMatch": "予定に戻す",
+    "cancelConfirm": "「{title}」を中止しますか？公開日程から消えます。練習セッションは削除されません。",
+    "cancelledBanner": "この試合は中止され、公開日程には出ません。戻してから再編集・公開できます。",
+    "editTitle": "試合情報",
+    "resultTitle": "結果",
+    "rosterTitle": "公開メンバー",
+    "rosterEmptyTitle": "このチームに在籍選手がいません",
+    "rosterEmptyBody": "先に所属を追加し、公開メンバーに載せる選手を選んでください。",
+    "rosterCount": "メンバー {count} 人",
+    "viewPublic": "公開ページを見る",
+    "openSession": "セッションツールを開く",
+    "attachLead": "このカップ／リーグ回はまだ公開試合ではありません。対戦相手を入れると公開ページを作れます。書き込みは管理者のみです。",
+    "attachSubmit": "公開試合を作成",
+    "coachReadOnly": "公開試合（読み取り専用）。メンバーと結果の公開は管理者です。",
+    "sides": {
+      "home": "ホーム",
+      "away": "アウェイ"
+    },
+    "statuses": {
+      "scheduled": "予定",
+      "completed": "終了",
+      "cancelled": "中止"
+    }
   }
 }

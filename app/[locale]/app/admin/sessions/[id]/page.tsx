@@ -17,6 +17,9 @@ import {
 } from "@/components/sessions/session-status-badge";
 import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { getSession, listSessionRegistrations } from "@/lib/org/session-queries";
+import { getMatchForStaff } from "@/lib/org/match-queries";
+import { attachMatchPublication } from "@/lib/org/match-actions";
+import { AttachMatchForm } from "@/components/admin/attach-match-form";
 import { setSessionStatus, softDeleteSession, softDeleteSessionSeries } from "@/lib/org/session-actions";
 import { localizedPlayerName, playerNameList } from "@/lib/org/display-name";
 import { formatClubDateTime, formatClubDateTimeRange } from "@/lib/org/session-time";
@@ -52,15 +55,19 @@ export default async function AdminSessionDetailPage({ params }: SessionDetailPa
 
   const t = await getTranslations("admin");
   const sessionsT = await getTranslations("sessions");
+  const matchesT = await getTranslations("matches");
   const creditsT = await getTranslations("credits");
   const org = await getTranslations("org");
   const common = await getTranslations("common");
   const locale = await getLocale();
-  const [registrations, attendance, roster, leaveRequests] = await Promise.all([
+  const [registrations, attendance, roster, leaveRequests, match] = await Promise.all([
     listSessionRegistrations(session.id),
     listAttendanceForSession(session.id),
     session.team_id ? listActiveRosterForTeam(session.team_id) : Promise.resolve([]),
     listLeaveRequestsForSession(session.id),
+    session.kind === "cup" || session.kind === "league"
+      ? getMatchForStaff(session.id)
+      : Promise.resolve(null),
   ]);
   const open = registrations.filter((row) => row.status === "registered");
   const history = registrations.filter((row) => row.status !== "registered");
@@ -155,6 +162,25 @@ export default async function AdminSessionDetailPage({ params }: SessionDetailPa
             </dd>
           </div>
         </dl>
+        {session.kind === "cup" || session.kind === "league" ? (
+          <section className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+              {matchesT("title")}
+            </h2>
+            {match ? (
+              <div className="flex flex-wrap gap-2">
+                <Link href={`/app/admin/matches/${session.id}`} className={secondaryButtonClassName}>
+                  {t("matchesTitle")}
+                </Link>
+                <Link href={`/matches/${session.id}`} className={secondaryButtonClassName}>
+                  {matchesT("viewPublic")}
+                </Link>
+              </div>
+            ) : isDeleted ? null : (
+              <AttachMatchForm action={attachMatchPublication.bind(null, session.id)} />
+            )}
+          </section>
+        ) : null}
         {isDeleted ? null : (
           <NoticeCopyPanel
             fields={{

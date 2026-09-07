@@ -25,6 +25,8 @@ export type CreditLedgerEntryType =
   | "admin_adjust"
   | "reversal";
 export type LeaveRequestStatus = "pending" | "approved" | "rejected";
+export type MatchSide = "home" | "away";
+export type MatchPublicStatus = "scheduled" | "completed" | "cancelled";
 
 export type Profile = {
   id: string;
@@ -256,6 +258,60 @@ export type ClubRuntimeSetting = {
   value: string;
   updated_at: string;
   updated_by: string | null;
+};
+
+export type MatchPublication = {
+  session_id: string;
+  opponent: string;
+  side: MatchSide;
+  is_published: boolean;
+  public_status: MatchPublicStatus;
+  club_score: number | null;
+  opponent_score: number | null;
+  result_note: string | null;
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+};
+
+export type MatchRosterRow = {
+  id: string;
+  session_id: string;
+  player_id: string;
+  jersey_number: number;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+};
+
+export type PublishedMatch = {
+  id: string;
+  team_id: string;
+  team_name: string;
+  title: string;
+  kind: SessionKind;
+  is_playoff: boolean;
+  starts_at: string;
+  ends_at: string;
+  location: string | null;
+  opponent: string;
+  side: MatchSide;
+  public_status: MatchPublicStatus;
+  club_score: number | null;
+  opponent_score: number | null;
+  result_note: string | null;
+};
+
+export type PublishedMatchRosterEntry = {
+  player_id: string;
+  name_zh: string | null;
+  name_en_given: string;
+  name_en_family: string;
+  name_ja: string | null;
+  jersey_number: number;
 };
 
 export type SessionRegistrationMessage = {
@@ -829,6 +885,73 @@ export type Database = {
         };
         Relationships: [];
       };
+      match_publications: {
+        Row: MatchPublication;
+        Insert: {
+          session_id: string;
+          opponent: string;
+          side: MatchSide;
+          is_published?: boolean;
+          public_status?: MatchPublicStatus;
+          club_score?: number | null;
+          opponent_score?: number | null;
+          result_note?: string | null;
+          published_at?: string | null;
+        } & TimestampInsert;
+        Update: {
+          opponent?: string;
+          side?: MatchSide;
+          is_published?: boolean;
+          public_status?: MatchPublicStatus;
+          club_score?: number | null;
+          opponent_score?: number | null;
+          result_note?: string | null;
+          published_at?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "match_publications_session_id_fkey";
+            columns: ["session_id"];
+            isOneToOne: true;
+            referencedRelation: "training_sessions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      match_roster: {
+        Row: MatchRosterRow;
+        Insert: {
+          id?: string;
+          session_id: string;
+          player_id: string;
+          jersey_number: number;
+        } & TimestampInsert;
+        Update: {
+          session_id?: string;
+          player_id?: string;
+          jersey_number?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "match_roster_session_id_fkey";
+            columns: ["session_id"];
+            isOneToOne: false;
+            referencedRelation: "match_publications";
+            referencedColumns: ["session_id"];
+          },
+          {
+            foreignKeyName: "match_roster_player_id_fkey";
+            columns: ["player_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -1036,6 +1159,92 @@ export type Database = {
         };
         Returns: string;
       };
+      list_published_matches: {
+        Args: Record<PropertyKey, never>;
+        Returns: PublishedMatch[];
+      };
+      get_published_match: {
+        Args: { p_session_id: string };
+        Returns: PublishedMatch[];
+      };
+      list_published_match_roster: {
+        Args: { p_session_id: string };
+        Returns: PublishedMatchRosterEntry[];
+      };
+      match_is_publicly_visible: {
+        Args: { p_session_id: string };
+        Returns: boolean;
+      };
+      admin_create_match: {
+        Args: {
+          p_team_id: string;
+          p_title: string;
+          p_kind: SessionKind;
+          p_starts_at: string;
+          p_ends_at: string;
+          p_location?: string | null;
+          p_notes?: string | null;
+          p_opponent?: string | null;
+          p_side?: MatchSide;
+          p_is_playoff?: boolean;
+          p_is_published?: boolean;
+        };
+        Returns: string;
+      };
+      admin_upsert_match_publication: {
+        Args: {
+          p_session_id: string;
+          p_opponent: string;
+          p_side: MatchSide;
+          p_is_published?: boolean;
+        };
+        Returns: string;
+      };
+      admin_update_match: {
+        Args: {
+          p_session_id: string;
+          p_title: string;
+          p_starts_at: string;
+          p_ends_at: string;
+          p_location?: string | null;
+          p_notes?: string | null;
+          p_opponent?: string | null;
+          p_side?: MatchSide;
+          p_is_playoff?: boolean;
+        };
+        Returns: string;
+      };
+      admin_set_match_published: {
+        Args: {
+          p_session_id: string;
+          p_is_published: boolean;
+        };
+        Returns: string;
+      };
+      admin_set_match_result: {
+        Args: {
+          p_session_id: string;
+          p_club_score: number;
+          p_opponent_score: number;
+          p_result_note?: string | null;
+        };
+        Returns: string;
+      };
+      admin_cancel_match: {
+        Args: { p_session_id: string };
+        Returns: string;
+      };
+      admin_restore_match: {
+        Args: { p_session_id: string };
+        Returns: string;
+      };
+      admin_set_match_roster: {
+        Args: {
+          p_session_id: string;
+          p_player_ids: string[];
+        };
+        Returns: string;
+      };
     };
     Enums: {
       app_role: AppRole;
@@ -1051,6 +1260,8 @@ export type Database = {
       attendance_status: AttendanceStatus;
       credit_ledger_entry_type: CreditLedgerEntryType;
       leave_request_status: LeaveRequestStatus;
+      match_side: MatchSide;
+      match_public_status: MatchPublicStatus;
     };
     CompositeTypes: Record<string, never>;
   };

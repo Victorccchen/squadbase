@@ -11,16 +11,17 @@
     "footer": "Production deploys require human approval. Do not publish to production automatically."
   },
   "home": {
-    "eyebrow": "Stage 4B · prepaid credits and attendance",
+    "eyebrow": "Stage 5B · public match schedule",
     "headline": "Welcome to the Club management system",
-    "lead": "Sign in with a phone SMS one-time code. Parents request a link to an existing player; after admin approval they can register a child for training, submit a bank-transfer credit claim, request excused leave, and ask the club questions. Admins review transfers, mark attendance (which debits credits), and copy a trilingual LINE-group notice to paste manually into existing groups.",
+    "lead": "Visitors can open the public match schedule without signing in. Parents sign in with a phone SMS code to link a child, register for training, and manage prepaid credits. Admins publish cup and league matches, lineups, and results.",
     "openDashboard": "Open dashboard",
+    "openMatches": "Match schedule",
     "sampleLabel": "Sample copy",
     "sampleBody": "Current language: English. Use the language switcher above to see Traditional Chinese or Japanese strings.",
     "stackTitle": "Stack",
     "stackNext": "Next.js App Router + TypeScript",
     "stackI18n": "next-intl (Traditional Chinese / English / Japanese)",
-    "stackSupabase": "Supabase phone OTP, profiles, multi-role, org master data, guardian links, training sessions, prepaid credits, and RLS",
+    "stackSupabase": "Supabase phone OTP, profiles, multi-role, org master data, guardian links, training sessions, prepaid credits, public matches, and RLS",
     "stackPwa": "PWA: web app manifest and basic meta",
     "envTitle": "Environment",
     "envConfigured": "Public Supabase variables are present. Sign-in talks to this project (anon key only).",
@@ -58,7 +59,7 @@
   "app": {
     "eyebrow": "Dashboard",
     "title": "Club dashboard",
-    "welcome": "Parents can request a link to a child, register approved children for training, and see prepaid session credits. Admins manage teams, players, coaches, bindings, sessions, and bank-transfer claims. Coaches can open assigned rosters and take attendance. Other operations features are still later stages.",
+    "welcome": "Parents can request a link to a child, register approved children for training, and see prepaid session credits. Anyone can open the public match schedule. Admins manage teams, players, coaches, bindings, sessions, matches, and bank-transfer claims. Coaches can open assigned rosters and take attendance.",
     "accountTitle": "Account",
     "phoneLabel": "Phone",
     "rolesLabel": "Roles",
@@ -78,6 +79,7 @@
     "openChildren": "Open my children",
     "openSessions": "Open sessions",
     "openCredits": "Open credits",
+    "openMatches": "Open match schedule",
     "roles": {
       "parent": "Parent",
       "coach": "Coach",
@@ -133,6 +135,14 @@
         "title": "Training sessions",
         "body": "Create titled sessions by kind. Regular, cup, and league can generate a weekly series. Soft-delete keeps registration history."
       },
+      "adminMatches": {
+        "title": "Public matches",
+        "body": "Create cup and league matches, publish a lineup of display names and jersey numbers, and set the result."
+      },
+      "publicMatches": {
+        "title": "Match schedule",
+        "body": "Open the public cup and league schedule, results, and published lineups. No extra private match tools are required."
+      },
       "credits": {
         "title": "Credits and top-up",
         "body": "See remaining prepaid credits for approved children and submit a bank-transfer claim."
@@ -164,7 +174,8 @@
     "bindings": "Bindings",
     "credits": "Credits",
     "claims": "Claims",
-    "creditsAdmin": "Credit admin"
+    "creditsAdmin": "Credit admin",
+    "matches": "Matches"
   },
   "access": {
     "deniedTitle": "You cannot open this page",
@@ -185,6 +196,8 @@
     "bindingsBody": "Parents search for an existing player with team + jersey or birth date + name, then request a link. Approve, reject, or revoke an approved link here. Pending, rejected, and revoked parents cannot read that child’s record.",
     "sessionsTitle": "Training sessions",
     "sessionsBody": "Create a titled session under an existing team. Special is one occurrence. Regular, cup, and league use selected weekdays plus an end date or a per-weekday week count. The default admin view is a month calendar. Inactive hides new parent signup; soft-delete keeps registrations and Q&A. Registration is auto-approved. There is no capacity limit in this stage.",
+    "matchesTitle": "Public matches",
+    "matchesBody": "Announce cup and league matches on the public schedule. Choose who appears on the published lineup (display name and jersey only). Cancelled matches are hidden from visitors, not listed as cancelled. Writes are admin-only.",
     "createTeam": "Create team",
     "editTeam": "Edit team",
     "createPlayer": "Create player",
@@ -226,6 +239,7 @@
     "deleteBlockedActive": "This team still has {count} active players, so it cannot be deleted. Move them to another team or end those memberships first.",
     "openTeamRoster": "Open roster",
     "createSession": "Create session",
+    "createMatch": "Create match",
     "editSession": "Edit session",
     "deactivateSession": "Deactivate session",
     "reactivateSession": "Reactivate session",
@@ -235,6 +249,8 @@
     "rosterEmptyBody": "When a parent registers an approved child, they appear here.",
     "sessionsEmptyTitle": "No sessions yet",
     "sessionsEmptyBody": "Create a team first, then add a training session.",
+    "matchesEmptyTitle": "No public matches yet",
+    "matchesEmptyBody": "Create a cup or league match, or attach a public page to an existing cup/league session.",
     "sessionsFilterEmptyTitle": "No sessions match",
     "sessionsFilterEmptyBody": "Try other kinds or teams, or include deleted sessions to see history.",
     "filterAllKinds": "All kinds",
@@ -389,6 +405,13 @@
       "pendingLeaveExists": "This registration already has a pending or approved leave request.",
       "leaveNotFound": "That leave request was not found or is no longer pending.",
       "invalidPackageBand": "Choose a valid package age band.",
+      "invalidOpponent": "Enter the opponent name.",
+      "invalidMatchSide": "Choose home or away.",
+      "invalidMatchScore": "Enter whole-number scores from 0 to 99.",
+      "matchKindRequired": "Public matches must be cup or league.",
+      "matchNotFound": "That match was not found.",
+      "matchCancelled": "This match is cancelled. Restore it before publishing or setting a result.",
+      "matchRosterPlayerInvalid": "Every selected player must have an active membership on this team.",
       "generic": "Could not save. Please try again."
     }
   },
@@ -637,5 +660,62 @@
     "approveLeave": "Approve leave",
     "rejectLeave": "Reject leave",
     "backToRoster": "Back to roster"
+  },
+  "matches": {
+    "title": "Match schedule",
+    "lead": "Upcoming and recent cup and league matches. Lineups show display names and jersey numbers only.",
+    "upcomingTitle": "Upcoming",
+    "recentTitle": "Recent results",
+    "upcomingEmptyTitle": "No upcoming matches",
+    "upcomingEmptyBody": "When the club publishes a cup or league match, it appears here. Unpublished and cancelled matches stay private.",
+    "recentEmptyTitle": "No recent results",
+    "recentEmptyBody": "Completed matches from the last 90 days appear here after they are published.",
+    "backToSchedule": "Back to schedule",
+    "titleLabel": "Match title",
+    "kickoff": "Kickoff",
+    "venue": "Venue",
+    "opponent": "Opponent",
+    "side": "Home / away",
+    "team": "Team",
+    "versus": "vs",
+    "score": "Score",
+    "clubScore": "Club score",
+    "opponentScore": "Opponent score",
+    "resultNote": "Result note (optional)",
+    "lineupTitle": "Published lineup",
+    "lineupEmptyTitle": "Lineup not published yet",
+    "lineupEmptyBody": "The club has not published a roster for this match.",
+    "notesPrivateHint": "Staff notes stay on the session record and are never shown on the public match page.",
+    "publishNow": "Publish immediately",
+    "publish": "Publish",
+    "unpublish": "Unpublish",
+    "published": "Published",
+    "unpublished": "Unpublished",
+    "saveRoster": "Save published lineup",
+    "saveResult": "Save result",
+    "cancelMatch": "Cancel match",
+    "restoreMatch": "Restore to scheduled",
+    "cancelConfirm": "Cancel “{title}”? It will disappear from the public schedule. The training session is not deleted.",
+    "cancelledBanner": "This match is cancelled. It is hidden from the public schedule. Restore it to edit and publish again.",
+    "editTitle": "Match details",
+    "resultTitle": "Result",
+    "rosterTitle": "Published lineup",
+    "rosterEmptyTitle": "No active players on this team",
+    "rosterEmptyBody": "Add team memberships first, then choose who appears on the public lineup.",
+    "rosterCount": "{count} in lineup",
+    "viewPublic": "View public page",
+    "openSession": "Open session tools",
+    "attachLead": "This cup or league session is not a public match yet. Add an opponent to create a public match page. Writes stay admin-only.",
+    "attachSubmit": "Create public match",
+    "coachReadOnly": "Public match (read-only). Admins publish the lineup and result.",
+    "sides": {
+      "home": "Home",
+      "away": "Away"
+    },
+    "statuses": {
+      "scheduled": "Scheduled",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    }
   }
 }

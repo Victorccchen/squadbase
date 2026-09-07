@@ -64,6 +64,13 @@ export type OrgErrorKey =
   | "pendingLeaveExists"
   | "leaveNotFound"
   | "invalidPackageBand"
+  | "invalidOpponent"
+  | "invalidMatchSide"
+  | "invalidMatchScore"
+  | "matchKindRequired"
+  | "matchNotFound"
+  | "matchCancelled"
+  | "matchRosterPlayerInvalid"
   | "generic";
 
 export type OrgActionState = {
