@@ -2,12 +2,14 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   adminSessionsHref,
+  calendarListHref,
   defaultDayForMonth,
   groupSessionsByClubDate,
   groupSessionsByTeam,
   isDateInClubWeek,
   monthGrid,
   parseAdminSessionsQuery,
+  resolveSurfaceKinds,
   sessionsInWeek,
   shiftClubDate,
   uniqueAgeBandAbbrevsOnDate,
@@ -15,6 +17,7 @@ import {
   visibleMonthRange,
   weekRangeForDate,
 } from "./session-calendar.ts";
+import { TRAINING_SESSION_KINDS } from "./session-recurrence.ts";
 import type { CalendarSession } from "./session-calendar.ts";
 
 function session(
@@ -95,11 +98,37 @@ describe("adminSessionsHref", () => {
       query: {
         month: "2026-09",
         day: "2026-09-10",
+        view: "calendar",
         kind: ["regular", "league"],
         team: ["team-1"],
         includeDeleted: "1",
       },
     });
+  });
+
+  it("T6P1-1 training surface never lists cup/league/friendly", () => {
+    const now = new Date("2026-09-04T01:00:00.000Z");
+    const query = parseAdminSessionsQuery(
+      { kind: ["cup", "league", "friendly", "regular"] },
+      now,
+      { allowedKinds: TRAINING_SESSION_KINDS },
+    );
+    assert.deepEqual(query.kinds, ["regular"]);
+    assert.deepEqual(resolveSurfaceKinds([], TRAINING_SESSION_KINDS), ["regular", "special"]);
+    assert.equal(resolveSurfaceKinds([], TRAINING_SESSION_KINDS).includes("cup"), false);
+    assert.equal(resolveSurfaceKinds(["league"], TRAINING_SESSION_KINDS).includes("league"), false);
+    const matchesHref = calendarListHref("/app/admin/matches", {
+      year: 2026,
+      month: 9,
+      day: "2026-09-10",
+      view: "list",
+      kinds: ["friendly"],
+      teamIds: [],
+      includeDeleted: false,
+    });
+    assert.equal(matchesHref.pathname, "/app/admin/matches");
+    assert.equal(matchesHref.query.view, "list");
+    assert.deepEqual(matchesHref.query.kind, ["friendly"]);
   });
 });
 

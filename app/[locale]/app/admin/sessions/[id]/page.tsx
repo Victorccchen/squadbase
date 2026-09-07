@@ -16,6 +16,7 @@ import {
   SessionStatusBadge,
 } from "@/components/sessions/session-status-badge";
 import { canRenderAdminPage } from "@/lib/auth/admin-page";
+import { isMatchKind } from "@/lib/org/match";
 import { getSession, listSessionRegistrations } from "@/lib/org/session-queries";
 import { getMatchForStaff } from "@/lib/org/match-queries";
 import { attachMatchPublication } from "@/lib/org/match-actions";
@@ -65,7 +66,7 @@ export default async function AdminSessionDetailPage({ params }: SessionDetailPa
     listAttendanceForSession(session.id),
     session.team_id ? listActiveRosterForTeam(session.team_id) : Promise.resolve([]),
     listLeaveRequestsForSession(session.id),
-    session.kind === "cup" || session.kind === "league"
+    isMatchKind(session.kind)
       ? getMatchForStaff(session.id)
       : Promise.resolve(null),
   ]);
@@ -83,10 +84,10 @@ export default async function AdminSessionDetailPage({ params }: SessionDetailPa
   const origin = publicAppOrigin();
   const signupUrl = origin
     ? sessionSignupUrl(origin, "zh-Hant", session.id, session.kind)
-    : session.kind === "cup" || session.kind === "league"
+    : isMatchKind(session.kind)
       ? `/zh-Hant/app/competitions/${session.id}`
       : `/zh-Hant/app/sessions/${session.id}`;
-  const useRoster = session.kind === "cup" || session.kind === "league";
+  const useRoster = isMatchKind(session.kind);
   const attendancePlayers = useRoster
     ? roster.map((row) => ({ player: row.player, jerseyNumber: row.membership.jersey_number }))
     : open
@@ -109,9 +110,15 @@ export default async function AdminSessionDetailPage({ params }: SessionDetailPa
           description={`${session.team?.name ?? org("unknownTeam")} · ${formatClubDateTimeRange(session.starts_at, session.ends_at, locale)}`}
           actions={
             <span className="flex flex-wrap gap-2">
-              <Link href={`/app/admin/sessions/${session.id}/edit`} className={secondaryButtonClassName}>
-                {t("edit")}
-              </Link>
+              {isMatchKind(session.kind) ? (
+                <Link href={`/app/admin/matches/${session.id}`} className={secondaryButtonClassName}>
+                  {t("matchesTitle")}
+                </Link>
+              ) : (
+                <Link href={`/app/admin/sessions/${session.id}/edit`} className={secondaryButtonClassName}>
+                  {t("edit")}
+                </Link>
+              )}
             </span>
           }
         />
@@ -164,7 +171,7 @@ export default async function AdminSessionDetailPage({ params }: SessionDetailPa
             </dd>
           </div>
         </dl>
-        {session.kind === "cup" || session.kind === "league" ? (
+        {isMatchKind(session.kind) ? (
           <section className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
               {matchesT("title")}

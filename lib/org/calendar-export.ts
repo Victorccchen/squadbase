@@ -4,7 +4,7 @@
  * (opponent or TBD, kind). Never phones, assessments, credits, or guardian data.
  */
 
-import { publicOpponentLabel } from "./match.ts";
+import { publicOpponentLabel, isMatchKind } from "./match.ts";
 import type { SessionKind } from "../supabase/database.types.ts";
 
 export const CALENDAR_PAYLOAD_KEYS = [
@@ -96,7 +96,7 @@ export function calendarEventFromPublicFields(
   },
   labels: { kindLabel: string; opponentTbd: string },
 ): CalendarEventPayload {
-  const isMatch = input.kind === "cup" || input.kind === "league";
+  const isMatch = isMatchKind(input.kind);
   return {
     uid: `session-${input.id}@squadbase`,
     title: input.title,

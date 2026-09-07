@@ -11,7 +11,7 @@
     "footer": "生產環境部署需人工核准，請勿自動發佈到 production。"
   },
   "home": {
-    "eyebrow": "階段 6P · 訓練與賽事分開、系列報名、加入行事曆",
+    "eyebrow": "階段 6P.1 · 訓練與比賽分開、月曆／列表、友誼賽",
     "headline": "歡迎使用球團管理系統",
     "lead": "訪客無需登入即可查看公開賽程，並可把比賽加入行事曆。家長登入後，訓練與賽事分開報名；同一系列可一次參加或取消。管理員與被指派教練可為四個比賽情境與四項特質打 1–5 分。能力細節與堂數不會出現在公開頁面。",
     "openDashboard": "進入儀表板",
@@ -98,7 +98,7 @@
       },
       "competitions": {
         "title": "賽事",
-        "body": "為已核准連結的子女報名盃賽與聯賽。同標題賽事會合成系列，可一次參加或取消。"
+        "body": "為已核准連結的子女報名盃賽、聯賽與友誼賽。同標題賽事會合成系列，可一次參加或取消。"
       },
       "courses": {
         "title": "課程",
@@ -138,15 +138,15 @@
       },
       "adminSessions": {
         "title": "訓練場次",
-        "body": "依種類建立有標題的場次。例行訓練、盃賽與聯賽可產生每週系列。軟刪除會保留報名紀錄。"
+        "body": "建立有標題的例行與特別訓練。每週系列依所選星期產生。盃賽、聯賽與友誼賽請到比賽管理。"
       },
       "adminMatches": {
         "title": "公開比賽",
-        "body": "建立盃賽與聯賽、發布只含顯示名稱與背號的先發名單，並登錄賽果。"
+        "body": "建立盃賽、聯賽與友誼賽、發布只含顯示名稱與背號的先發名單，並登錄賽果。"
       },
       "publicMatches": {
         "title": "公開賽程",
-        "body": "訪客賽程：已發布的盃賽與聯賽、賽果與先發名單。家長報名請用賽事頁。"
+        "body": "訪客賽程：已發布的盃賽、聯賽與友誼賽、賽果與先發名單。家長報名請用賽事頁。"
       },
       "credits": {
         "title": "堂數與儲值",
@@ -204,9 +204,9 @@
     "bindingsTitle": "家長連結",
     "bindingsBody": "家長以隊伍加背號，或出生日期加姓名片段搜尋既有球員後提出申請。你在此核准、拒絕，或撤銷已核准的連結。待審、已拒絕與已撤銷的家長無法讀取該球員資料。",
     "sessionsTitle": "訓練場次",
-    "sessionsBody": "在既有隊伍下建立有標題的場次。特別場次只產生 1 場。例行訓練、盃賽與聯賽依所選星期，加上結束日期或「每個星期幾的場次數」產生場次。管理員預設為月曆檢視。停用會暫時隱藏新報名；軟刪除會保留報名與問答。報名自動核准，此階段沒有人數上限。",
+    "sessionsBody": "在既有隊伍下建立有標題的例行或特別訓練。特別場次只產生 1 場。例行訓練依所選星期，加上結束日期或「每個星期幾的場次數」產生場次。盃賽、聯賽與友誼賽請到「管理 → 比賽」。管理員預設為月曆檢視。停用會暫時隱藏新報名；軟刪除會保留報名與問答。報名自動核准，此階段沒有人數上限。",
     "matchesTitle": "公開比賽",
-    "matchesBody": "在公開賽程公告盃賽與聯賽。勾選要出現在公開名單的球員（只顯示名稱與背號）。已取消的比賽不會出現在訪客列表。寫入僅限管理員。",
+    "matchesBody": "在公開賽程公告盃賽、聯賽與友誼賽。勾選要出現在公開名單的球員（只顯示名稱與背號）。已取消的比賽不會出現在訪客列表。寫入僅限管理員。",
     "createTeam": "新增隊伍",
     "editTeam": "編輯隊伍",
     "createPlayer": "新增球員",
@@ -249,8 +249,8 @@
     "openTeamRoster": "查看名單",
     "createSession": "新增場次",
     "createMatch": "新增比賽",
-    "bulkCreateMatch": "批次新增聯賽／盃賽",
-    "bulkCreateMatchBody": "一次為同一隊伍建立多場未公開的盃賽或聯賽空殼。對手未定可留空，之後再開單場補對手、發布與名單。",
+    "bulkCreateMatch": "批次新增盃賽／聯賽／友誼賽",
+    "bulkCreateMatchBody": "一次為同一隊伍建立多場未公開的盃賽、聯賽或友誼賽空殼。對手未定可留空，之後再開單場補對手、發布與名單。",
     "editSession": "編輯場次",
     "deactivateSession": "停用場次",
     "reactivateSession": "重新啟用場次",
@@ -261,11 +261,11 @@
     "sessionsEmptyTitle": "尚無訓練場次",
     "sessionsEmptyBody": "先選擇隊伍，再建立第一個場次。",
     "matchesEmptyTitle": "尚無公開比賽",
-    "matchesEmptyBody": "建立盃賽或聯賽，或把既有盃賽／聯賽場次設為公開比賽頁。",
+    "matchesEmptyBody": "建立盃賽、聯賽或友誼賽，或把既有比賽場次設為公開比賽頁。",
     "sessionsFilterEmptyTitle": "沒有符合的場次",
     "sessionsFilterEmptyBody": "請改選種類或隊伍，或勾選包含已刪除以查看歷史場次。",
     "filterAllKinds": "全部種類",
-    "filterKindsHint": "都不勾選即顯示所有種類。",
+    "filterKindsHint": "都不勾選即顯示此頁所有種類。",
     "filterTeamsHint": "都不勾選即顯示所有隊伍。",
     "filterNoTeams": "尚無隊伍。",
     "includeDeleted": "包含已刪除",
@@ -396,6 +396,7 @@
       "missingSession": "請選擇場次。",
       "missingTitle": "請填寫場次標題。",
       "invalidSessionKind": "請選擇有效的場次種類。",
+      "sessionKindUseMatches": "盃賽、聯賽與友誼賽請到「管理 → 比賽」新增或編輯，不要在訓練場次建立。",
       "recurrenceMutex": "結束日期與週數只能擇一，不能同時填。",
       "recurrenceBoundRequired": "每週場次請填結束日期或週數。",
       "invalidWeekCount": "週數必須是 1 到 52 的整數。N 週代表含第一場共 N 場。",
@@ -421,7 +422,7 @@
       "invalidOpponent": "對手名稱最多 200 字。未定可留空。",
       "invalidMatchSide": "請選擇主場或客場。",
       "invalidMatchScore": "比分須為 0 到 99 的整數。",
-      "matchKindRequired": "公開比賽必須是盃賽或聯賽。",
+      "matchKindRequired": "公開比賽必須是盃賽、聯賽或友誼賽。",
       "matchNotFound": "找不到這場比賽。",
       "matchCancelled": "此場比賽已取消。請先恢復，才能發布或登錄賽果。",
       "matchRosterPlayerInvalid": "每位勾選的球員都必須是此隊伍的在籍成員。",
@@ -487,7 +488,7 @@
   },
   "sessions": {
     "title": "訓練",
-    "lead": "為已核准連結的子女報名所屬隊伍的例行訓練與特別場次。盃賽與聯賽請到賽事頁。報名自動核准。停用或已刪除的場次不會出現。開始前 24 小時內無法取消。給球團的備註請在場次詳情填寫。",
+    "lead": "為已核准連結的子女報名所屬隊伍的例行訓練與特別場次。盃賽、聯賽與友誼賽請到賽事頁。報名自動核准。停用或已刪除的場次不會出現。開始前 24 小時內無法取消。給球團的備註請在場次詳情填寫。可切換月曆與列表。",
     "upcomingTitle": "可報名場次",
     "myRegistrations": "我的報名",
     "emptyUpcomingTitle": "目前沒有可報名場次",
@@ -530,7 +531,8 @@
       "regular": "例行訓練",
       "special": "特別場次",
       "cup": "盃賽",
-      "league": "聯賽"
+      "league": "聯賽",
+      "friendly": "友誼賽"
     },
     "weekdaysLegend": "星期",
     "weekdaysHint": "請勾選此系列固定上課的每一天，至少一天。不要只靠系列開始日期的星期來推斷。",
@@ -581,11 +583,11 @@
   },
   "competitions": {
     "title": "賽事",
-    "lead": "為已核准連結的子女報名所屬隊伍的盃賽與聯賽。同一隊伍、種類與標題會合成系列，可一次參加可報名場次或取消可取消的報名。公開訪客賽程仍在比賽頁。開始前 24 小時內無法取消。",
+    "lead": "為已核准連結的子女報名所屬隊伍的盃賽、聯賽與友誼賽。同一隊伍、種類與標題會合成系列，可一次參加可報名場次或取消可取消的報名。公開訪客賽程仍在比賽頁。開始前 24 小時內無法取消。可切換月曆與列表。",
     "upcomingTitle": "可報名賽事",
     "myRegistrations": "我的賽事報名",
     "emptyUpcomingTitle": "目前沒有可報名賽事",
-    "emptyUpcomingBody": "管理員建立盃賽或聯賽後，屬於你子女隊伍的賽事會出現在這裡。",
+    "emptyUpcomingBody": "管理員建立盃賽、聯賽或友誼賽後，屬於你子女隊伍的賽事會出現在這裡。",
     "needApprovedChild": "請先完成子女連結並等待管理員核准，才能報名賽事。",
     "emptyRegistrationsTitle": "尚無賽事報名",
     "emptyRegistrationsBody": "從上方系列選擇賽事並為子女報名。",
@@ -698,7 +700,7 @@
     "debitOverrideTitle": "此場扣堂例外",
     "noDebitFlag": "不扣堂（覆蓋預設規則）",
     "debitOverride": "指定扣堂數（空白＝依種類預設）",
-    "debitOverrideHint": "例行訓練預設出席扣 1，無故缺席不扣堂；特別場次出席或無故缺席扣 2；盃賽／聯賽出賽每人每天扣 1。U6、預備隊、成人永不扣堂。",
+    "debitOverrideHint": "例行訓練預設出席扣 1，無故缺席不扣堂；特別場次出席或無故缺席扣 2；盃賽、聯賽與友誼賽出賽每人每天扣 1。U6、預備隊、成人永不扣堂。",
     "saveDebitOverride": "儲存扣堂設定",
     "attendanceTitle": "出缺席",
     "attendanceEmpty": "沒有可登記的球員。",
@@ -720,11 +722,11 @@
   },
   "matches": {
     "title": "比賽賽程",
-    "lead": "即將進行與近期的盃賽、聯賽。公開名單只含顯示名稱與背號。",
+    "lead": "即將進行與近期的盃賽、聯賽與友誼賽。公開名單只含顯示名稱與背號。",
     "upcomingTitle": "即將進行",
     "recentTitle": "近期戰績",
     "upcomingEmptyTitle": "目前沒有即將進行的比賽",
-    "upcomingEmptyBody": "球團發布盃賽或聯賽後會顯示在此。未發布與已取消的比賽不會公開。",
+    "upcomingEmptyBody": "球團發布盃賽、聯賽或友誼賽後會顯示在此。未發布與已取消的比賽不會公開。",
     "recentEmptyTitle": "目前沒有近期戰績",
     "recentEmptyBody": "已完賽且已發布的比賽，過去 90 天會顯示在此。",
     "backToSchedule": "返回賽程",
@@ -764,7 +766,7 @@
     "rosterCount": "名單 {count} 人",
     "viewPublic": "查看公開頁",
     "openSession": "開啟場次工具",
-    "attachLead": "此盃賽或聯賽場次尚未公開。填寫主客場（對手未定可留空）即可建立公開比賽頁。寫入仍僅限管理員。",
+    "attachLead": "此盃賽、聯賽或友誼賽場次尚未公開。填寫主客場（對手未定可留空）即可建立公開比賽頁。寫入仍僅限管理員。",
     "attachSubmit": "建立公開比賽",
     "coachReadOnly": "公開比賽（唯讀）。管理員負責發布名單與賽果。",
     "bulkLead": "為同一隊伍新增多個開賽時間。對手可留空。除非勾選立即發布，否則預設不公開。",

@@ -5,18 +5,18 @@
 
 import type { SessionKind } from "../supabase/database.types.ts";
 import type { OrgErrorKey } from "./errors.ts";
-import { isMatchKind, type MatchKind } from "./match.ts";
+import { MATCH_KINDS, isMatchKind, type MatchKind } from "./match.ts";
 import { parseUuid } from "./parse.ts";
+import {
+  TRAINING_SESSION_KINDS,
+  isTrainingSessionKind,
+  type TrainingSessionKind,
+} from "./session-recurrence.ts";
 import { isGuardianCancelLocked, isSessionOpenForSignup } from "./session-time.ts";
 
-export const TRAINING_SESSION_KINDS = ["regular", "special"] as const;
-export type TrainingSessionKind = (typeof TRAINING_SESSION_KINDS)[number];
+export { TRAINING_SESSION_KINDS, isTrainingSessionKind, type TrainingSessionKind };
 
-export const COMPETITION_SESSION_KINDS = ["cup", "league"] as const;
-
-export function isTrainingSessionKind(kind: string): kind is TrainingSessionKind {
-  return kind === "regular" || kind === "special";
-}
+export const COMPETITION_SESSION_KINDS = MATCH_KINDS;
 
 export function isCompetitionSessionKind(kind: string): kind is MatchKind {
   return isMatchKind(kind);

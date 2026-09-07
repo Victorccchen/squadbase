@@ -37,6 +37,9 @@ const REQUIRED_KEYS = [
   "calendar.apple",
   "calendar.outlook",
   "calendar.ics",
+  "sessions.kinds.friendly",
+  "admin.calendarView",
+  "admin.listView",
 ];
 
 describe("T6P-9 locale smoke", () => {

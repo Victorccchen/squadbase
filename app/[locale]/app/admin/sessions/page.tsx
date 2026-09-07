@@ -19,13 +19,14 @@ import { listTeams } from "@/lib/org/queries";
 import { listSessionsForAdmin } from "@/lib/org/session-queries";
 import { setSessionStatus } from "@/lib/org/session-actions";
 import { formatClubDateTimeRange } from "@/lib/org/session-time";
+import { TRAINING_SESSION_KINDS, isTrainingSessionKind } from "@/lib/org/session-recurrence";
 import {
-  adminSessionsHref,
+  calendarWeekNavHrefs,
   clubRangeToTimestamptz,
   clubTodayDate,
   parseAdminSessionsQuery,
+  resolveSurfaceKinds,
   sessionsInWeek,
-  shiftClubDate,
   visibleMonthRange,
   weekRangeForDate,
 } from "@/lib/org/session-calendar";
@@ -48,7 +49,10 @@ export default async function AdminSessionsPage({ searchParams }: AdminSessionsP
   }
 
   const params = await searchParams;
-  const query = parseAdminSessionsQuery(params);
+  const query = parseAdminSessionsQuery(params, undefined, {
+    allowedKinds: TRAINING_SESSION_KINDS,
+  });
+  const kinds = resolveSurfaceKinds(query.kinds, TRAINING_SESSION_KINDS);
   const range = visibleMonthRange(query.year, query.month);
   const week = weekRangeForDate(query.day);
   const fromDate =
@@ -67,9 +71,9 @@ export default async function AdminSessionsPage({ searchParams }: AdminSessionsP
   const org = await getTranslations("org");
   const common = await getTranslations("common");
   const locale = await getLocale();
-  const [sessions, teams] = await Promise.all([
+  const [rawSessions, teams] = await Promise.all([
     listSessionsForAdmin({
-      kinds: query.kinds,
+      kinds,
       teamIds: query.teamIds,
       includeDeleted: query.includeDeleted,
       startsFrom: bounds?.from,
@@ -77,29 +81,12 @@ export default async function AdminSessionsPage({ searchParams }: AdminSessionsP
     }),
     listTeams(),
   ]);
+  const sessions = rawSessions.filter((row) => isTrainingSessionKind(row.kind));
   const weekSessions = sessionsInWeek(sessions, query.day);
-  const prevWeek = shiftClubDate(query.day, -7);
-  const nextWeek = shiftClubDate(query.day, 7);
-  const prevWeekHref = prevWeek
-    ? adminSessionsHref({
-        ...query,
-        year: prevWeek.year,
-        month: prevWeek.month,
-        day: prevWeek.day,
-        view: "calendar",
-      })
-    : adminSessionsHref({ ...query, view: "calendar" });
-  const nextWeekHref = nextWeek
-    ? adminSessionsHref({
-        ...query,
-        year: nextWeek.year,
-        month: nextWeek.month,
-        day: nextWeek.day,
-        view: "calendar",
-      })
-    : adminSessionsHref({ ...query, view: "calendar" });
-  const calendarHref = adminSessionsHref({ ...query, view: "calendar" });
-  const listHref = adminSessionsHref({ ...query, view: "list" });
+  const { calendarHref, listHref, prevWeekHref, nextWeekHref } = calendarWeekNavHrefs(
+    "/app/admin/sessions",
+    query,
+  );
   const hasFilters = query.kinds.length > 0 || query.teamIds.length > 0 || query.includeDeleted;
 
   return (
@@ -123,7 +110,7 @@ export default async function AdminSessionsPage({ searchParams }: AdminSessionsP
             </span>
           }
         />
-        <SessionListFiltersForm query={query} teams={teams} />
+        <SessionListFiltersForm query={query} teams={teams} kinds={TRAINING_SESSION_KINDS} />
         {query.view === "list" ? (
           sessions.length === 0 ? (
             <EmptyState
@@ -192,7 +179,13 @@ export default async function AdminSessionsPage({ searchParams }: AdminSessionsP
         ) : (
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
             <div className="min-w-0 flex-1">
-              <SessionMonthCalendar query={query} sessions={sessions} today={today} />
+              <SessionMonthCalendar
+                query={query}
+                sessions={sessions}
+                today={today}
+                pathname="/app/admin/sessions"
+                legendKinds={TRAINING_SESSION_KINDS}
+              />
             </div>
             <div className="min-w-0 flex-1 lg:max-w-md">
               <SessionDayAgenda
@@ -200,6 +193,7 @@ export default async function AdminSessionsPage({ searchParams }: AdminSessionsP
                 weekFrom={week?.from ?? query.day}
                 weekTo={week?.to ?? query.day}
                 sessions={weekSessions}
+                occurrenceHref={(id) => `/app/admin/sessions/${id}`}
                 prevHref={prevWeekHref}
                 nextHref={nextWeekHref}
               />

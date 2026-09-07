@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { SESSION_KINDS } from "@/lib/org/session-recurrence";
+import type { SessionKind } from "@/lib/supabase/database.types";
 import { formatYearMonth, type AdminSessionsQuery } from "@/lib/org/session-calendar";
 import { secondaryButtonClassName } from "@/lib/ui";
 import type { Team } from "@/lib/supabase/database.types";
@@ -9,9 +10,16 @@ import type { Team } from "@/lib/supabase/database.types";
 type SessionListFiltersFormProps = {
   query: AdminSessionsQuery;
   teams: Pick<Team, "id" | "name" | "age_band">[];
+  kinds?: readonly SessionKind[];
+  showIncludeDeleted?: boolean;
 };
 
-export function SessionListFiltersForm({ query, teams }: SessionListFiltersFormProps) {
+export function SessionListFiltersForm({
+  query,
+  teams,
+  kinds = SESSION_KINDS,
+  showIncludeDeleted = true,
+}: SessionListFiltersFormProps) {
   const t = useTranslations("admin");
   const sessionsT = useTranslations("sessions");
   const org = useTranslations("org");
@@ -23,11 +31,11 @@ export function SessionListFiltersForm({ query, teams }: SessionListFiltersFormP
     >
       <input type="hidden" name="month" value={formatYearMonth(query.year, query.month)} />
       <input type="hidden" name="day" value={query.day} />
-      {query.view === "list" ? <input type="hidden" name="view" value="list" /> : null}
+      <input type="hidden" name="view" value={query.view} />
       <fieldset className="flex flex-col gap-2">
         <legend className="text-sm font-medium">{sessionsT("kind")}</legend>
         <div className="flex flex-wrap gap-3">
-          {SESSION_KINDS.map((value) => (
+          {kinds.map((value) => (
             <label key={value} className="flex items-center gap-2 text-sm font-medium">
               <input
                 type="checkbox"
@@ -62,10 +70,12 @@ export function SessionListFiltersForm({ query, teams }: SessionListFiltersFormP
         )}
         <p className="text-xs text-zinc-500">{t("filterTeamsHint")}</p>
       </fieldset>
-      <label className="flex items-center gap-2 text-sm font-medium">
-        <input type="checkbox" name="includeDeleted" value="1" defaultChecked={query.includeDeleted} />
-        {t("includeDeleted")}
-      </label>
+      {showIncludeDeleted ? (
+        <label className="flex items-center gap-2 text-sm font-medium">
+          <input type="checkbox" name="includeDeleted" value="1" defaultChecked={query.includeDeleted} />
+          {t("includeDeleted")}
+        </label>
+      ) : null}
       <button type="submit" className={secondaryButtonClassName}>
         {t("applyFilters")}
       </button>

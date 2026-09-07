@@ -68,6 +68,7 @@ export type OrgErrorKey =
   | "invalidMatchSide"
   | "invalidMatchScore"
   | "matchKindRequired"
+  | "sessionKindUseMatches"
   | "matchNotFound"
   | "matchCancelled"
   | "matchRosterPlayerInvalid"

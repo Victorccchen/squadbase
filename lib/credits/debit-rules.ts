@@ -9,8 +9,8 @@
  * Kind defaults (when no_debit is false and no override):
  * - regular: 1 on present; 0 on unexcused_absent (無故缺席) or excused
  * - special: 2 on present or unexcused_absent; 0 if excused leave approved
- * - cup/league: 1 per competing player per club calendar day (skip if already
- *   match-debited that day)
+ * - cup/league/friendly: 1 per competing player per club calendar day (skip if
+ *   already match-debited that day)
  *
  * Signup does not pre-debit. Cancel before attendance: no debit.
  * Per-session admin override: no_debit or debit_override_n (override still wins).
@@ -18,6 +18,7 @@
  */
 
 import type { AgeBand } from "../age-band.ts";
+import { isMatchKind } from "../org/match.ts";
 import type { SessionKind } from "../org/session-recurrence.ts";
 
 export const PACKAGE_CATALOG_BANDS = ["U8", "U10_U18"] as const;
@@ -91,7 +92,7 @@ function overrideEntryType(
   kind: SessionKind,
   attendanceStatus: AttendanceStatus,
 ): DebitEntryType {
-  if (kind === "cup" || kind === "league") {
+  if (isMatchKind(kind)) {
     return "match_debit";
   }
   if (attendanceStatus === "unexcused_absent") {
@@ -118,10 +119,7 @@ export function computeSessionDebit(input: ComputeDebitInput): ComputeDebitResul
     if (n === 0) {
       return { credits: 0, entryType: null, noDebitLabel: true };
     }
-    if (
-      (input.kind === "cup" || input.kind === "league") &&
-      input.alreadyDebitedSameMatchDay
-    ) {
+    if (isMatchKind(input.kind) && input.alreadyDebitedSameMatchDay) {
       return { credits: 0, entryType: null, noDebitLabel: false };
     }
     return {

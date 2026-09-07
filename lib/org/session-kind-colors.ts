@@ -6,6 +6,7 @@ export const SESSION_KIND_DOT_CLASS: Record<SessionKind, string> = {
   special: "bg-session-special",
   cup: "bg-session-cup",
   league: "bg-session-league",
+  friendly: "bg-session-friendly",
 };
 
 export const SESSION_KIND_BADGE_CLASS: Record<SessionKind, string> = {
@@ -16,4 +17,6 @@ export const SESSION_KIND_BADGE_CLASS: Record<SessionKind, string> = {
   cup: "bg-session-cup/15 text-purple-950 dark:bg-session-cup/25 dark:text-purple-100",
   league:
     "bg-session-league/15 text-green-950 dark:bg-session-league/25 dark:text-green-100",
+  friendly:
+    "bg-session-friendly/15 text-rose-950 dark:bg-session-friendly/25 dark:text-rose-100",
 };

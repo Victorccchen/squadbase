@@ -4,7 +4,7 @@
  * Club wall time is Asia/Taipei (no DST).
  *
  * Recurring kinds (regular, cup, league) require end date XOR week count.
- * special always yields exactly one occurrence.
+ * special and friendly always yield exactly one occurrence.
  *
  * Weekdays use ISO-8601: 1=Monday … 7=Sunday.
  * Week-count N = N occurrences per selected weekday, including the first
@@ -23,8 +23,11 @@ import {
   toDateTimeLocalInput,
 } from "./session-time.ts";
 
-export const SESSION_KINDS = ["regular", "special", "cup", "league"] as const;
+export const SESSION_KINDS = ["regular", "special", "cup", "league", "friendly"] as const;
 export type SessionKind = (typeof SESSION_KINDS)[number];
+
+export const TRAINING_SESSION_KINDS = ["regular", "special"] as const;
+export type TrainingSessionKind = (typeof TRAINING_SESSION_KINDS)[number];
 
 export const RECURRING_SESSION_KINDS = ["regular", "cup", "league"] as const;
 export type RecurringSessionKind = (typeof RECURRING_SESSION_KINDS)[number];
@@ -70,6 +73,10 @@ const ISO_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 export function isSessionKind(value: string): value is SessionKind {
   return (SESSION_KINDS as readonly string[]).includes(value);
+}
+
+export function isTrainingSessionKind(value: string): value is TrainingSessionKind {
+  return (TRAINING_SESSION_KINDS as readonly string[]).includes(value);
 }
 
 export function isRecurringSessionKind(value: string): value is RecurringSessionKind {
@@ -310,7 +317,7 @@ export function generateSessionOccurrences(
 ):
   | { ok: true; occurrences: SessionOccurrence[] }
   | { ok: false; errorKey: RecurrenceErrorKey } {
-  if (input.kind === "special") {
+  if (input.kind === "special" || input.kind === "friendly") {
     return {
       ok: true,
       occurrences: [{ startsAt: input.startsAt, endsAt: input.endsAt }],

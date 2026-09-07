@@ -4,6 +4,9 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { SeriesGroupCard } from "@/components/sessions/series-group-card";
 import { SessionListActions } from "@/components/sessions/session-list-actions";
+import { SessionMonthCalendar } from "@/components/admin/session-month-calendar";
+import { SessionDayAgenda } from "@/components/admin/session-day-agenda";
+import { SessionViewToggle } from "@/components/admin/session-kind-legend";
 import {
   RegistrationStatusBadge,
   SessionKindBadge,
@@ -16,6 +19,7 @@ import {
   listOwnSessionRegistrations,
 } from "@/lib/org/session-queries";
 import {
+  COMPETITION_SESSION_KINDS,
   groupMatchSessionsForParent,
   isCompetitionSessionKind,
   parentGroupPath,
@@ -23,10 +27,20 @@ import {
 } from "@/lib/org/parent-series";
 import { localizedPlayerName } from "@/lib/org/display-name";
 import { formatParentVisibleDateTimeRange } from "@/lib/org/session-time";
+import {
+  calendarWeekNavHrefs,
+  clubTodayDate,
+  parseAdminSessionsQuery,
+  sessionsInWeek,
+  weekRangeForDate,
+} from "@/lib/org/session-calendar";
 
 type ParentCompetitionsPageProps = {
   searchParams: Promise<{
     registered?: string | string[];
+    month?: string | string[];
+    day?: string | string[];
+    view?: string | string[];
   }>;
 };
 
@@ -35,10 +49,15 @@ export default async function ParentCompetitionsPage({
 }: ParentCompetitionsPageProps) {
   const t = await getTranslations("competitions");
   const sessionsT = await getTranslations("sessions");
+  const admin = await getTranslations("admin");
   const org = await getTranslations("org");
   const common = await getTranslations("common");
   const locale = await getLocale();
   const params = await searchParams;
+  const query = parseAdminSessionsQuery(params, undefined, {
+    allowedKinds: COMPETITION_SESSION_KINDS,
+    defaultView: "list",
+  });
   const registeredRaw = Array.isArray(params.registered)
     ? (params.registered[0] ?? "")
     : (params.registered ?? "");
@@ -56,11 +75,34 @@ export default async function ParentCompetitionsPage({
     (row) =>
       row.status === "registered" && row.session && isCompetitionSessionKind(row.session.kind),
   );
+  const week = weekRangeForDate(query.day);
+  const weekSessions = sessionsInWeek(sessions, query.day);
+  const today = clubTodayDate();
+  const { calendarHref, listHref, prevWeekHref, nextWeekHref } = calendarWeekNavHrefs(
+    "/app/competitions",
+    query,
+  );
 
   return (
     <>
-      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-10 px-6 py-12">
-        <PageHeader title={t("title")} description={t("lead")} />
+      <main
+        className={`mx-auto flex w-full flex-1 flex-col gap-10 px-6 py-12 ${
+          query.view === "calendar" ? "max-w-6xl" : "max-w-3xl"
+        }`}
+      >
+        <PageHeader
+          title={t("title")}
+          description={t("lead")}
+          actions={
+            <SessionViewToggle
+              calendarHref={calendarHref}
+              listHref={listHref}
+              view={query.view}
+              calendarLabel={admin("calendarView")}
+              listLabel={admin("listView")}
+            />
+          }
+        />
 
         {showRegistered ? (
           <p
@@ -77,6 +119,33 @@ export default async function ParentCompetitionsPage({
           </h2>
           {children.length === 0 ? (
             <EmptyState title={t("emptyUpcomingTitle")} body={t("needApprovedChild")} />
+          ) : query.view === "calendar" ? (
+            sessions.length === 0 ? (
+              <EmptyState title={t("emptyUpcomingTitle")} body={t("emptyUpcomingBody")} />
+            ) : (
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+                <div className="min-w-0 flex-1">
+                  <SessionMonthCalendar
+                    query={query}
+                    sessions={sessions}
+                    today={today}
+                    pathname="/app/competitions"
+                    legendKinds={COMPETITION_SESSION_KINDS}
+                  />
+                </div>
+                <div className="min-w-0 flex-1 lg:max-w-md">
+                  <SessionDayAgenda
+                    selectedDate={query.day}
+                    weekFrom={week?.from ?? query.day}
+                    weekTo={week?.to ?? query.day}
+                    sessions={weekSessions}
+                    occurrenceHref={(id) => `/app/competitions/${id}`}
+                    prevHref={prevWeekHref}
+                    nextHref={nextWeekHref}
+                  />
+                </div>
+              </div>
+            )
           ) : groups.length === 0 ? (
             <EmptyState title={t("emptyUpcomingTitle")} body={t("emptyUpcomingBody")} />
           ) : (

@@ -39,17 +39,22 @@ function session(input: {
 }
 
 describe("T6P-1 training list only regular/special", () => {
-  it("drops cup and league rows from training grouping", () => {
+  it("drops cup, league, and friendly rows from training grouping", () => {
     const grouped = groupTrainingSessionsForParent([
       session({ id: "r1", kind: "regular", title: "Tue training", series_id: "s1" }),
       session({ id: "sp1", kind: "special", title: "Camp", starts_at: "2026-10-02T10:00:00.000Z" }),
       session({ id: "c1", kind: "cup", title: "Cup" }),
       session({ id: "l1", kind: "league", title: "Victory League" }),
+      session({ id: "f1", kind: "friendly", title: "Friendly" }),
     ]);
     const ids = grouped.flatMap((group) => group.sessions.map((row) => row.id));
     assert.deepEqual(ids.sort(), ["r1", "sp1"]);
     assert.equal(
-      grouped.some((group) => group.sessions.some((row) => row.kind === "cup" || row.kind === "league")),
+      grouped.some((group) =>
+        group.sessions.some(
+          (row) => row.kind === "cup" || row.kind === "league" || row.kind === "friendly",
+        ),
+      ),
       false,
     );
   });
@@ -81,7 +86,7 @@ describe("T6P-1 training list only regular/special", () => {
   });
 });
 
-describe("T6P-2 competition list only cup/league; VL title groups", () => {
+describe("T6P-2 competition list cup/league/friendly; VL title groups", () => {
   it("drops regular/special and groups Victory League shells by title", () => {
     const teamId = "11111111-1111-4111-8111-111111111111";
     const grouped = groupMatchSessionsForParent([
@@ -129,9 +134,37 @@ describe("T6P-2 competition list only cup/league; VL title groups", () => {
       ["1"],
     );
     assert.deepEqual(
-      filterSessionsByKinds(rows, ["cup", "league"]).map((row) => row.id),
+      filterSessionsByKinds(rows, ["cup", "league", "friendly"]).map((row) => row.id),
       ["2"],
     );
+  });
+
+  it("groups friendly matches by team, kind, and title (T6P1-2)", () => {
+    const teamId = "11111111-1111-4111-8111-111111111111";
+    const grouped = groupMatchSessionsForParent([
+      session({
+        id: "f1",
+        kind: "friendly",
+        title: "Saturday friendly",
+        starts_at: "2026-10-03T07:00:00.000Z",
+      }),
+      session({
+        id: "f2",
+        kind: "friendly",
+        title: "Saturday friendly",
+        starts_at: "2026-10-10T07:00:00.000Z",
+      }),
+      session({ id: "c1", kind: "cup", title: "Spring Cup", starts_at: "2026-09-20T07:00:00.000Z" }),
+    ]);
+    const friendly = grouped.find((group) => group.title === "Saturday friendly");
+    assert.equal(friendly?.sessions.length, 2);
+    assert.equal(friendly?.sessionKind, "friendly");
+    assert.deepEqual(decodeMatchGroupKey(friendly!.key), {
+      teamId,
+      kind: "friendly",
+      title: "Saturday friendly",
+    });
+    assert.equal(parentOccurrencePath({ id: "f1", kind: "friendly" }), "/app/competitions/f1");
   });
 });
 

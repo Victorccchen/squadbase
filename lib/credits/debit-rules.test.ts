@@ -103,7 +103,7 @@ describe("computeSessionDebit C3 special", () => {
   });
 });
 
-describe("computeSessionDebit C4 cup/league", () => {
+describe("computeSessionDebit C4 cup/league/friendly", () => {
   it("debits 1 per competing player per day", () => {
     const cup = computeSessionDebit({
       ...base,
@@ -117,6 +117,12 @@ describe("computeSessionDebit C4 cup/league", () => {
       teamAgeBand: "U18",
       attendanceStatus: "present",
     });
+    const friendly = computeSessionDebit({
+      ...base,
+      kind: "friendly",
+      teamAgeBand: "U12",
+      attendanceStatus: "present",
+    });
     assert.deepEqual(cup, {
       credits: 1,
       entryType: "match_debit",
@@ -124,18 +130,32 @@ describe("computeSessionDebit C4 cup/league", () => {
     });
     assert.equal(league.credits, 1);
     assert.equal(league.entryType, "match_debit");
+    assert.deepEqual(friendly, {
+      credits: 1,
+      entryType: "match_debit",
+      noDebitLabel: false,
+    });
   });
 
   it("skips a second match debit on the same club day", () => {
-    const result = computeSessionDebit({
+    const cup = computeSessionDebit({
       ...base,
       kind: "cup",
       teamAgeBand: "U15",
       attendanceStatus: "present",
       alreadyDebitedSameMatchDay: true,
     });
-    assert.equal(result.credits, 0);
-    assert.equal(result.entryType, null);
+    const friendly = computeSessionDebit({
+      ...base,
+      kind: "friendly",
+      teamAgeBand: "U15",
+      attendanceStatus: "unexcused_absent",
+      alreadyDebitedSameMatchDay: true,
+    });
+    assert.equal(cup.credits, 0);
+    assert.equal(cup.entryType, null);
+    assert.equal(friendly.credits, 0);
+    assert.equal(friendly.entryType, null);
   });
 });
 

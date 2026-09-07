@@ -11,7 +11,7 @@
     "footer": "Production deploys require human approval. Do not publish to production automatically."
   },
   "home": {
-    "eyebrow": "Stage 6P · split training and competitions, series RSVP, calendar add",
+    "eyebrow": "Stage 6P.1 · training vs matches, calendar + list, friendly matches",
     "headline": "Welcome to the Club management system",
     "lead": "Visitors can open the public match schedule without signing in and add a match to a calendar. After parents sign in, training and competitions are listed separately; the same series can be attended or declined in one tap. Admins and assigned coaches record 1–5 scores for match situations and player traits. Ability details and credits are never shown on public pages.",
     "openDashboard": "Open dashboard",
@@ -98,7 +98,7 @@
       },
       "competitions": {
         "title": "Competitions",
-        "body": "Register an approved child for cup and league matches. Same-title fixtures are grouped so you can RSVP the series together."
+        "body": "Register an approved child for cup, league, and friendly matches. Same-title fixtures are grouped so you can RSVP the series together."
       },
       "courses": {
         "title": "Courses",
@@ -138,15 +138,15 @@
       },
       "adminSessions": {
         "title": "Training sessions",
-        "body": "Create titled sessions by kind. Regular, cup, and league can generate a weekly series. Soft-delete keeps registration history."
+        "body": "Create titled regular and special training sessions. Weekly series use selected weekdays. Cup, league, and friendly matches belong under Matches."
       },
       "adminMatches": {
         "title": "Public matches",
-        "body": "Create cup and league matches, publish a lineup of display names and jersey numbers, and set the result."
+        "body": "Create cup, league, and friendly matches, publish a lineup of display names and jersey numbers, and set the result."
       },
       "publicMatches": {
         "title": "Public schedule",
-        "body": "Visitor schedule: published cup and league matches, results, and lineups. Parent signup is on Competitions."
+        "body": "Visitor schedule: published cup, league, and friendly matches, results, and lineups. Parent signup is on Competitions."
       },
       "credits": {
         "title": "Credits and top-up",
@@ -204,9 +204,9 @@
     "bindingsTitle": "Guardian bindings",
     "bindingsBody": "Parents search for an existing player with team + jersey or birth date + name, then request a link. Approve, reject, or revoke an approved link here. Pending, rejected, and revoked parents cannot read that child’s record.",
     "sessionsTitle": "Training sessions",
-    "sessionsBody": "Create a titled session under an existing team. Special is one occurrence. Regular, cup, and league use selected weekdays plus an end date or a per-weekday week count. The default admin view is a month calendar. Inactive hides new parent signup; soft-delete keeps registrations and Q&A. Registration is auto-approved. There is no capacity limit in this stage.",
+    "sessionsBody": "Create titled regular or special training under an existing team. Special is one occurrence. Regular uses selected weekdays plus an end date or a per-weekday week count. Cup, league, and friendly matches belong on Admin → Matches. The default admin view is a month calendar. Inactive hides new parent signup; soft-delete keeps registrations and Q&A. Registration is auto-approved. There is no capacity limit in this stage.",
     "matchesTitle": "Public matches",
-    "matchesBody": "Announce cup and league matches on the public schedule. Choose who appears on the published lineup (display name and jersey only). Cancelled matches are hidden from visitors, not listed as cancelled. Writes are admin-only.",
+    "matchesBody": "Announce cup, league, and friendly matches on the public schedule. Choose who appears on the published lineup (display name and jersey only). Cancelled matches are hidden from visitors, not listed as cancelled. Writes are admin-only.",
     "createTeam": "Create team",
     "editTeam": "Edit team",
     "createPlayer": "Create player",
@@ -249,8 +249,8 @@
     "openTeamRoster": "Open roster",
     "createSession": "Create session",
     "createMatch": "Create match",
-    "bulkCreateMatch": "Bulk add cup / league",
-    "bulkCreateMatchBody": "Create many unpublished cup or league shells for one team. Leave opponent blank when the fixture is not known yet. Edit each match later to add the opponent, publish, and set the lineup.",
+    "bulkCreateMatch": "Bulk add cup / league / friendly",
+    "bulkCreateMatchBody": "Create many unpublished cup, league, or friendly shells for one team. Leave opponent blank when the fixture is not known yet. Edit each match later to add the opponent, publish, and set the lineup.",
     "editSession": "Edit session",
     "deactivateSession": "Deactivate session",
     "reactivateSession": "Reactivate session",
@@ -261,11 +261,11 @@
     "sessionsEmptyTitle": "No sessions yet",
     "sessionsEmptyBody": "Create a team first, then add a training session.",
     "matchesEmptyTitle": "No public matches yet",
-    "matchesEmptyBody": "Create a cup or league match, or attach a public page to an existing cup/league session.",
+    "matchesEmptyBody": "Create a cup, league, or friendly match, or attach a public page to an existing match session.",
     "sessionsFilterEmptyTitle": "No sessions match",
     "sessionsFilterEmptyBody": "Try other kinds or teams, or include deleted sessions to see history.",
     "filterAllKinds": "All kinds",
-    "filterKindsHint": "Leave all unchecked to show every kind.",
+    "filterKindsHint": "Leave all unchecked to show every kind on this page.",
     "filterTeamsHint": "Leave all unchecked to show every team.",
     "filterNoTeams": "No teams yet.",
     "includeDeleted": "Include deleted",
@@ -396,6 +396,7 @@
       "missingSession": "Choose a session.",
       "missingTitle": "Enter a session title.",
       "invalidSessionKind": "Choose a valid session kind.",
+      "sessionKindUseMatches": "Cup, league, and friendly matches are created and edited under Admin → Matches, not training sessions.",
       "recurrenceMutex": "Choose either an end date or a week count, not both.",
       "recurrenceBoundRequired": "For weekly kinds, enter an end date or a week count.",
       "invalidWeekCount": "Week count must be a whole number from 1 to 52. N weeks means N occurrences including the first.",
@@ -421,7 +422,7 @@
       "invalidOpponent": "Opponent name must be 200 characters or fewer. Leave it blank if unknown.",
       "invalidMatchSide": "Choose home or away.",
       "invalidMatchScore": "Enter whole-number scores from 0 to 99.",
-      "matchKindRequired": "Public matches must be cup or league.",
+      "matchKindRequired": "Public matches must be cup, league, or friendly.",
       "matchNotFound": "That match was not found.",
       "matchCancelled": "This match is cancelled. Restore it before publishing or setting a result.",
       "matchRosterPlayerInvalid": "Every selected player must have an active membership on this team.",
@@ -487,7 +488,7 @@
   },
   "sessions": {
     "title": "Training",
-    "lead": "Register an approved child for regular and special training on their team. Cup and league signup is on Competitions. Signup is auto-approved. Inactive or deleted sessions are not listed. You cannot cancel within 24 hours of the start. Add a note on the session detail page.",
+    "lead": "Register an approved child for regular and special training on their team. Cup, league, and friendly signup is on Competitions. Signup is auto-approved. Inactive or deleted sessions are not listed. You cannot cancel within 24 hours of the start. Add a note on the session detail page. Switch between calendar and list views.",
     "upcomingTitle": "Open sessions",
     "myRegistrations": "My registrations",
     "emptyUpcomingTitle": "No sessions to register",
@@ -530,7 +531,8 @@
       "regular": "Regular training",
       "special": "Special",
       "cup": "Cup",
-      "league": "League"
+      "league": "League",
+      "friendly": "Friendly"
     },
     "weekdaysLegend": "Weekdays",
     "weekdaysHint": "Select every weekday this series meets. At least one is required. Do not rely on the series start date’s weekday alone.",
@@ -581,11 +583,11 @@
   },
   "competitions": {
     "title": "Competitions",
-    "lead": "Register an approved child for cup and league matches on their team. Same team, kind, and title are grouped as a series so you can attend eligible fixtures or cancel cancellable ones together. The public visitor schedule stays on Matches. You cannot cancel within 24 hours of kickoff.",
+    "lead": "Register an approved child for cup, league, and friendly matches on their team. Same team, kind, and title are grouped as a series so you can attend eligible fixtures or cancel cancellable ones together. The public visitor schedule stays on Matches. You cannot cancel within 24 hours of kickoff. Switch between calendar and list views.",
     "upcomingTitle": "Open competitions",
     "myRegistrations": "My competition registrations",
     "emptyUpcomingTitle": "No competitions to register",
-    "emptyUpcomingBody": "When an admin creates a cup or league match for your child’s team, it appears here.",
+    "emptyUpcomingBody": "When an admin creates a cup, league, or friendly match for your child’s team, it appears here.",
     "needApprovedChild": "Link a child and wait for admin approval before you can register for competitions.",
     "emptyRegistrationsTitle": "No competition registrations yet",
     "emptyRegistrationsBody": "Open a series above and register a child.",
@@ -698,7 +700,7 @@
     "debitOverrideTitle": "This session’s debit override",
     "noDebitFlag": "No debit (overrides kind defaults)",
     "debitOverride": "Debit this many credits (blank = kind default)",
-    "debitOverrideHint": "Regular present defaults to 1; regular unexcused does not debit. Special present or unexcused is 2; cup/league competing players debit 1 per day. U6, reserve, and adult never debit.",
+    "debitOverrideHint": "Regular present defaults to 1; regular unexcused does not debit. Special present or unexcused is 2; cup, league, and friendly competing players debit 1 per day. U6, reserve, and adult never debit.",
     "saveDebitOverride": "Save debit settings",
     "attendanceTitle": "Attendance",
     "attendanceEmpty": "No players to mark.",
@@ -720,11 +722,11 @@
   },
   "matches": {
     "title": "Match schedule",
-    "lead": "Upcoming and recent cup and league matches. Lineups show display names and jersey numbers only.",
+    "lead": "Upcoming and recent cup, league, and friendly matches. Lineups show display names and jersey numbers only.",
     "upcomingTitle": "Upcoming",
     "recentTitle": "Recent results",
     "upcomingEmptyTitle": "No upcoming matches",
-    "upcomingEmptyBody": "When the club publishes a cup or league match, it appears here. Unpublished and cancelled matches stay private.",
+    "upcomingEmptyBody": "When the club publishes a cup, league, or friendly match, it appears here. Unpublished and cancelled matches stay private.",
     "recentEmptyTitle": "No recent results",
     "recentEmptyBody": "Completed matches from the last 90 days appear here after they are published.",
     "backToSchedule": "Back to schedule",
@@ -764,7 +766,7 @@
     "rosterCount": "{count} in lineup",
     "viewPublic": "View public page",
     "openSession": "Open session tools",
-    "attachLead": "This cup or league session is not a public match yet. Add home/away (and opponent if known) to create a public match page. Writes stay admin-only.",
+    "attachLead": "This cup, league, or friendly session is not a public match yet. Add home/away (and opponent if known) to create a public match page. Writes stay admin-only.",
     "attachSubmit": "Create public match",
     "coachReadOnly": "Public match (read-only). Admins publish the lineup and result.",
     "bulkLead": "Add several kickoff times for the same team. Opponent can stay blank. Matches stay unpublished unless you tick publish.",

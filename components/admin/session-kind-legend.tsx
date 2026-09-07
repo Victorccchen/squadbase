@@ -1,9 +1,15 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { SESSION_KINDS } from "@/lib/org/session-recurrence";
+import type { SessionKind } from "@/lib/supabase/database.types";
+import type { CalendarListHref } from "@/lib/org/session-calendar";
 import { SESSION_KIND_DOT_CLASS } from "@/lib/org/session-kind-colors";
 
-export async function SessionKindLegend() {
+export async function SessionKindLegend({
+  kinds = SESSION_KINDS,
+}: {
+  kinds?: readonly SessionKind[];
+}) {
   const t = await getTranslations("sessions");
   const admin = await getTranslations("admin");
 
@@ -13,7 +19,7 @@ export async function SessionKindLegend() {
         {admin("calendarLegend")}
       </p>
       <ul className="flex flex-wrap gap-3 text-sm">
-        {SESSION_KINDS.map((kind) => (
+        {kinds.map((kind) => (
           <li key={kind} className="flex items-center gap-1.5">
             <span
               className={`inline-block h-2.5 w-2.5 rounded-full ${SESSION_KIND_DOT_CLASS[kind]}`}
@@ -34,8 +40,8 @@ export function SessionViewToggle({
   calendarLabel,
   listLabel,
 }: {
-  calendarHref: { pathname: "/app/admin/sessions"; query: Record<string, string | string[]> };
-  listHref: { pathname: "/app/admin/sessions"; query: Record<string, string | string[]> };
+  calendarHref: CalendarListHref;
+  listHref: CalendarListHref;
   view: "calendar" | "list";
   calendarLabel: string;
   listLabel: string;

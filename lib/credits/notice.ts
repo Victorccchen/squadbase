@@ -3,6 +3,8 @@
  * Staff copy/paste into existing LINE groups.
  */
 
+import { isMatchKind } from "../org/match.ts";
+
 export type NoticeLocale = "zh-Hant" | "en" | "ja";
 
 export type SessionNoticeFields = {
@@ -94,6 +96,6 @@ export function sessionSignupUrl(
   kind?: string,
 ): string {
   const base = origin.replace(/\/$/, "");
-  const surface = kind === "cup" || kind === "league" ? "competitions" : "sessions";
+  const surface = kind && isMatchKind(kind) ? "competitions" : "sessions";
   return `${base}/${locale}/app/${surface}/${sessionId}`;
 }

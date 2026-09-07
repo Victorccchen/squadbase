@@ -4,7 +4,7 @@ import {
   ISO_WEEKDAYS,
 } from "@/lib/org/session-recurrence";
 import {
-  adminSessionsHref,
+  calendarListHref,
   defaultDayForMonth,
   monthGrid,
   shiftYearMonth,
@@ -12,22 +12,28 @@ import {
   uniqueKindsOnDate,
   isDateInClubWeek,
   type AdminSessionsQuery,
+  type CalendarListPath,
   type CalendarSession,
 } from "@/lib/org/session-calendar";
 import { SESSION_KIND_DOT_CLASS } from "@/lib/org/session-kind-colors";
 import { formatClubMonth } from "@/lib/org/session-time";
 import { SessionKindLegend } from "@/components/admin/session-kind-legend";
+import type { SessionKind } from "@/lib/supabase/database.types";
 
 type SessionMonthCalendarProps = {
   query: AdminSessionsQuery;
   sessions: CalendarSession[];
   today: string;
+  pathname: CalendarListPath;
+  legendKinds?: readonly SessionKind[];
 };
 
 export async function SessionMonthCalendar({
   query,
   sessions,
   today,
+  pathname,
+  legendKinds,
 }: SessionMonthCalendarProps) {
   const t = await getTranslations("sessions");
   const admin = await getTranslations("admin");
@@ -35,13 +41,13 @@ export async function SessionMonthCalendar({
   const grid = monthGrid(query.year, query.month);
   const prev = shiftYearMonth(query.year, query.month, -1);
   const next = shiftYearMonth(query.year, query.month, 1);
-  const prevHref = adminSessionsHref({
+  const prevHref = calendarListHref(pathname, {
     ...query,
     year: prev.year,
     month: prev.month,
     day: defaultDayForMonth(prev.year, prev.month, today),
   });
-  const nextHref = adminSessionsHref({
+  const nextHref = calendarListHref(pathname, {
     ...query,
     year: next.year,
     month: next.month,
@@ -67,7 +73,7 @@ export async function SessionMonthCalendar({
           {admin("nextMonth")}
         </Link>
       </div>
-      <SessionKindLegend />
+      <SessionKindLegend kinds={legendKinds} />
       <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium uppercase tracking-wide text-zinc-500">
         {ISO_WEEKDAYS.map((weekday) => (
           <div key={weekday} className="py-1">
@@ -83,7 +89,7 @@ export async function SessionMonthCalendar({
           const inSelectedWeek = isDateInClubWeek(cell.date, query.day);
           const isToday = cell.date === today;
           const parts = cell.date.split("-");
-          const href = adminSessionsHref({
+          const href = calendarListHref(pathname, {
             ...query,
             year: Number(parts[0]),
             month: Number(parts[1]),

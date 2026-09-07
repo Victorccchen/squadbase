@@ -1,8 +1,8 @@
 /**
  * Stage 5B public match helpers (pure).
  *
- * Cup/league training_sessions stay the debit source (Stage 4B). A 1:1
- * match_publications row is the public overlay. Cancelled matches are
+ * Cup/league/friendly training_sessions stay the debit source (Stage 4B).
+ * A 1:1 match_publications row is the public overlay. Cancelled matches are
  * omitted from the public list (T5B-5), not shown as cancelled.
  * Opponent may be null (TBD) when the fixture is entered months ahead.
  */
@@ -20,7 +20,7 @@ export type MatchSide = (typeof MATCH_SIDES)[number];
 export const MATCH_PUBLIC_STATUSES = ["scheduled", "completed", "cancelled"] as const;
 export type MatchPublicStatus = (typeof MATCH_PUBLIC_STATUSES)[number];
 
-export const MATCH_KINDS = ["cup", "league"] as const;
+export const MATCH_KINDS = ["cup", "league", "friendly"] as const;
 export type MatchKind = (typeof MATCH_KINDS)[number];
 
 export const DEFAULT_MATCH_DURATION_MINUTES = 90;
@@ -304,7 +304,10 @@ export type MatchRpcErrorKey =
 
 export function matchRpcErrorKey(error: PgLikeError): MatchRpcErrorKey {
   const text = errorBlob(error);
-  if (text.includes("match kind must be cup or league")) {
+  if (
+    text.includes("match kind must be cup or league") ||
+    text.includes("match kind must be cup, league, or friendly")
+  ) {
     return "matchKindRequired";
   }
   if (text.includes("opponent required") || text.includes("invalid opponent")) {
