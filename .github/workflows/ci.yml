@@ -32,4 +32,6 @@ jobs:
       - name: Unit tests
         run: npm test
 
-# This workflow must not deploy. Production deploys require human approval.
+# Quality gate only. This workflow must not deploy.
+# After Victor connects GitHub → Vercel, merges to main auto-deploy the
+# squadbase-staging project (see docs/deploy-staging.md). Production stays manual.

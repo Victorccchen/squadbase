@@ -73,6 +73,11 @@ export type OrgErrorKey =
   | "matchRosterPlayerInvalid"
   | "tooManyMatches"
   | "matchKickoffRequired"
+  | "invalidScore"
+  | "noteTooLong"
+  | "invalidAssessedOn"
+  | "futureAssessedOn"
+  | "assessmentNotFound"
   | "generic";
 
 export type OrgActionState = {

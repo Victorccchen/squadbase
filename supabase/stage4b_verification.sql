@@ -9,7 +9,7 @@ declare
   v_entry public.credit_ledger_entry_type;
   v_label boolean;
 begin
-  -- C2 regular present = 1
+  -- C2 regular present = 1; regular unexcused = 0 (Victor 2026-09-05)
   select credits, entry_type, no_debit_label
     into v_credits, v_entry, v_label
   from public.compute_session_debit_plan('regular', 'U8', 'present', false, null, false, false);
@@ -17,7 +17,15 @@ begin
     raise exception 'C2 failed: regular present should debit 1';
   end if;
 
+  select credits, entry_type
+    into v_credits, v_entry
+  from public.compute_session_debit_plan('regular', 'U10', 'unexcused_absent', false, null, false, false);
+  if v_credits is distinct from 0 or v_entry is not null then
+    raise exception 'C2 failed: regular unexcused should debit 0';
+  end if;
+
   -- C2 balance 0 blocks present is enforced in mark_session_attendance (insufficient credits).
+  -- Regular unexcused does not debit, so balance 0 must not block that outcome.
 
   -- C3 special unexcused = 2; excused leave = 0
   select credits, entry_type

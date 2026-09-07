@@ -8,7 +8,6 @@ type DashboardPlaceholdersProps = {
 };
 
 const PARENT_COMING = ["courses"] as const;
-const COACH_COMING = ["assessments"] as const;
 
 function PlaceholderCard({
   title,
@@ -49,6 +48,7 @@ function LinkCard({
     | "/app/children"
     | "/app/sessions"
     | "/app/credits"
+    | "/app/assessments"
     | "/app/admin/claims"
     | "/app/admin/credits"
     | "/app/admin/matches"
@@ -116,6 +116,12 @@ export async function DashboardPlaceholders({ roles }: DashboardPlaceholdersProp
               body={t("placeholders.publicMatches.body")}
               action={t("openMatches")}
             />
+            <LinkCard
+              href="/app/assessments"
+              title={t("placeholders.assessments.title")}
+              body={t("placeholders.assessments.body")}
+              action={t("openAssessments")}
+            />
             {PARENT_COMING.map((key) => (
               <PlaceholderCard
                 key={key}
@@ -146,14 +152,12 @@ export async function DashboardPlaceholders({ roles }: DashboardPlaceholdersProp
               body={t("placeholders.attendance.body")}
               action={t("openRoster")}
             />
-            {COACH_COMING.map((key) => (
-              <PlaceholderCard
-                key={key}
-                title={t(`placeholders.${key}.title`)}
-                body={t(`placeholders.${key}.body`)}
-                comingSoon={comingSoon}
-              />
-            ))}
+            <LinkCard
+              href="/app/assessments"
+              title={t("placeholders.assessments.title")}
+              body={t("placeholders.assessments.body")}
+              action={t("openAssessments")}
+            />
           </div>
         </section>
       ) : null}
@@ -211,6 +215,12 @@ export async function DashboardPlaceholders({ roles }: DashboardPlaceholdersProp
               title={t("placeholders.creditsAdmin.title")}
               body={t("placeholders.creditsAdmin.body")}
               action={t("openAdmin")}
+            />
+            <LinkCard
+              href="/app/assessments"
+              title={t("placeholders.assessments.title")}
+              body={t("placeholders.assessments.body")}
+              action={t("openAssessments")}
             />
             <PlaceholderCard
               title={t("placeholders.adminNote.title")}

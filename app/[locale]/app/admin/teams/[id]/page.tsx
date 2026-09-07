@@ -83,15 +83,18 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
               {members.map((row) => {
                 const band = ageBandFromBirthDate(row.player.birth_date);
                 return (
-                  <li key={row.membership.id}>
+                  <li
+                    key={row.membership.id}
+                    className="flex flex-col gap-2 rounded-2xl border border-zinc-200 bg-white px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900 sm:flex-row sm:items-center sm:justify-between"
+                  >
                     <Link
                       href={`/app/admin/players/${row.player.id}`}
-                      className="flex flex-col gap-1 rounded-2xl border border-zinc-200 bg-white px-5 py-4 hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 sm:flex-row sm:items-center sm:justify-between"
+                      className="font-medium hover:underline"
                     >
-                      <span className="font-medium">
-                        #{row.membership.jersey_number} {localizedPlayerName(row.player, locale)}
-                      </span>
-                      <span className="text-sm text-zinc-500">
+                      #{row.membership.jersey_number} {localizedPlayerName(row.player, locale)}
+                    </Link>
+                    <span className="flex flex-col gap-1 text-sm text-zinc-500 sm:items-end">
+                      <span>
                         {band ? org(`ageBands.${band}`) : org("ageBandUnknown")}
                         {" · "}
                         {org(row.player.status === "active" ? "statusActive" : "statusInactive")}
@@ -99,7 +102,13 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
                           ? ` · ${org("membershipInactive")}`
                           : ""}
                       </span>
-                    </Link>
+                      <Link
+                        href={`/app/assessments/${row.player.id}`}
+                        className="font-medium text-zinc-800 underline underline-offset-2 dark:text-zinc-100"
+                      >
+                        {t("openAssessment")}
+                      </Link>
+                    </span>
                   </li>
                 );
               })}

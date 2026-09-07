@@ -28,6 +28,27 @@ export type LeaveRequestStatus = "pending" | "approved" | "rejected";
 export type MatchSide = "home" | "away";
 export type MatchPublicStatus = "scheduled" | "completed" | "cancelled";
 
+export type AssessmentScoreValue = 1 | 2 | 3 | 4 | 5;
+
+export type AssessmentScoreItem = {
+  score: AssessmentScoreValue;
+  note: string | null;
+};
+
+export type AssessmentSituations = {
+  attack: AssessmentScoreItem;
+  defense: AssessmentScoreItem;
+  attack_to_defense: AssessmentScoreItem;
+  defense_to_attack: AssessmentScoreItem;
+};
+
+export type AssessmentTraits = {
+  adaptability: AssessmentScoreItem;
+  resilience: AssessmentScoreItem;
+  coachability: AssessmentScoreItem;
+  team_commitment: AssessmentScoreItem;
+};
+
 export type Profile = {
   id: string;
   phone: string | null;
@@ -270,6 +291,19 @@ export type MatchPublication = {
   opponent_score: number | null;
   result_note: string | null;
   published_at: string | null;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+};
+
+export type PlayerAssessment = {
+  id: string;
+  player_id: string;
+  assessed_on: string;
+  assessor_user_id: string;
+  situations: AssessmentSituations;
+  traits: AssessmentTraits;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -952,6 +986,40 @@ export type Database = {
           },
         ];
       };
+      player_assessments: {
+        Row: PlayerAssessment;
+        Insert: {
+          id?: string;
+          player_id: string;
+          assessed_on: string;
+          assessor_user_id: string;
+          situations: AssessmentSituations;
+          traits: AssessmentTraits;
+        } & TimestampInsert;
+        Update: {
+          assessed_on?: string;
+          situations?: AssessmentSituations;
+          traits?: AssessmentTraits;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "player_assessments_player_id_fkey";
+            columns: ["player_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "player_assessments_assessor_user_id_fkey";
+            columns: ["assessor_user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -1260,6 +1328,40 @@ export type Database = {
           p_is_published?: boolean;
         };
         Returns: string[];
+      };
+      coach_can_assess_player: {
+        Args: { p_player_id: string };
+        Returns: boolean;
+      };
+      staff_can_write_player_assessment: {
+        Args: { p_player_id: string };
+        Returns: boolean;
+      };
+      can_read_player_assessment: {
+        Args: { p_player_id: string };
+        Returns: boolean;
+      };
+      create_player_assessment: {
+        Args: {
+          p_player_id: string;
+          p_assessed_on: string;
+          p_situations: AssessmentSituations;
+          p_traits: AssessmentTraits;
+        };
+        Returns: string;
+      };
+      update_player_assessment: {
+        Args: {
+          p_id: string;
+          p_assessed_on: string;
+          p_situations: AssessmentSituations;
+          p_traits: AssessmentTraits;
+        };
+        Returns: string;
+      };
+      delete_player_assessment: {
+        Args: { p_id: string };
+        Returns: string;
       };
     };
     Enums: {

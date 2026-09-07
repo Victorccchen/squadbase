@@ -13,6 +13,7 @@
 - [ ] Stage 4A session title, kind, weekly series, soft-delete
 - [ ] Stage 4A.1 multi-weekday series + admin calendar
 - [ ] Stage 4B prepaid credits, bank-transfer claims, attendance debit, LINE copy
+- [ ] Stage 5 player ability assessments (situations + traits, RLS, parent read-only)
 - [ ] Stage 5B public match schedule, results, published rosters
 
 ## Verification
@@ -27,4 +28,7 @@
 
 ## Deploy
 
-This PR must **not** deploy to production. Production deploys require human approval. CI is lint + typecheck + unit tests only.
+- [ ] After merge to `main`: **staging** Vercel auto-deploys (once `squadbase-staging` is connected; see `docs/deploy-staging.md`)
+- [ ] Production stays **manual approval** — this PR does not enable auto-prod and is not a production release
+
+This PR must **not** deploy to production. Production deploys require human approval. GitHub CI is lint + typecheck + unit tests only. Prefer Vercel Git integration over putting a Vercel token in Actions.
