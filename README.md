@@ -73,6 +73,8 @@ npm run typecheck
 npm test
 ```
 
+Staging Continuous Deployment (after Victor connects GitHub in the Vercel dashboard) is documented in [`docs/deploy-staging.md`](docs/deploy-staging.md): merge to `main` → auto-deploy the **`squadbase-staging`** project only. Production stays **manual**. Do not put Vercel tokens, service role keys, or real bank details in git or Actions.
+
 ## Schema choice (Stage 2)
 
 Players do **not** store a primary `team_id`. Membership and jersey number live on `team_memberships`:
@@ -548,10 +550,10 @@ Locale check: situation/trait labels, CTFA hint blurbs, score words, empty state
 | Environment | Use |
 | --- | --- |
 | `local` | Developer machines. Point `.env.local` at the **staging** Supabase project. |
-| `staging` | Shared QA. Own Supabase project (`ffksqfgscuezjwdbktcd`). |
-| `production` | Live club operations. Own Supabase project. **Human approval required before any production deploy.** |
+| `staging` | Shared QA. Own Supabase project (`ffksqfgscuezjwdbktcd`). Hosted on a dedicated Vercel project (recommend `squadbase-staging`) with Production Branch = `main`. That Vercel “Production” URL **is staging**, not the public club site. |
+| `production` | Live club operations. Own Supabase project. **Human approval required before any production deploy.** Do not auto-deploy prod. Do not point a public club domain at staging until Victor approves. |
 
-CI on pull requests does **not** deploy.
+CI on pull requests does **not** deploy. Vercel Git integration (not a deploy token in Actions) builds staging after merge to `main`. Step-by-step: [`docs/deploy-staging.md`](docs/deploy-staging.md).
 
 **Do not treat merging this work as a production release.** A person has to review, apply SQL only to the intended project, and approve any future production release.
 
@@ -570,6 +572,7 @@ lib/supabase/          Browser, server, and proxy (cookie) clients
 messages/              zh-Hant, en, ja copy
 supabase/migrations/   SQL (apply on staging only)
 .github/workflows/     PR CI (lint, typecheck, unit tests; no deploy)
+docs/                  Staging Vercel CD (Connect GitHub → env → Auth redirect)
 ```
 
 Auth uses the official `@supabase/ssr` cookie pattern for Next.js, composed in `proxy.ts` with `next-intl` (Next.js 16 proxy, not the old `middleware.ts` filename). Server pages call `getUser()`; the proxy refreshes/validates with `getClaims()`. Clients receive only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.

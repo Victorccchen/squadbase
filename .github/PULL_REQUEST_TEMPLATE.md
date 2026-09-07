@@ -27,4 +27,7 @@
 
 ## Deploy
 
-This PR must **not** deploy to production. Production deploys require human approval. CI is lint + typecheck + unit tests only.
+- [ ] After merge to `main`: **staging** Vercel auto-deploys (once `squadbase-staging` is connected; see `docs/deploy-staging.md`)
+- [ ] Production stays **manual approval** — this PR does not enable auto-prod and is not a production release
+
+This PR must **not** deploy to production. Production deploys require human approval. GitHub CI is lint + typecheck + unit tests only. Prefer Vercel Git integration over putting a Vercel token in Actions.
