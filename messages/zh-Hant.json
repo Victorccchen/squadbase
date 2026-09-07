@@ -663,7 +663,7 @@
   },
   "matches": {
     "title": "比賽賽程",
-    "lead": "即將進行與近期的盃賽、聯賽。公開名單只顯示顯示名稱與背號。",
+    "lead": "即將進行與近期的盃賽、聯賽。公開名單只含顯示名稱與背號。",
     "upcomingTitle": "即將進行",
     "recentTitle": "近期戰績",
     "upcomingEmptyTitle": "目前沒有即將進行的比賽",
