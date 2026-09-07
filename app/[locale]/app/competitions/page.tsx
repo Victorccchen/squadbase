@@ -2,7 +2,6 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
-import { AvailableSessionCard } from "@/components/sessions/available-session-card";
 import { SeriesGroupCard } from "@/components/sessions/series-group-card";
 import { SessionListActions } from "@/components/sessions/session-list-actions";
 import {
@@ -13,28 +12,29 @@ import {
 import { listOwnGuardianLinks } from "@/lib/org/queries";
 import {
   approvedChildrenFromLinks,
-  childrenOnSessionTeam,
-  listOpenTrainingSessionsForParent,
+  listOpenCompetitionSessionsForParent,
   listOwnSessionRegistrations,
-  openRegistrationForPlayer,
 } from "@/lib/org/session-queries";
 import {
-  groupTrainingSessionsForParent,
-  isTrainingSessionKind,
+  groupMatchSessionsForParent,
+  isCompetitionSessionKind,
   parentGroupPath,
   parentOccurrencePath,
 } from "@/lib/org/parent-series";
 import { localizedPlayerName } from "@/lib/org/display-name";
 import { formatParentVisibleDateTimeRange } from "@/lib/org/session-time";
 
-type ParentSessionsPageProps = {
+type ParentCompetitionsPageProps = {
   searchParams: Promise<{
     registered?: string | string[];
   }>;
 };
 
-export default async function ParentSessionsPage({ searchParams }: ParentSessionsPageProps) {
-  const t = await getTranslations("sessions");
+export default async function ParentCompetitionsPage({
+  searchParams,
+}: ParentCompetitionsPageProps) {
+  const t = await getTranslations("competitions");
+  const sessionsT = await getTranslations("sessions");
   const org = await getTranslations("org");
   const common = await getTranslations("common");
   const locale = await getLocale();
@@ -48,12 +48,13 @@ export default async function ParentSessionsPage({ searchParams }: ParentSession
   const teamIds = [...new Set(children.map((child) => child.teamId))];
   const playerIds = [...new Set(children.map((child) => child.player.id))];
   const [sessions, registrations] = await Promise.all([
-    listOpenTrainingSessionsForParent(teamIds),
+    listOpenCompetitionSessionsForParent(teamIds),
     listOwnSessionRegistrations(playerIds),
   ]);
-  const groups = groupTrainingSessionsForParent(sessions);
+  const groups = groupMatchSessionsForParent(sessions);
   const openRegistrations = registrations.filter(
-    (row) => row.status === "registered" && row.session && isTrainingSessionKind(row.session.kind),
+    (row) =>
+      row.status === "registered" && row.session && isCompetitionSessionKind(row.session.kind),
   );
 
   return (
@@ -66,7 +67,7 @@ export default async function ParentSessionsPage({ searchParams }: ParentSession
             role="status"
             className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100"
           >
-            {t("registerSuccess")}
+            {sessionsT("registerSuccess")}
           </p>
         ) : null}
 
@@ -81,46 +82,18 @@ export default async function ParentSessionsPage({ searchParams }: ParentSession
           ) : (
             <ul className="grid gap-3">
               {groups.map((group) => {
-                if (group.groupKind === "training-series") {
-                  const next = group.sessions[0];
-                  return (
-                    <SeriesGroupCard
-                      key={group.key}
-                      href={parentGroupPath(group)}
-                      title={group.title}
-                      teamName={next?.team?.name ?? org("unknownTeam")}
-                      kind={group.sessionKind}
-                      isPlayoff={group.sessions.some((row) => row.is_playoff)}
-                      nextStartsAt={next?.starts_at ?? ""}
-                      occurrenceCount={group.sessions.length}
-                      locale={locale}
-                    />
-                  );
-                }
-                const session = group.sessions[0];
-                if (!session) {
-                  return null;
-                }
+                const next = group.sessions[0];
                 return (
-                  <AvailableSessionCard
-                    key={session.id}
-                    sessionId={session.id}
-                    title={session.title}
-                    teamName={session.team?.name ?? org("unknownTeam")}
-                    location={session.location}
-                    startsAt={session.starts_at}
-                    endsAt={session.ends_at}
-                    kind={session.kind}
-                    isPlayoff={session.is_playoff}
+                  <SeriesGroupCard
+                    key={group.key}
+                    href={parentGroupPath(group)}
+                    title={group.title}
+                    teamName={next?.team?.name ?? org("unknownTeam")}
+                    kind={group.sessionKind}
+                    isPlayoff={group.sessions.some((row) => row.is_playoff)}
+                    nextStartsAt={next?.starts_at ?? ""}
+                    occurrenceCount={group.sessions.length}
                     locale={locale}
-                    returnTo="sessions"
-                    childrenOnTeam={childrenOnSessionTeam(children, session.team_id).map((child) => ({
-                      playerId: child.player.id,
-                      playerName: localizedPlayerName(child.player, locale),
-                      registrationId:
-                        openRegistrationForPlayer(registrations, session.id, child.player.id)?.id ??
-                        null,
-                    }))}
                   />
                 );
               })}
@@ -146,19 +119,21 @@ export default async function ParentSessionsPage({ searchParams }: ParentSession
                       <div className="flex flex-wrap items-center gap-2">
                         <RegistrationStatusBadge
                           status={row.status}
-                          label={t(`statuses.${row.status}`)}
+                          label={sessionsT(`statuses.${row.status}`)}
                         />
                         {row.session ? (
                           <SessionKindBadge
                             kind={row.session.kind}
-                            label={t(`kinds.${row.session.kind}`)}
+                            label={sessionsT(`kinds.${row.session.kind}`)}
                           />
                         ) : null}
                         {row.session?.is_playoff ? (
-                          <SessionPlayoffBadge label={t("playoff")} />
+                          <SessionPlayoffBadge label={sessionsT("playoff")} />
                         ) : null}
                         <span className="font-medium">
-                          {row.player ? localizedPlayerName(row.player, locale) : t("unknownPlayer")}
+                          {row.player
+                            ? localizedPlayerName(row.player, locale)
+                            : sessionsT("unknownPlayer")}
                         </span>
                       </div>
                       <p className="text-sm text-zinc-500">
@@ -174,17 +149,12 @@ export default async function ParentSessionsPage({ searchParams }: ParentSession
                             )
                           : ""}
                       </p>
-                      {row.parent_note ? (
-                        <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">
-                          {t("parentNote")}: {row.parent_note}
-                        </p>
-                      ) : null}
                       {row.session ? (
                         <Link
                           href={parentOccurrencePath(row.session)}
                           className="text-sm font-medium underline underline-offset-2"
                         >
-                          {t("viewSession")}
+                          {t("viewMatch")}
                         </Link>
                       ) : null}
                     </div>
@@ -196,7 +166,7 @@ export default async function ParentSessionsPage({ searchParams }: ParentSession
                           startsAt={row.session.starts_at}
                           registrationId={row.id}
                           showRegisteredLabel={false}
-                          returnTo="sessions"
+                          returnTo="competitions"
                         />
                       </div>
                     ) : null}

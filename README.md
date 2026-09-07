@@ -2,7 +2,7 @@
 
 Responsive web + PWA for a football **Club** (球團) operations app: training squads, courses, attendance, assessments, and matches/events.
 
-This repository is currently **Stage 5B**: Stages 1–5 plus a **public match schedule**. Coaches and admins record 1–5 scores for four match situations and four player traits (optional notes). Approved guardians can read assessments only for their linked children. Ability details are **never** shown on visitor/public pages. Cup and league `training_sessions` stay the debit source. A 1:1 `match_publications` row holds opponent, home/away, publish flag, status, and score. Visitors (no login) see upcoming and recent matches plus a published lineup of **display name + jersey number** only. Contacts, credits, claims, and ability assessments stay private. Admins create/update/publish/soft-cancel matches and choose the lineup. Writes are admin-only.
+This repository is currently **Stage 6P**: Stages 1–5B plus a **parent training / competition split**. Parent nav and dashboard list **訓練** (`/app/sessions`, kinds `regular` / `special`) separately from **賽事** (`/app/competitions`, kinds `cup` / `league`). Same-series training groups by `series_id`; cup/league fixtures with the same team, kind, and title (including Victory League shells without a DB series) share a series page with bulk attend/decline. Every parent-visible date shows a locale weekday in Asia/Taipei. Public `/matches` stays the visitor schedule. Anyone can add a session or match to Google, Apple, or Outlook calendars (title, start/end, location, opponent or TBD, kind only). Debit rules are unchanged. Coaches and admins still record 1–5 scores for four match situations and four player traits. Ability details are **never** shown on visitor/public pages.
 
 Parents can request a link to an **existing** player (the club creates the player record first). Until an admin approves, the parent cannot read that player’s private fields. After approval, the parent sees a basic “my children” list (names, birth date, team, jersey) and may **register that child for training sessions** on the child’s team. The parent may **withdraw a pending request**; only an **admin** may revoke an **approved** link. After revoke or withdraw, `is_approved_guardian_for_player` is false and the same pair may apply again. Session signup checks `guardian_player_links.status = approved`.
 
@@ -59,7 +59,11 @@ Routes:
 | `/[locale]/login` | Phone OTP sign-in |
 | `/[locale]/app` | Signed-in dashboard |
 | `/[locale]/app/children` | Parent: linked children, request status, constrained search form |
-| `/[locale]/app/sessions` | Parent: upcoming sessions for linked children’s teams, register / cancel / switch, Q&A, excused leave |
+| `/[locale]/app/sessions` | Parent: upcoming **training** (regular/special) for linked children’s teams, series pages, register / cancel / switch, Q&A, excused leave |
+| `/[locale]/app/sessions/series/[seriesId]` | Parent: training series bulk RSVP + per-occurrence controls |
+| `/[locale]/app/competitions` | Parent: upcoming **cup/league** signup for linked children’s teams, grouped by title |
+| `/[locale]/app/competitions/group/[groupKey]` | Parent: match-group series bulk RSVP + per-occurrence controls |
+| `/[locale]/app/competitions/[id]` | Parent: one cup/league occurrence (signup, calendar, notes) |
 | `/[locale]/app/credits` | Parent: remaining credits, 10/20/30 pack claim with last-5 digits |
 | `/[locale]/app/assessments` | Ability assessments: staff create/edit; approved guardians read their children |
 | `/[locale]/app/admin/*` | Admin CRUD (teams, players, coaches, sessions, matches), binding approvals, payment claims, packages. Parents/coaches without admin see an access-denied page. |
@@ -232,7 +236,21 @@ Public RPCs (`list_published_matches`, `get_published_match`, `list_published_ma
 
 Writes (`admin_create_match`, `admin_create_matches`, `admin_update_match`, `admin_set_match_roster`, `admin_set_match_published`, `admin_set_match_result`, `admin_cancel_match`) are admin-only. Opponent may be **null** (shown as TBD). Coaches may **read** publications on assigned teams (roster session page). Cancelling a match unpublishes it; it does **not** soft-delete the training session (attendance/debit path stays).
 
-Out of scope: live scores, federation feeds, tickets, push/LINE, changing Stage 5 assessment rules, production deploy.
+Out of scope: live scores, federation feeds, tickets, push/LINE, changing Stage 4B debit math, auto-creating `session_series` for league shells, OAuth calendar sync, production deploy.
+
+## Schema choice (Stage 6P)
+
+Parent surfaces split **training** from **competitions** without a new debit table. `training_sessions` remains the source; `match_publications` remains the public overlay.
+
+| Surface | Kinds | Grouping |
+| --- | --- | --- |
+| `/app/sessions` | `regular`, `special` | `series_id` when present; otherwise one-off |
+| `/app/competitions` | `cup`, `league` | `(team_id, kind, title)` for upcoming non-deleted sessions |
+| `/matches` | published cup/league | Visitor schedule (unchanged) |
+
+Bulk 參加本系列 / 取消本系列已報名 loops the existing `register_player_for_session` and `cancel_session_registration` RPCs (same approved-guardian check, membership check, and 24h cancel lock). Partial success returns per-occurrence reasons. Calendar add is client-side Google / Outlook links plus a downloaded `.ics`; payloads never include phones, assessments, credits, or guardian fields.
+
+No new staging SQL is required for Stage 6P.
 
 ### Player discovery (search UX)
 
@@ -586,7 +604,26 @@ Use an admin account for writes. Public checks must be **signed out** (or a priv
 | T5B-8 | Admin can create/update a match with a **blank opponent**. Public list/detail shows TBD (zh-Hant 對手未定 / en TBD / ja 対戦相手未定), never a fake club name. Existing admin edit can fill the opponent later. |
 | T5B-9 | Admin bulk-creates N unpublished cup/league shells from `/app/admin/matches/bulk` with blank opponent → N `training_sessions` + `match_publications` rows. |
 
-Locale check: schedule empty states, status/side badges, admin forms, and errors in zh-Hant / en / ja.
+Locale check: schedule empty states, status/side badges, admin forms, calendar add, and errors in zh-Hant / en / ja.
+
+### Stage 6P
+
+Use **one non-admin parent** with an approved child on a team that has both training and cup/league sessions. No new SQL.
+
+| ID | Check |
+| --- | --- |
+| T6P-1 | Parent `/app/sessions` lists only `regular` / `special`. Cup and league rows are absent. Series with `series_id` open a series page. |
+| T6P-2 | Parent `/app/competitions` lists only `cup` / `league`. Victory League shells with the same title group together even without `session_series`. Public `/matches` is still the visitor schedule. |
+| T6P-3 | Parent-visible dates show a weekday after the date in Asia/Taipei: `2026-09-20（週日）` / `2026-09-20 (Sun)` / `2026-09-20（日曜）`. Covered by `npm test`. |
+| T6P-4 | Series **參加本系列**: some occurrences register, already-registered (including 24h-soon) rows skip with a reason. Partial success. |
+| T6P-5 | Series **取消本系列已報名**: only cancellable rows cancel; within 24h of `starts_at` skips with `cannotCancelWithin24h`. |
+| T6P-6 | Bulk RSVP for a player the signed-in user does not guardian is denied (`notApprovedGuardian`). |
+| T6P-7 | Public match detail and parent training/match/series rows offer Google Calendar, Apple `.ics`, and Outlook. |
+| T6P-8 | Generated calendar text has title, start/end, location, opponent or TBD, and kind. No phone, credits, assessments, or guardian fields. |
+| T6P-9 | `/zh-Hant`, `/en`, and `/ja` render the new nav labels, series RSVP, and calendar copy. |
+| T6P-10 | Single-occurrence register and cancel still work (including the 24h cancel lock). Debit math unchanged. |
+
+Locale check: training list, competitions list, series pages, calendar buttons in zh-Hant / en / ja. `npm run lint`, `npm run typecheck`, and `npm test` pass.
 
 ## Staging vs production
 
@@ -603,7 +640,7 @@ CI on pull requests does **not** deploy. Vercel Git integration (not a deploy to
 ## Project layout
 
 ```text
-app/[locale]/          Public home, /matches, /login, gated /app, /app/children, /app/sessions, /app/credits, /app/assessments, /app/admin, /app/roster
+app/[locale]/          Public home, /matches, /login, gated /app, /app/children, /app/sessions, /app/competitions, /app/credits, /app/assessments, /app/admin, /app/roster
 components/            Header, forms, dashboard cards, access denied, public match cards, assessment forms
 i18n/                  next-intl routing, navigation, request config
 lib/age-band.ts        Season-start age band helper
@@ -624,13 +661,15 @@ Auth uses the official `@supabase/ssr` cookie pattern for Next.js, composed in `
 
 `app/manifest.ts` publishes a web app manifest. Placeholder icons live in `public/icons/`. Installability and offline caching are not Stage 4A goals.
 
-## Out of scope (Stage 5B)
+## Out of scope (Stage 6P)
 
 - Live scores / external federation feeds
 - Ticket sales / payments beyond Stage 4B bank-transfer claims
 - LINE Messaging API auto-send, official account binding, or push notifications
 - Official CTFA PDF export or claiming CTFA certification
 - Changing Stage 4B debit math or Stage 5 assessment scoring
+- Auto-creating `session_series` for Victory League shells
+- OAuth calendar sync (Google/Apple/Outlook one-tap add only)
 - Production deploys, merging this work to `main` from an agent, or modifying a production database
 - Service role keys, real bank account numbers, or LINE tokens in the repo or in client code
 - In-app admin backdoors or phone whitelists

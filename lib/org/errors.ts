@@ -90,6 +90,27 @@ export const INITIAL_ORG_ACTION_STATE: OrgActionState = {
   errorKey: null,
 };
 
+export type BulkRsvpRowResult = {
+  sessionId: string;
+  startsAt: string;
+  ok: boolean;
+  errorKey: OrgErrorKey | null;
+};
+
+export type BulkRsvpState = {
+  ok: boolean;
+  errorKey: OrgErrorKey | null;
+  results: BulkRsvpRowResult[];
+  attempted: boolean;
+};
+
+export const INITIAL_BULK_RSVP_STATE: BulkRsvpState = {
+  ok: false,
+  errorKey: null,
+  results: [],
+  attempted: false,
+};
+
 export type PlayerSearchMatchState = {
   id: string;
   name_zh: string | null;

@@ -10,9 +10,14 @@ import { inputClassName, secondaryButtonClassName } from "@/lib/ui";
 type LeaveRequestFormProps = {
   registrationId: string;
   sessionId: string;
+  returnTo?: string;
 };
 
-export function LeaveRequestForm({ registrationId, sessionId }: LeaveRequestFormProps) {
+export function LeaveRequestForm({
+  registrationId,
+  sessionId,
+  returnTo = "session",
+}: LeaveRequestFormProps) {
   const t = useTranslations("credits");
   const org = useTranslations("org");
   const [state, formAction, pending] = useActionState(
@@ -25,6 +30,7 @@ export function LeaveRequestForm({ registrationId, sessionId }: LeaveRequestForm
       <LocaleHiddenField />
       <input type="hidden" name="registration_id" value={registrationId} />
       <input type="hidden" name="session_id" value={sessionId} />
+      <input type="hidden" name="return_to" value={returnTo} />
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         {t("leaveNote")}
         <textarea name="parent_note" rows={2} maxLength={1000} className={inputClassName} />

@@ -11,9 +11,9 @@
     "footer": "生產環境部署需人工核准，請勿自動發佈到 production。"
   },
   "home": {
-    "eyebrow": "階段 5B · 公開比賽賽程與能力評量",
+    "eyebrow": "階段 6P · 訓練與賽事分開、系列報名、加入行事曆",
     "headline": "歡迎使用球團管理系統",
-    "lead": "訪客無需登入即可查看公開賽程。家長以手機簡訊驗證碼登入後，可申請連結子女、報名訓練、管理預付堂數，並閱讀該子女的能力評量。管理員與被指派教練可為四個比賽情境與四項特質打 1–5 分。管理員也可發布盃賽與聯賽、先發名單與賽果。能力細節不會出現在公開頁面。",
+    "lead": "訪客無需登入即可查看公開賽程，並可把比賽加入行事曆。家長登入後，訓練與賽事分開報名；同一系列可一次參加或取消。管理員與被指派教練可為四個比賽情境與四項特質打 1–5 分。能力細節與堂數不會出現在公開頁面。",
     "openDashboard": "進入儀表板",
     "openMatches": "比賽賽程",
     "sampleLabel": "範例文案",
@@ -59,7 +59,7 @@
   "app": {
     "eyebrow": "儀表板",
     "title": "球團儀表板",
-    "welcome": "家長可申請連結子女，為已核准的子女報名訓練場次、查看預付堂數，並閱讀已連結子女的能力評量。任何人都可以開啟公開賽程。管理員可管理隊伍、球員、教練、連結審核、場次、比賽、匯款申請與評量。教練可開啟被指派的名單、登記出缺席，並為該隊球員記錄評量。",
+    "welcome": "家長可申請連結子女，為已核准的子女分別報名訓練或賽事、查看預付堂數，並閱讀已連結子女的能力評量。任何人都可以開啟公開賽程並加入行事曆。管理員可管理隊伍、球員、教練、連結審核、場次、比賽、匯款申請與評量。教練可開啟被指派的名單、登記出缺席，並為該隊球員記錄評量。",
     "accountTitle": "帳號",
     "phoneLabel": "手機",
     "rolesLabel": "角色",
@@ -77,7 +77,8 @@
     "openRoster": "開啟名單",
     "openAdmin": "開啟管理",
     "openChildren": "開啟我的子女",
-    "openSessions": "開啟訓練場次",
+    "openSessions": "開啟訓練",
+    "openCompetitions": "開啟賽事",
     "openCredits": "開啟堂數",
     "openMatches": "開啟比賽賽程",
     "roles": {
@@ -92,8 +93,12 @@
         "body": "申請連結球團已建立的球員。管理員核准後會顯示在這裡。"
       },
       "sessions": {
-        "title": "訓練場次",
-        "body": "為已核准連結的子女報名訓練場次、取消或改期，並向球團提問。"
+        "title": "訓練",
+        "body": "為已核准連結的子女報名例行或特別訓練。同一系列可一次參加或取消。"
+      },
+      "competitions": {
+        "title": "賽事",
+        "body": "為已核准連結的子女報名盃賽與聯賽。同標題賽事會合成系列，可一次參加或取消。"
       },
       "courses": {
         "title": "課程",
@@ -140,8 +145,8 @@
         "body": "建立盃賽與聯賽、發布只含顯示名稱與背號的先發名單，並登錄賽果。"
       },
       "publicMatches": {
-        "title": "比賽賽程",
-        "body": "開啟公開的盃賽與聯賽賽程、賽果與先發名單。不需要額外的私人比賽頁。"
+        "title": "公開賽程",
+        "body": "訪客賽程：已發布的盃賽與聯賽、賽果與先發名單。家長報名請用賽事頁。"
       },
       "credits": {
         "title": "堂數與儲值",
@@ -166,7 +171,8 @@
     "label": "功能區",
     "dashboard": "儀表板",
     "children": "子女",
-    "sessions": "訓練場次",
+    "sessions": "訓練",
+    "competitions": "賽事",
     "roster": "名單",
     "admin": "管理",
     "teams": "隊伍",
@@ -431,7 +437,7 @@
   },
   "children": {
     "title": "我的子女",
-    "lead": "申請連結球團已建立的球員。管理員核准後，才能在此看到子女資料，並可為他們報名訓練場次。",
+    "lead": "申請連結球團已建立的球員。管理員核准後，才能在此看到子女資料，並可為他們報名訓練或賽事。",
     "myChildren": "已連結子女",
     "requests": "申請紀錄",
     "emptyChildrenTitle": "尚無已連結子女",
@@ -473,14 +479,15 @@
     "playerNames": "姓名",
     "playerTeam": "隊伍 / 背號",
     "playerBirth": "出生日期",
-    "openSessions": "報名訓練場次",
+    "openSessions": "報名訓練",
+    "openCompetitions": "報名賽事",
     "openCredits": "查看堂數",
     "openAssessments": "查看能力評量",
     "noAssessment": "尚無評量紀錄。"
   },
   "sessions": {
-    "title": "訓練場次",
-    "lead": "為已核准連結的子女報名所屬隊伍的場次。報名自動核准。停用或已刪除的場次不會出現。開始前 24 小時內無法取消。給球團的備註請在場次詳情填寫。",
+    "title": "訓練",
+    "lead": "為已核准連結的子女報名所屬隊伍的例行訓練與特別場次。盃賽與聯賽請到賽事頁。報名自動核准。停用或已刪除的場次不會出現。開始前 24 小時內無法取消。給球團的備註請在場次詳情填寫。",
     "upcomingTitle": "可報名場次",
     "myRegistrations": "我的報名",
     "emptyUpcomingTitle": "目前沒有可報名場次",
@@ -571,6 +578,40 @@
       "registered": "已報名",
       "cancelled": "已取消"
     }
+  },
+  "competitions": {
+    "title": "賽事",
+    "lead": "為已核准連結的子女報名所屬隊伍的盃賽與聯賽。同一隊伍、種類與標題會合成系列，可一次參加可報名場次或取消可取消的報名。公開訪客賽程仍在比賽頁。開始前 24 小時內無法取消。",
+    "upcomingTitle": "可報名賽事",
+    "myRegistrations": "我的賽事報名",
+    "emptyUpcomingTitle": "目前沒有可報名賽事",
+    "emptyUpcomingBody": "管理員建立盃賽或聯賽後，屬於你子女隊伍的賽事會出現在這裡。",
+    "needApprovedChild": "請先完成子女連結並等待管理員核准，才能報名賽事。",
+    "emptyRegistrationsTitle": "尚無賽事報名",
+    "emptyRegistrationsBody": "從上方系列選擇賽事並為子女報名。",
+    "viewSeries": "查看系列",
+    "viewMatch": "查看賽事",
+    "nextOccurrence": "下一場",
+    "occurrenceCount": "{count} 場",
+    "occurrencesTitle": "場次",
+    "selectChild": "選擇子女",
+    "attendSeries": "參加本系列（可報名）",
+    "cancelSeries": "取消本系列已報名（可取消）",
+    "cancellingSeries": "取消中…",
+    "bulkPartial": "部分場次已完成，請查看每場結果。",
+    "bulkAllOk": "本系列已更新。",
+    "bulkNone": "沒有場次完成。請查看每場原因。",
+    "bulkRowOk": "完成",
+    "bulkRowSkipped": "已略過",
+    "backToList": "返回賽事列表",
+    "registerFromListHint": "請先從系列列表報名。報名後可在此填寫給球團的備註。"
+  },
+  "calendar": {
+    "add": "加入行事曆",
+    "google": "Google 日曆",
+    "apple": "Apple 日曆",
+    "outlook": "Outlook",
+    "ics": "下載 .ics"
   },
   "credits": {
     "title": "堂數",

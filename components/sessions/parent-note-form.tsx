@@ -11,12 +11,14 @@ type ParentNoteFormProps = {
   registrationId: string;
   sessionId: string;
   initialNote: string | null;
+  returnTo?: string;
 };
 
 export function ParentNoteForm({
   registrationId,
   sessionId,
   initialNote,
+  returnTo = "session",
 }: ParentNoteFormProps) {
   const t = useTranslations("sessions");
   const org = useTranslations("org");
@@ -30,6 +32,7 @@ export function ParentNoteForm({
       <LocaleHiddenField />
       <input type="hidden" name="registration_id" value={registrationId} />
       <input type="hidden" name="session_id" value={sessionId} />
+      <input type="hidden" name="return_to" value={returnTo} />
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         {t("parentNote")}
         <textarea

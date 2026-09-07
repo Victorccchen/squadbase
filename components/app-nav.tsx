@@ -33,6 +33,12 @@ export function AppNav({ isAdmin, canRoster }: AppNavProps) {
       match: (path: string) => path.startsWith("/app/sessions"),
     },
     {
+      href: "/app/competitions",
+      label: t("competitions"),
+      show: true,
+      match: (path: string) => path.startsWith("/app/competitions"),
+    },
+    {
       href: "/app/credits",
       label: t("credits"),
       show: true,
@@ -43,12 +49,6 @@ export function AppNav({ isAdmin, canRoster }: AppNavProps) {
       label: t("assessments"),
       show: true,
       match: (path: string) => path.startsWith("/app/assessments"),
-    },
-    {
-      href: "/matches",
-      label: t("matches"),
-      show: true,
-      match: (path: string) => path.startsWith("/matches"),
     },
     {
       href: "/app/roster",

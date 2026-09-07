@@ -227,6 +227,106 @@ export function formatClubDateTimeRange(
   return `${formatClubDateTime(startsAt, locale)} – ${formatClubDateTime(endsAt, locale)}`;
 }
 
+/** ISO weekday 1=Monday … 7=Sunday for an instant in Asia/Taipei. */
+export function clubIsoWeekday(iso: string, timeZone = CLUB_TIME_ZONE): 1 | 2 | 3 | 4 | 5 | 6 | 7 | null {
+  const local = toDateTimeLocalInput(iso, timeZone);
+  if (!local) {
+    return null;
+  }
+  const date = local.slice(0, 10);
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  if (!match) {
+    return null;
+  }
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const jsDay = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+  return (jsDay === 0 ? 7 : jsDay) as 1 | 2 | 3 | 4 | 5 | 6 | 7;
+}
+
+const WEEKDAY_ZH_HANT: Record<1 | 2 | 3 | 4 | 5 | 6 | 7, string> = {
+  1: "週一",
+  2: "週二",
+  3: "週三",
+  4: "週四",
+  5: "週五",
+  6: "週六",
+  7: "週日",
+};
+
+const WEEKDAY_EN: Record<1 | 2 | 3 | 4 | 5 | 6 | 7, string> = {
+  1: "Mon",
+  2: "Tue",
+  3: "Wed",
+  4: "Thu",
+  5: "Fri",
+  6: "Sat",
+  7: "Sun",
+};
+
+const WEEKDAY_JA: Record<1 | 2 | 3 | 4 | 5 | 6 | 7, string> = {
+  1: "月曜",
+  2: "火曜",
+  3: "水曜",
+  4: "木曜",
+  5: "金曜",
+  6: "土曜",
+  7: "日曜",
+};
+
+function weekdayLabel(weekday: 1 | 2 | 3 | 4 | 5 | 6 | 7, locale: string): string {
+  if (locale === "zh-Hant") {
+    return WEEKDAY_ZH_HANT[weekday];
+  }
+  if (locale === "ja") {
+    return WEEKDAY_JA[weekday];
+  }
+  return WEEKDAY_EN[weekday];
+}
+
+/**
+ * Parent-visible date: club calendar day plus locale weekday
+ * (e.g. 2026-09-20（週日） / 2026-09-20 (Sun) / 2026-09-20（日曜）).
+ */
+export function formatClubDateWithWeekday(
+  iso: string,
+  locale: string,
+  timeZone = CLUB_TIME_ZONE,
+): string {
+  const local = toDateTimeLocalInput(iso, timeZone);
+  if (!local) {
+    return iso;
+  }
+  const date = local.slice(0, 10);
+  const weekday = clubIsoWeekday(iso, timeZone);
+  if (!weekday) {
+    return date || iso;
+  }
+  const label = weekdayLabel(weekday, locale);
+  if (locale === "zh-Hant" || locale === "ja") {
+    return `${date}（${label}）`;
+  }
+  return `${date} (${label})`;
+}
+
+/** Parent-visible range: date + weekday, then clock times in Asia/Taipei. */
+export function formatParentVisibleDateTimeRange(
+  startsAt: string,
+  endsAt: string,
+  locale: string,
+): string {
+  const startDate = formatClubDateWithWeekday(startsAt, locale);
+  const startTime = formatClubTime(startsAt, locale);
+  const endTime = formatClubTime(endsAt, locale);
+  const startDay = toDateTimeLocalInput(startsAt).slice(0, 10);
+  const endDay = toDateTimeLocalInput(endsAt).slice(0, 10);
+  if (startDay && endDay && startDay !== endDay) {
+    return `${startDate} ${startTime} – ${formatClubDateWithWeekday(endsAt, locale)} ${endTime}`;
+  }
+  return `${startDate} ${startTime} – ${endTime}`;
+}
+
 /** Clock time only (Asia/Taipei), for calendar agenda rows. */
 export function formatClubTime(
   iso: string,
