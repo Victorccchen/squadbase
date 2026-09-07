@@ -5,6 +5,8 @@ import { PageHeader } from "@/components/page-header";
 import { RequestLinkForm } from "@/components/children/request-link-form";
 import { CancelLinkForm } from "@/components/children/cancel-link-form";
 import { LinkStatusBadge } from "@/components/bindings/link-status-badge";
+import { AssessmentSummary } from "@/components/assessments/assessment-summary";
+import { listLatestAssessmentsByPlayerId } from "@/lib/assessments/queries";
 import { listActiveTeamsForLink, listOwnGuardianLinks } from "@/lib/org/queries";
 import { uniqueApprovedLinksByPlayerId } from "@/lib/org/guardian-links";
 import { localizedPlayerName, playerNameList } from "@/lib/org/display-name";
@@ -26,6 +28,11 @@ export default async function ChildrenPage() {
     links.filter((link) => link.status === "approved"),
   );
   const requests = links.filter((link) => link.status !== "approved");
+  const latestAssessments = await listLatestAssessmentsByPlayerId(
+    approved
+      .map((link) => link.player?.id)
+      .filter((id): id is string => Boolean(id)),
+  );
 
   return (
     <>
@@ -61,6 +68,7 @@ export default async function ChildrenPage() {
                   );
                 }
                 const band = ageBandFromBirthDate(player.birth_date);
+                const latest = latestAssessments.get(player.id);
                 return (
                   <li
                     key={link.id}
@@ -81,8 +89,19 @@ export default async function ChildrenPage() {
                       {band ? ` · ${org(`ageBands.${band}`)}` : ""}
                       {` · ${t(`relations.${link.relation}`)}`}
                     </span>
+                    {latest ? (
+                      <AssessmentSummary assessment={latest} />
+                    ) : (
+                      <p className="mt-2 text-sm text-zinc-500">{t("noAssessment")}</p>
+                    )}
                     <Link href="/app/credits" className="mt-2 text-sm font-medium underline underline-offset-2">
                       {t("openCredits")}
+                    </Link>
+                    <Link
+                      href={`/app/assessments/${player.id}`}
+                      className="text-sm font-medium underline underline-offset-2"
+                    >
+                      {t("openAssessments")}
                     </Link>
                   </li>
                 );

@@ -37,12 +37,20 @@ export default async function PlayerDetailPage({ params }: PlayerDetailPageProps
         <PageHeader
           title={localizedPlayerName(player, locale)}
           actions={
-            <Link
-              href={`/app/admin/players/${player.id}/edit`}
-              className={secondaryButtonClassName}
-            >
-              {t("edit")}
-            </Link>
+            <span className="flex flex-wrap gap-2">
+              <Link
+                href={`/app/assessments/${player.id}`}
+                className={secondaryButtonClassName}
+              >
+                {t("openAssessment")}
+              </Link>
+              <Link
+                href={`/app/admin/players/${player.id}/edit`}
+                className={secondaryButtonClassName}
+              >
+                {t("edit")}
+              </Link>
+            </span>
           }
         />
         <dl className="grid gap-3 rounded-2xl border border-zinc-200 bg-white p-6 text-sm dark:border-zinc-800 dark:bg-zinc-900">

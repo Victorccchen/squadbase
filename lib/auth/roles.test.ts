@@ -5,6 +5,7 @@ import {
   canAccessRoster,
   canReviewPayments,
   canTakeAttendance,
+  canWriteAssessments,
 } from "./roles.ts";
 
 describe("canAccessAdmin", () => {
@@ -43,5 +44,15 @@ describe("payment vs attendance roles (C7)", () => {
     assert.equal(canTakeAttendance(["coach"]), true);
     assert.equal(canTakeAttendance(["admin"]), true);
     assert.equal(canTakeAttendance(["parent"]), false);
+  });
+});
+
+describe("canWriteAssessments", () => {
+  it("allows coach and admin writes; parents are read-only in the app", () => {
+    assert.equal(canWriteAssessments(["admin"]), true);
+    assert.equal(canWriteAssessments(["coach"]), true);
+    assert.equal(canWriteAssessments(["parent"]), false);
+    assert.equal(canWriteAssessments(["parent", "coach"]), true);
+    assert.equal(canWriteAssessments([]), false);
   });
 });

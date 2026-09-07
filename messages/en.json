@@ -11,16 +11,16 @@
     "footer": "Production deploys require human approval. Do not publish to production automatically."
   },
   "home": {
-    "eyebrow": "Stage 4B · prepaid credits and attendance",
+    "eyebrow": "Stage 5 · player ability assessments",
     "headline": "Welcome to the Club management system",
-    "lead": "Sign in with a phone SMS one-time code. Parents request a link to an existing player; after admin approval they can register a child for training, submit a bank-transfer credit claim, request excused leave, and ask the club questions. Admins review transfers, mark attendance (which debits credits), and copy a trilingual LINE-group notice to paste manually into existing groups.",
+    "lead": "Sign in with a phone SMS one-time code. Parents request a link to an existing player; after admin approval they can register a child for training, submit a bank-transfer credit claim, request excused leave, and read that child’s ability assessments. Admins and assigned coaches record 1–5 scores for match situations and player traits. Ability details are never shown on public pages.",
     "openDashboard": "Open dashboard",
     "sampleLabel": "Sample copy",
     "sampleBody": "Current language: English. Use the language switcher above to see Traditional Chinese or Japanese strings.",
     "stackTitle": "Stack",
     "stackNext": "Next.js App Router + TypeScript",
     "stackI18n": "next-intl (Traditional Chinese / English / Japanese)",
-    "stackSupabase": "Supabase phone OTP, profiles, multi-role, org master data, guardian links, training sessions, prepaid credits, and RLS",
+    "stackSupabase": "Supabase phone OTP, profiles, multi-role, org master data, guardian links, training sessions, prepaid credits, player assessments, and RLS",
     "stackPwa": "PWA: web app manifest and basic meta",
     "envTitle": "Environment",
     "envConfigured": "Public Supabase variables are present. Sign-in talks to this project (anon key only).",
@@ -58,7 +58,7 @@
   "app": {
     "eyebrow": "Dashboard",
     "title": "Club dashboard",
-    "welcome": "Parents can request a link to a child, register approved children for training, and see prepaid session credits. Admins manage teams, players, coaches, bindings, sessions, and bank-transfer claims. Coaches can open assigned rosters and take attendance. Other operations features are still later stages.",
+    "welcome": "Parents can request a link to a child, register approved children for training, see prepaid session credits, and read ability assessments for linked children. Admins manage teams, players, coaches, bindings, sessions, claims, and assessments. Coaches can open assigned rosters, take attendance, and record assessments for players on their teams.",
     "accountTitle": "Account",
     "phoneLabel": "Phone",
     "rolesLabel": "Roles",
@@ -78,6 +78,7 @@
     "openChildren": "Open my children",
     "openSessions": "Open sessions",
     "openCredits": "Open credits",
+    "openAssessments": "Open assessments",
     "roles": {
       "parent": "Parent",
       "coach": "Coach",
@@ -118,8 +119,8 @@
         "body": "Mark present, excused, or unexcused on assigned-team sessions. Insufficient credits block present."
       },
       "assessments": {
-        "title": "Assessments",
-        "body": "Ability assessments are not available yet."
+        "title": "Ability assessments",
+        "body": "Coaches and admins record 1–5 scores for four match situations and four traits. Approved guardians can read only their linked children."
       },
       "members": {
         "title": "Members",
@@ -163,6 +164,7 @@
     "coaches": "Coaches",
     "bindings": "Bindings",
     "credits": "Credits",
+    "assessments": "Assessments",
     "claims": "Claims",
     "creditsAdmin": "Credit admin"
   },
@@ -170,6 +172,7 @@
     "deniedTitle": "You cannot open this page",
     "deniedBodyAdmin": "Admin pages are limited to club admins. Coaches can open the roster; parents can request a child link from My children.",
     "deniedBodyRoster": "The roster is limited to assigned coaches and admins. Parents without those roles stay on the dashboard.",
+    "deniedBodyAssessments": "Only an assigned coach or admin can create or edit an assessment. Approved guardians can read their child’s history.",
     "backToDashboard": "Back to dashboard"
   },
   "admin": {
@@ -264,7 +267,8 @@
     "softDeleteSessionConfirm": "Delete “{title}”? Parents will no longer see it for new signup. Registrations and Q&A are kept.",
     "softDeleteSeries": "Delete entire series",
     "softDeleteSeriesConfirm": "Delete every occurrence in the series that includes “{title}”? Parents will no longer see those sessions for new signup. Registrations and Q&A are kept.",
-    "registrationHistoryTitle": "Cancelled registrations"
+    "registrationHistoryTitle": "Cancelled registrations",
+    "openAssessment": "Assessment"
   },
   "roster": {
     "title": "Roster",
@@ -274,7 +278,8 @@
     "sessionsTitle": "Session signups",
     "sessionsLead": "Read-only list of sessions on teams assigned to you, including who registered.",
     "sessionsEmptyTitle": "No assigned sessions",
-    "sessionsEmptyBody": "When an admin creates a session on a team assigned to you, it will show up here."
+    "sessionsEmptyBody": "When an admin creates a session on a team assigned to you, it will show up here.",
+    "openAssessment": "Assessment"
   },
   "org": {
     "teamName": "Team name",
@@ -389,6 +394,11 @@
       "pendingLeaveExists": "This registration already has a pending or approved leave request.",
       "leaveNotFound": "That leave request was not found or is no longer pending.",
       "invalidPackageBand": "Choose a valid package age band.",
+      "invalidScore": "Each situation and trait needs a whole-number score from 1 to 5.",
+      "noteTooLong": "A note cannot be longer than 1000 characters.",
+      "invalidAssessedOn": "Enter a valid assessment date.",
+      "futureAssessedOn": "The assessment date cannot be in the future.",
+      "assessmentNotFound": "That assessment was not found.",
       "generic": "Could not save. Please try again."
     }
   },
@@ -437,7 +447,9 @@
     "playerTeam": "Team / jersey",
     "playerBirth": "Date of birth",
     "openSessions": "Register for sessions",
-    "openCredits": "View credits"
+    "openCredits": "View credits",
+    "openAssessments": "View assessments",
+    "noAssessment": "No assessment recorded yet."
   },
   "sessions": {
     "title": "Training sessions",
@@ -637,5 +649,87 @@
     "approveLeave": "Approve leave",
     "rejectLeave": "Reject leave",
     "backToRoster": "Back to roster"
+  },
+  "assessments": {
+    "title": "Ability assessments",
+    "lead": "Coaches and admins record development scores for players. Approved guardians can read only their linked children. Ability details are never public.",
+    "staffListTitle": "Players you can assess",
+    "staffEmptyTitle": "No players to assess",
+    "staffEmptyBody": "Admins see every player. Coaches see players on assigned teams.",
+    "parentListTitle": "Linked children",
+    "parentEmptyTitle": "No linked children",
+    "parentEmptyBody": "After an admin approves a guardian link, that child’s assessments appear here.",
+    "noLatest": "No assessment recorded yet.",
+    "openHistory": "View history",
+    "openDetail": "Open this assessment",
+    "create": "New assessment",
+    "createTitle": "New assessment · {name}",
+    "createLead": "Score four match situations and four traits from 1 to 5. Notes are optional. CTFA behaviour items are hints only and are not scored.",
+    "historyTitle": "Assessments · {name}",
+    "historyLead": "Each saved assessment is kept as history. There is no one-row-forever limit.",
+    "historyEmptyTitle": "No assessments yet",
+    "historyEmptyBody": "When a coach or admin records an assessment, it appears here.",
+    "detailTitle": "Assessment · {name}",
+    "editLead": "You can update these scores or delete this assessment.",
+    "readOnlyLead": "This view is read-only. Parents cannot create or edit assessments.",
+    "backToList": "All assessments",
+    "backToHistory": "Back to history",
+    "submit": "Save assessment",
+    "save": "Save changes",
+    "delete": "Delete this assessment",
+    "deleteConfirm": "Delete this assessment? This cannot be undone.",
+    "assessedOn": "Assessed on",
+    "assessedOnHint": "Club calendar date (Asia/Taipei). Defaults to today.",
+    "latestOn": "Latest assessment",
+    "situationsTitle": "Match situations",
+    "situationsLead": "One overall score per situation. Use the hints as guidance, not as extra scored fields.",
+    "traitsTitle": "Player traits",
+    "traitsLead": "One overall score per trait.",
+    "hintsTitle": "Guidance (not scored)",
+    "ctfaDisclaimer": "These short hints follow a youth “complete player” idea. They are guidance only — not official CTFA certification, and they are not scored.",
+    "note": "Note (optional)",
+    "noteHint": "At most 1000 characters.",
+    "noNote": "No note",
+    "situations": {
+      "attack": "Attack",
+      "defense": "Defense",
+      "attack_to_defense": "Attack to defense",
+      "defense_to_attack": "Defense to attack"
+    },
+    "traits": {
+      "adaptability": "Adaptability",
+      "resilience": "Resilience",
+      "coachability": "Coachability",
+      "team_commitment": "Team commitment"
+    },
+    "scores": {
+      "1": "Developing",
+      "2": "Emerging",
+      "3": "Competent",
+      "4": "Strong",
+      "5": "Excellent"
+    },
+    "hints": {
+      "attack": [
+        "First touch and control when receiving",
+        "Choose to pass, dribble, or shoot",
+        "Move into space off the ball"
+      ],
+      "defense": [
+        "Stay with the marker and see the ball",
+        "Time the tackle; do not dive in",
+        "Cover teammates and talk"
+      ],
+      "attack_to_defense": [
+        "Press or recover as soon as possession is lost",
+        "Cut the first passing lane",
+        "Get compact toward goal"
+      ],
+      "defense_to_attack": [
+        "First pass after winning the ball",
+        "Support quickly in front of the ball",
+        "Switch play when the press is beaten"
+      ]
+    }
   }
 }
