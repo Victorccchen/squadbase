@@ -14,6 +14,7 @@
 - [ ] Stage 4A.1 multi-weekday series + admin calendar
 - [ ] Stage 4B prepaid credits, bank-transfer claims, attendance debit, LINE copy
 - [ ] Stage 5 player ability assessments (situations + traits, RLS, parent read-only)
+- [ ] Stage 5B public match schedule, results, published rosters
 
 ## Verification
 

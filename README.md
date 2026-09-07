@@ -2,7 +2,7 @@
 
 Responsive web + PWA for a football **Club** (球團) operations app: training squads, courses, attendance, assessments, and matches/events.
 
-This repository is currently **Stage 5**: Stage 1–4B plus **player ability assessments**. Coaches and admins record 1–5 scores for four match situations and four player traits (optional notes). Approved guardians can read assessments only for their linked children. Ability details are **never** shown on visitor/public pages.
+This repository is currently **Stage 5B**: Stages 1–5 plus a **public match schedule**. Coaches and admins record 1–5 scores for four match situations and four player traits (optional notes). Approved guardians can read assessments only for their linked children. Ability details are **never** shown on visitor/public pages. Cup and league `training_sessions` stay the debit source. A 1:1 `match_publications` row holds opponent, home/away, publish flag, status, and score. Visitors (no login) see upcoming and recent matches plus a published lineup of **display name + jersey number** only. Contacts, credits, claims, and ability assessments stay private. Admins create/update/publish/soft-cancel matches and choose the lineup. Writes are admin-only.
 
 Parents can request a link to an **existing** player (the club creates the player record first). Until an admin approves, the parent cannot read that player’s private fields. After approval, the parent sees a basic “my children” list (names, birth date, team, jersey) and may **register that child for training sessions** on the child’s team. The parent may **withdraw a pending request**; only an **admin** may revoke an **approved** link. After revoke or withdraw, `is_approved_guardian_for_player` is false and the same pair may apply again. Session signup checks `guardian_player_links.status = approved`.
 
@@ -54,18 +54,20 @@ Routes:
 | Path | Who |
 | --- | --- |
 | `/[locale]` | Public homepage |
+| `/[locale]/matches` | Public match schedule (no login) |
+| `/[locale]/matches/[id]` | Public match detail + published lineup (no login) |
 | `/[locale]/login` | Phone OTP sign-in |
 | `/[locale]/app` | Signed-in dashboard |
 | `/[locale]/app/children` | Parent: linked children, request status, constrained search form |
 | `/[locale]/app/sessions` | Parent: upcoming sessions for linked children’s teams, register / cancel / switch, Q&A, excused leave |
 | `/[locale]/app/credits` | Parent: remaining credits, 10/20/30 pack claim with last-5 digits |
 | `/[locale]/app/assessments` | Ability assessments: staff create/edit; approved guardians read their children |
-| `/[locale]/app/admin/*` | Admin CRUD (teams, players, coaches, sessions), binding approvals, payment claims, packages. Parents/coaches without admin see an access-denied page. |
+| `/[locale]/app/admin/*` | Admin CRUD (teams, players, coaches, sessions, matches), binding approvals, payment claims, packages. Parents/coaches without admin see an access-denied page. |
 | `/[locale]/app/roster` | Coach (or admin) roster of assigned teams, session signups, attendance, and assessment links |
 
 ## Checks (CI)
 
-Pull request CI runs **lint + typecheck + unit tests** (age-band and form parse helpers). It does **not** deploy.
+Pull request CI runs **lint + typecheck + unit tests** (age-band, form parse, assessment scores, and match publish helpers). It does **not** deploy.
 
 ```bash
 npm run lint
@@ -215,7 +217,22 @@ JSONB shape per key: `{ "score": 1-5, "note": string|null }`. CHECK constraints 
 
 **SELECT:** admin (all); assigned coach via existing `coach_can_read_player`; approved guardian via `is_approved_guardian_for_player` (linked children only). `anon` has no GRANT. Public/visitor pages do not query this table.
 
-Out of scope for Stage 5: public match schedule/results, push / LINE personal binding, official CTFA PDF export, payments/credits changes, production deploy.
+## Schema choice (Stage 5B)
+
+Public cup/league matches reuse `training_sessions` so Stage 4B debit (`match_debit`, 1 per club calendar day) is unchanged. **Option A:** a thin 1:1 `match_publications` overlay (not a separate `matches` table). Regular/special sessions cannot be published.
+
+| Object | Purpose |
+| --- | --- |
+| `match_publications` | 1:1 with `training_sessions`. Opponent (optional / TBD), home/away (`side`), `is_published`, `public_status` (`scheduled` / `completed` / `cancelled`), scores, optional result note |
+| `match_roster` | Published lineup: `player_id` + jersey snapshot from active `team_memberships` |
+
+**Public visibility (anon + authenticated via security-definer RPCs):** `is_published` and `public_status` in `scheduled`/`completed` and session `active`, not soft-deleted, kind `cup` or `league`. **T5B-5:** cancelled matches are **omitted** from the public list (not shown as cancelled). Soft-deleted or inactive sessions are also omitted. Unpublished matches are hidden from anon (T5B-2).
+
+Public RPCs (`list_published_matches`, `get_published_match`, `list_published_match_roster`) return title, kickoff, venue, opponent, side, status, score, team name, and lineup **display-name fields + jersey** only. No phones, emails, guardian info, credits, claims, staff notes, or birth dates. Public pages live under `/[locale]/matches` and do **not** call `ensure_own_profile`.
+
+Writes (`admin_create_match`, `admin_create_matches`, `admin_update_match`, `admin_set_match_roster`, `admin_set_match_published`, `admin_set_match_result`, `admin_cancel_match`) are admin-only. Opponent may be **null** (shown as TBD). Coaches may **read** publications on assigned teams (roster session page). Cancelling a match unpublishes it; it does **not** soft-delete the training session (attendance/debit path stays).
+
+Out of scope: live scores, federation feeds, tickets, push/LINE, changing Stage 5 assessment rules, production deploy.
 
 ### Player discovery (search UX)
 
@@ -258,9 +275,12 @@ Apply in order:
 18. [`supabase/migrations/20260906600000_ensure_link_status_revoked.sql`](supabase/migrations/20260906600000_ensure_link_status_revoked.sql) (**duplicate-link cleanup step 1; paste this file’s CONTENTS alone and wait** — `alter type link_status add value if not exists 'revoked'`. Same statement as item 6. Required if staging never applied the lifecycle enum file. PostgreSQL cannot ADD VALUE and USE it in one transaction.)
 19. [`supabase/migrations/20260907000000_dedupe_guardian_player_links.sql`](supabase/migrations/20260907000000_dedupe_guardian_player_links.sql) (**duplicate-link cleanup step 2; paste only after step 1 committed** — revokes extra pending/approved `guardian_player_links` for the same guardian×player, then recreates the unique partial index. History rows stay as `revoked` with `admin_note` `deduped by migration`. Does not change RLS or Stage 4B debit rules.)
 20. [`supabase/migrations/20260907010000_session_cancel_lock_24h.sql`](supabase/migrations/20260907010000_session_cancel_lock_24h.sql) (**parent list 取消 lock; paste this file’s CONTENTS on staging** — guardians cannot cancel within 24 hours of `starts_at`; admins remain exempt. Also adds `update_session_registration_parent_note`. Does not change Stage 4B debit rules.)
-21. [`supabase/migrations/20260908000000_regular_unexcused_debit_zero.sql`](supabase/migrations/20260908000000_regular_unexcused_debit_zero.sql) (**Stage 4B debit-rule follow-up; paste this file’s CONTENTS on staging** — `CREATE OR REPLACE` of `compute_session_debit_plan` so **regular unexcused = 0**. Regular present stays −1; special unexcused stays −2. Does not rewrite the original 4B migration. Staging only. Do not run on production.)
-22. [`supabase/migrations/20260908010000_stage5_player_assessments.sql`](supabase/migrations/20260908010000_stage5_player_assessments.sql) (**Stage 5; paste this file’s CONTENTS on staging** — `player_assessments`, JSONB validators, RLS, write RPCs. Does not change credits or sessions.)
-23. [`supabase/migrations/20260908020000_regrant_stage5_privileges.sql`](supabase/migrations/20260908020000_regrant_stage5_privileges.sql) (**paste if staff/parents see `permission denied` on `player_assessments` or Stage 5 RPCs** — re-grants SELECT/execute to `authenticated`. Does not change RLS. Safe to re-run.)
+21. [`supabase/migrations/20260907120000_stage5b_public_matches.sql`](supabase/migrations/20260907120000_stage5b_public_matches.sql) (**Stage 5B; paste this file’s CONTENTS on staging** — `match_publications`, `match_roster`, public RPCs for anon, admin write RPCs. Does not change Stage 4B debit rules.)
+22. [`supabase/migrations/20260907140000_regrant_stage5b_privileges.sql`](supabase/migrations/20260907140000_regrant_stage5b_privileges.sql) (**paste if anon/admins see `permission denied` on public match RPCs** — re-grants to `anon`/`authenticated`. Does not change RLS. Safe to re-run.)
+23. [`supabase/migrations/20260907180000_stage5b_optional_opponent_bulk.sql`](supabase/migrations/20260907180000_stage5b_optional_opponent_bulk.sql) (**Stage 5B follow-up; paste this file’s CONTENTS on staging after 21** — makes `match_publications.opponent` nullable, allows blank opponent on create/update, adds `admin_create_matches` for bulk unpublished cup/league shells. Does not change Stage 4B debit rules.)
+24. [`supabase/migrations/20260908000000_regular_unexcused_debit_zero.sql`](supabase/migrations/20260908000000_regular_unexcused_debit_zero.sql) (**Stage 4B debit-rule follow-up; paste this file’s CONTENTS on staging** — `CREATE OR REPLACE` of `compute_session_debit_plan` so **regular unexcused = 0**. Regular present stays −1; special unexcused stays −2. Does not rewrite the original 4B migration. Staging only. Do not run on production.)
+25. [`supabase/migrations/20260908010000_stage5_player_assessments.sql`](supabase/migrations/20260908010000_stage5_player_assessments.sql) (**Stage 5; paste this file’s CONTENTS on staging** — `player_assessments`, JSONB validators, RLS, write RPCs. Does not change credits or sessions.)
+26. [`supabase/migrations/20260908020000_regrant_stage5_privileges.sql`](supabase/migrations/20260908020000_regrant_stage5_privileges.sql) (**paste if staff/parents see `permission denied` on `player_assessments` or Stage 5 RPCs** — re-grants SELECT/execute to `authenticated`. Does not change RLS. Safe to re-run.)
 
 Steps:
 
@@ -268,7 +288,7 @@ Steps:
 2. Go to **SQL Editor** → **New query**.
 3. Paste the full contents of the migration file.
 4. Run the query.
-5. In **Table Editor**, confirm `teams`, `players`, `team_memberships`, `coaches`, `coach_team_assignments`, `guardian_player_links`, and (after Stage 4) `training_sessions`, `session_registrations`, `session_registration_messages` exist. After Stage 4A, also confirm `session_series` and that `training_sessions` has `title`, `kind`, `series_id`, `deleted_at`, and `is_playoff`. After Stage 4A.1, confirm `session_series.weekdays`. After Stage 4B, confirm `session_packages`, `player_session_balances`, `payment_claims`, `session_credit_ledger`, `session_attendance`, `session_leave_requests`, and `club_runtime_settings`. After Stage 5, confirm `player_assessments`.
+5. In **Table Editor**, confirm `teams`, `players`, `team_memberships`, `coaches`, `coach_team_assignments`, `guardian_player_links`, and (after Stage 4) `training_sessions`, `session_registrations`, `session_registration_messages` exist. After Stage 4A, also confirm `session_series` and that `training_sessions` has `title`, `kind`, `series_id`, `deleted_at`, and `is_playoff`. After Stage 4A.1, confirm `session_series.weekdays`. After Stage 4B, confirm `session_packages`, `player_session_balances`, `payment_claims`, `session_credit_ledger`, `session_attendance`, `session_leave_requests`, and `club_runtime_settings`. After Stage 5, confirm `player_assessments`. After Stage 5B, confirm `match_publications` and `match_roster`.
 
 If you use the Supabase CLI and it is linked to **staging** (never production):
 
@@ -306,6 +326,8 @@ Stage 5 (`20260908010000_stage5_player_assessments.sql`): **Victor: paste the SQ
 
 Regular unexcused must not debit: paste contents of [`supabase/migrations/20260908000000_regular_unexcused_debit_zero.sql`](supabase/migrations/20260908000000_regular_unexcused_debit_zero.sql) on **staging only** after Stage 4B. Replaces `compute_session_debit_plan` only. Do not run on production.
 
+Stage 5B (`20260907120000_stage5b_public_matches.sql`): **Victor: paste the SQL file contents into the staging SQL Editor, not a path string.** Then paste the regrant file. Then paste [`supabase/migrations/20260907180000_stage5b_optional_opponent_bulk.sql`](supabase/migrations/20260907180000_stage5b_optional_opponent_bulk.sql) so opponent can be blank and bulk create works. Do not run them on production. Do not put secrets in git. Public match RPCs are granted to `anon`; org tables stay revoked from `anon`.
+
 ### How to verify the migration
 
 - Table Editor shows the five Stage 2 tables above, with RLS enabled, plus `guardian_player_links` after Stage 3.
@@ -318,6 +340,8 @@ Regular unexcused must not debit: paste contents of [`supabase/migrations/202609
 - Optional: paste [`supabase/stage4a1_verification.sql`](supabase/stage4a1_verification.sql) after Stage 4A.1. Asserts `session_series.weekdays` and the `p_weekdays` RPC signature exist. Rolls back.
 - Optional: paste [`supabase/stage4b_verification.sql`](supabase/stage4b_verification.sql) after Stage 4B **and** the regular-unexcused follow-up. Asserts debit-plan C2–C5 (regular present 1, regular unexcused 0, special unexcused 2 / excused 0, cup 1/day, U6/reserve/senior 0). Rolls back.
 - Optional: paste [`supabase/stage5_verification.sql`](supabase/stage5_verification.sql) after Stage 5. Asserts JSONB 1–5 validators and write RPC signatures. Rolls back.
+- Optional: paste [`supabase/stage5b_verification.sql`](supabase/stage5b_verification.sql) after Stage 5B. Asserts `match_publications` / RPCs exist and that cup/league debit C4 is unchanged. Rolls back.
+- Optional: paste [`supabase/guardian_link_dedupe_verification.sql`](supabase/guardian_link_dedupe_verification.sql) after **both** cleanup files (enum `revoked` in one Run, then the dedupe UPDATE in a second Run). Lists remaining open duplicates (expect none), asserts the unique index, and has a commented unique-insert check that rolls back.
 - Optional: the RLS block at the bottom of the Stage 2 file, with real user UUIDs.
 
 The package catalog is **seeded with TWD prices from 2026-09-01** (no personal data, no bank account numbers). There is **no real PII** in the repo.
@@ -407,10 +431,11 @@ Do not grant extra roles from the browser except through this admin action. RLS 
   - Insert own **pending** links only. Cannot set `approved` / `rejected` (T3-4). Can update **own pending** rows only to `revoked` (withdraw). Cannot revoke `approved`.
 - `coach`: read assigned teams, memberships, and those players (including `birth_date`, needed to show age band on the roster). No insert/update/delete on org tables. Same parent-link rules if they also have the parent role (default).
 - `admin`: full CRUD on org tables and `training_sessions`; can `select` all `profiles` in order to link coaches (phone is PII; admins can see it); can select all guardian links and call `admin_review_guardian_link` / `admin_revoke_guardian_link` / `admin_delete_team`. Team hard-delete refuses while **active** `team_memberships` remain; inactive memberships, coach assignments, and training sessions are removed with the team. Admins can reply on `session_registration_messages`.
-- Training sessions: parents `SELECT` only sessions they can read via approved children (or existing registrations, including after soft-delete). `register_player_for_session` requires an approved guardian, an **active non-deleted** session, and an active membership of that player on the session’s team. Parents cannot dump another family’s roster. Coaches `SELECT` sessions/registrations/messages on assigned teams. `anon` has no GRANT. Create and soft-delete go through admin-only RPCs.
+- Training sessions: parents `SELECT` only sessions they can read via approved children (or existing registrations, including after soft-delete). `register_player_for_session` requires an approved guardian, an **active non-deleted** session, and an active membership of that player on the session’s team. Parents cannot dump another family’s roster. Coaches `SELECT` sessions/registrations/messages on assigned teams. `anon` has no GRANT on session tables. Create and soft-delete go through admin-only RPCs.
 - Ability assessments: `anon` has no GRANT on `player_assessments`. Parents `SELECT` only rows for approved-linked children and cannot call write RPCs successfully. Assigned coaches `SELECT` via `coach_can_read_player`; writes require an **active** membership on an assigned team (`coach_can_assess_player`) or admin. Public homepage and visitor routes never load assessment payloads.
+- Public matches: `anon` and `authenticated` may `EXECUTE` `list_published_matches` / `get_published_match` / `list_published_match_roster` only. Those RPCs return published cup/league fields and lineup names/jersey. No GRANT on `players`, `match_publications`, or `training_sessions` to `anon`. Admins write via RPCs; coaches may `SELECT` publications on assigned teams.
 
-Public match pages that show names without dates of birth are a later stage. This stage does not expose player rows to unauthenticated users.
+Public match pages that show names without dates of birth are Stage 5B. Ability assessments stay on authenticated `/app/assessments` only.
 
 ## Test steps
 
@@ -532,7 +557,7 @@ Locale check: packages, claims, attendance, last-5 error, leave, notice template
 
 Use **one admin**, **one assigned coach**, **one approved guardian** of player A, and optionally a **guardian of player B** plus an **unassigned coach**. Score parse is also covered by `npm test` (`lib/assessments/parse.test.ts`).
 
-Paste Stage 5 SQL **file contents** (not path strings) on **staging only** before UI checks. `git checkout` the feature branch. Do not deploy production.
+Paste Stage 5 SQL **file contents** (not path strings) on **staging only** before UI checks. Do not deploy production.
 
 | ID | Check |
 | --- | --- |
@@ -544,6 +569,24 @@ Paste Stage 5 SQL **file contents** (not path strings) on **staging only** befor
 | T5-6 | Logged-out `/zh-Hant` and `/zh-Hant/login` show no ability scores. Signed-out `/zh-Hant/app/assessments` redirects to login. |
 
 Locale check: situation/trait labels, CTFA hint blurbs, score words, empty states, and errors in zh-Hant / en / ja (`/zh-Hant/app/assessments`, `/en/app/assessments`, `/ja/app/assessments`).
+
+### Stage 5B
+
+Use an admin account for writes. Public checks must be **signed out** (or a private window). Apply Stage 5B SQL **file contents** (not path strings) on **staging only** before UI checks.
+
+| ID | Check |
+| --- | --- |
+| T5B-1 | Admin creates a **published** upcoming cup/league match from `/app/admin/matches/new` → it appears on `/zh-Hant/matches` while signed out. |
+| T5B-2 | Unpublished match is hidden from anon (`/matches` and `/matches/[id]` 404). |
+| T5B-3 | Detail shows roster **display names + jersey**. HTML/payload has no phone, birth date, credits, last-5, or assessment fields. |
+| T5B-4 | Admin sets a completed score → public detail shows the result. |
+| T5B-5 | Admin cancels a match → it is **not listed** publicly (not shown as cancelled). Soft-delete of the session also hides it. |
+| T5B-6 | `/zh-Hant/matches`, `/en/matches`, and `/ja/matches` render with locale copy. Header and home link to the schedule. |
+| T5B-7 | Signed-in non-admin cannot open `/app/admin/matches` (access denied). Parent JWT cannot call `admin_create_match`. `npm run lint`, `npm run typecheck`, and `npm test` pass. |
+| T5B-8 | Admin can create/update a match with a **blank opponent**. Public list/detail shows TBD (zh-Hant 對手未定 / en TBD / ja 対戦相手未定), never a fake club name. Existing admin edit can fill the opponent later. |
+| T5B-9 | Admin bulk-creates N unpublished cup/league shells from `/app/admin/matches/bulk` with blank opponent → N `training_sessions` + `match_publications` rows. |
+
+Locale check: schedule empty states, status/side badges, admin forms, and errors in zh-Hant / en / ja.
 
 ## Staging vs production
 
@@ -560,13 +603,13 @@ CI on pull requests does **not** deploy. Vercel Git integration (not a deploy to
 ## Project layout
 
 ```text
-app/[locale]/          Public home, /login, gated /app, /app/children, /app/sessions, /app/credits, /app/assessments, /app/admin, /app/roster
-components/            Header, forms, dashboard cards, access denied
+app/[locale]/          Public home, /matches, /login, gated /app, /app/children, /app/sessions, /app/credits, /app/assessments, /app/admin, /app/roster
+components/            Header, forms, dashboard cards, access denied, public match cards, assessment forms
 i18n/                  next-intl routing, navigation, request config
 lib/age-band.ts        Season-start age band helper
 lib/assessments/       Assessment parse/validation, queries, server actions
 lib/credits/           Debit rules, packages, LINE notice copy, credit queries/actions
-lib/org/               Server actions, queries, display-name helper, binding actions
+lib/org/               Server actions, queries, display-name helper, binding actions, match helpers
 lib/auth/              Phone helpers, session/role guards
 lib/supabase/          Browser, server, and proxy (cookie) clients
 messages/              zh-Hant, en, ja copy
@@ -581,12 +624,13 @@ Auth uses the official `@supabase/ssr` cookie pattern for Next.js, composed in `
 
 `app/manifest.ts` publishes a web app manifest. Placeholder icons live in `public/icons/`. Installability and offline caching are not Stage 4A goals.
 
-## Out of scope (Stage 5)
+## Out of scope (Stage 5B)
 
-- Public match schedule / results (Stage 5B later)
-- Push notifications / LINE personal binding / LINE Messaging API auto-send
+- Live scores / external federation feeds
+- Ticket sales / payments beyond Stage 4B bank-transfer claims
+- LINE Messaging API auto-send, official account binding, or push notifications
 - Official CTFA PDF export or claiming CTFA certification
-- Payments / credits changes
+- Changing Stage 4B debit math or Stage 5 assessment scoring
 - Production deploys, merging this work to `main` from an agent, or modifying a production database
 - Service role keys, real bank account numbers, or LINE tokens in the repo or in client code
 - In-app admin backdoors or phone whitelists
@@ -594,4 +638,4 @@ Auth uses the official `@supabase/ssr` cookie pattern for Next.js, composed in `
 
 ## Later stages
 
-Keep staging and production isolated, and keep production releases behind human approval. Public match pages and richer contribution reports can follow on this folder structure.
+Keep staging and production isolated, and keep production releases behind human approval. Richer contribution reports can follow on this folder structure.

@@ -27,7 +27,13 @@ export async function HomeScreen() {
           <p className="max-w-2xl text-lg leading-8 text-zinc-600 dark:text-zinc-300">
             {t("lead")}
           </p>
-          <div className="pt-2">
+          <div className="flex flex-wrap gap-3 pt-2">
+            <Link
+              href="/matches"
+              className="inline-flex rounded-full border border-zinc-300 px-5 py-2.5 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+            >
+              {t("openMatches")}
+            </Link>
             <Link
               href={signedIn ? "/app" : "/login"}
               className="inline-flex rounded-full bg-foreground px-5 py-2.5 text-sm font-medium text-background"

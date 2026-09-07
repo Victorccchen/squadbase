@@ -13,12 +13,15 @@ import {
 import { loadSignedInAccount } from "@/lib/auth/session";
 import { canAccessRoster } from "@/lib/auth/roles";
 import { getSession, listSessionRegistrations } from "@/lib/org/session-queries";
+import { getMatchForStaff } from "@/lib/org/match-queries";
+import { MatchSideBadge, MatchStatusBadge } from "@/components/matches/match-status-badge";
 import {
   listActiveRosterForTeam,
   listAttendanceForSession,
   listBalancesForPlayers,
 } from "@/lib/credits/queries";
 import { creditsApplyToAgeBand } from "@/lib/credits/debit-rules";
+import { publicOpponentLabel } from "@/lib/org/match";
 import { formatClubDateTimeRange } from "@/lib/org/session-time";
 import { secondaryButtonClassName } from "@/lib/ui";
 
@@ -42,13 +45,17 @@ export default async function CoachSessionAttendancePage({
 
   const t = await getTranslations("credits");
   const sessionsT = await getTranslations("sessions");
+  const matchesT = await getTranslations("matches");
   const org = await getTranslations("org");
   const common = await getTranslations("common");
   const locale = await getLocale();
-  const [registrations, attendance, roster] = await Promise.all([
+  const [registrations, attendance, roster, match] = await Promise.all([
     listSessionRegistrations(session.id),
     listAttendanceForSession(session.id),
     session.team_id ? listActiveRosterForTeam(session.team_id) : Promise.resolve([]),
+    session.kind === "cup" || session.kind === "league"
+      ? getMatchForStaff(session.id)
+      : Promise.resolve(null),
   ]);
 
   const registered = registrations.filter((row) => row.status === "registered");
@@ -99,6 +106,30 @@ export default async function CoachSessionAttendancePage({
             </span>
           ) : null}
         </div>
+        {match ? (
+          <section className="flex flex-col gap-2 rounded-2xl border border-zinc-200 bg-white p-5 text-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+              {matchesT("title")}
+            </h2>
+            <p className="text-zinc-600 dark:text-zinc-300">{matchesT("coachReadOnly")}</p>
+            <div className="flex flex-wrap gap-2">
+              <MatchStatusBadge
+                status={match.publication.public_status}
+                label={matchesT(`statuses.${match.publication.public_status}`)}
+              />
+              <MatchSideBadge label={matchesT(`sides.${match.publication.side}`)} />
+            </div>
+            <p>
+              {match.team?.name ?? org("unknownTeam")} {matchesT("versus")}{" "}
+              {publicOpponentLabel(match.publication.opponent, matchesT("opponentTbd"))}
+            </p>
+            {match.publication.is_published ? (
+              <Link href={`/matches/${session.id}`} className={secondaryButtonClassName}>
+                {matchesT("viewPublic")}
+              </Link>
+            ) : null}
+          </section>
+        ) : null}
         <section className="flex flex-col gap-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
             {t("attendanceTitle")}

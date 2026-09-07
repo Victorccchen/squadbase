@@ -11,16 +11,17 @@
     "footer": "生產環境部署需人工核准，請勿自動發佈到 production。"
   },
   "home": {
-    "eyebrow": "階段 5 · 球員能力評量",
+    "eyebrow": "階段 5B · 公開比賽賽程與能力評量",
     "headline": "歡迎使用球團管理系統",
-    "lead": "以手機簡訊驗證碼登入。家長可申請連結既有球員，管理員核准後可為子女報名訓練場次、提交匯款堂數申請、請假，並閱讀該子女的能力評量。管理員與被指派教練可為四個比賽情境與四項特質打 1–5 分。能力細節不會出現在公開頁面。",
+    "lead": "訪客無需登入即可查看公開賽程。家長以手機簡訊驗證碼登入後，可申請連結子女、報名訓練、管理預付堂數，並閱讀該子女的能力評量。管理員與被指派教練可為四個比賽情境與四項特質打 1–5 分。管理員也可發布盃賽與聯賽、先發名單與賽果。能力細節不會出現在公開頁面。",
     "openDashboard": "進入儀表板",
+    "openMatches": "比賽賽程",
     "sampleLabel": "範例文案",
     "sampleBody": "目前語言：繁體中文。切換上方語言後，標題與說明應改為英文或日文。",
     "stackTitle": "技術堆疊",
     "stackNext": "Next.js App Router + TypeScript",
     "stackI18n": "next-intl（繁中 / English / 日本語）",
-    "stackSupabase": "Supabase Phone OTP、profiles、多角色、組織主檔、家長連結、訓練場次、預付堂數、球員評量與 RLS",
+    "stackSupabase": "Supabase Phone OTP、profiles、多角色、組織主檔、家長連結、訓練場次、預付堂數、球員評量、公開比賽與 RLS",
     "stackPwa": "PWA：網頁應用程式資訊清單與基本 meta",
     "envTitle": "環境",
     "envConfigured": "已讀取公開 Supabase 變數。登入會連線到此專案（僅使用 anon key）。",
@@ -58,7 +59,7 @@
   "app": {
     "eyebrow": "儀表板",
     "title": "球團儀表板",
-    "welcome": "家長可申請連結子女，為已核准的子女報名訓練場次、查看預付堂數，並閱讀已連結子女的能力評量。管理員可管理隊伍、球員、教練、連結、場次、匯款與評量。教練可開啟被指派名單、登記出缺席，並為該隊球員記錄評量。",
+    "welcome": "家長可申請連結子女，為已核准的子女報名訓練場次、查看預付堂數，並閱讀已連結子女的能力評量。任何人都可以開啟公開賽程。管理員可管理隊伍、球員、教練、連結審核、場次、比賽、匯款申請與評量。教練可開啟被指派的名單、登記出缺席，並為該隊球員記錄評量。",
     "accountTitle": "帳號",
     "phoneLabel": "手機",
     "rolesLabel": "角色",
@@ -78,7 +79,7 @@
     "openChildren": "開啟我的子女",
     "openSessions": "開啟訓練場次",
     "openCredits": "開啟堂數",
-    "openAssessments": "開啟能力評量",
+    "openMatches": "開啟比賽賽程",
     "roles": {
       "parent": "家長",
       "coach": "教練",
@@ -134,6 +135,14 @@
         "title": "訓練場次",
         "body": "依種類建立有標題的場次。例行訓練、盃賽與聯賽可產生每週系列。軟刪除會保留報名紀錄。"
       },
+      "adminMatches": {
+        "title": "公開比賽",
+        "body": "建立盃賽與聯賽、發布只含顯示名稱與背號的先發名單，並登錄賽果。"
+      },
+      "publicMatches": {
+        "title": "比賽賽程",
+        "body": "開啟公開的盃賽與聯賽賽程、賽果與先發名單。不需要額外的私人比賽頁。"
+      },
       "credits": {
         "title": "堂數與儲值",
         "body": "查看已核准子女的剩餘堂數，並提交銀行匯款申請。"
@@ -150,7 +159,8 @@
         "title": "角色升級",
         "body": "應用程式內沒有後門。請在 Dashboard 的 user_roles 資料表為使用者新增 admin 角色。連結教練時也會授予 coach 角色。"
       }
-    }
+    },
+    "openAssessments": "開啟能力評量"
   },
   "nav": {
     "label": "功能區",
@@ -164,16 +174,17 @@
     "coaches": "教練",
     "bindings": "連結審核",
     "credits": "堂數",
-    "assessments": "能力評量",
     "claims": "匯款申請",
-    "creditsAdmin": "堂數管理"
+    "creditsAdmin": "堂數管理",
+    "matches": "比賽",
+    "assessments": "能力評量"
   },
   "access": {
     "deniedTitle": "你沒有權限開啟此頁",
     "deniedBodyAdmin": "管理頁僅限球團管理員。教練可開啟名單；家長可在「子女」申請連結球員。",
     "deniedBodyRoster": "名單僅限被指派的教練與管理員。沒有這些角色的家長請留在儀表板。",
-    "deniedBodyAssessments": "只有被指派教練或管理員可以新增或編輯評量。已核准家長只能閱讀自己子女的紀錄。",
-    "backToDashboard": "返回儀表板"
+    "backToDashboard": "返回儀表板",
+    "deniedBodyAssessments": "只有被指派教練或管理員可以新增或編輯評量。已核准家長只能閱讀自己子女的紀錄。"
   },
   "admin": {
     "title": "管理",
@@ -188,6 +199,8 @@
     "bindingsBody": "家長以隊伍加背號，或出生日期加姓名片段搜尋既有球員後提出申請。你在此核准、拒絕，或撤銷已核准的連結。待審、已拒絕與已撤銷的家長無法讀取該球員資料。",
     "sessionsTitle": "訓練場次",
     "sessionsBody": "在既有隊伍下建立有標題的場次。特別場次只產生 1 場。例行訓練、盃賽與聯賽依所選星期，加上結束日期或「每個星期幾的場次數」產生場次。管理員預設為月曆檢視。停用會暫時隱藏新報名；軟刪除會保留報名與問答。報名自動核准，此階段沒有人數上限。",
+    "matchesTitle": "公開比賽",
+    "matchesBody": "在公開賽程公告盃賽與聯賽。勾選要出現在公開名單的球員（只顯示名稱與背號）。已取消的比賽不會出現在訪客列表。寫入僅限管理員。",
     "createTeam": "新增隊伍",
     "editTeam": "編輯隊伍",
     "createPlayer": "新增球員",
@@ -229,6 +242,9 @@
     "deleteBlockedActive": "此隊伍仍有 {count} 名啟用中球員，無法刪除。請先把球員改到其他隊伍或結束歸屬。",
     "openTeamRoster": "查看名單",
     "createSession": "新增場次",
+    "createMatch": "新增比賽",
+    "bulkCreateMatch": "批次新增聯賽／盃賽",
+    "bulkCreateMatchBody": "一次為同一隊伍建立多場未公開的盃賽或聯賽空殼。對手未定可留空，之後再開單場補對手、發布與名單。",
     "editSession": "編輯場次",
     "deactivateSession": "停用場次",
     "reactivateSession": "重新啟用場次",
@@ -238,6 +254,8 @@
     "rosterEmptyBody": "家長為已核准子女報名後，會出現在這裡。",
     "sessionsEmptyTitle": "尚無訓練場次",
     "sessionsEmptyBody": "先選擇隊伍，再建立第一個場次。",
+    "matchesEmptyTitle": "尚無公開比賽",
+    "matchesEmptyBody": "建立盃賽或聯賽，或把既有盃賽／聯賽場次設為公開比賽頁。",
     "sessionsFilterEmptyTitle": "沒有符合的場次",
     "sessionsFilterEmptyBody": "請改選種類或隊伍，或勾選包含已刪除以查看歷史場次。",
     "filterAllKinds": "全部種類",
@@ -394,12 +412,21 @@
       "pendingLeaveExists": "此報名已有待審或已核准的請假。",
       "leaveNotFound": "找不到這筆請假申請，或它已審核。",
       "invalidPackageBand": "請選擇有效的方案年齡組。",
+      "invalidOpponent": "對手名稱最多 200 字。未定可留空。",
+      "invalidMatchSide": "請選擇主場或客場。",
+      "invalidMatchScore": "比分須為 0 到 99 的整數。",
+      "matchKindRequired": "公開比賽必須是盃賽或聯賽。",
+      "matchNotFound": "找不到這場比賽。",
+      "matchCancelled": "此場比賽已取消。請先恢復，才能發布或登錄賽果。",
+      "matchRosterPlayerInvalid": "每位勾選的球員都必須是此隊伍的在籍成員。",
+      "tooManyMatches": "一次最多建立 40 場。",
+      "matchKickoffRequired": "請至少填一個開賽時間。",
+      "generic": "無法儲存，請再試一次。",
       "invalidScore": "每個情境與特質都需填寫 1 到 5 的整數分數。",
       "noteTooLong": "備註不可超過 1000 字。",
       "invalidAssessedOn": "請輸入有效的評量日期。",
       "futureAssessedOn": "評量日期不可是未來。",
-      "assessmentNotFound": "找不到這筆評量。",
-      "generic": "無法儲存，請再試一次。"
+      "assessmentNotFound": "找不到這筆評量。"
     }
   },
   "children": {
@@ -649,6 +676,69 @@
     "approveLeave": "核准請假",
     "rejectLeave": "拒絕請假",
     "backToRoster": "返回名單"
+  },
+  "matches": {
+    "title": "比賽賽程",
+    "lead": "即將進行與近期的盃賽、聯賽。公開名單只含顯示名稱與背號。",
+    "upcomingTitle": "即將進行",
+    "recentTitle": "近期戰績",
+    "upcomingEmptyTitle": "目前沒有即將進行的比賽",
+    "upcomingEmptyBody": "球團發布盃賽或聯賽後會顯示在此。未發布與已取消的比賽不會公開。",
+    "recentEmptyTitle": "目前沒有近期戰績",
+    "recentEmptyBody": "已完賽且已發布的比賽，過去 90 天會顯示在此。",
+    "backToSchedule": "返回賽程",
+    "titleLabel": "比賽標題",
+    "kickoff": "開賽時間",
+    "venue": "場地",
+    "opponent": "對手",
+    "opponentTbd": "對手未定",
+    "opponentHint": "尚未確定對手可留空，之後再開這場比賽補上，不必重開場次。",
+    "side": "主場／客場",
+    "team": "隊伍",
+    "versus": "對",
+    "score": "比分",
+    "clubScore": "我方得分",
+    "opponentScore": "對方得分",
+    "resultNote": "賽果備註（選填）",
+    "lineupTitle": "公開先發名單",
+    "lineupEmptyTitle": "尚未公布名單",
+    "lineupEmptyBody": "球團尚未為此場比賽發布先發名單。",
+    "notesPrivateHint": "內部備註留在場次紀錄，不會出現在公開比賽頁。",
+    "publishNow": "立即發布",
+    "publish": "發布",
+    "unpublish": "取消發布",
+    "published": "已發布",
+    "unpublished": "未發布",
+    "saveRoster": "儲存公開名單",
+    "saveResult": "儲存賽果",
+    "cancelMatch": "取消比賽",
+    "restoreMatch": "恢復為已排程",
+    "cancelConfirm": "取消「{title}」？公開賽程將不再顯示。訓練場次不會被刪除。",
+    "cancelledBanner": "此場比賽已取消，不會出現在公開賽程。恢復後才能再編輯與發布。",
+    "editTitle": "比賽資料",
+    "resultTitle": "賽果",
+    "rosterTitle": "公開先發名單",
+    "rosterEmptyTitle": "此隊目前沒有在籍球員",
+    "rosterEmptyBody": "請先建立隊伍成員，再勾選要出現在公開名單的球員。",
+    "rosterCount": "名單 {count} 人",
+    "viewPublic": "查看公開頁",
+    "openSession": "開啟場次工具",
+    "attachLead": "此盃賽或聯賽場次尚未公開。填寫主客場（對手未定可留空）即可建立公開比賽頁。寫入仍僅限管理員。",
+    "attachSubmit": "建立公開比賽",
+    "coachReadOnly": "公開比賽（唯讀）。管理員負責發布名單與賽果。",
+    "bulkLead": "為同一隊伍新增多個開賽時間。對手可留空。除非勾選立即發布，否則預設不公開。",
+    "bulkKickoffs": "開賽時間",
+    "bulkCountHint": "一次最多 {max} 場。空白列會略過。",
+    "addKickoff": "再加一場開賽",
+    "sides": {
+      "home": "主場",
+      "away": "客場"
+    },
+    "statuses": {
+      "scheduled": "已排程",
+      "completed": "已完賽",
+      "cancelled": "已取消"
+    }
   },
   "assessments": {
     "title": "能力評量",
