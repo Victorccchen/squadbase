@@ -2,14 +2,11 @@ import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { AccessDenied } from "@/components/access-denied";
-import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { SessionStatusForm } from "@/components/admin/session-status-form";
 import { SessionSoftDeleteForm } from "@/components/admin/session-soft-delete-form";
-import { QuestionForm } from "@/components/sessions/question-form";
-import { MessageThread } from "@/components/sessions/message-thread";
+import { AdminSessionRegistrations } from "@/components/admin/admin-session-registrations";
 import {
-  RegistrationStatusBadge,
   SessionDeletedBadge,
   SessionKindBadge,
   SessionPlayoffBadge,
@@ -22,7 +19,6 @@ import { getMatchForStaff } from "@/lib/org/match-queries";
 import { attachMatchPublication } from "@/lib/org/match-actions";
 import { AttachMatchForm } from "@/components/admin/attach-match-form";
 import { setSessionStatus, softDeleteSession, softDeleteSessionSeries } from "@/lib/org/session-actions";
-import { localizedPlayerName, playerNameList } from "@/lib/org/display-name";
 import { formatClubDateTime, formatClubDateTimeRange } from "@/lib/org/session-time";
 import { secondaryButtonClassName } from "@/lib/ui";
 import { AttendancePanel } from "@/components/credits/attendance-panel";
@@ -71,7 +67,6 @@ export default async function AdminSessionDetailPage({ params }: SessionDetailPa
       : Promise.resolve(null),
   ]);
   const open = registrations.filter((row) => row.status === "registered");
-  const history = registrations.filter((row) => row.status !== "registered");
   const isDeleted = Boolean(session.deleted_at);
   const teamBand = session.team?.age_band ?? "U8";
   const noDebitLabel = !creditsApplyToAgeBand(teamBand) || session.no_debit;
@@ -285,78 +280,11 @@ export default async function AdminSessionDetailPage({ params }: SessionDetailPa
             ) : null}
           </div>
         )}
-        <section className="flex flex-col gap-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
-            {t("rosterTitle")}
-          </h2>
-          {open.length === 0 ? (
-            <EmptyState title={t("rosterEmptyTitle")} body={t("rosterEmptyBody")} />
-          ) : (
-            <ul className="grid gap-3">
-              {open.map((row) => (
-                <li
-                  key={row.id}
-                  className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900"
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <RegistrationStatusBadge
-                      status={row.status}
-                      label={sessionsT(`statuses.${row.status}`)}
-                    />
-                    <span className="font-medium">
-                      {row.player ? localizedPlayerName(row.player, locale) : sessionsT("unknownPlayer")}
-                    </span>
-                  </div>
-                  {row.player ? (
-                    <p className="text-sm text-zinc-500">{playerNameList(row.player)}</p>
-                  ) : null}
-                  {row.parent_note ? (
-                    <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">
-                      {sessionsT("parentNote")}: {row.parent_note}
-                    </p>
-                  ) : null}
-                  <div className="flex flex-col gap-3">
-                    <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                      {sessionsT("qaTitle")}
-                    </h3>
-                    <MessageThread messages={row.messages} locale={locale} />
-                    <QuestionForm
-                      registrationId={row.id}
-                      sessionId={session.id}
-                      authorRole="admin"
-                    />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-        {history.length > 0 ? (
-          <section className="flex flex-col gap-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
-              {t("registrationHistoryTitle")}
-            </h2>
-            <ul className="grid gap-3">
-              {history.map((row) => (
-                <li
-                  key={row.id}
-                  className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900"
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <RegistrationStatusBadge
-                      status={row.status}
-                      label={sessionsT(`statuses.${row.status}`)}
-                    />
-                    <span className="font-medium">
-                      {row.player ? localizedPlayerName(row.player, locale) : sessionsT("unknownPlayer")}
-                    </span>
-                  </div>
-                  <MessageThread messages={row.messages} locale={locale} />
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
+        <AdminSessionRegistrations
+          registrations={registrations}
+          sessionId={session.id}
+          locale={locale}
+        />
       </main>
       <footer className="border-t border-zinc-200 px-6 py-4 pb-10 text-sm text-zinc-500 dark:border-zinc-800">
         {common("footer")}

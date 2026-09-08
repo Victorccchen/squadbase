@@ -4,16 +4,18 @@ import { Link } from "@/i18n/navigation";
 import { AccessDenied } from "@/components/access-denied";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { AdminSessionRegistrations } from "@/components/admin/admin-session-registrations";
 import { MatchForm } from "@/components/admin/match-form";
 import { MatchRosterForm } from "@/components/admin/match-roster-form";
 import { MatchResultForm } from "@/components/admin/match-result-form";
 import { MatchPublishForm } from "@/components/admin/match-publish-form";
 import { MatchCancelForm, MatchRestoreForm } from "@/components/admin/match-cancel-form";
-import { SessionKindBadge, SessionPlayoffBadge } from "@/components/sessions/session-status-badge";
+import { SessionDeletedBadge, SessionKindBadge, SessionPlayoffBadge } from "@/components/sessions/session-status-badge";
 import { MatchSideBadge, MatchStatusBadge } from "@/components/matches/match-status-badge";
 import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { listTeams } from "@/lib/org/queries";
 import { getMatchForStaff, listMatchRosterForStaff } from "@/lib/org/match-queries";
+import { listSessionRegistrations } from "@/lib/org/session-queries";
 import {
   cancelMatch,
   restoreMatch,
@@ -48,14 +50,19 @@ export default async function AdminMatchDetailPage({ params }: AdminMatchDetailP
   const org = await getTranslations("org");
   const common = await getTranslations("common");
   const locale = await getLocale();
-  const [teams, roster, teamRoster] = await Promise.all([
+  const [teams, roster, teamRoster, registrations] = await Promise.all([
     listTeams({ kind: "competition_team" }),
     listMatchRosterForStaff(match.id),
     match.team_id ? listActiveRosterForTeam(match.team_id) : Promise.resolve([]),
+    listSessionRegistrations(match.id),
   ]);
   const score = formatMatchScore(match.publication.club_score, match.publication.opponent_score);
   const cancelled = match.publication.public_status === "cancelled";
+  const isDeleted = Boolean(match.deleted_at);
   const updateAction = updateMatch.bind(null, match.id);
+  const registeredIds = registrations
+    .filter((row) => row.status === "registered")
+    .map((row) => row.player_id);
 
   return (
     <>
@@ -77,6 +84,7 @@ export default async function AdminMatchDetailPage({ params }: AdminMatchDetailP
         <div className="flex flex-wrap gap-2">
           <SessionKindBadge kind={match.kind} label={sessionsT(`kinds.${match.kind}`)} />
           {match.is_playoff ? <SessionPlayoffBadge label={sessionsT("playoff")} /> : null}
+          {isDeleted ? <SessionDeletedBadge label={t("sessionDeleted")} /> : null}
           <MatchStatusBadge
             status={match.publication.public_status}
             label={matchesT(`statuses.${match.publication.public_status}`)}
@@ -86,45 +94,58 @@ export default async function AdminMatchDetailPage({ params }: AdminMatchDetailP
             {match.publication.is_published ? matchesT("published") : matchesT("unpublished")}
           </span>
         </div>
+        <p className="text-sm text-zinc-500">
+          {t("rosterCount", { count: registeredIds.length })}
+          {" · "}
+          {matchesT("rosterCount", { count: roster.length })}
+        </p>
         {score ? (
           <p className="text-lg font-semibold">
             {matchesT("score")}: {score}
           </p>
         ) : null}
-        <div className="flex flex-col gap-3 sm:flex-row">
-          {cancelled ? (
-            <MatchRestoreForm action={restoreMatch.bind(null, match.id)} />
-          ) : (
-            <>
-              <MatchPublishForm
-                action={setMatchPublished.bind(null, match.id)}
-                isPublished={match.publication.is_published}
-              />
-              <MatchCancelForm
-                action={cancelMatch.bind(null, match.id)}
-                confirmMessage={matchesT("cancelConfirm", { title: match.title })}
-              />
-            </>
-          )}
-        </div>
+        {isDeleted ? (
+          <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:bg-amber-950 dark:text-amber-100">
+            {t("sessionDeletedBanner")}
+          </p>
+        ) : (
+          <div className="flex flex-col gap-3 sm:flex-row">
+            {cancelled ? (
+              <MatchRestoreForm action={restoreMatch.bind(null, match.id)} />
+            ) : (
+              <>
+                <MatchPublishForm
+                  action={setMatchPublished.bind(null, match.id)}
+                  isPublished={match.publication.is_published}
+                />
+                <MatchCancelForm
+                  action={cancelMatch.bind(null, match.id)}
+                  confirmMessage={matchesT("cancelConfirm", { title: match.title })}
+                />
+              </>
+            )}
+          </div>
+        )}
         {cancelled ? (
           <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:bg-amber-950 dark:text-amber-100">
             {matchesT("cancelledBanner")}
           </p>
         ) : null}
-        <section className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
-            {matchesT("editTitle")}
-          </h2>
-          <MatchForm
-            action={updateAction}
-            teams={teams}
-            session={match}
-            publication={match.publication}
-            submitLabel={t("save")}
-          />
-        </section>
-        {cancelled ? null : (
+        {isDeleted ? null : (
+          <section className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+              {matchesT("editTitle")}
+            </h2>
+            <MatchForm
+              action={updateAction}
+              teams={teams}
+              session={match}
+              publication={match.publication}
+              submitLabel={t("save")}
+            />
+          </section>
+        )}
+        {cancelled || isDeleted ? null : (
           <section className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
               {matchesT("resultTitle")}
@@ -137,11 +158,20 @@ export default async function AdminMatchDetailPage({ params }: AdminMatchDetailP
             />
           </section>
         )}
+        <AdminSessionRegistrations
+          registrations={registrations}
+          sessionId={match.id}
+          locale={locale}
+          variant="match"
+        />
         <section className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
-            {matchesT("rosterTitle")}
+            {matchesT("staffRosterTitle")}
           </h2>
-          {teamRoster.length === 0 ? (
+          <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">
+            {matchesT("staffRosterHint")}
+          </p>
+          {isDeleted ? null : teamRoster.length === 0 ? (
             <EmptyState title={matchesT("rosterEmptyTitle")} body={matchesT("rosterEmptyBody")} />
           ) : (
             <MatchRosterForm
@@ -151,6 +181,7 @@ export default async function AdminMatchDetailPage({ params }: AdminMatchDetailP
                 jerseyNumber: row.membership.jersey_number,
               }))}
               selectedIds={roster.map((row) => row.player_id)}
+              registeredIds={registeredIds}
               locale={locale}
             />
           )}

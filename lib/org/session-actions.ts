@@ -714,7 +714,11 @@ export async function postSessionMessage(
 
   revalidateSessions();
   if (authorRole === "admin" && sessionId) {
-    redirectAdmin(`/app/admin/sessions/${sessionId}`, formData);
+    const next = readString(formData, "next");
+    redirectAdmin(
+      next === "match" ? `/app/admin/matches/${sessionId}` : `/app/admin/sessions/${sessionId}`,
+      formData,
+    );
   } else {
     redirectParentFromForm(formData);
   }

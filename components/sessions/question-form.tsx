@@ -12,9 +12,15 @@ type QuestionFormProps = {
   registrationId: string;
   sessionId: string;
   authorRole: SessionMessageAuthorRole;
+  next?: "session" | "match";
 };
 
-export function QuestionForm({ registrationId, sessionId, authorRole }: QuestionFormProps) {
+export function QuestionForm({
+  registrationId,
+  sessionId,
+  authorRole,
+  next = "session",
+}: QuestionFormProps) {
   const t = useTranslations("sessions");
   const org = useTranslations("org");
   const [state, formAction, pending] = useActionState(
@@ -28,6 +34,7 @@ export function QuestionForm({ registrationId, sessionId, authorRole }: Question
       <input type="hidden" name="registration_id" value={registrationId} />
       <input type="hidden" name="session_id" value={sessionId} />
       <input type="hidden" name="author_role" value={authorRole} />
+      {authorRole === "admin" ? <input type="hidden" name="next" value={next} /> : null}
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         {authorRole === "admin" ? t("reply") : t("askQuestion")}
         <textarea
