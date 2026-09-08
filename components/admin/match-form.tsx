@@ -6,7 +6,7 @@ import { LocaleHiddenField } from "@/components/admin/locale-hidden-field";
 import { INITIAL_ORG_ACTION_STATE } from "@/lib/org/errors";
 import type { OrgActionState } from "@/lib/org/errors";
 import type { MatchPublication, Team, TrainingSession } from "@/lib/supabase/database.types";
-import { MATCH_KINDS } from "@/lib/org/match";
+import { MATCH_KINDS, parseMatchKind } from "@/lib/org/match";
 import { toDateTimeLocalInput } from "@/lib/org/session-time";
 import { inputClassName, primaryButtonClassName } from "@/lib/ui";
 
@@ -34,7 +34,7 @@ export function MatchForm({
   const [state, formAction, pending] = useActionState(action, INITIAL_ORG_ACTION_STATE);
   const isEdit = Boolean(session);
   const [kind, setKind] = useState<(typeof MATCH_KINDS)[number]>(
-    session?.kind === "league" ? "league" : "cup",
+    parseMatchKind(session?.kind ?? "") ?? "cup",
   );
   const activeTeams = teams.filter(
     (team) => team.status === "active" || team.id === session?.team_id,
@@ -85,9 +85,12 @@ export function MatchForm({
             name="kind"
             required
             value={kind}
-            onChange={(event) =>
-              setKind(event.target.value === "league" ? "league" : "cup")
-            }
+            onChange={(event) => {
+              const parsed = parseMatchKind(event.target.value);
+              if (parsed) {
+                setKind(parsed);
+              }
+            }}
             className={inputClassName}
           >
             {MATCH_KINDS.map((value) => (

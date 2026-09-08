@@ -2,12 +2,15 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   adminSessionsHref,
+  calendarHrefPath,
+  calendarListHref,
   defaultDayForMonth,
   groupSessionsByClubDate,
   groupSessionsByTeam,
   isDateInClubWeek,
   monthGrid,
   parseAdminSessionsQuery,
+  resolveSurfaceKinds,
   sessionsInWeek,
   shiftClubDate,
   uniqueAgeBandAbbrevsOnDate,
@@ -15,6 +18,7 @@ import {
   visibleMonthRange,
   weekRangeForDate,
 } from "./session-calendar.ts";
+import { TRAINING_SESSION_KINDS } from "./session-recurrence.ts";
 import type { CalendarSession } from "./session-calendar.ts";
 
 function session(
@@ -48,6 +52,18 @@ describe("monthGrid", () => {
 describe("parseAdminSessionsQuery", () => {
   const now = new Date("2026-09-04T01:00:00.000Z");
 
+  it("honours defaultView list for parent-style surfaces", () => {
+    const query = parseAdminSessionsQuery({}, now, {
+      allowedKinds: TRAINING_SESSION_KINDS,
+      defaultView: "list",
+    });
+    assert.equal(query.view, "list");
+    assert.equal(
+      parseAdminSessionsQuery({ view: "calendar" }, now, { defaultView: "list" }).view,
+      "calendar",
+    );
+  });
+
   it("defaults to calendar view, today, and the club month", () => {
     const query = parseAdminSessionsQuery({}, now);
     assert.equal(query.view, "calendar");
@@ -79,6 +95,38 @@ describe("parseAdminSessionsQuery", () => {
   });
 });
 
+describe("calendarHrefPath T6P1-7/8", () => {
+  it("emits a string href with view=calendar for parent surfaces", () => {
+    const href = calendarHrefPath(
+      calendarListHref("/app/sessions", {
+        year: 2026,
+        month: 9,
+        day: "2026-09-08",
+        view: "calendar",
+        kinds: [],
+        teamIds: [],
+        includeDeleted: false,
+      }),
+    );
+    assert.equal(href.startsWith("/app/sessions?"), true);
+    assert.match(href, /view=calendar/);
+    assert.match(href, /month=2026-09/);
+    const competitions = calendarHrefPath(
+      calendarListHref("/app/competitions", {
+        year: 2026,
+        month: 9,
+        day: "2026-09-08",
+        view: "calendar",
+        kinds: [],
+        teamIds: [],
+        includeDeleted: false,
+      }),
+    );
+    assert.match(competitions, /^\/app\/competitions\?/);
+    assert.match(competitions, /view=calendar/);
+  });
+});
+
 describe("adminSessionsHref", () => {
   it("keeps month/day and repeated filters", () => {
     const href = adminSessionsHref({
@@ -95,11 +143,37 @@ describe("adminSessionsHref", () => {
       query: {
         month: "2026-09",
         day: "2026-09-10",
+        view: "calendar",
         kind: ["regular", "league"],
         team: ["team-1"],
         includeDeleted: "1",
       },
     });
+  });
+
+  it("T6P1-1 training surface never lists cup/league/friendly", () => {
+    const now = new Date("2026-09-04T01:00:00.000Z");
+    const query = parseAdminSessionsQuery(
+      { kind: ["cup", "league", "friendly", "regular"] },
+      now,
+      { allowedKinds: TRAINING_SESSION_KINDS },
+    );
+    assert.deepEqual(query.kinds, ["regular"]);
+    assert.deepEqual(resolveSurfaceKinds([], TRAINING_SESSION_KINDS), ["regular", "special"]);
+    assert.equal(resolveSurfaceKinds([], TRAINING_SESSION_KINDS).includes("cup"), false);
+    assert.equal(resolveSurfaceKinds(["league"], TRAINING_SESSION_KINDS).includes("league"), false);
+    const matchesHref = calendarListHref("/app/admin/matches", {
+      year: 2026,
+      month: 9,
+      day: "2026-09-10",
+      view: "list",
+      kinds: ["friendly"],
+      teamIds: [],
+      includeDeleted: false,
+    });
+    assert.equal(matchesHref.pathname, "/app/admin/matches");
+    assert.equal(matchesHref.query.view, "list");
+    assert.deepEqual(matchesHref.query.kind, ["friendly"]);
   });
 });
 

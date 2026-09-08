@@ -25,10 +25,14 @@ describe("sessionSignupUrl", () => {
     );
   });
 
-  it("uses the parent competitions path for cup and league", () => {
+  it("uses the parent competitions path for cup, league, and friendly", () => {
     assert.equal(
       sessionSignupUrl("https://app.example", "en", "mid-1", "league"),
       "https://app.example/en/app/competitions/mid-1",
+    );
+    assert.equal(
+      sessionSignupUrl("https://app.example", "zh-Hant", "fid-1", "friendly"),
+      "https://app.example/zh-Hant/app/competitions/fid-1",
     );
   });
 });

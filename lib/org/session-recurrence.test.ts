@@ -16,11 +16,12 @@ const FIRST_START = "2026-09-10T18:00:00+08:00";
 const FIRST_END = "2026-09-10T19:30:00+08:00";
 
 describe("parseSessionKind", () => {
-  it("accepts the four Stage 4A kinds", () => {
+  it("accepts Stage 4A kinds plus friendly", () => {
     assert.equal(parseSessionKind("regular"), "regular");
     assert.equal(parseSessionKind("special"), "special");
     assert.equal(parseSessionKind("cup"), "cup");
     assert.equal(parseSessionKind("league"), "league");
+    assert.equal(parseSessionKind("friendly"), "friendly");
     assert.equal(parseSessionKind("playoff"), null);
     assert.equal(parseSessionKind(""), null);
   });
@@ -63,6 +64,20 @@ describe("generateSessionOccurrences", () => {
       assert.equal(result.occurrences.length, 1);
       assert.equal(result.occurrences[0].startsAt, FIRST_START);
       assert.equal(result.occurrences[0].endsAt, FIRST_END);
+    }
+  });
+
+  it("friendly is a one-off like special (match UI, not a training series)", () => {
+    const result = generateSessionOccurrences({
+      kind: "friendly",
+      startsAt: FIRST_START,
+      endsAt: FIRST_END,
+      untilDate: null,
+      weekCount: null,
+    });
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.equal(result.occurrences.length, 1);
     }
   });
 

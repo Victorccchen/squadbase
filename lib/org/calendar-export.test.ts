@@ -47,6 +47,15 @@ describe("T6P-7 Google/.ics calendar", () => {
     assert.equal(icsFilename("Victory League"), "victory-league.ics");
   });
 
+  it("includes opponent for friendly matches", () => {
+    const event = calendarEventFromPublicFields(
+      { ...PUBLIC_FIELDS, kind: "friendly", title: "Saturday friendly" },
+      { kindLabel: "Friendly", opponentTbd: "TBD" },
+    );
+    assert.match(event.description ?? "", /Friendly/);
+    assert.match(event.description ?? "", /Rivals FC/);
+  });
+
   it("uses TBD when opponent is missing", () => {
     const event = calendarEventFromPublicFields(
       { ...PUBLIC_FIELDS, opponent: null },

@@ -4,7 +4,8 @@ import {
   ISO_WEEKDAYS,
 } from "@/lib/org/session-recurrence";
 import {
-  adminSessionsHref,
+  calendarHrefPath,
+  calendarListHref,
   defaultDayForMonth,
   monthGrid,
   shiftYearMonth,
@@ -12,22 +13,28 @@ import {
   uniqueKindsOnDate,
   isDateInClubWeek,
   type AdminSessionsQuery,
+  type CalendarListPath,
   type CalendarSession,
 } from "@/lib/org/session-calendar";
 import { SESSION_KIND_DOT_CLASS } from "@/lib/org/session-kind-colors";
 import { formatClubMonth } from "@/lib/org/session-time";
 import { SessionKindLegend } from "@/components/admin/session-kind-legend";
+import type { SessionKind } from "@/lib/supabase/database.types";
 
 type SessionMonthCalendarProps = {
   query: AdminSessionsQuery;
   sessions: CalendarSession[];
   today: string;
+  pathname: CalendarListPath;
+  legendKinds?: readonly SessionKind[];
 };
 
 export async function SessionMonthCalendar({
   query,
   sessions,
   today,
+  pathname,
+  legendKinds,
 }: SessionMonthCalendarProps) {
   const t = await getTranslations("sessions");
   const admin = await getTranslations("admin");
@@ -35,13 +42,13 @@ export async function SessionMonthCalendar({
   const grid = monthGrid(query.year, query.month);
   const prev = shiftYearMonth(query.year, query.month, -1);
   const next = shiftYearMonth(query.year, query.month, 1);
-  const prevHref = adminSessionsHref({
+  const prevHref = calendarListHref(pathname, {
     ...query,
     year: prev.year,
     month: prev.month,
     day: defaultDayForMonth(prev.year, prev.month, today),
   });
-  const nextHref = adminSessionsHref({
+  const nextHref = calendarListHref(pathname, {
     ...query,
     year: next.year,
     month: next.month,
@@ -52,7 +59,7 @@ export async function SessionMonthCalendar({
     <section className="flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
       <div className="flex items-center justify-between gap-3">
         <Link
-          href={prevHref}
+          href={calendarHrefPath(prevHref)}
           className="rounded-full border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
         >
           {admin("prevMonth")}
@@ -61,13 +68,13 @@ export async function SessionMonthCalendar({
           {formatClubMonth(query.year, query.month, locale)}
         </h2>
         <Link
-          href={nextHref}
+          href={calendarHrefPath(nextHref)}
           className="rounded-full border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
         >
           {admin("nextMonth")}
         </Link>
       </div>
-      <SessionKindLegend />
+      <SessionKindLegend kinds={legendKinds} />
       <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium uppercase tracking-wide text-zinc-500">
         {ISO_WEEKDAYS.map((weekday) => (
           <div key={weekday} className="py-1">
@@ -83,7 +90,7 @@ export async function SessionMonthCalendar({
           const inSelectedWeek = isDateInClubWeek(cell.date, query.day);
           const isToday = cell.date === today;
           const parts = cell.date.split("-");
-          const href = adminSessionsHref({
+          const href = calendarListHref(pathname, {
             ...query,
             year: Number(parts[0]),
             month: Number(parts[1]),
@@ -93,7 +100,7 @@ export async function SessionMonthCalendar({
           return (
             <Link
               key={cell.date}
-              href={href}
+              href={calendarHrefPath(href)}
               aria-current={selected ? "date" : undefined}
               aria-label={cell.date}
               className={`flex min-h-16 flex-col items-center gap-1 rounded-xl border px-1 py-1.5 text-sm ${

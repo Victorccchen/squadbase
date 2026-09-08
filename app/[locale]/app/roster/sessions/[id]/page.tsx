@@ -21,7 +21,7 @@ import {
   listBalancesForPlayers,
 } from "@/lib/credits/queries";
 import { creditsApplyToAgeBand } from "@/lib/credits/debit-rules";
-import { publicOpponentLabel } from "@/lib/org/match";
+import { publicOpponentLabel, isMatchKind } from "@/lib/org/match";
 import { formatClubDateTimeRange } from "@/lib/org/session-time";
 import { secondaryButtonClassName } from "@/lib/ui";
 
@@ -53,13 +53,13 @@ export default async function CoachSessionAttendancePage({
     listSessionRegistrations(session.id),
     listAttendanceForSession(session.id),
     session.team_id ? listActiveRosterForTeam(session.team_id) : Promise.resolve([]),
-    session.kind === "cup" || session.kind === "league"
+    isMatchKind(session.kind)
       ? getMatchForStaff(session.id)
       : Promise.resolve(null),
   ]);
 
   const registered = registrations.filter((row) => row.status === "registered");
-  const useRoster = session.kind === "cup" || session.kind === "league";
+  const useRoster = isMatchKind(session.kind);
   const players = useRoster
     ? roster.map((row) => ({ player: row.player, jerseyNumber: row.membership.jersey_number }))
     : registered

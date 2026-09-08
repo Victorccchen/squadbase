@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getPublicSupabaseEnv } from "@/lib/env";
-import { partitionPublicMatches } from "@/lib/org/match";
+import { isMatchKind, parseMatchKind, partitionPublicMatches } from "@/lib/org/match";
+import { parseUuid } from "@/lib/org/parse";
 import type {
   MatchPublication,
   MatchRosterRow,
@@ -80,12 +81,42 @@ export async function listPublishedMatchRoster(
   return data ?? [];
 }
 
-export async function listMatchesForAdmin(): Promise<MatchAdminRow[]> {
+export type AdminMatchListFilters = {
+  kinds?: string[];
+  teamIds?: string[];
+  startsFrom?: string;
+  startsToExclusive?: string;
+};
+
+export async function listMatchesForAdmin(
+  filters: AdminMatchListFilters = {},
+): Promise<MatchAdminRow[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("match_publications")
-    .select("*, training_sessions(*, teams(*))")
+    .select("*, training_sessions!inner(*, teams(*))")
     .order("created_at", { ascending: false });
+
+  const kinds = (filters.kinds ?? [])
+    .map((value) => parseMatchKind(value))
+    .filter((kind): kind is NonNullable<typeof kind> => kind !== null);
+  if (kinds.length > 0) {
+    query = query.in("training_sessions.kind", kinds);
+  }
+  const teamIds = (filters.teamIds ?? [])
+    .map((value) => parseUuid(value))
+    .filter((id): id is string => id !== null);
+  if (teamIds.length > 0) {
+    query = query.in("training_sessions.team_id", teamIds);
+  }
+  if (filters.startsFrom) {
+    query = query.gte("training_sessions.starts_at", filters.startsFrom);
+  }
+  if (filters.startsToExclusive) {
+    query = query.lt("training_sessions.starts_at", filters.startsToExclusive);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("listMatchesForAdmin", error.message);
@@ -123,6 +154,9 @@ export async function listMatchesForAdmin(): Promise<MatchAdminRow[]> {
       continue;
     }
     const { teams, ...session } = sessionSource;
+    if (!isMatchKind(session.kind)) {
+      continue;
+    }
     rows.push({
       ...(session as TrainingSession),
       team: one(teams ?? null),

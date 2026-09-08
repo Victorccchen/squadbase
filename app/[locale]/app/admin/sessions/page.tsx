@@ -19,13 +19,20 @@ import { listTeams } from "@/lib/org/queries";
 import { listSessionsForAdmin } from "@/lib/org/session-queries";
 import { setSessionStatus } from "@/lib/org/session-actions";
 import { formatClubDateTimeRange } from "@/lib/org/session-time";
+import { TRAINING_SESSION_KINDS, isTrainingSessionKind } from "@/lib/org/session-recurrence";
 import {
-  adminSessionsHref,
+  adminGroupHref,
+  groupTrainingSessionsForParent,
+  nextOccurrenceInGroup,
+} from "@/lib/org/parent-series";
+import { SeriesGroupCard } from "@/components/sessions/series-group-card";
+import {
+  calendarWeekNavHrefs,
   clubRangeToTimestamptz,
   clubTodayDate,
   parseAdminSessionsQuery,
+  resolveSurfaceKinds,
   sessionsInWeek,
-  shiftClubDate,
   visibleMonthRange,
   weekRangeForDate,
 } from "@/lib/org/session-calendar";
@@ -48,18 +55,18 @@ export default async function AdminSessionsPage({ searchParams }: AdminSessionsP
   }
 
   const params = await searchParams;
-  const query = parseAdminSessionsQuery(params);
+  const query = parseAdminSessionsQuery(params, undefined, {
+    allowedKinds: TRAINING_SESSION_KINDS,
+    defaultView: "list",
+  });
+  const kinds = resolveSurfaceKinds(query.kinds, TRAINING_SESSION_KINDS);
   const range = visibleMonthRange(query.year, query.month);
   const week = weekRangeForDate(query.day);
   const fromDate =
     range && week && week.from < range.from ? week.from : (range?.from ?? query.day);
   const toDate = range && week && week.to > range.to ? week.to : (range?.to ?? query.day);
   const bounds =
-    query.view === "calendar"
-      ? clubRangeToTimestamptz(fromDate, toDate)
-      : range
-        ? clubRangeToTimestamptz(range.from, range.to)
-        : null;
+    query.view === "calendar" ? clubRangeToTimestamptz(fromDate, toDate) : null;
   const today = clubTodayDate();
 
   const t = await getTranslations("admin");
@@ -67,9 +74,9 @@ export default async function AdminSessionsPage({ searchParams }: AdminSessionsP
   const org = await getTranslations("org");
   const common = await getTranslations("common");
   const locale = await getLocale();
-  const [sessions, teams] = await Promise.all([
+  const [rawSessions, teams] = await Promise.all([
     listSessionsForAdmin({
-      kinds: query.kinds,
+      kinds,
       teamIds: query.teamIds,
       includeDeleted: query.includeDeleted,
       startsFrom: bounds?.from,
@@ -77,29 +84,13 @@ export default async function AdminSessionsPage({ searchParams }: AdminSessionsP
     }),
     listTeams(),
   ]);
+  const sessions = rawSessions.filter((row) => isTrainingSessionKind(row.kind));
+  const groups = groupTrainingSessionsForParent(sessions);
   const weekSessions = sessionsInWeek(sessions, query.day);
-  const prevWeek = shiftClubDate(query.day, -7);
-  const nextWeek = shiftClubDate(query.day, 7);
-  const prevWeekHref = prevWeek
-    ? adminSessionsHref({
-        ...query,
-        year: prevWeek.year,
-        month: prevWeek.month,
-        day: prevWeek.day,
-        view: "calendar",
-      })
-    : adminSessionsHref({ ...query, view: "calendar" });
-  const nextWeekHref = nextWeek
-    ? adminSessionsHref({
-        ...query,
-        year: nextWeek.year,
-        month: nextWeek.month,
-        day: nextWeek.day,
-        view: "calendar",
-      })
-    : adminSessionsHref({ ...query, view: "calendar" });
-  const calendarHref = adminSessionsHref({ ...query, view: "calendar" });
-  const listHref = adminSessionsHref({ ...query, view: "list" });
+  const { calendarHref, listHref, prevWeekHref, nextWeekHref } = calendarWeekNavHrefs(
+    "/app/admin/sessions",
+    query,
+  );
   const hasFilters = query.kinds.length > 0 || query.teamIds.length > 0 || query.includeDeleted;
 
   return (
@@ -110,89 +101,127 @@ export default async function AdminSessionsPage({ searchParams }: AdminSessionsP
           description={t("sessionsBody")}
           actions={
             <span className="flex flex-wrap gap-2">
-              <SessionViewToggle
-                calendarHref={calendarHref}
-                listHref={listHref}
-                view={query.view}
-                calendarLabel={t("calendarView")}
-                listLabel={t("listView")}
-              />
               <Link href="/app/admin/sessions/new" className={primaryButtonClassName}>
                 {t("createSession")}
               </Link>
             </span>
           }
         />
-        <SessionListFiltersForm query={query} teams={teams} />
+        <SessionViewToggle
+          calendarHref={calendarHref}
+          listHref={listHref}
+          view={query.view}
+          calendarLabel={t("calendarView")}
+          listLabel={t("listView")}
+          toggleLabel={t("viewToggleLabel")}
+        />
+        <SessionListFiltersForm query={query} teams={teams} kinds={TRAINING_SESSION_KINDS} />
         {query.view === "list" ? (
-          sessions.length === 0 ? (
+          groups.length === 0 ? (
             <EmptyState
               title={hasFilters ? t("sessionsFilterEmptyTitle") : t("sessionsEmptyTitle")}
               body={hasFilters ? t("sessionsFilterEmptyBody") : t("sessionsEmptyBody")}
             />
           ) : (
             <ul className="grid gap-3">
-              {sessions.map((session) => (
-                <li
-                  key={session.id}
-                  className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900"
-                >
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="flex flex-col gap-1">
-                      <Link
-                        href={`/app/admin/sessions/${session.id}`}
-                        className="font-semibold hover:underline"
-                      >
-                        {session.title}
-                      </Link>
-                      <p className="text-sm text-zinc-500">
-                        {session.team?.name ?? org("unknownTeam")}
-                        {" · "}
-                        {formatClubDateTimeRange(session.starts_at, session.ends_at, locale)}
-                      </p>
-                      {session.location ? (
-                        <p className="text-sm text-zinc-500">{session.location}</p>
-                      ) : null}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <SessionKindBadge kind={session.kind} label={sessionsT(`kinds.${session.kind}`)} />
-                      {session.is_playoff ? <SessionPlayoffBadge label={sessionsT("playoff")} /> : null}
-                      {session.deleted_at ? (
-                        <SessionDeletedBadge label={t("sessionDeleted")} />
-                      ) : (
-                        <SessionStatusBadge
-                          status={session.status}
-                          label={org(session.status === "active" ? "statusActive" : "statusInactive")}
+              {groups.map((group) => {
+                const next = nextOccurrenceInGroup(group.sessions);
+                if (group.groupKind === "training-series") {
+                  return (
+                    <SeriesGroupCard
+                      key={group.key}
+                      href={adminGroupHref(group)}
+                      title={group.title}
+                      teamName={next?.team?.name ?? org("unknownTeam")}
+                      kind={group.sessionKind}
+                      isPlayoff={group.sessions.some((row) => row.is_playoff)}
+                      nextStartsAt={next?.starts_at ?? ""}
+                      occurrenceCount={group.sessions.length}
+                      locale={locale}
+                      detail={t("rosterCount", {
+                        count: group.sessions.reduce((sum, row) => sum + row.registeredCount, 0),
+                      })}
+                      viewLabel={t("edit")}
+                    />
+                  );
+                }
+                const session = next ?? group.sessions[0];
+                if (!session) {
+                  return null;
+                }
+                return (
+                  <li
+                    key={session.id}
+                    className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900"
+                  >
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="flex flex-col gap-1">
+                        <Link
+                          href={`/app/admin/sessions/${session.id}`}
+                          className="font-semibold hover:underline"
+                        >
+                          {session.title}
+                        </Link>
+                        <p className="text-sm text-zinc-500">
+                          {session.team?.name ?? org("unknownTeam")}
+                          {" · "}
+                          {formatClubDateTimeRange(session.starts_at, session.ends_at, locale)}
+                        </p>
+                        {session.location ? (
+                          <p className="text-sm text-zinc-500">{session.location}</p>
+                        ) : null}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <SessionKindBadge
+                          kind={session.kind}
+                          label={sessionsT(`kinds.${session.kind}`)}
                         />
-                      )}
-                      <span className="text-sm text-zinc-500">
-                        {t("rosterCount", { count: session.registeredCount })}
-                      </span>
+                        {session.is_playoff ? (
+                          <SessionPlayoffBadge label={sessionsT("playoff")} />
+                        ) : null}
+                        {session.deleted_at ? (
+                          <SessionDeletedBadge label={t("sessionDeleted")} />
+                        ) : (
+                          <SessionStatusBadge
+                            status={session.status}
+                            label={org(session.status === "active" ? "statusActive" : "statusInactive")}
+                          />
+                        )}
+                        <span className="text-sm text-zinc-500">
+                          {t("rosterCount", { count: session.registeredCount })}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  {session.deleted_at ? null : (
-                    <div className="flex flex-wrap gap-2">
-                      <Link
-                        href={`/app/admin/sessions/${session.id}/edit`}
-                        className="inline-flex items-center justify-center rounded-full border border-zinc-300 px-4 py-2.5 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
-                      >
-                        {t("edit")}
-                      </Link>
-                      <SessionStatusForm
-                        status={session.status}
-                        action={setSessionStatus.bind(null, session.id)}
-                        redirectTo="list"
-                      />
-                    </div>
-                  )}
-                </li>
-              ))}
+                    {session.deleted_at ? null : (
+                      <div className="flex flex-wrap gap-2">
+                        <Link
+                          href={`/app/admin/sessions/${session.id}/edit`}
+                          className="inline-flex items-center justify-center rounded-full border border-zinc-300 px-4 py-2.5 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                        >
+                          {t("edit")}
+                        </Link>
+                        <SessionStatusForm
+                          status={session.status}
+                          action={setSessionStatus.bind(null, session.id)}
+                          redirectTo="list"
+                        />
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )
         ) : (
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
             <div className="min-w-0 flex-1">
-              <SessionMonthCalendar query={query} sessions={sessions} today={today} />
+              <SessionMonthCalendar
+                query={query}
+                sessions={sessions}
+                today={today}
+                pathname="/app/admin/sessions"
+                legendKinds={TRAINING_SESSION_KINDS}
+              />
             </div>
             <div className="min-w-0 flex-1 lg:max-w-md">
               <SessionDayAgenda
@@ -200,6 +229,7 @@ export default async function AdminSessionsPage({ searchParams }: AdminSessionsP
                 weekFrom={week?.from ?? query.day}
                 weekTo={week?.to ?? query.day}
                 sessions={weekSessions}
+                occurrenceHref={(id) => `/app/admin/sessions/${id}`}
                 prevHref={prevWeekHref}
                 nextHref={nextWeekHref}
               />

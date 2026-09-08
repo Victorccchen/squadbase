@@ -2,7 +2,7 @@
 
 Responsive web + PWA for a football **Club** (球團) operations app: training squads, courses, attendance, assessments, and matches/events.
 
-This repository is currently **Stage 6P**: Stages 1–5B plus a **parent training / competition split**. Parent nav and dashboard list **訓練** (`/app/sessions`, kinds `regular` / `special`) separately from **賽事** (`/app/competitions`, kinds `cup` / `league`). Same-series training groups by `series_id`; cup/league fixtures with the same team, kind, and title (including Victory League shells without a DB series) share a series page with bulk attend/decline. Every parent-visible date shows a locale weekday in Asia/Taipei. Public `/matches` stays the visitor schedule. Anyone can add a session or match to Google, Apple, or Outlook calendars (title, start/end, location, opponent or TBD, kind only). Debit rules are unchanged. Coaches and admins still record 1–5 scores for four match situations and four player traits. Ability details are **never** shown on visitor/public pages.
+This repository is currently **Stage 6P.1**: Stages 1–5B plus a **parent training / competition split**, **calendar + list** views, and **friendly（友誼賽）** matches. Parent nav and dashboard list **訓練** (`/app/sessions`, kinds `regular` / `special`) separately from **賽事** (`/app/competitions`, kinds `cup` / `league` / `friendly`). Admin **訓練場次** (`/app/admin/sessions`) lists only regular/special; cup, league, and friendly belong under **比賽** (`/app/admin/matches`). Same-series training groups by `series_id`; cup/league/friendly fixtures with the same team, kind, and title (including Victory League shells without a DB series) share a series page with bulk attend/decline. Training and competition surfaces (parent + admin) toggle **月曆 / 列表**. Every parent-visible date shows a locale weekday in Asia/Taipei. Public `/matches` stays the visitor schedule and can show **published** friendlies. Anyone can add a session or match to Google, Apple, or Outlook calendars (title, start/end, location, opponent or TBD, kind only). Friendly debit matches cup/league (`match_debit`, 1 per competing player per club calendar day). Coaches and admins still record 1–5 scores for four match situations and four player traits. Ability details are **never** shown on visitor/public pages.
 
 Parents can request a link to an **existing** player (the club creates the player record first). Until an admin approves, the parent cannot read that player’s private fields. After approval, the parent sees a basic “my children” list (names, birth date, team, jersey) and may **register that child for training sessions** on the child’s team. The parent may **withdraw a pending request**; only an **admin** may revoke an **approved** link. After revoke or withdraw, `is_approved_guardian_for_player` is false and the same pair may apply again. Session signup checks `guardian_player_links.status = approved`.
 
@@ -59,11 +59,11 @@ Routes:
 | `/[locale]/login` | Phone OTP sign-in |
 | `/[locale]/app` | Signed-in dashboard |
 | `/[locale]/app/children` | Parent: linked children, request status, constrained search form |
-| `/[locale]/app/sessions` | Parent: upcoming **training** (regular/special) for linked children’s teams, series pages, register / cancel / switch, Q&A, excused leave |
+| `/[locale]/app/sessions` | Parent: upcoming **training** (regular/special) for linked children’s teams, calendar/list toggle, series pages, register / cancel / switch, Q&A, excused leave |
 | `/[locale]/app/sessions/series/[seriesId]` | Parent: training series bulk RSVP + per-occurrence controls |
-| `/[locale]/app/competitions` | Parent: upcoming **cup/league** signup for linked children’s teams, grouped by title |
+| `/[locale]/app/competitions` | Parent: upcoming **cup/league/friendly** signup for linked children’s teams, calendar/list toggle, grouped by title |
 | `/[locale]/app/competitions/group/[groupKey]` | Parent: match-group series bulk RSVP + per-occurrence controls |
-| `/[locale]/app/competitions/[id]` | Parent: one cup/league occurrence (signup, calendar, notes) |
+| `/[locale]/app/competitions/[id]` | Parent: one cup/league/friendly occurrence (signup, calendar, notes) |
 | `/[locale]/app/credits` | Parent: remaining credits, 10/20/30 pack claim with last-5 digits |
 | `/[locale]/app/assessments` | Ability assessments: staff create/edit; approved guardians read their children |
 | `/[locale]/app/admin/*` | Admin CRUD (teams, players, coaches, sessions, matches), binding approvals, payment claims, packages. Parents/coaches without admin see an access-denied page. |
@@ -146,7 +146,7 @@ Stage 4A extends sessions with a required **title**, a **kind**, optional **seri
 
 | Addition | Purpose |
 | --- | --- |
-| `session_kind` | `regular` / `special` / `cup` / `league` |
+| `session_kind` | `regular` / `special` / `cup` / `league` / `friendly` |
 | `session_series` | Shared title/kind/location/notes for generated occurrences. `deleted_at` for series soft-delete |
 | `training_sessions.title` | Required. Parents see this on signup lists |
 | `training_sessions.kind` | Copied from the series at create |
@@ -194,7 +194,7 @@ Prepaid credits for fee-paying youth bands. Signup still does **not** pre-debit.
 
 **Who pays:** U8 and U10–U18 (package from the player’s current team age band). **No credit MVP:** U6, reserve, adult/senior — attendance does not debit; UI label 不扣堂.
 
-**Kind defaults (Victor 2026-09-05):** regular present −1; regular unexcused (無故缺席) **0** (do not debit); regular excused 0; special present or unexcused −2 (excused leave 0); cup/league competing player −1 per club calendar day (`match_debit`; skip if already match-debited that Asia/Taipei calendar day); reserve/adult/U6/`no_debit` 0. Admin override still wins. Insufficient balance blocks outcomes that would debit (regular unexcused is not blocked because it does not debit).
+**Kind defaults (Victor 2026-09-05, friendly 2026-09-07):** regular present −1; regular unexcused (無故缺席) **0** (do not debit); regular excused 0; special present or unexcused −2 (excused leave 0); cup/league/**friendly** competing player −1 per club calendar day (`match_debit`; skip if already match-debited that Asia/Taipei calendar day); reserve/adult/U6/`no_debit` 0. Admin override still wins. Insufficient balance blocks outcomes that would debit (regular unexcused is not blocked because it does not debit).
 
 **RLS (conservative):** parents see own claims and balances for approved-linked players only (not the money ledger). Admins see all. Coaches may read remaining credits and write attendance on assigned teams; they cannot approve claims or select ledger/last-5. Writes for approve/adjust/attendance debit go through security-definer RPCs in one transaction.
 
@@ -230,7 +230,7 @@ Public cup/league matches reuse `training_sessions` so Stage 4B debit (`match_de
 | `match_publications` | 1:1 with `training_sessions`. Opponent (optional / TBD), home/away (`side`), `is_published`, `public_status` (`scheduled` / `completed` / `cancelled`), scores, optional result note |
 | `match_roster` | Published lineup: `player_id` + jersey snapshot from active `team_memberships` |
 
-**Public visibility (anon + authenticated via security-definer RPCs):** `is_published` and `public_status` in `scheduled`/`completed` and session `active`, not soft-deleted, kind `cup` or `league`. **T5B-5:** cancelled matches are **omitted** from the public list (not shown as cancelled). Soft-deleted or inactive sessions are also omitted. Unpublished matches are hidden from anon (T5B-2).
+**Public visibility (anon + authenticated via security-definer RPCs):** `is_published` and `public_status` in `scheduled`/`completed` and session `active`, not soft-deleted, kind `cup` or `league` (Stage 6P.1 also allows `friendly`). **T5B-5:** cancelled matches are **omitted** from the public list (not shown as cancelled). Soft-deleted or inactive sessions are also omitted. Unpublished matches are hidden from anon (T5B-2 / T6P1-5).
 
 Public RPCs (`list_published_matches`, `get_published_match`, `list_published_match_roster`) return title, kickoff, venue, opponent, side, status, score, team name, and lineup **display-name fields + jersey** only. No phones, emails, guardian info, credits, claims, staff notes, or birth dates. Public pages live under `/[locale]/matches` and do **not** call `ensure_own_profile`.
 
@@ -244,13 +244,29 @@ Parent surfaces split **training** from **competitions** without a new debit tab
 
 | Surface | Kinds | Grouping |
 | --- | --- | --- |
-| `/app/sessions` | `regular`, `special` | `series_id` when present; otherwise one-off |
-| `/app/competitions` | `cup`, `league` | `(team_id, kind, title)` for upcoming non-deleted sessions |
-| `/matches` | published cup/league | Visitor schedule (unchanged) |
+| `/app/sessions` | `regular`, `special` | `series_id` when present; otherwise one-off. Calendar + list. |
+| `/app/competitions` | `cup`, `league`, `friendly` | `(team_id, kind, title)` for upcoming non-deleted sessions. Calendar + list. |
+| `/app/admin/sessions` | `regular`, `special` only | Month calendar + series-collapsed list. Kind/team filters. Cup/league/friendly are not listed. |
+| `/app/admin/matches` | `cup`, `league`, `friendly` | Month calendar + series-collapsed list. Kind/team filters. Bulk create supports friendly. |
+| `/matches` | published cup/league/friendly | Visitor schedule |
 
 Bulk 參加本系列 / 取消本系列已報名 loops the existing `register_player_for_session` and `cancel_session_registration` RPCs (same approved-guardian check, membership check, and 24h cancel lock). Partial success returns per-occurrence reasons. Calendar add is client-side Google / Outlook links plus a downloaded `.ics`; payloads never include phones, assessments, credits, or guardian fields.
 
-No new staging SQL is required for Stage 6P.
+No new staging SQL was required for Stage 6P. Stage 6P.1 adds `session_kind.friendly` and match RPC/debit updates (see migrations 27–29).
+
+## Schema choice (Stage 6P.1)
+
+Training and matches stay on `training_sessions`. Friendly is a new `session_kind` value with the same public overlay (`match_publications`) and debit path as cup/league.
+
+| Rule | Behaviour |
+| --- | --- |
+| Admin sessions | List/create/edit **regular** and **special** only. Creating cup/league/friendly from this UI is rejected; edit of those kinds redirects to `/app/admin/matches`. |
+| Admin matches | Create/edit/publish **cup**, **league**, **friendly**. Bulk create supports friendly. Unpublished friendlies stay hidden from `/matches`. |
+| Parent | `/app/sessions` remains regular/special. `/app/competitions` includes friendly, grouped by `(team_id, kind, title)`. |
+| Views | Parent training & competitions and admin sessions & matches toggle **月曆 / 列表**, reusing the Stage 4A.1 month grid. |
+| Debit | `friendly` → `match_debit`, 1 per competing player per Asia/Taipei calendar day (same skip-if-already-debited rule as cup/league). Regular/special debit is unchanged. |
+
+Out of scope: Stage 6A import, push/LINE, changing regular/special debit, deleting existing Victory League data.
 
 ### Player discovery (search UX)
 
@@ -299,6 +315,9 @@ Apply in order:
 24. [`supabase/migrations/20260908000000_regular_unexcused_debit_zero.sql`](supabase/migrations/20260908000000_regular_unexcused_debit_zero.sql) (**Stage 4B debit-rule follow-up; paste this file’s CONTENTS on staging** — `CREATE OR REPLACE` of `compute_session_debit_plan` so **regular unexcused = 0**. Regular present stays −1; special unexcused stays −2. Does not rewrite the original 4B migration. Staging only. Do not run on production.)
 25. [`supabase/migrations/20260908010000_stage5_player_assessments.sql`](supabase/migrations/20260908010000_stage5_player_assessments.sql) (**Stage 5; paste this file’s CONTENTS on staging** — `player_assessments`, JSONB validators, RLS, write RPCs. Does not change credits or sessions.)
 26. [`supabase/migrations/20260908020000_regrant_stage5_privileges.sql`](supabase/migrations/20260908020000_regrant_stage5_privileges.sql) (**paste if staff/parents see `permission denied` on `player_assessments` or Stage 5 RPCs** — re-grants SELECT/execute to `authenticated`. Does not change RLS. Safe to re-run.)
+27. [`supabase/migrations/20260909000000_stage6p1_session_kind_friendly.sql`](supabase/migrations/20260909000000_stage6p1_session_kind_friendly.sql) (**Stage 6P.1 step 1; paste this file’s CONTENTS alone and wait** — `alter type session_kind add value if not exists 'friendly'`. PostgreSQL cannot ADD VALUE and USE it in one transaction.)
+28. [`supabase/migrations/20260909010000_stage6p1_friendly_matches.sql`](supabase/migrations/20260909010000_stage6p1_friendly_matches.sql) (**Stage 6P.1 step 2; paste only after step 1 committed** — match create/update/publish RPCs and public visibility allow friendly; `compute_session_debit_plan` treats friendly like cup/league. Does not rewrite earlier 5B files.)
+29. [`supabase/migrations/20260909020000_regrant_stage6p1_privileges.sql`](supabase/migrations/20260909020000_regrant_stage6p1_privileges.sql) (**paste if anon/admins see `permission denied` after the friendly RPC replacements** — re-grants to `anon`/`authenticated`. Does not change RLS. Safe to re-run.)
 
 Steps:
 
@@ -346,6 +365,8 @@ Regular unexcused must not debit: paste contents of [`supabase/migrations/202609
 
 Stage 5B (`20260907120000_stage5b_public_matches.sql`): **Victor: paste the SQL file contents into the staging SQL Editor, not a path string.** Then paste the regrant file. Then paste [`supabase/migrations/20260907180000_stage5b_optional_opponent_bulk.sql`](supabase/migrations/20260907180000_stage5b_optional_opponent_bulk.sql) so opponent can be blank and bulk create works. Do not run them on production. Do not put secrets in git. Public match RPCs are granted to `anon`; org tables stay revoked from `anon`.
 
+Stage 6P.1: **two separate SQL Editor Runs** on **staging only**, then the regrant. First paste contents of [`supabase/migrations/20260909000000_stage6p1_session_kind_friendly.sql`](supabase/migrations/20260909000000_stage6p1_session_kind_friendly.sql). After that succeeds, paste contents of [`supabase/migrations/20260909010000_stage6p1_friendly_matches.sql`](supabase/migrations/20260909010000_stage6p1_friendly_matches.sql). Then paste [`supabase/migrations/20260909020000_regrant_stage6p1_privileges.sql`](supabase/migrations/20260909020000_regrant_stage6p1_privileges.sql). Do not concatenate step 1 and step 2. Optional check: paste [`supabase/stage6p1_verification.sql`](supabase/stage6p1_verification.sql) contents. Do not run on production. If you skip step 1, step 2 fails with `invalid input value for enum session_kind: "friendly"`.
+
 ### How to verify the migration
 
 - Table Editor shows the five Stage 2 tables above, with RLS enabled, plus `guardian_player_links` after Stage 3.
@@ -359,6 +380,7 @@ Stage 5B (`20260907120000_stage5b_public_matches.sql`): **Victor: paste the SQL 
 - Optional: paste [`supabase/stage4b_verification.sql`](supabase/stage4b_verification.sql) after Stage 4B **and** the regular-unexcused follow-up. Asserts debit-plan C2–C5 (regular present 1, regular unexcused 0, special unexcused 2 / excused 0, cup 1/day, U6/reserve/senior 0). Rolls back.
 - Optional: paste [`supabase/stage5_verification.sql`](supabase/stage5_verification.sql) after Stage 5. Asserts JSONB 1–5 validators and write RPC signatures. Rolls back.
 - Optional: paste [`supabase/stage5b_verification.sql`](supabase/stage5b_verification.sql) after Stage 5B. Asserts `match_publications` / RPCs exist and that cup/league debit C4 is unchanged. Rolls back.
+- Optional: paste [`supabase/stage6p1_verification.sql`](supabase/stage6p1_verification.sql) after **both** Stage 6P.1 files (enum `friendly` in one Run, then match RPC/debit updates in a second Run). Asserts `session_kind.friendly` and friendly `match_debit`. Rolls back.
 - Optional: paste [`supabase/guardian_link_dedupe_verification.sql`](supabase/guardian_link_dedupe_verification.sql) after **both** cleanup files (enum `revoked` in one Run, then the dedupe UPDATE in a second Run). Lists remaining open duplicates (expect none), asserts the unique index, and has a commented unique-insert check that rolls back.
 - Optional: the RLS block at the bottom of the Stage 2 file, with real user UUIDs.
 
@@ -624,6 +646,25 @@ Use **one non-admin parent** with an approved child on a team that has both trai
 | T6P-10 | Single-occurrence register and cancel still work (including the 24h cancel lock). Debit math unchanged. |
 
 Locale check: training list, competitions list, series pages, calendar buttons in zh-Hant / en / ja. `npm run lint`, `npm run typecheck`, and `npm test` pass.
+
+### Stage 6P.1
+
+Apply Stage 6P.1 SQL **file contents** (not path strings) on **staging only** (enum first, then RPCs, then regrant) before UI checks. Use an admin account plus a non-admin parent with an approved child. Existing Victory League rows stay under matches; do not delete them.
+
+| ID | Check |
+| --- | --- |
+| T6P1-1 | Admin `/app/admin/sessions` has **zero** cup/league/friendly rows even if such sessions exist in the DB. Kind filters only show regular/special. Creating those kinds from this UI is blocked. |
+| T6P1-2 | Admin `/app/admin/matches` can create a **friendly**. It appears on parent `/app/competitions`, grouped with the same team/kind/title. |
+| T6P1-3 | Calendar + list toggle on admin sessions, admin matches, parent sessions, and parent competitions (labels 月曆 / 列表). |
+| T6P1-4 | Debit: friendly → `match_debit` same as cup/league (1/day, skip if already match-debited). Covered by `npm test`. Regular/special debit unchanged. |
+| T6P1-5 | Public `/matches` lists a **published** friendly; an unpublished friendly is hidden (same as cup/league). |
+| T6P1-6 | `npm run lint`, `npm run typecheck`, and `npm test` pass. README + PR template include Stage 6P.1. |
+| T6P1-7 | Parent `/app/sessions` shows a visible **月曆 / 列表** toggle. Calendar view renders the month grid + day agenda for training occurrences. Default stays list. |
+| T6P1-8 | Parent `/app/competitions` shows the same toggle. Calendar view renders cup/league/friendly on the month grid. |
+| T6P1-9 | Admin `/app/admin/sessions` list collapses same-series rows by `series_id`, has the same toggle, and kind/team filters (regular/special only). |
+| T6P1-10 | Admin `/app/admin/matches` list collapses by `(team_id, kind, title)`, has the same toggle, and kind/team filters (friendly/cup/league). |
+
+Locale check: friendly kind label (友誼賽 / Friendly / 親善試合) and updated admin/parent copy in zh-Hant / en / ja.
 
 ## Staging vs production
 

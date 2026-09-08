@@ -40,6 +40,17 @@ export type CalendarCell = {
 
 export type AdminSessionsView = "calendar" | "list";
 
+export type CalendarListPath =
+  | "/app/admin/sessions"
+  | "/app/admin/matches"
+  | "/app/sessions"
+  | "/app/competitions";
+
+export type CalendarListHref = {
+  pathname: CalendarListPath;
+  query: Record<string, string | string[]>;
+};
+
 export type AdminSessionsQuery = {
   year: number;
   month: number;
@@ -49,6 +60,22 @@ export type AdminSessionsQuery = {
   teamIds: string[];
   includeDeleted: boolean;
 };
+
+export type ParseCalendarQueryOptions = {
+  allowedKinds?: readonly SessionKind[];
+  defaultView?: AdminSessionsView;
+};
+
+export function resolveSurfaceKinds(
+  requested: readonly SessionKind[],
+  allowed: readonly SessionKind[],
+): SessionKind[] {
+  if (requested.length === 0) {
+    return [...allowed];
+  }
+  const filtered = allowed.filter((kind) => requested.includes(kind));
+  return filtered.length > 0 ? filtered : [...allowed];
+}
 
 export type TeamAgendaGroup<T> = {
   teamId: string | null;
@@ -178,6 +205,7 @@ export function parseAdminSessionsQuery(
     includeDeleted?: string | string[];
   },
   now = new Date(),
+  options: ParseCalendarQueryOptions = {},
 ): AdminSessionsQuery {
   const today = clubTodayDate(now);
   const todayParts = parseCalendarDateParts(today);
@@ -196,12 +224,19 @@ export function parseAdminSessionsQuery(
   }
 
   const viewRaw = Array.isArray(params.view) ? (params.view[0] ?? "") : (params.view ?? "");
-  const view: AdminSessionsView = viewRaw === "list" ? "list" : "calendar";
+  const defaultView = options.defaultView ?? "calendar";
+  let view: AdminSessionsView = defaultView;
+  if (viewRaw === "list") {
+    view = "list";
+  } else if (viewRaw === "calendar") {
+    view = "calendar";
+  }
 
+  const allowed = options.allowedKinds ?? SESSION_KINDS;
   const kinds = asParamList(params.kind)
     .map(parseSessionKind)
-    .filter((kind): kind is SessionKind => kind !== null);
-  const uniqueKinds = SESSION_KINDS.filter((kind) => kinds.includes(kind));
+    .filter((kind): kind is SessionKind => kind !== null && allowed.includes(kind));
+  const uniqueKinds = allowed.filter((kind) => kinds.includes(kind));
 
   const teamIds = [...new Set(asParamList(params.team))];
 
@@ -213,19 +248,19 @@ export function parseAdminSessionsQuery(
   return { year, month, day, view, kinds: uniqueKinds, teamIds, includeDeleted };
 }
 
-export function adminSessionsHref(query: Partial<AdminSessionsQuery> & Pick<
-  AdminSessionsQuery,
-  "year" | "month" | "day" | "view" | "kinds" | "teamIds" | "includeDeleted"
->): {
-  pathname: "/app/admin/sessions";
-  query: Record<string, string | string[]>;
-} {
+export function calendarListHref(
+  pathname: CalendarListPath,
+  query: Partial<AdminSessionsQuery> &
+    Pick<AdminSessionsQuery, "year" | "month" | "day" | "view" | "kinds" | "teamIds" | "includeDeleted">,
+): CalendarListHref {
   const search: Record<string, string | string[]> = {
     month: formatYearMonth(query.year, query.month),
     day: query.day,
   };
   if (query.view === "list") {
     search.view = "list";
+  } else if (query.view === "calendar") {
+    search.view = "calendar";
   }
   if (query.kinds.length > 0) {
     search.kind = query.kinds;
@@ -236,7 +271,65 @@ export function adminSessionsHref(query: Partial<AdminSessionsQuery> & Pick<
   if (query.includeDeleted) {
     search.includeDeleted = "1";
   }
-  return { pathname: "/app/admin/sessions", query: search };
+  return { pathname, query: search };
+}
+
+/** Stable string href so next-intl Link always keeps `view` and filters. */
+export function calendarHrefPath(href: CalendarListHref): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(href.query)) {
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        params.append(key, item);
+      }
+    } else if (value) {
+      params.set(key, value);
+    }
+  }
+  const qs = params.toString();
+  return qs ? `${href.pathname}?${qs}` : href.pathname;
+}
+
+export function adminSessionsHref(
+  query: Partial<AdminSessionsQuery> &
+    Pick<AdminSessionsQuery, "year" | "month" | "day" | "view" | "kinds" | "teamIds" | "includeDeleted">,
+): CalendarListHref {
+  return calendarListHref("/app/admin/sessions", query);
+}
+
+export function calendarWeekNavHrefs(
+  pathname: CalendarListPath,
+  query: AdminSessionsQuery,
+): {
+  calendarHref: CalendarListHref;
+  listHref: CalendarListHref;
+  prevWeekHref: CalendarListHref;
+  nextWeekHref: CalendarListHref;
+} {
+  const prevWeek = shiftClubDate(query.day, -7);
+  const nextWeek = shiftClubDate(query.day, 7);
+  return {
+    calendarHref: calendarListHref(pathname, { ...query, view: "calendar" }),
+    listHref: calendarListHref(pathname, { ...query, view: "list" }),
+    prevWeekHref: prevWeek
+      ? calendarListHref(pathname, {
+          ...query,
+          year: prevWeek.year,
+          month: prevWeek.month,
+          day: prevWeek.day,
+          view: "calendar",
+        })
+      : calendarListHref(pathname, { ...query, view: "calendar" }),
+    nextWeekHref: nextWeek
+      ? calendarListHref(pathname, {
+          ...query,
+          year: nextWeek.year,
+          month: nextWeek.month,
+          day: nextWeek.day,
+          view: "calendar",
+        })
+      : calendarListHref(pathname, { ...query, view: "calendar" }),
+  };
 }
 
 export function sessionsOnDate<T extends { starts_at: string }>(

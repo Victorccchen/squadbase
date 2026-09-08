@@ -5,18 +5,18 @@
 
 import type { SessionKind } from "../supabase/database.types.ts";
 import type { OrgErrorKey } from "./errors.ts";
-import { isMatchKind, type MatchKind } from "./match.ts";
+import { MATCH_KINDS, isMatchKind, type MatchKind } from "./match.ts";
 import { parseUuid } from "./parse.ts";
+import {
+  TRAINING_SESSION_KINDS,
+  isTrainingSessionKind,
+  type TrainingSessionKind,
+} from "./session-recurrence.ts";
 import { isGuardianCancelLocked, isSessionOpenForSignup } from "./session-time.ts";
 
-export const TRAINING_SESSION_KINDS = ["regular", "special"] as const;
-export type TrainingSessionKind = (typeof TRAINING_SESSION_KINDS)[number];
+export { TRAINING_SESSION_KINDS, isTrainingSessionKind, type TrainingSessionKind };
 
-export const COMPETITION_SESSION_KINDS = ["cup", "league"] as const;
-
-export function isTrainingSessionKind(kind: string): kind is TrainingSessionKind {
-  return kind === "regular" || kind === "special";
-}
+export const COMPETITION_SESSION_KINDS = MATCH_KINDS;
 
 export function isCompetitionSessionKind(kind: string): kind is MatchKind {
   return isMatchKind(kind);
@@ -242,6 +242,28 @@ export function parentGroupPath(group: ParentSeriesGroup): string {
   }
   const first = group.sessions[0];
   return first ? parentOccurrencePath(first) : "/app/sessions";
+}
+
+export function nextOccurrenceInGroup<T extends { starts_at: string }>(
+  sessions: readonly T[],
+  now = new Date(),
+): T | null {
+  const sorted = sortByStart([...sessions]);
+  const upcoming = sorted.find((row) => {
+    const start = Date.parse(row.starts_at);
+    return !Number.isNaN(start) && start >= now.getTime();
+  });
+  return upcoming ?? sorted[sorted.length - 1] ?? null;
+}
+
+export function adminGroupHref(group: ParentSeriesGroup, now = new Date()): string {
+  const next = nextOccurrenceInGroup(group.sessions, now);
+  if (!next) {
+    return group.groupKind === "match-group" ? "/app/admin/matches" : "/app/admin/sessions";
+  }
+  return isMatchKind(group.sessionKind)
+    ? `/app/admin/matches/${next.id}`
+    : `/app/admin/sessions/${next.id}`;
 }
 
 export type ParentReturnTo =

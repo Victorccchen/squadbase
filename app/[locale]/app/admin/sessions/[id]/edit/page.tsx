@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { AccessDenied } from "@/components/access-denied";
 import { PageHeader } from "@/components/page-header";
 import { SessionForm } from "@/components/admin/session-form";
@@ -7,6 +7,8 @@ import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { listTeams } from "@/lib/org/queries";
 import { getSession } from "@/lib/org/session-queries";
 import { updateSession } from "@/lib/org/session-actions";
+import { isMatchKind } from "@/lib/org/match";
+import { redirect } from "@/i18n/navigation";
 
 type EditSessionPageProps = {
   params: Promise<{ id: string }>;
@@ -21,6 +23,9 @@ export default async function EditSessionPage({ params }: EditSessionPageProps) 
   const session = await getSession(id);
   if (!session) {
     notFound();
+  }
+  if (isMatchKind(session.kind)) {
+    redirect({ href: `/app/admin/matches/${session.id}`, locale: await getLocale() });
   }
 
   const t = await getTranslations("admin");

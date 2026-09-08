@@ -6,7 +6,7 @@ import { LocaleHiddenField } from "@/components/admin/locale-hidden-field";
 import { INITIAL_ORG_ACTION_STATE } from "@/lib/org/errors";
 import type { OrgActionState } from "@/lib/org/errors";
 import type { Team } from "@/lib/supabase/database.types";
-import { MATCH_KINDS, MAX_BULK_MATCHES } from "@/lib/org/match";
+import { MATCH_KINDS, MAX_BULK_MATCHES, parseMatchKind } from "@/lib/org/match";
 import { inputClassName, primaryButtonClassName, quietButtonClassName } from "@/lib/ui";
 
 type BulkMatchFormProps = {
@@ -49,7 +49,12 @@ export function BulkMatchForm({ action, teams, submitLabel }: BulkMatchFormProps
           name="kind"
           required
           value={kind}
-          onChange={(event) => setKind(event.target.value === "cup" ? "cup" : "league")}
+          onChange={(event) => {
+            const parsed = parseMatchKind(event.target.value);
+            if (parsed) {
+              setKind(parsed);
+            }
+          }}
           className={inputClassName}
         >
           {MATCH_KINDS.map((value) => (

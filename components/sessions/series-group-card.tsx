@@ -16,6 +16,8 @@ type SeriesGroupCardProps = {
   nextStartsAt: string;
   occurrenceCount: number;
   locale: string;
+  detail?: string;
+  viewLabel?: string;
 };
 
 export async function SeriesGroupCard({
@@ -27,6 +29,8 @@ export async function SeriesGroupCard({
   nextStartsAt,
   occurrenceCount,
   locale,
+  detail,
+  viewLabel,
 }: SeriesGroupCardProps) {
   const sessionsT = await getTranslations("sessions");
   const t = await getTranslations("competitions");
@@ -51,7 +55,10 @@ export async function SeriesGroupCard({
           {" · "}
           {t("occurrenceCount", { count: occurrenceCount })}
         </p>
-        <span className="text-sm font-medium underline underline-offset-2">{t("viewSeries")}</span>
+        {detail ? <p className="text-sm text-zinc-500">{detail}</p> : null}
+        <span className="text-sm font-medium underline underline-offset-2">
+          {viewLabel ?? t("viewSeries")}
+        </span>
       </Link>
     </li>
   );

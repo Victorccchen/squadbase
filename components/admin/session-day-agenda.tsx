@@ -7,23 +7,35 @@ import {
   SessionPlayoffBadge,
   SessionStatusBadge,
 } from "@/components/sessions/session-status-badge";
-import { groupSessionsByClubDate } from "@/lib/org/session-calendar";
+import {
+  calendarHrefPath,
+  groupSessionsByClubDate,
+  type CalendarListHref,
+} from "@/lib/org/session-calendar";
 import { formatClubDate, formatClubTime } from "@/lib/org/session-time";
-import type { TrainingSessionAdminRow } from "@/lib/org/session-queries";
+import type { OrgStatus, SessionKind, Team } from "@/lib/supabase/database.types";
+
+type AgendaSession = {
+  id: string;
+  title: string;
+  kind: SessionKind;
+  is_playoff: boolean;
+  deleted_at: string | null;
+  status: OrgStatus;
+  starts_at: string;
+  ends_at: string;
+  location: string | null;
+  team: Pick<Team, "id" | "name" | "age_band"> | null;
+};
 
 type SessionWeekAgendaProps = {
   selectedDate: string;
   weekFrom: string;
   weekTo: string;
-  sessions: TrainingSessionAdminRow[];
-  prevHref: {
-    pathname: "/app/admin/sessions";
-    query: Record<string, string | string[]>;
-  };
-  nextHref: {
-    pathname: "/app/admin/sessions";
-    query: Record<string, string | string[]>;
-  };
+  sessions: AgendaSession[];
+  occurrenceHref: (id: string) => string;
+  prevHref: CalendarListHref;
+  nextHref: CalendarListHref;
 };
 
 export async function SessionDayAgenda({
@@ -31,6 +43,7 @@ export async function SessionDayAgenda({
   weekFrom,
   weekTo,
   sessions,
+  occurrenceHref,
   prevHref,
   nextHref,
 }: SessionWeekAgendaProps) {
@@ -44,7 +57,7 @@ export async function SessionDayAgenda({
     <section className="flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
       <div className="flex items-center justify-between gap-3">
         <Link
-          href={prevHref}
+          href={calendarHrefPath(prevHref)}
           className="rounded-full border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
         >
           {t("prevWeek")}
@@ -61,7 +74,7 @@ export async function SessionDayAgenda({
           </h2>
         </div>
         <Link
-          href={nextHref}
+          href={calendarHrefPath(nextHref)}
           className="rounded-full border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
         >
           {t("nextWeek")}
@@ -95,7 +108,7 @@ export async function SessionDayAgenda({
                     >
                       <div className="flex flex-wrap items-start justify-between gap-2">
                         <Link
-                          href={`/app/admin/sessions/${session.id}`}
+                          href={occurrenceHref(session.id)}
                           className="font-semibold hover:underline"
                         >
                           {session.title}

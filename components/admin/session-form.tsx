@@ -8,7 +8,7 @@ import type { OrgActionState } from "@/lib/org/errors";
 import type { SessionKind, Team, TrainingSession } from "@/lib/supabase/database.types";
 import {
   ISO_WEEKDAYS,
-  SESSION_KINDS,
+  TRAINING_SESSION_KINDS,
   isRecurringSessionKind,
 } from "@/lib/org/session-recurrence";
 import { toDateTimeLocalInput } from "@/lib/org/session-time";
@@ -107,7 +107,7 @@ export function SessionForm({
             onChange={(event) => setKind(event.target.value as SessionKind)}
             className={inputClassName}
           >
-            {SESSION_KINDS.map((value) => (
+            {TRAINING_SESSION_KINDS.map((value) => (
               <option key={value} value={value}>
                 {t(`kinds.${value}`)}
               </option>

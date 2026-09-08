@@ -29,11 +29,13 @@ import {
 import {
   generateSessionOccurrences,
   isRecurringSessionKind,
+  isTrainingSessionKind,
   parseSessionKind,
   parseUntilDate,
   parseWeekCount,
   parseWeekdays,
 } from "@/lib/org/session-recurrence";
+import { isMatchKind } from "@/lib/org/match";
 import { type OrgActionState, type OrgErrorKey, type BulkRsvpState } from "@/lib/org/errors";
 import { listOwnGuardianLinks } from "@/lib/org/queries";
 import {
@@ -69,7 +71,9 @@ function revalidateSessions() {
 
 type AdminHref =
   | "/app/admin/sessions"
-  | `/app/admin/sessions/${string}`;
+  | `/app/admin/sessions/${string}`
+  | "/app/admin/matches"
+  | `/app/admin/matches/${string}`;
 
 function redirectAdmin(href: AdminHref, formData: FormData) {
   redirect({ href, locale: localeFromForm(formData) });
@@ -209,6 +213,9 @@ export async function createSession(
   if (!kind) {
     return fail("invalidSessionKind");
   }
+  if (!isTrainingSessionKind(kind)) {
+    return fail("sessionKindUseMatches");
+  }
 
   const schedule = parseSessionSchedule(formData, isRecurringSessionKind(kind));
   if (!schedule.ok) {
@@ -331,9 +338,11 @@ export async function updateSession(
   if (!existing.data) {
     return fail("sessionNotFound");
   }
+  if (isMatchKind(existing.data.kind)) {
+    return fail("sessionKindUseMatches");
+  }
 
-  const isPlayoff =
-    existing.data.kind === "league" && readString(formData, "is_playoff") === "true";
+  const isPlayoff = false;
 
   const { data, error } = await actor.supabase
     .from("training_sessions")

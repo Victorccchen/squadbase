@@ -82,9 +82,10 @@ describe("parseMatchSide / parseMatchKind", () => {
     assert.equal(parseMatchSide("neutral"), null);
   });
 
-  it("accepts only cup and league as public match kinds", () => {
+  it("accepts cup, league, and friendly as public match kinds", () => {
     assert.equal(parseMatchKind("cup"), "cup");
     assert.equal(parseMatchKind("league"), "league");
+    assert.equal(parseMatchKind("friendly"), "friendly");
     assert.equal(parseMatchKind("regular"), null);
     assert.equal(parseMatchKind("special"), null);
   });
@@ -147,8 +148,20 @@ describe("isPubliclyListedMatch", () => {
     );
   });
 
+  it("lists a published scheduled friendly match (T6P1-5)", () => {
+    assert.equal(isPubliclyListedMatch({ ...base, kind: "friendly" }), true);
+  });
+
+  it("hides unpublished friendlies", () => {
+    assert.equal(
+      isPubliclyListedMatch({ ...base, kind: "friendly", isPublished: false }),
+      false,
+    );
+  });
+
   it("hides regular/special sessions", () => {
     assert.equal(isPubliclyListedMatch({ ...base, kind: "regular" }), false);
+    assert.equal(isPubliclyListedMatch({ ...base, kind: "special" }), false);
   });
 });
 
@@ -242,6 +255,10 @@ describe("matchRpcErrorKey", () => {
   it("maps RPC messages", () => {
     assert.equal(
       matchRpcErrorKey({ message: "match kind must be cup or league" }),
+      "matchKindRequired",
+    );
+    assert.equal(
+      matchRpcErrorKey({ message: "match kind must be cup, league, or friendly" }),
       "matchKindRequired",
     );
     assert.equal(matchRpcErrorKey({ message: "opponent required" }), "invalidOpponent");
