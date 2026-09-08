@@ -79,6 +79,13 @@ const REQUIRED_KEYS = [
   "matches.matchDeleted",
   "matches.matchDeletedBanner",
   "sessions.createTeamsHint",
+  "matches.parentRegistrationsTitle",
+  "matches.parentRegistrationsHint",
+  "matches.parentRegistrationsEmptyTitle",
+  "matches.parentRegistrationsEmptyBody",
+  "matches.parentRegisteredBadge",
+  "matches.staffRosterTitle",
+  "matches.staffRosterHint",
 ];
 
 describe("T6P-9 locale smoke", () => {

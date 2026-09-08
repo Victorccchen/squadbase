@@ -18,6 +18,7 @@ type MatchRosterFormProps = {
   action: (prev: OrgActionState, formData: FormData) => Promise<OrgActionState>;
   options: RosterOption[];
   selectedIds: string[];
+  registeredIds?: string[];
   locale: string;
 };
 
@@ -25,12 +26,14 @@ export function MatchRosterForm({
   action,
   options,
   selectedIds,
+  registeredIds = [],
   locale,
 }: MatchRosterFormProps) {
   const t = useTranslations("matches");
   const org = useTranslations("org");
   const [state, formAction, pending] = useActionState(action, INITIAL_ORG_ACTION_STATE);
   const selected = new Set(selectedIds);
+  const registered = new Set(registeredIds);
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
@@ -50,6 +53,11 @@ export function MatchRosterForm({
                 />
                 <span className="font-medium tabular-nums">#{row.jerseyNumber}</span>
                 <span>{localizedPlayerName(row.player, locale)}</span>
+                {registered.has(row.player.id) ? (
+                  <span className="ml-auto rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">
+                    {t("parentRegisteredBadge")}
+                  </span>
+                ) : null}
               </label>
             </li>
           ))}

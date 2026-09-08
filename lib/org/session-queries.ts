@@ -18,6 +18,7 @@ import {
   TRAINING_SESSION_KINDS,
   type MatchGroupKey,
 } from "@/lib/org/parent-series";
+import { tallyRegisteredCounts } from "@/lib/org/registration-counts";
 import type { SessionWindowProbe } from "@/lib/org/session-calendar";
 import { filterDefaultAdminList, filterParentDefaultList } from "@/lib/org/soft-delete";
 
@@ -127,7 +128,7 @@ export async function listSessionsForAdmin(
   }
 
   const sessionIds = (sessionsResult.data ?? []).map((row) => row.id as string);
-  const registeredBySession = new Map<string, number>();
+  let registeredBySession = new Map<string, number>();
   if (sessionIds.length > 0) {
     const countsResult = await supabase
       .from("session_registrations")
@@ -136,12 +137,7 @@ export async function listSessionsForAdmin(
     if (countsResult.error) {
       console.error("listSessionsForAdmin counts", countsResult.error.message);
     }
-    for (const row of countsResult.data ?? []) {
-      if (row.status !== "registered") {
-        continue;
-      }
-      registeredBySession.set(row.session_id, (registeredBySession.get(row.session_id) ?? 0) + 1);
-    }
+    registeredBySession = tallyRegisteredCounts(countsResult.data ?? []);
   }
 
   const rows = (sessionsResult.data ?? []).map((row) => {
@@ -446,13 +442,7 @@ export async function listCoachSessions(): Promise<TrainingSessionAdminRow[]> {
     console.error("listCoachSessions counts", countsResult.error.message);
   }
 
-  const registeredBySession = new Map<string, number>();
-  for (const row of countsResult.data ?? []) {
-    if (row.status !== "registered") {
-      continue;
-    }
-    registeredBySession.set(row.session_id, (registeredBySession.get(row.session_id) ?? 0) + 1);
-  }
+  const registeredBySession = tallyRegisteredCounts(countsResult.data ?? []);
 
   return (sessionsResult.data ?? []).map((row) => {
     const session = mapSessionRow(row as unknown as Record<string, unknown>);

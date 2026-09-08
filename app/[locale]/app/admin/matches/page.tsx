@@ -161,6 +161,11 @@ export default async function AdminMatchesPage({ searchParams }: AdminMatchesPag
                       next.publication.opponent_score,
                     )
                   : null;
+                const registeredSum = group.sessions.reduce(
+                  (sum, row) => sum + row.registeredCount,
+                  0,
+                );
+                const rosterSum = group.sessions.reduce((sum, row) => sum + row.rosterCount, 0);
                 const detailParts = [
                   next
                     ? `${next.team?.name ?? org("unknownTeam")} ${matchesT("versus")} ${publicOpponentLabel(next.publication.opponent, matchesT("opponentTbd"))}`
@@ -172,6 +177,9 @@ export default async function AdminMatchesPage({ searchParams }: AdminMatchesPag
                     : null,
                   score,
                   next ? formatClubDateTime(next.starts_at, locale) : null,
+                  t("rosterCount", { count: registeredSum }),
+                  matchesT("rosterCount", { count: rosterSum }),
+                  next?.deleted_at ? matchesT("matchDeleted") : null,
                 ].filter((part): part is string => Boolean(part));
                 return (
                   <SeriesGroupCard
