@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   buildLocaleNotice,
   buildTrilingualNotice,
+  publicMatchUrl,
   sessionSignupUrl,
 } from "./notice.ts";
 
@@ -33,6 +34,13 @@ describe("sessionSignupUrl", () => {
     assert.equal(
       sessionSignupUrl("https://app.example", "zh-Hant", "fid-1", "friendly"),
       "https://app.example/zh-Hant/app/competitions/fid-1",
+    );
+  });
+
+  it("builds a public match path from the app origin", () => {
+    assert.equal(
+      publicMatchUrl("https://app.example", "zh-Hant", "mid-1"),
+      "https://app.example/zh-Hant/matches/mid-1",
     );
   });
 });

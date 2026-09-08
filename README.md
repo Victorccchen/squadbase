@@ -2,7 +2,7 @@
 
 Responsive web + PWA for a football **Club** (球團) operations app: training squads, courses, attendance, assessments, and matches/events.
 
-This repository is currently **Stage 6A**: Stages 1–6P.1 plus Stage ST (梯隊 / 隊伍) and **admin Excel/CSV import** (players, coaches, matches, plus match URL assist). 梯隊 (age squad) is the roster band for every registered player and for training. 隊伍 (competition team) is the external match side; only continuing trainees may join, with at most two active 隊伍 and no two sharing the same `layer_key`. Parent nav still lists **訓練** (`/app/sessions`) separately from **賽事** (`/app/competitions`). Training attaches to 梯隊; matches attach to 隊伍. Dual membership **replaces** the PR #22 one-ladder-step-up rule. Admins import master data from `/app/admin/import` (preview then confirm; create-only).
+This repository is currently **Stage 6A** plus **Stage N**: Stages 1–6P.1 plus Stage ST (梯隊 / 隊伍), **admin Excel/CSV import** (players, coaches, matches, plus match URL assist), and admin LINE-group **generate + copy** (no send). 梯隊 (age squad) is the roster band for every registered player and for training. 隊伍 (competition team) is the external match side; only continuing trainees may join, with at most two active 隊伍 and no two sharing the same `layer_key`. Parent nav still lists **訓練** (`/app/sessions`) separately from **賽事** (`/app/competitions`). Training attaches to 梯隊; matches attach to 隊伍. Dual membership **replaces** the PR #22 one-ladder-step-up rule. Admins import master data from `/app/admin/import` (preview then confirm; create-only) and generate notice copy from `/app/admin/notices`.
 
 Parents can request a link to an **existing** player (the club creates the player record first). Until an admin approves, the parent cannot read that player’s private fields. After approval, the parent sees a basic “my children” list (names, birth date, team, jersey) and may **register that child for training sessions** on the child’s team. The parent may **withdraw a pending request**; only an **admin** may revoke an **approved** link. After revoke or withdraw, `is_approved_guardian_for_player` is false and the same pair may apply again. Session signup checks `guardian_player_links.status = approved`.
 
@@ -66,7 +66,7 @@ Routes:
 | `/[locale]/app/competitions/[id]` | Parent: one cup/league/friendly occurrence (signup, calendar, notes) |
 | `/[locale]/app/credits` | Parent: remaining credits, 10/20/30 pack claim with last-5 digits |
 | `/[locale]/app/assessments` | Ability assessments: staff create/edit; approved guardians read their children |
-| `/[locale]/app/admin/*` | Admin CRUD (teams, players, coaches, sessions, matches), **data import**, binding approvals, payment claims, packages. Parents/coaches without admin see an access-denied page. |
+| `/[locale]/app/admin/*` | Admin CRUD (teams, players, coaches, sessions, matches), **data import**, notice copy, binding approvals, payment claims, packages. Parents/coaches without admin see an access-denied page. |
 | `/[locale]/app/roster` | Coach (or admin) roster of assigned teams, session signups, attendance, and assessment links |
 
 ## Checks (CI)
@@ -776,6 +776,25 @@ Use an **admin** account for UI checks. Unit tests cover T6A-1…T6A-10 in [`lib
 
 Locale check: import tabs, template buttons, preview/confirm, URL assist, and errors in zh-Hant / en / ja.
 
+### Stage N (notice templates + audiences)
+
+Admin **generate + copy** only. LINE groups stay manual paste. The app is the source of truth; LINE is a wake-up plus deep link. Stage 4B debit/bank-transfer notice copy on session detail is unchanged.
+
+| ID | Check |
+| --- | --- |
+| TN-1 | Regular/special training template includes the parent `/app/sessions/{id}` link. |
+| TN-2 | Match notes omit blank kit / gear / gather lines. |
+| TN-3 | Session-registrations audience includes the `registered` count (total only). |
+| TN-4 | Futuro U9 (or any 隊伍 whose eligible births map to two 梯隊) suggests two paste texts (U8 group + U10 group) with the same app link. |
+| TN-5 | Non-admin opening `/app/admin/notices` sees access denied. |
+| TN-6 | Copy language switch zh-Hant / en / ja changes the skeleton; UI labels exist in all three locales. |
+
+Also: six templates produce copyable text; no parent names or phones in group copy; `npm run lint`, `npm run typecheck`, and `npm test` pass. No new SQL. No production deploy.
+
+Unit tests: [`lib/credits/notice-templates.test.ts`](lib/credits/notice-templates.test.ts). Admin UI: `/app/admin/notices`, plus **產生通知文案** on session and match detail.
+
+Out of scope: push / LINE Messaging API / SMS / OA send, parent inbox, scheduled send, Stage 6A import, production deploy.
+
 ## Staging vs production
 
 | Environment | Use |
@@ -796,7 +815,7 @@ components/            Header, forms, dashboard cards, access denied, public mat
 i18n/                  next-intl routing, navigation, request config
 lib/age-band.ts        Season-start age band helper
 lib/assessments/       Assessment parse/validation, queries, server actions
-lib/credits/           Debit rules, packages, LINE notice copy, credit queries/actions
+lib/credits/           Debit rules, packages, LINE notice copy, Stage N announcement templates, credit queries/actions
 lib/org/               Server actions, queries, import parse/validate, URL assist, match helpers
 lib/auth/              Phone helpers, session/role guards
 lib/supabase/          Browser, server, and proxy (cookie) clients

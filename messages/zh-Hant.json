@@ -11,7 +11,7 @@
     "footer": "生產環境部署需人工核准，請勿自動發佈到 production。"
   },
   "home": {
-    "eyebrow": "階段 6A · 管理員 Excel／CSV 匯入與比賽網址輔助",
+    "eyebrow": "階段 6A＋N · 管理員匯入與通知文案",
     "headline": "歡迎使用球團管理系統",
     "lead": "訪客無需登入即可查看公開賽程，並可把比賽加入行事曆。家長登入後，訓練與賽事分開報名；同一系列可一次參加或取消。管理員與被指派教練可為四個比賽情境與四項特質打 1–5 分。能力細節與堂數不會出現在公開頁面。",
     "openDashboard": "進入儀表板",
@@ -59,7 +59,7 @@
   "app": {
     "eyebrow": "儀表板",
     "title": "球團儀表板",
-    "welcome": "家長可申請連結子女，為已核准的子女分別報名訓練或賽事、查看預付堂數，並閱讀已連結子女的能力評量。任何人都可以開啟公開賽程並加入行事曆。管理員可管理隊伍、球員、教練、連結審核、場次、比賽、匯款申請、評量與資料匯入。教練可開啟被指派的名單、登記出缺席，並為該隊球員記錄評量。",
+    "welcome": "家長可申請連結子女，為已核准的子女分別報名訓練或賽事、查看預付堂數，並閱讀已連結子女的能力評量。任何人都可以開啟公開賽程並加入行事曆。管理員可管理隊伍、球員、教練、連結審核、場次、比賽、匯款申請、評量、資料匯入與通知文案。教練可開啟被指派的名單、登記出缺席，並為該隊球員記錄評量。",
     "accountTitle": "帳號",
     "phoneLabel": "手機",
     "rolesLabel": "角色",
@@ -188,7 +188,8 @@
     "creditsAdmin": "堂數管理",
     "matches": "比賽",
     "import": "匯入",
-    "assessments": "能力評量"
+    "assessments": "能力評量",
+    "notices": "通知文案"
   },
   "access": {
     "deniedTitle": "你沒有權限開啟此頁",
@@ -315,7 +316,9 @@
     "softDeleteSeries": "刪除整個系列",
     "softDeleteSeriesConfirm": "確定刪除「{title}」所屬系列的每一場？家長將無法新報名那些場次。報名與問答會保留。",
     "registrationHistoryTitle": "已取消的報名",
-    "openAssessment": "能力評量"
+    "openAssessment": "能力評量",
+    "noticesTitle": "通知文案",
+    "noticesBody": "為梯隊、隊伍，或本場已報名的家長產生 LINE 群短文與 App 連結。只複製、不發送 LINE、簡訊或推播。"
   },
   "roster": {
     "title": "名單",
@@ -1005,6 +1008,55 @@
       "urlFetchFailed": "無法抓取該頁（大小、類型或 HTTP 錯誤）。",
       "urlTimeout": "抓取該頁逾時。",
       "missingProfile": "找不到這個 profile。"
+    }
+  },
+  "notices": {
+    "title": "通知文案",
+    "lead": "產生短文與 App 深層連結，複製後手動貼到既有 LINE 家長群。應用程式不會發送 LINE、簡訊或推播。報名與出賽以 App 為準，LINE 只是提醒。",
+    "generateCta": "產生通知文案",
+    "templateLabel": "範本",
+    "audienceLabel": "對象",
+    "sourceLabel": "場次或比賽",
+    "sourcePlaceholder": "選擇訓練或比賽",
+    "teamLabel": "單位",
+    "teamPlaceholder": "選擇梯隊或隊伍",
+    "copyLocaleLabel": "文案語言",
+    "copy": "複製",
+    "copied": "已複製",
+    "kit": "裝備",
+    "gear": "用品",
+    "gather": "集合",
+    "recap": "賽後簡記",
+    "kitPlaceholder": "例如釘鞋、護脛（空白則省略）",
+    "gearPlaceholder": "例如水、零食（空白則省略）",
+    "gatherPlaceholder": "例如 17:30 球場門口（空白則省略）",
+    "recapPlaceholder": "短評，不要寫家長姓名或電話",
+    "dualPasteHint": "此隊伍跨兩個梯隊家長群。請分別複製貼到對應 LINE 群，App 連結相同。",
+    "pasteForGroup": "貼到梯隊 {band} 家長群",
+    "registeredMeta": "目前報名 {count} 人（僅顯示合計）",
+    "noSourceTitle": "尚未選擇場次",
+    "noSourceBody": "請選擇一場訓練或比賽以產生文案。也可從場次或比賽詳情頁的「產生通知文案」進來。",
+    "noPiiHint": "群組文案不會帶入家長姓名或電話。請不要把個人資料貼進備註欄。",
+    "noSendHint": "僅複製貼上。沒有推播、LINE Messaging API、簡訊或官方帳號發送。",
+    "coexistHint": "扣堂／匯款通知仍在場次詳情的「複製通知」，此頁不取代它。",
+    "previewTitle": "預覽",
+    "templates": {
+      "regular_training_signup": "例行訓練報名",
+      "special_training_signup": "特別訓練報名",
+      "match_signup": "比賽報名",
+      "match_notes": "出賽注意（裝備／用品／集合）",
+      "thanks": "感謝",
+      "match_report": "賽後簡報"
+    },
+    "audiences": {
+      "age_squad": "梯隊",
+      "competition_team": "隊伍",
+      "session_registrations": "本場已報名"
+    },
+    "locales": {
+      "zh-Hant": "繁中",
+      "en": "English",
+      "ja": "日本語"
     }
   }
 }

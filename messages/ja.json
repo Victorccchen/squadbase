@@ -11,7 +11,7 @@
     "footer": "本番環境へのデプロイには人による承認が必要です。自動で production へ公開しないでください。"
   },
   "home": {
-    "eyebrow": "ステージ 6A · 管理者 Excel／CSV 取込と試合 URL 補助",
+    "eyebrow": "ステージ 6A＋N · 管理者取込とお知らせ文案",
     "headline": "クラブ管理システムへようこそ",
     "lead": "来場者はログインなしで公開日程を見られ、試合をカレンダーに追加できます。保護者のログイン後は練習と試合が別リストになり、同じシリーズをまとめて参加または取消できます。管理者と担当コーチは試合状況4項目と選手特性4項目を1–5で記録します。能力の詳細と単位は公開ページに出ません。",
     "openDashboard": "ダッシュボードを開く",
@@ -59,7 +59,7 @@
   "app": {
     "eyebrow": "ダッシュボード",
     "title": "クラブ ダッシュボード",
-    "welcome": "保護者は子どもへの紐付けを申請し、承認済みの子どもを練習または試合に申し込み、前払い単位と能力評価を確認できます。公開試合日程は誰でも開け、カレンダーにも追加できます。管理者はチーム・選手・コーチ・紐付け・セッション・試合・振込申請・評価・データ取込を管理します。コーチは担当名簿を開き、出欠を記録し、担当チームの選手を評価できます。",
+    "welcome": "保護者は子どもへの紐付けを申請し、承認済みの子どもを練習または試合に申し込み、前払い単位と能力評価を確認できます。公開試合日程は誰でも開け、カレンダーにも追加できます。管理者はチーム・選手・コーチ・紐付け・セッション・試合・振込申請・評価・データ取込・お知らせ文案を管理します。コーチは担当名簿を開き、出欠を記録し、担当チームの選手を評価できます。",
     "accountTitle": "アカウント",
     "phoneLabel": "電話",
     "rolesLabel": "ロール",
@@ -188,7 +188,8 @@
     "creditsAdmin": "単位管理",
     "matches": "試合",
     "import": "取込",
-    "assessments": "能力評価"
+    "assessments": "能力評価",
+    "notices": "お知らせ文案"
   },
   "access": {
     "deniedTitle": "このページを開けません",
@@ -315,7 +316,9 @@
     "softDeleteSeries": "シリーズ全体を削除",
     "softDeleteSeriesConfirm": "「{title}」を含むシリーズの全回を削除しますか？保護者の新規申込には出なくなります。申込とQ&Aは残ります。",
     "registrationHistoryTitle": "取消済みの申込",
-    "openAssessment": "能力評価"
+    "openAssessment": "能力評価",
+    "noticesTitle": "お知らせ文案",
+    "noticesBody": "梯隊、隊伍、またはその回に申し込んだ保護者向けの LINE グループ短文とアプリリンクを作ります。コピーのみで、LINE・SMS・プッシュ送信はありません。"
   },
   "roster": {
     "title": "名簿",
@@ -1005,6 +1008,55 @@
       "urlFetchFailed": "そのページを取得できませんでした（サイズ、種類、または HTTP エラー）。",
       "urlTimeout": "ページの取得がタイムアウトしました。",
       "missingProfile": "そのプロフィールは見つかりませんでした。"
+    }
+  },
+  "notices": {
+    "title": "お知らせ文案",
+    "lead": "短い LINE グループ文とアプリのディープリンクを作り、既存の保護者グループへ手動で貼ります。このアプリは LINE・SMS・プッシュを送信しません。申込と出試合はアプリが正で、LINE はお知らせだけです。",
+    "generateCta": "お知らせ文案を作成",
+    "templateLabel": "テンプレート",
+    "audienceLabel": "対象",
+    "sourceLabel": "練習または試合",
+    "sourcePlaceholder": "練習または試合を選ぶ",
+    "teamLabel": "単位",
+    "teamPlaceholder": "梯隊または隊伍を選ぶ",
+    "copyLocaleLabel": "文案の言語",
+    "copy": "コピー",
+    "copied": "コピーしました",
+    "kit": "用具",
+    "gear": "持ち物",
+    "gather": "集合",
+    "recap": "試合メモ",
+    "kitPlaceholder": "例：スパイク、すね当て（空なら省略）",
+    "gearPlaceholder": "例：水、おやつ（空なら省略）",
+    "gatherPlaceholder": "例：17:30 ゲート前（空なら省略）",
+    "recapPlaceholder": "短いメモ。保護者の氏名や電話は書かない",
+    "dualPasteHint": "この隊伍は2つの梯隊保護者グループにまたがります。それぞれコピーして対応する LINE グループへ。アプリのリンクは同じです。",
+    "pasteForGroup": "梯隊 {band} の保護者グループへ",
+    "registeredMeta": "現在の申込 {count} 人（合計のみ）",
+    "noSourceTitle": "セッション未選択",
+    "noSourceBody": "文案を作る練習または試合を選んでください。セッションや試合の詳細から「お知らせ文案を作成」でも開けます。",
+    "noPiiHint": "グループ文に保護者の氏名や電話は入りません。メモ欄に個人情報を貼らないでください。",
+    "noSendHint": "コピーのみです。プッシュ、LINE Messaging API、SMS、公式アカウント送信はありません。",
+    "coexistHint": "振込・減算のお知らせはセッション詳細の「お知らせをコピー」のままです。このページは置き換えません。",
+    "previewTitle": "プレビュー",
+    "templates": {
+      "regular_training_signup": "通常練習の申込",
+      "special_training_signup": "特別練習の申込",
+      "match_signup": "試合申込",
+      "match_notes": "試合の注意（用具／持ち物／集合）",
+      "thanks": "お礼",
+      "match_report": "試合レポート"
+    },
+    "audiences": {
+      "age_squad": "梯隊",
+      "competition_team": "隊伍",
+      "session_registrations": "この回の申込者"
+    },
+    "locales": {
+      "zh-Hant": "繁中",
+      "en": "English",
+      "ja": "日本語"
     }
   }
 }

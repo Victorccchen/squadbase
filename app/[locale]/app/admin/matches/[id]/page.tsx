@@ -18,6 +18,7 @@ import {
 } from "@/components/sessions/session-status-badge";
 import { MatchSideBadge, MatchStatusBadge } from "@/components/matches/match-status-badge";
 import { canRenderAdminPage } from "@/lib/auth/admin-page";
+import { suggestedNoticeAudience, suggestedNoticeTemplate } from "@/lib/credits/notice-templates";
 import { listTeams } from "@/lib/org/queries";
 import { getMatchForStaff, listMatchRosterForStaff } from "@/lib/org/match-queries";
 import { listSessionRegistrations } from "@/lib/org/session-queries";
@@ -52,6 +53,7 @@ export default async function AdminMatchDetailPage({ params }: AdminMatchDetailP
 
   const t = await getTranslations("admin");
   const matchesT = await getTranslations("matches");
+  const noticesT = await getTranslations("notices");
   const sessionsT = await getTranslations("sessions");
   const org = await getTranslations("org");
   const common = await getTranslations("common");
@@ -85,6 +87,12 @@ export default async function AdminMatchDetailPage({ params }: AdminMatchDetailP
               )}
               <Link href={`/app/admin/sessions/${match.id}`} className={secondaryButtonClassName}>
                 {matchesT("openSession")}
+              </Link>
+              <Link
+                href={`/app/admin/notices?session=${match.id}&template=${suggestedNoticeTemplate(match.kind, match.publication.public_status)}&audience=${suggestedNoticeAudience(match.team?.kind)}`}
+                className={secondaryButtonClassName}
+              >
+                {noticesT("generateCta")}
               </Link>
             </span>
           }

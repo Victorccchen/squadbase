@@ -11,7 +11,7 @@
     "footer": "Production deploys require human approval. Do not publish to production automatically."
   },
   "home": {
-    "eyebrow": "Stage 6A · admin Excel/CSV import and match URL assist",
+    "eyebrow": "Stage 6A + N · admin import and notice copy",
     "headline": "Welcome to the Club management system",
     "lead": "Visitors can open the public match schedule without signing in and add a match to a calendar. After parents sign in, training and competitions are listed separately; the same series can be attended or declined in one tap. Admins and assigned coaches record 1–5 scores for match situations and player traits. Ability details and credits are never shown on public pages.",
     "openDashboard": "Open dashboard",
@@ -59,7 +59,7 @@
   "app": {
     "eyebrow": "Dashboard",
     "title": "Club dashboard",
-    "welcome": "Parents can request a link to a child, register approved children for training or competitions, see prepaid session credits, and read ability assessments for linked children. Anyone can open the public match schedule and add it to a calendar. Admins manage teams, players, coaches, bindings, sessions, matches, claims, assessments, and data import. Coaches can open assigned rosters, take attendance, and record assessments for players on their teams.",
+    "welcome": "Parents can request a link to a child, register approved children for training or competitions, see prepaid session credits, and read ability assessments for linked children. Anyone can open the public match schedule and add it to a calendar. Admins manage teams, players, coaches, bindings, sessions, matches, claims, assessments, data import, and notice copy. Coaches can open assigned rosters, take attendance, and record assessments for players on their teams.",
     "accountTitle": "Account",
     "phoneLabel": "Phone",
     "rolesLabel": "Roles",
@@ -188,7 +188,8 @@
     "creditsAdmin": "Credit admin",
     "matches": "Matches",
     "import": "Import",
-    "assessments": "Assessments"
+    "assessments": "Assessments",
+    "notices": "Notices"
   },
   "access": {
     "deniedTitle": "You cannot open this page",
@@ -315,7 +316,9 @@
     "softDeleteSeries": "Delete entire series",
     "softDeleteSeriesConfirm": "Delete every occurrence in the series that includes “{title}”? Parents will no longer see those sessions for new signup. Registrations and Q&A are kept.",
     "registrationHistoryTitle": "Cancelled registrations",
-    "openAssessment": "Assessment"
+    "openAssessment": "Assessment",
+    "noticesTitle": "Notice copy",
+    "noticesBody": "Generate short LINE-group text and app deep links for a 梯隊, a 隊伍, or parents already registered on a session. Copy only — this app does not send LINE, SMS, or push."
   },
   "roster": {
     "title": "Roster",
@@ -1005,6 +1008,55 @@
       "urlFetchFailed": "Could not fetch that page (size, type, or HTTP error).",
       "urlTimeout": "Fetching that page timed out.",
       "missingProfile": "That profile was not found."
+    }
+  },
+  "notices": {
+    "title": "Notice copy",
+    "lead": "Generate a short LINE-group message and app deep links, then copy and paste into existing parent groups. This app does not send LINE, SMS, or push. The app is the source of truth; LINE is only a reminder.",
+    "generateCta": "Generate notice copy",
+    "templateLabel": "Template",
+    "audienceLabel": "Audience",
+    "sourceLabel": "Session or match",
+    "sourcePlaceholder": "Choose training or a match",
+    "teamLabel": "Unit",
+    "teamPlaceholder": "Choose a 梯隊 or 隊伍",
+    "copyLocaleLabel": "Copy language",
+    "copy": "Copy",
+    "copied": "Copied",
+    "kit": "Kit",
+    "gear": "Gear",
+    "gather": "Meet-up",
+    "recap": "Recap note",
+    "kitPlaceholder": "e.g. boots, shinguards (omit if blank)",
+    "gearPlaceholder": "e.g. water, snacks (omit if blank)",
+    "gatherPlaceholder": "e.g. 17:30 at the gate (omit if blank)",
+    "recapPlaceholder": "Short note — do not include parent names or phones",
+    "dualPasteHint": "This 隊伍 spans two 梯隊 parent groups. Copy each block into the matching LINE group. The app link is the same.",
+    "pasteForGroup": "Paste into the {band} parent group",
+    "registeredMeta": "{count} currently registered (total only)",
+    "noSourceTitle": "No session selected",
+    "noSourceBody": "Choose a training session or match to generate copy. You can also open this page from session or match detail.",
+    "noPiiHint": "Group copy never includes parent names or phone numbers. Do not paste personal data into the note fields.",
+    "noSendHint": "Generate and copy only. No push, LINE Messaging API, SMS, or official-account send.",
+    "coexistHint": "Bank-transfer and debit notice copy stay on the session detail “Copy notice” panel. This page does not replace them.",
+    "previewTitle": "Preview",
+    "templates": {
+      "regular_training_signup": "Regular training signup",
+      "special_training_signup": "Special training signup",
+      "match_signup": "Match signup",
+      "match_notes": "Match notes (kit / gear / meet-up)",
+      "thanks": "Thank you",
+      "match_report": "Match recap"
+    },
+    "audiences": {
+      "age_squad": "梯隊 (age squad)",
+      "competition_team": "隊伍 (competition team)",
+      "session_registrations": "Registered on this session"
+    },
+    "locales": {
+      "zh-Hant": "繁中",
+      "en": "English",
+      "ja": "日本語"
     }
   }
 }

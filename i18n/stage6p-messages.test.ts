@@ -97,6 +97,11 @@ const REQUIRED_KEYS = [
   "import.errors.blockedUrl",
   "org.errors.duplicatePlayer",
   "org.errors.matchKindRequired",
+  "nav.notices",
+  "notices.title",
+  "notices.generateCta",
+  "notices.templates.match_notes",
+  "admin.noticesTitle",
 ];
 
 describe("T6P-9 / T6A locale smoke", () => {
