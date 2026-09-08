@@ -11,7 +11,7 @@
     "footer": "生產環境部署需人工核准，請勿自動發佈到 production。"
   },
   "home": {
-    "eyebrow": "階段 6P.1 · 訓練與比賽分開、月曆／列表、友誼賽",
+    "eyebrow": "階段 6A＋N · 管理員匯入與通知文案",
     "headline": "歡迎使用球團管理系統",
     "lead": "訪客無需登入即可查看公開賽程，並可把比賽加入行事曆。家長登入後，訓練與賽事分開報名；同一系列可一次參加或取消。管理員與被指派教練可為四個比賽情境與四項特質打 1–5 分。能力細節與堂數不會出現在公開頁面。",
     "openDashboard": "進入儀表板",
@@ -59,7 +59,7 @@
   "app": {
     "eyebrow": "儀表板",
     "title": "球團儀表板",
-    "welcome": "家長可申請連結子女，為已核准的子女分別報名訓練或賽事、查看預付堂數，並閱讀已連結子女的能力評量。任何人都可以開啟公開賽程並加入行事曆。管理員可管理隊伍、球員、教練、連結審核、場次、比賽、匯款申請與評量。教練可開啟被指派的名單、登記出缺席，並為該隊球員記錄評量。",
+    "welcome": "家長可申請連結子女，為已核准的子女分別報名訓練或賽事、查看預付堂數，並閱讀已連結子女的能力評量。任何人都可以開啟公開賽程並加入行事曆。管理員可管理隊伍、球員、教練、連結審核、場次、比賽、匯款申請、評量、資料匯入與通知文案。教練可開啟被指派的名單、登記出缺席，並為該隊球員記錄評量。",
     "accountTitle": "帳號",
     "phoneLabel": "手機",
     "rolesLabel": "角色",
@@ -144,6 +144,10 @@
         "title": "公開比賽",
         "body": "建立盃賽、聯賽與友誼賽、發布只含顯示名稱與背號的先發名單，並登錄賽果。"
       },
+      "adminImport": {
+        "title": "資料匯入",
+        "body": "下載 CSV／Excel 範本，預覽列之後再確認匯入球員、教練與比賽。可貼公開賽事網址帶出草稿欄位。"
+      },
       "publicMatches": {
         "title": "公開賽程",
         "body": "訪客賽程：已發布的盃賽、聯賽與友誼賽、賽果與先發名單。家長報名請用賽事頁。"
@@ -183,6 +187,7 @@
     "claims": "匯款申請",
     "creditsAdmin": "堂數管理",
     "matches": "比賽",
+    "import": "匯入",
     "assessments": "能力評量",
     "notices": "通知文案"
   },
@@ -208,8 +213,8 @@
     "sessionsBody": "在梯隊上建立有標題的例行或特別訓練。可一次勾選多個梯隊，各自建立一組相同內容的場次。特別場次只產生 1 場。例行訓練依所選星期，加上結束日期或「每個星期幾的場次數」產生場次。盃賽、聯賽與友誼賽請到「管理 → 比賽」，並掛在隊伍上。管理員預設為月曆檢視。停用會暫時隱藏新報名；軟刪除會保留報名與問答。報名自動核准，此階段沒有人數上限。",
     "matchesTitle": "公開比賽",
     "matchesBody": "在公開賽程公告盃賽、聯賽與友誼賽。可一次勾選多個隊伍，各自建立相同標題與開賽時間的比賽。勾選要出現在公開名單的球員（只顯示名稱與背號）。已取消的比賽不會出現在訪客列表。寫入僅限管理員。",
-    "noticesTitle": "通知文案",
-    "noticesBody": "為梯隊、隊伍，或本場已報名的家長產生 LINE 群短文與 App 連結。只複製、不發送 LINE、簡訊或推播。",
+    "importTitle": "資料匯入",
+    "importBody": "上傳 Excel 或 CSV，先預覽有效／無效列，再按確認匯入。上傳本身不會寫入。球員與教練僅新增（重複列會被擋下）。比賽掛在隊伍上，預設不公開。網址輔助只填草稿。",
     "createTeam": "新增單位",
     "createAgeSquad": "新增梯隊",
     "createCompetitionTeam": "新增隊伍",
@@ -311,7 +316,9 @@
     "softDeleteSeries": "刪除整個系列",
     "softDeleteSeriesConfirm": "確定刪除「{title}」所屬系列的每一場？家長將無法新報名那些場次。報名與問答會保留。",
     "registrationHistoryTitle": "已取消的報名",
-    "openAssessment": "能力評量"
+    "openAssessment": "能力評量",
+    "noticesTitle": "通知文案",
+    "noticesBody": "為梯隊、隊伍，或本場已報名的家長產生 LINE 群短文與 App 連結。只複製、不發送 LINE、簡訊或推播。"
   },
   "roster": {
     "title": "名單",
@@ -491,7 +498,21 @@
       "noteTooLong": "備註不可超過 1000 字。",
       "invalidAssessedOn": "請輸入有效的評量日期。",
       "futureAssessedOn": "評量日期不可是未來。",
-      "assessmentNotFound": "找不到這筆評量。"
+      "assessmentNotFound": "找不到這筆評量。",
+      "duplicatePlayer": "已有相同英文名、姓與生日的球員（匯入僅新增，不更新）。",
+      "duplicateInFile": "此列與同一檔案中較早的列重複。",
+      "unknownProfilePhone": "找不到這個電話（或 profile id）對應的既有帳號。教練必須先自行登入；匯入不會建立登入帳號。",
+      "coachAlreadyLinked": "這個 profile 已經連結為教練。匯入僅新增。",
+      "ambiguousTeamName": "有多個單位使用這個名稱。請改填 id 欄。",
+      "importEmpty": "檔案沒有資料列。",
+      "importTooLarge": "檔案太大或列數過多（上限 1 MB／200 列）。",
+      "importInvalidFile": "無法讀取這個檔案。請使用 CSV 或 Excel 範本。",
+      "importNoValidRows": "沒有可匯入的有效列。請先修正預覽錯誤。",
+      "importHeaderInvalid": "表頭與範本不符。請重新下載範本。",
+      "blockedUrl": "這個網址不被允許。請用公開的 http(s) 頁面；私網、localhost 與 metadata 位址會被擋下。",
+      "urlFetchFailed": "無法抓取該頁（大小、類型或 HTTP 錯誤）。",
+      "urlTimeout": "抓取該頁逾時。",
+      "missingProfile": "找不到這個 profile。"
     }
   },
   "children": {
@@ -934,6 +955,59 @@
         "迅速前插支援持球者",
         "壓迫被突破時轉移進攻"
       ]
+    }
+  },
+  "import": {
+    "tabsLabel": "匯入類型",
+    "tabs": {
+      "players": "球員",
+      "coaches": "教練",
+      "matches": "比賽",
+      "url": "比賽網址"
+    },
+    "downloadCsv": "下載 CSV 範本",
+    "downloadXlsx": "下載 Excel 範本",
+    "fileLabel": "上傳 CSV 或 Excel",
+    "preview": "預覽（尚未匯入）",
+    "previewing": "解析中…",
+    "confirm": "確認匯入",
+    "importing": "匯入中…",
+    "confirmHint": "上傳只做解析。按下確認前不會寫入名冊。僅新增：重複與背號衝突會擋下該列。",
+    "previewCounts": "有效 {valid} · 無效 {invalid}",
+    "confirmCounts": "已新增 {created} · 失敗 {failed}",
+    "line": "列",
+    "status": "狀態",
+    "summary": "摘要",
+    "reason": "原因",
+    "valid": "有效",
+    "invalid": "無效",
+    "failedLine": "第 {line} 列：",
+    "urlLabel": "公開賽事網址",
+    "extract": "帶出建議欄位",
+    "extracting": "抓取中…",
+    "suggestionsHint": "建議欄位可編輯。儲存走既有的建立比賽流程。除非你勾選發布，否則預設不公開。不會儲存網頁 HTML。",
+    "saveMatch": "從草稿建立比賽",
+    "leads": {
+      "players": "必填：英文名、姓、生日、梯隊名稱或 id、梯隊背號，以及中文或日文名至少一個。可選隊伍與背號。重複＝相同英文姓名＋生日。",
+      "coaches": "必填：既有 profile 的 E.164 電話或 profile id。匯入不會建立登入帳號。可選隊伍名稱／id 以便連結後指派。",
+      "matches": "必填：隊伍名稱或 id、標題、kind（cup／league／friendly）、starts_at（台北時間）。對手可空白（未定）。is_published 預設 false。訓練 kind 會被拒絕。",
+      "url": "貼上公開的 http(s) 賽事頁。私網、localhost 與雲端 metadata 位址會被擋下。逾時約 8 秒、內容上限 1 MB。編輯建議欄位後再儲存。"
+    },
+    "errors": {
+      "duplicatePlayer": "已有相同英文名、姓與生日的球員（匯入僅新增，不更新）。",
+      "duplicateInFile": "此列與同一檔案中較早的列重複。",
+      "unknownProfilePhone": "找不到這個電話（或 profile id）對應的既有帳號。教練必須先自行登入；匯入不會建立登入帳號。",
+      "coachAlreadyLinked": "這個 profile 已經連結為教練。匯入僅新增。",
+      "ambiguousTeamName": "有多個單位使用這個名稱。請改填 id 欄。",
+      "importEmpty": "檔案沒有資料列。",
+      "importTooLarge": "檔案太大或列數過多（上限 1 MB／200 列）。",
+      "importInvalidFile": "無法讀取這個檔案。請使用 CSV 或 Excel 範本。",
+      "importNoValidRows": "沒有可匯入的有效列。請先修正預覽錯誤。",
+      "importHeaderInvalid": "表頭與範本不符。請重新下載範本。",
+      "blockedUrl": "這個網址不被允許。請用公開的 http(s) 頁面；私網、localhost 與 metadata 位址會被擋下。",
+      "urlFetchFailed": "無法抓取該頁（大小、類型或 HTTP 錯誤）。",
+      "urlTimeout": "抓取該頁逾時。",
+      "missingProfile": "找不到這個 profile。"
     }
   },
   "notices": {

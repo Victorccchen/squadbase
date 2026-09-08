@@ -8,7 +8,7 @@ import { TeamCreateResults } from "@/components/admin/team-create-results";
 import { INITIAL_ORG_ACTION_STATE } from "@/lib/org/errors";
 import type { OrgActionState } from "@/lib/org/errors";
 import type { MatchPublication, Team, TrainingSession } from "@/lib/supabase/database.types";
-import { MATCH_KINDS, parseMatchKind } from "@/lib/org/match";
+import { MATCH_KINDS, parseMatchKind, type MatchKind, type MatchSide } from "@/lib/org/match";
 import { toDateTimeLocalInput } from "@/lib/org/session-time";
 import { inputClassName, primaryButtonClassName } from "@/lib/ui";
 
@@ -20,6 +20,18 @@ type MatchFormProps = {
     "team_id" | "title" | "kind" | "starts_at" | "ends_at" | "location" | "notes" | "is_playoff"
   >;
   publication?: Pick<MatchPublication, "opponent" | "side" | "is_published">;
+  draft?: {
+    title?: string | null;
+    kind?: MatchKind | null;
+    startsAt?: string | null;
+    endsAt?: string | null;
+    location?: string | null;
+    notes?: string | null;
+    opponent?: string | null;
+    side?: MatchSide | null;
+    isPublished?: boolean;
+    isPlayoff?: boolean;
+  };
   submitLabel: string;
 };
 
@@ -28,6 +40,7 @@ export function MatchForm({
   teams,
   session,
   publication,
+  draft,
   submitLabel,
 }: MatchFormProps) {
   const t = useTranslations("matches");
@@ -36,7 +49,7 @@ export function MatchForm({
   const [state, formAction, pending] = useActionState(action, INITIAL_ORG_ACTION_STATE);
   const isEdit = Boolean(session);
   const [kind, setKind] = useState<(typeof MATCH_KINDS)[number]>(
-    parseMatchKind(session?.kind ?? "") ?? "cup",
+    parseMatchKind(session?.kind ?? "") ?? draft?.kind ?? "cup",
   );
   const activeTeams = teams.filter(
     (team) => team.status === "active" || team.id === session?.team_id,
@@ -51,7 +64,7 @@ export function MatchForm({
           name="title"
           required
           maxLength={200}
-          defaultValue={session?.title ?? ""}
+          defaultValue={session?.title ?? draft?.title ?? ""}
           className={inputClassName}
         />
       </label>
@@ -120,7 +133,7 @@ export function MatchForm({
             type="checkbox"
             name="is_playoff"
             value="true"
-            defaultChecked={session?.is_playoff ?? false}
+            defaultChecked={session?.is_playoff ?? draft?.isPlayoff ?? false}
           />
           {sessionsT("playoffFlag")}
         </label>
@@ -134,7 +147,13 @@ export function MatchForm({
           type="datetime-local"
           name="starts_at"
           required
-          defaultValue={session ? toDateTimeLocalInput(session.starts_at) : ""}
+          defaultValue={
+            session
+              ? toDateTimeLocalInput(session.starts_at)
+              : draft?.startsAt
+                ? toDateTimeLocalInput(draft.startsAt)
+                : ""
+          }
           className={inputClassName}
         />
       </label>
@@ -143,7 +162,13 @@ export function MatchForm({
         <input
           type="datetime-local"
           name="ends_at"
-          defaultValue={session ? toDateTimeLocalInput(session.ends_at) : ""}
+          defaultValue={
+            session
+              ? toDateTimeLocalInput(session.ends_at)
+              : draft?.endsAt
+                ? toDateTimeLocalInput(draft.endsAt)
+                : ""
+          }
           className={inputClassName}
         />
       </label>
@@ -161,7 +186,7 @@ export function MatchForm({
         <input
           name="location"
           maxLength={200}
-          defaultValue={session?.location ?? ""}
+          defaultValue={session?.location ?? draft?.location ?? ""}
           className={inputClassName}
         />
       </label>
@@ -170,7 +195,7 @@ export function MatchForm({
         <input
           name="opponent"
           maxLength={200}
-          defaultValue={publication?.opponent ?? ""}
+          defaultValue={publication?.opponent ?? draft?.opponent ?? ""}
           placeholder={t("opponentTbd")}
           className={inputClassName}
         />
@@ -180,7 +205,7 @@ export function MatchForm({
         {t("side")}
         <select
           name="side"
-          defaultValue={publication?.side ?? "home"}
+          defaultValue={publication?.side ?? draft?.side ?? "home"}
           className={inputClassName}
         >
           <option value="home">{t("sides.home")}</option>
@@ -193,7 +218,7 @@ export function MatchForm({
           name="notes"
           rows={3}
           maxLength={1000}
-          defaultValue={session?.notes ?? ""}
+          defaultValue={session?.notes ?? draft?.notes ?? ""}
           className={inputClassName}
         />
       </label>
@@ -204,7 +229,7 @@ export function MatchForm({
             type="checkbox"
             name="is_published"
             value="true"
-            defaultChecked={publication?.is_published ?? false}
+            defaultChecked={publication?.is_published ?? draft?.isPublished ?? false}
           />
           {t("publishNow")}
         </label>
