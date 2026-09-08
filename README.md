@@ -2,7 +2,7 @@
 
 Responsive web + PWA for a football **Club** (球團) operations app: training squads, courses, attendance, assessments, and matches/events.
 
-This repository is currently **Stage 6A** plus **Stage N** plus **Stage P**: Stages 1–6P.1 plus Stage ST (梯隊 / 隊伍), **admin Excel/CSV import**, admin LINE-group **generate + copy** (no send), and **private player headshots / ID photos** bound to each player. 梯隊 (age squad) is the roster band for every registered player and for training. 隊伍 (competition team) is the external match side; only continuing trainees may join, with at most two active 隊伍 and no two sharing the same `layer_key`. Parent nav still lists **訓練** (`/app/sessions`) separately from **賽事** (`/app/competitions`). Training attaches to 梯隊; matches attach to 隊伍. Dual membership **replaces** the PR #22 one-ladder-step-up rule. Admins import master data from `/app/admin/import` (preview then confirm; create-only) and generate notice copy from `/app/admin/notices`. Each player may have one current private headshot (and an optional PDF) for league ID cards; public match pages never show it.
+This repository is currently **Stage R** plus **Stage P**: Stages 1–6P.1 plus Stage ST (梯隊 / 隊伍), **admin Excel/CSV import** (Stage 6A), admin LINE-group **generate + copy** (Stage N), **admin Excel/CSV reports** (attendance, registrations, credit ledger, match roster), and **private player headshots / ID photos** bound to each player. 梯隊 (age squad) is the roster band for every registered player and for training. 隊伍 (competition team) is the external match side; only continuing trainees may join, with at most two active 隊伍 and no two sharing the same `layer_key`. Parent nav still lists **訓練** (`/app/sessions`) separately from **賽事** (`/app/competitions`). Training attaches to 梯隊; matches attach to 隊伍. Dual membership **replaces** the PR #22 one-ladder-step-up rule. Admins import master data from `/app/admin/import` (preview then confirm; create-only), generate notice copy from `/app/admin/notices`, and download operational reports from `/app/admin/reports`. Each player may have one current private headshot (and an optional PDF) for league ID cards; public match pages never show it.
 
 Parents can request a link to an **existing** player (the club creates the player record first). Until an admin approves, the parent cannot read that player’s private fields. After approval, the parent sees a basic “my children” list (names, birth date, team, jersey) and may **register that child for training sessions** on the child’s team. The parent may **withdraw a pending request**; only an **admin** may revoke an **approved** link. After revoke or withdraw, `is_approved_guardian_for_player` is false and the same pair may apply again. Session signup checks `guardian_player_links.status = approved`.
 
@@ -66,7 +66,7 @@ Routes:
 | `/[locale]/app/competitions/[id]` | Parent: one cup/league/friendly occurrence (signup, calendar, notes) |
 | `/[locale]/app/credits` | Parent: remaining credits, 10/20/30 pack claim with last-5 digits |
 | `/[locale]/app/assessments` | Ability assessments: staff create/edit; approved guardians read their children |
-| `/[locale]/app/admin/*` | Admin CRUD (teams, players, coaches, sessions, matches), **data import**, notice copy, binding approvals, payment claims, packages. Parents/coaches without admin see an access-denied page. |
+| `/[locale]/app/admin/*` | Admin CRUD (teams, players, coaches, sessions, matches), **data import**, **reports export**, notice copy, binding approvals, payment claims, packages. Parents/coaches without admin see an access-denied page. |
 | `/[locale]/app/roster` | Coach (or admin) roster of assigned teams, session signups, attendance, and assessment links |
 
 ## Checks (CI)
@@ -429,6 +429,8 @@ Multi-team membership (PR #22, Victor 2026-09-08): items **30–31** above. Stag
 - Optional: paste [`supabase/stage6p1_verification.sql`](supabase/stage6p1_verification.sql) after **both** Stage 6P.1 files (enum `friendly` in one Run, then match RPC/debit updates in a second Run). Asserts `session_kind.friendly` and friendly `match_debit`. Rolls back.
 - Optional: paste [`supabase/multi_team_membership_verification.sql`](supabase/multi_team_membership_verification.sql) after the PR #22 multi-team membership migration **and before Stage ST**. Asserts the old TMT-1 / TMT-2 / TMT-3 ladder-up rules. After Stage ST, use [`supabase/stage_st_verification.sql`](supabase/stage_st_verification.sql) instead (T-ST-1…8). Both roll back.
 - Optional: paste [`supabase/stage_st_verification.sql`](supabase/stage_st_verification.sql) after Stage ST (items 32–33). Asserts Futuro 隊伍 seed, birth eligibility, max 2, same `layer_key` forbidden, `continues_training`, and jersey uniqueness. Rolls back.
+
+Stage R (admin reports) adds **no new SQL**. Skip this list unless staging already missed a 4B/5B regrant.
 - Optional: paste [`supabase/guardian_link_dedupe_verification.sql`](supabase/guardian_link_dedupe_verification.sql) after **both** cleanup files (enum `revoked` in one Run, then the dedupe UPDATE in a second Run). Lists remaining open duplicates (expect none), asserts the unique index, and has a commented unique-insert check that rolls back.
 - Optional: the RLS block at the bottom of the Stage 2 file, with real user UUIDs.
 
@@ -807,6 +809,44 @@ Unit tests: [`lib/credits/notice-templates.test.ts`](lib/credits/notice-template
 
 Out of scope: push / LINE Messaging API / SMS / OA send, parent inbox, scheduled send, Stage 6A import, production deploy.
 
+## Schema choice (Stage R)
+
+Admin operational reports. **No new tables.** **No new RPCs.** Downloads stay in the browser (no Drive/email upload). Same admin gate as import.
+
+| Object | Behaviour |
+| --- | --- |
+| `/app/admin/reports` | Admin-only hub. Four types: attendance, registrations, credit ledger, match roster. Non-admins see access denied. |
+| Formats | `.csv` (UTF-8 BOM) and `.xlsx`. Filename includes report type, date range, and export timestamp (Asia/Taipei). CSV headers follow the UI locale (zh-Hant / en / ja). |
+| Filters | Date from/to (Taipei calendar days). 梯隊 and/or 隊伍. Session kinds. Include soft-deleted default **false**. |
+| Attendance | Per session/player: title, date, kind, unit, player, jersey, attendance status, credits debited, leave note if any. Window is session `starts_at`. |
+| Registrations | `session_registrations`: session, kind, unit, player, status, parent_note, registered_at, has Q&A flag (no thread dump). |
+| Credit ledger | `session_credit_ledger`: player, time, type, amount, related session, actor role (admin > coach > parent). Date window is transaction `created_at`. Labels match the admin credit UI. |
+| Match roster | Staff `match_roster` (published or unpublished): match title, date, 隊伍, opponent, player, jersey, publish status. |
+| Cap | 5000 data rows. Clear `reportTooManyRows` if exceeded. No async jobs. |
+| PII | Operational columns OK. **Default: no parent phones/contact PII.** |
+| Shortcuts | Session detail: export this session’s attendance and registrations. Match detail: export registrations and match roster. |
+
+Stage ST: training reports attach to 梯隊; match roster attaches to 隊伍.
+
+**No new staging SQL.** Admins already `SELECT` `session_attendance`, `session_registrations`, `session_credit_ledger`, `session_leave_requests`, `match_roster`, and `match_publications` via existing RLS. If staging shows `permission denied`, re-paste the existing Stage 4B / 5B regrant files (items 17 and 22). Do not run anything on production.
+
+Out of scope: parent self-serve download; email/Drive; CTFA PDF; assessment bulk export; push notifications; coach-scoped export; production deploy.
+
+Use an **admin** account for UI checks. Unit tests cover TR-1…TR-8 in [`lib/org/reports.test.ts`](lib/org/reports.test.ts). Reuses Stage 6A [`stringifyCsv`](lib/org/import-csv.ts) (UTF-8 BOM) and [`workbookToXlsx`](lib/org/import-xlsx-write.ts).
+
+| ID | Check |
+| --- | --- |
+| TR-1 | Attendance export for a Taipei date range includes sessions whose `starts_at` falls in `[from, to]` and excludes the next day. |
+| TR-2 | Registrations honour kind and 梯隊/隊伍 filters; cancelled rows and the has-Q&A flag are included; parent_note text is present; no phone column. |
+| TR-3 | Credit ledger rows use the same type labels as the admin credit UI (e.g. Attend debit / 出席扣堂) and actor role admin > coach > parent. Date window is transaction time. |
+| TR-4 | Match roster is scoped to selected 隊伍 and cup/league/friendly; unpublished staff lineup is included. |
+| TR-5 | Soft-deleted sessions are omitted unless “Include soft-deleted” is checked. |
+| TR-6 | Signed-in non-admin cannot open `/app/admin/reports` (access denied). Parent JWT cannot export (`forbidden`). |
+| TR-7 | CSV starts with UTF-8 BOM; zh-Hant headers (標題, 球員) and CJK names open correctly. Filename includes report type, date range, and timestamp. |
+| TR-8 | More than 5000 data rows returns `reportTooManyRows` and does not download. `npm run lint`, `npm run typecheck`, and `npm test` pass. |
+
+Locale check: report hub, filters, errors, and CSV headers in zh-Hant / en / ja.
+
 ## Staging vs production
 
 | Environment | Use |
@@ -828,7 +868,7 @@ i18n/                  next-intl routing, navigation, request config
 lib/age-band.ts        Season-start age band helper
 lib/assessments/       Assessment parse/validation, queries, server actions
 lib/credits/           Debit rules, packages, LINE notice copy, Stage N announcement templates, credit queries/actions
-lib/org/               Server actions, queries, import parse/validate, URL assist, match helpers
+lib/org/               Server actions, queries, import parse/validate, URL assist, match helpers, admin reports
 lib/auth/              Phone helpers, session/role guards
 lib/supabase/          Browser, server, and proxy (cookie) clients
 messages/              zh-Hant, en, ja copy
@@ -843,7 +883,7 @@ Auth uses the official `@supabase/ssr` cookie pattern for Next.js, composed in `
 
 `app/manifest.ts` publishes a web app manifest. Placeholder icons live in `public/icons/`. Installability and offline caching are not Stage 4A goals.
 
-## Out of scope (Stage 6P / Stage P)
+## Out of scope (Stage 6P / Stage P / Stage R)
 
 - Live scores / external federation feeds
 - Ticket sales / payments beyond Stage 4B bank-transfer claims
@@ -859,4 +899,4 @@ Auth uses the official `@supabase/ssr` cookie pattern for Next.js, composed in `
 
 ## Later stages
 
-Keep staging and production isolated, and keep production releases behind human approval. Richer contribution reports can follow on this folder structure.
+Keep staging and production isolated, and keep production releases behind human approval. Parent self-serve downloads, email/Drive delivery, and coach-scoped exports can follow on this folder structure.

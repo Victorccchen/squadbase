@@ -11,7 +11,7 @@
     "footer": "生產環境部署需人工核准，請勿自動發佈到 production。"
   },
   "home": {
-    "eyebrow": "階段 6A＋N · 管理員匯入與通知文案",
+    "eyebrow": "階段 R · 管理員報表與 Excel／CSV 匯出",
     "headline": "歡迎使用球團管理系統",
     "lead": "訪客無需登入即可查看公開賽程，並可把比賽加入行事曆。家長登入後，訓練與賽事分開報名；同一系列可一次參加或取消。管理員與被指派教練可為四個比賽情境與四項特質打 1–5 分。能力細節、堂數與球員證件照不會出現在公開頁面。",
     "openDashboard": "進入儀表板",
@@ -59,7 +59,7 @@
   "app": {
     "eyebrow": "儀表板",
     "title": "球團儀表板",
-    "welcome": "家長可申請連結子女，為已核准的子女分別報名訓練或賽事、查看預付堂數，並閱讀已連結子女的能力評量。任何人都可以開啟公開賽程並加入行事曆。管理員可管理隊伍、球員、教練、連結審核、場次、比賽、匯款申請、評量、資料匯入與通知文案。教練可開啟被指派的名單、登記出缺席，並為該隊球員記錄評量。",
+    "welcome": "家長可申請連結子女，為已核准的子女分別報名訓練或賽事、查看預付堂數，並閱讀已連結子女的能力評量。任何人都可以開啟公開賽程並加入行事曆。管理員可管理隊伍、球員、教練、連結審核、場次、比賽、匯款申請、評量、資料匯入、通知文案，以及 Excel／CSV 報表。教練可開啟被指派的名單、登記出缺席，並為該隊球員記錄評量。",
     "accountTitle": "帳號",
     "phoneLabel": "手機",
     "rolesLabel": "角色",
@@ -148,6 +148,10 @@
         "title": "資料匯入",
         "body": "下載 CSV／Excel 範本，預覽列之後再確認匯入球員、教練與比賽。可貼公開賽事網址帶出草稿欄位。"
       },
+      "adminReports": {
+        "title": "報表",
+        "body": "匯出缺席、報名、堂數流水與比賽名單的 Excel 或 CSV，供營運核對。僅限管理員；預設不含家長電話。"
+      },
       "publicMatches": {
         "title": "公開賽程",
         "body": "訪客賽程：已發布的盃賽、聯賽與友誼賽、賽果與先發名單。家長報名請用賽事頁。"
@@ -189,7 +193,8 @@
     "matches": "比賽",
     "import": "匯入",
     "assessments": "能力評量",
-    "notices": "通知文案"
+    "notices": "通知文案",
+    "reports": "報表"
   },
   "access": {
     "deniedTitle": "你沒有權限開啟此頁",
@@ -318,7 +323,9 @@
     "registrationHistoryTitle": "已取消的報名",
     "openAssessment": "能力評量",
     "noticesTitle": "通知文案",
-    "noticesBody": "為梯隊、隊伍，或本場已報名的家長產生 LINE 群短文與 App 連結。只複製、不發送 LINE、簡訊或推播。"
+    "noticesBody": "為梯隊、隊伍，或本場已報名的家長產生 LINE 群短文與 App 連結。只複製、不發送 LINE、簡訊或推播。",
+    "reportsTitle": "報表",
+    "reportsBody": "下載出缺席、報名、堂數流水與比賽名單的 Excel 或 CSV。僅限管理員。預設不含家長電話等聯絡個資。軟刪除場次預設排除。每次最多 5000 列。"
   },
   "roster": {
     "title": "名單",
@@ -537,6 +544,10 @@
       "urlFetchFailed": "無法抓取該頁（大小、類型或 HTTP 錯誤）。",
       "urlTimeout": "抓取該頁逾時。",
       "missingProfile": "找不到這個 profile。",
+      "invalidReportType": "請選擇有效的報表類型。",
+      "invalidReportFormat": "請選擇 CSV 或 Excel。",
+      "reportInvalidDateRange": "請輸入有效的起始與結束日期（起始不可晚於結束）。",
+      "reportTooManyRows": "此匯出超過 5000 列。請縮小日期區間、梯隊、隊伍或場次類型後再試。",
       "invalidPhotoType": "請使用 JPEG、PNG 或 WebP 圖片。",
       "photoTooLarge": "這張照片超過 5 MB。",
       "invalidPdfType": "請使用 PDF 檔。",
@@ -1086,6 +1097,70 @@
       "zh-Hant": "繁中",
       "en": "English",
       "ja": "日本語"
+    }
+  },
+  "reports": {
+    "tabsLabel": "報表類型",
+    "types": {
+      "attendance": "出缺席",
+      "registrations": "報名",
+      "credit_ledger": "堂數流水",
+      "match_roster": "比賽名單"
+    },
+    "typeHint": {
+      "attendance": "每一場次／球員一列，含出缺席狀態、已扣堂數與請假備註（如有）。",
+      "registrations": "報名列：狀態、家長備註、報名時間，以及是否有問答（不含完整對話）。",
+      "credit_ledger": "堂數交易：球員、時間、類型、數量、相關場次、操作角色。標籤與管理介面一致。",
+      "match_roster": "工作人員比賽名單（已發布或未發布）：標題、日期、隊伍、對手、球員、背號、發布狀態。"
+    },
+    "privacyHint": "檔案只在瀏覽器下載，不上傳外部空間。不含家長電話等聯絡個資。訓練報表對應梯隊；比賽名單對應隊伍。",
+    "dateFrom": "起始日期",
+    "dateTo": "結束日期",
+    "dateHint": "球團日曆日（Asia/Taipei）。出缺席、報名與比賽名單依場次／開賽時間篩選。堂數流水依交易時間篩選。",
+    "kindsHint": "全部不勾選表示包含此報表適用的所有類型。",
+    "ageSquadHint": "全部不勾選表示包含所有梯隊。訓練場次掛在梯隊上。",
+    "competitionTeamHint": "全部不勾選表示包含所有隊伍。比賽掛在隊伍上。",
+    "includeDeleted": "包含已軟刪除的場次",
+    "formatCsv": "下載 CSV",
+    "formatXlsx": "下載 Excel",
+    "downloading": "準備下載…",
+    "emptyDownload": "檔案只有表頭（沒有符合的列）。",
+    "shortcutAttendance": "匯出本場出缺席",
+    "shortcutRegistrations": "匯出本場報名",
+    "shortcutRoster": "匯出比賽名單",
+    "yes": "是",
+    "no": "否",
+    "actorUnknown": "—",
+    "columns": {
+      "title": "標題",
+      "date": "日期",
+      "kind": "類型",
+      "unit": "單位",
+      "player": "球員",
+      "jersey": "背號",
+      "attendanceStatus": "出缺席",
+      "creditsDebited": "已扣堂數",
+      "leaveNote": "請假備註",
+      "registrationStatus": "報名狀態",
+      "parentNote": "家長備註",
+      "registeredAt": "報名時間",
+      "hasQa": "有問答",
+      "time": "時間",
+      "ledgerType": "類型",
+      "amount": "數量",
+      "relatedSession": "相關場次",
+      "actorRole": "操作角色",
+      "opponent": "對手",
+      "published": "發布狀態",
+      "publicStatus": "比賽狀態"
+    },
+    "ledgerTypes": {
+      "purchase": "儲值",
+      "attend_debit": "出席扣堂",
+      "no_show_debit": "缺席扣堂",
+      "match_debit": "比賽扣堂",
+      "admin_adjust": "管理員調整",
+      "reversal": "沖銷"
     }
   }
 }

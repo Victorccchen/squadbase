@@ -25,6 +25,7 @@ import { AttendancePanel } from "@/components/credits/attendance-panel";
 import { DebitOverrideForm } from "@/components/credits/debit-override-form";
 import { LeaveReviewForm } from "@/components/credits/leave-review-form";
 import { NoticeCopyPanel } from "@/components/credits/notice-copy-panel";
+import { ReportExportButtons } from "@/components/admin/report-export-buttons";
 import {
   listActiveRosterForTeam,
   listAttendanceForSession,
@@ -56,6 +57,7 @@ export default async function AdminSessionDetailPage({ params }: SessionDetailPa
   const matchesT = await getTranslations("matches");
   const creditsT = await getTranslations("credits");
   const noticesT = await getTranslations("notices");
+  const reportsT = await getTranslations("reports");
   const org = await getTranslations("org");
   const common = await getTranslations("common");
   const locale = await getLocale();
@@ -174,6 +176,18 @@ export default async function AdminSessionDetailPage({ params }: SessionDetailPa
             </dd>
           </div>
         </dl>
+        <section className="flex flex-col gap-3">
+          <ReportExportButtons
+            reportType="attendance"
+            sessionId={session.id}
+            label={reportsT("shortcutAttendance")}
+          />
+          <ReportExportButtons
+            reportType="registrations"
+            sessionId={session.id}
+            label={reportsT("shortcutRegistrations")}
+          />
+        </section>
         {isMatchKind(session.kind) ? (
           <section className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">

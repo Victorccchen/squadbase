@@ -41,6 +41,7 @@ const REQUIRED_KEYS = [
   "org.errors.pdfTooLarge",
   "org.errors.invalidPhotoPath",
   "org.errors.notApprovedGuardian",
+  "org.errors.reportTooManyRows",
 ];
 
 describe("Stage P locale smoke", () => {
