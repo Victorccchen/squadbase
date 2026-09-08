@@ -260,8 +260,8 @@ Training and matches stay on `training_sessions`. Friendly is a new `session_kin
 
 | Rule | Behaviour |
 | --- | --- |
-| Admin sessions | List/create/edit **regular** and **special** only. Creating cup/league/friendly from this UI is rejected; edit of those kinds redirects to `/app/admin/matches`. |
-| Admin matches | Create/edit/publish **cup**, **league**, **friendly**. Bulk create supports friendly. Unpublished friendlies stay hidden from `/matches`. |
+| Admin sessions | List/create/edit **regular** and **special** only. Creating cup/league/friendly from this UI is rejected; edit of those kinds redirects to `/app/admin/matches`. Create can multi-select teams (one independent series/session per team). |
+| Admin matches | Create/edit/publish **cup**, **league**, **friendly**. Single and bulk create can multi-select teams (one independent fixture set per team). Bulk create supports friendly. Unpublished friendlies stay hidden from `/matches`. |
 | Parent | `/app/sessions` remains regular/special. `/app/competitions` includes friendly, grouped by `(team_id, kind, title)`. |
 | Views | Parent training & competitions and admin sessions & matches toggle **月曆 / 列表**, reusing the Stage 4A.1 month grid. |
 | Debit | `friendly` → `match_debit`, 1 per competing player per Asia/Taipei calendar day (same skip-if-already-debited rule as cup/league). Regular/special debit is unchanged. |
@@ -673,6 +673,22 @@ Apply Stage 6P.1 SQL **file contents** (not path strings) on **staging only** (e
 | T6P1-10 | Admin `/app/admin/matches` list collapses by `(team_id, kind, title)`, has the same toggle, and kind/team filters (friendly/cup/league). |
 
 Locale check: friendly kind label (友誼賽 / Friendly / 親善試合) and updated admin/parent copy in zh-Hant / en / ja.
+
+### Admin multi-team create
+
+Admin **new match**, **bulk kickoffs**, and **new training** forms use a team checkbox list (same pattern as the admin matches/sessions filters). Shared fields are filled once. Each selected `team_id` is created independently through the existing RPCs (`admin_create_match`, `admin_create_matches`, `admin_create_session_series`). At least one team is required. Match kinds stay cup/league/friendly; training stays regular/special. List grouping is unchanged.
+
+**Partial success (TMT-C4):** if team A succeeds and team B fails, A’s rows stay. The form lists per-team results and does **not** roll back with a compensating delete. All-success redirects to the list (or the new match detail when only one team was selected on single-match create).
+
+| ID | Check |
+| --- | --- |
+| TMT-C1 | Match new/bulk: select two teams → two league groups with the same title/kickoffs. |
+| TMT-C2 | Training series new: multi-select two teams → two series, each only on that team. |
+| TMT-C3 | Zero teams selected → validation error (`missingTeam`). |
+| TMT-C4 | One team failure surfaces the reason; other teams still created when possible. |
+| TMT-C5 | `npm run lint`, `npm run typecheck`, and `npm test` pass. |
+
+Out of scope: debit rules, parent signup, Stage 6A Excel import, deleting existing Victory League data.
 
 ## Staging vs production
 
