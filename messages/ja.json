@@ -409,7 +409,7 @@
       "missingTeam": "チームを選んでください。",
       "missingAgeSquad": "梯隊を選んでください。",
       "partialTeamCreates": "一部の単位は作成済みです。失敗理由は以下に表示されます。成功した単位はすでに一覧にあります。",
-      "jerseyTaken": "この背番号はこの単位ですでに使われています。",
+      "jerseyTaken": "この背番号はこの単位（梯隊または隊伍）で他の選手が使っています。その単位で空いている 1–99 の番号を選んでください。",
       "tooManyActiveMemberships": "この選手にはすでに有効な隊伍所属が2つあるため、追加できません。",
       "membershipBandNotAllowed": "この梯隊は選手の出生年齢から算出した梯隊と一致しません。",
       "membershipBirthNotEligible": "この選手の出生年齢は、その隊伍の資格に合いません。",

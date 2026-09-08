@@ -48,10 +48,17 @@ function initialSlots(
     const team = teams.find((unit) => unit.id === row.team_id);
     return team ? isAgeSquad(team) : row.team?.kind === "age_squad";
   });
-  const competition = active.filter((row) => {
-    const team = teams.find((unit) => unit.id === row.team_id);
-    return team ? isCompetitionTeam(team) : row.team?.kind === "competition_team";
-  });
+  const competition = active
+    .filter((row) => {
+      const team = teams.find((unit) => unit.id === row.team_id);
+      return team ? isCompetitionTeam(team) : row.team?.kind === "competition_team";
+    })
+    .slice()
+    .sort((a, b) => {
+      const nameA = teams.find((unit) => unit.id === a.team_id)?.name ?? "";
+      const nameB = teams.find((unit) => unit.id === b.team_id)?.name ?? "";
+      return nameA.localeCompare(nameB);
+    });
   return {
     squadId: squad?.team_id ?? "",
     squadJersey: squad?.jersey_number != null ? String(squad.jersey_number) : "",
@@ -218,6 +225,7 @@ export function PlayerForm({
             min={1}
             max={99}
             required
+            key={`age-squad-jersey-${initial.squadId}`}
             defaultValue={initial.squadJersey}
             className={inputClassName}
           />
@@ -256,6 +264,7 @@ export function PlayerForm({
             inputMode="numeric"
             min={1}
             max={99}
+            key={`comp-jersey-${initial.teamId}`}
             defaultValue={initial.jersey}
             className={inputClassName}
           />
@@ -295,6 +304,7 @@ export function PlayerForm({
               inputMode="numeric"
               min={1}
               max={99}
+              key={`comp-jersey-2-${initial.teamId2}`}
               defaultValue={initial.jersey2}
               className={inputClassName}
             />

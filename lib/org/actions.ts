@@ -25,6 +25,7 @@ import {
   readString,
   readAllStrings,
   membershipWriteErrorKey,
+  jerseyNumberTakenOnTeam,
   teamDeleteErrorKey,
 } from "@/lib/org/parse";
 import {
@@ -343,6 +344,31 @@ async function setPlayerAssignments(
     });
     if (!decision.ok) {
       return decision.errorKey;
+    }
+  }
+
+  const slots = [ageSquad, ...memberships];
+  const { data: jerseyHolders, error: jerseyError } = await supabase
+    .from("team_memberships")
+    .select("player_id, team_id, jersey_number")
+    .in(
+      "team_id",
+      slots.map((row) => row.teamId),
+    );
+  if (jerseyError) {
+    console.error("setPlayerAssignments jersey holders", jerseyError.message);
+    return "generic";
+  }
+  for (const slot of slots) {
+    if (
+      jerseyNumberTakenOnTeam({
+        playerId,
+        teamId: slot.teamId,
+        jersey: slot.jersey,
+        holders: jerseyHolders ?? [],
+      })
+    ) {
+      return "jerseyTaken";
     }
   }
 

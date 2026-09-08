@@ -409,7 +409,7 @@
       "missingTeam": "請選擇隊伍。",
       "missingAgeSquad": "請選擇梯隊。",
       "partialTeamCreates": "部分單位已建立。失敗原因列於下方；成功的單位已出現在列表中。",
-      "jerseyTaken": "此背號在這個單位已經被使用。",
+      "jerseyTaken": "此背號在這個單位（梯隊或隊伍）已被其他球員使用。請改填該單位尚未使用的 1–99 號。",
       "tooManyActiveMemberships": "此球員已有兩個啟用中的隊伍歸屬，無法再新增。",
       "membershipBandNotAllowed": "此梯隊與球員依出生年齡算出的梯隊不符。",
       "membershipBirthNotEligible": "此球員的出生年齡不符合該隊伍資格。",
