@@ -5,6 +5,7 @@ import { AccessDenied } from "@/components/access-denied";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { TeamLifecycleForms } from "@/components/admin/team-lifecycle-forms";
+import { PhotoPackExportForm } from "@/components/admin/photo-pack-export";
 import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { getTeam, listTeamPlayers, countCoachAssignmentsForTeam } from "@/lib/org/queries";
 import { setTeamStatus } from "@/lib/org/actions";
@@ -57,6 +58,9 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
             </span>
           }
         />
+        {team.kind === "competition_team" ? (
+          <PhotoPackExportForm variant="team" teamId={team.id} />
+        ) : null}
         <dl className="grid gap-3 rounded-2xl border border-zinc-200 bg-white p-6 text-sm dark:border-zinc-800 dark:bg-zinc-900">
           <div className="flex justify-between gap-4">
             <dt className="text-zinc-500">{org("teamKind")}</dt>

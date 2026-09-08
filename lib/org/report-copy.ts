@@ -7,6 +7,7 @@ import en from "../../messages/en.json" with { type: "json" };
 import ja from "../../messages/ja.json" with { type: "json" };
 import zhHant from "../../messages/zh-Hant.json" with { type: "json" };
 import type { ReportCopy } from "./reports.ts";
+import type { PhotoPackCopy } from "./photo-pack.ts";
 
 const BUNDLES = {
   "zh-Hant": zhHant,
@@ -34,5 +35,23 @@ export function reportCopyForLocale(locale: string): ReportCopy {
     yes: bundle.reports.yes,
     no: bundle.reports.no,
     opponentTbd: bundle.matches.opponentTbd,
+  };
+}
+
+export function photoPackCopyForLocale(locale: string): PhotoPackCopy {
+  const bundle: MessageBundle =
+    locale === "en" ? BUNDLES.en : locale === "ja" ? BUNDLES.ja : BUNDLES["zh-Hant"];
+  return {
+    jersey: bundle.reports.photoPack.columns.jersey,
+    player: bundle.reports.photoPack.columns.player,
+    nameEn: bundle.reports.photoPack.columns.nameEn,
+    birthDate: bundle.reports.photoPack.columns.birthDate,
+    unit: bundle.reports.photoPack.columns.unit,
+    hasPhoto: bundle.reports.photoPack.columns.hasPhoto,
+    hasPdf: bundle.reports.photoPack.columns.hasPdf,
+    photoFile: bundle.reports.photoPack.columns.photoFile,
+    pdfFile: bundle.reports.photoPack.columns.pdfFile,
+    yes: bundle.reports.yes,
+    no: bundle.reports.no,
   };
 }

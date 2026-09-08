@@ -24,6 +24,7 @@
   - [ ] Stage N: admin notice templates + audiences (generate + copy LINE-group text; no send)
   - [ ] Stage R: admin Excel/CSV reports (attendance, registrations, credit ledger, match roster); admin-only; browser download
   - [ ] Stage P: player headshots / ID photos bound to players (private Storage)
+  - [ ] Stage P.1: admin league-registration ZIP (roster Excel + photos/; optional pdfs/)
 
 ## Verification
 

@@ -113,6 +113,7 @@ export type OrgErrorKey =
   | "invalidPdfType"
   | "pdfTooLarge"
   | "invalidPhotoPath"
+  | "photoPackTooMany"
   | "generic";
 
 export type TeamCreateRowResult = {

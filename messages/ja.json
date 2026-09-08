@@ -325,7 +325,7 @@
     "noticesTitle": "お知らせ文案",
     "noticesBody": "梯隊、隊伍、またはその回に申し込んだ保護者向けの LINE グループ短文とアプリリンクを作ります。コピーのみで、LINE・SMS・プッシュ送信はありません。",
     "reportsTitle": "レポート",
-    "reportsBody": "出欠、申込、単位台帳、試合メンバーを Excel または CSV でダウンロードします。管理者のみ。既定では保護者の電話など連絡先 PII を含めません。論理削除した回は、含めない限り除外します。1回あたり最大 5000 行です。"
+    "reportsBody": "出欠、申込、単位台帳、試合メンバーを Excel または CSV でダウンロードし、連盟提出用 ZIP（名簿 + 写真）も出せます。管理者のみ。既定では保護者の電話など連絡先 PII を含めません。論理削除した回は、含めない限り除外します。表は 1 回あたり最大 5000 行、写真パックは最大 200 人です。"
   },
   "roster": {
     "title": "名簿",
@@ -552,7 +552,8 @@
       "photoTooLarge": "その写真は 5 MB を超えています。",
       "invalidPdfType": "PDF ファイルを使ってください。",
       "pdfTooLarge": "その PDF は 8 MB を超えています。",
-      "invalidPhotoPath": "その写真パスは無効です。"
+      "invalidPhotoPath": "その写真パスは無効です。",
+      "photoPackTooMany": "この写真パックは 200 人を超えています。梯隊または隊伍の選択を減らしてやり直してください。"
     }
   },
   "children": {
@@ -1128,6 +1129,26 @@
     "shortcutAttendance": "この回の出欠を書き出す",
     "shortcutRegistrations": "この回の申込を書き出す",
     "shortcutRoster": "試合メンバーを書き出す",
+    "photoPack": {
+      "title": "連盟提出用の写真パック",
+      "lead": "選手名簿（Excel + CSV）と photos/ フォルダを含む ZIP をダウンロードします。ID PDF がある場合は pdfs/ も入ります。写真がない選手も名簿に残し、欠ファイルで ZIP 全体は失敗しません。管理者のみ。",
+      "hint": "梯隊と隊伍を未選択のままにすると、有効な所属がある選手をすべて含めます。単位を選ぶと範囲を絞れます。",
+      "download": "名簿 + 写真 ZIP をダウンロード",
+      "teamDownload": "この隊伍の ZIP をダウンロード",
+      "teamHint": "この隊伍の有効メンバー：roster.xlsx、manifest.csv、photos/。PDF があれば pdfs/。",
+      "downloading": "ZIP を準備中…",
+      "columns": {
+        "jersey": "背番号",
+        "player": "選手",
+        "nameEn": "英語名",
+        "birthDate": "生年月日",
+        "unit": "単位",
+        "hasPhoto": "写真あり",
+        "hasPdf": "PDF あり",
+        "photoFile": "写真ファイル",
+        "pdfFile": "PDF ファイル"
+      }
+    },
     "yes": "はい",
     "no": "いいえ",
     "actorUnknown": "—",
