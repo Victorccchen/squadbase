@@ -89,7 +89,7 @@ Players do **not** store a primary `team_id`. Membership and jersey number live 
 - `UNIQUE (player_id, team_id)` — a player cannot be listed twice on one team
 - Jersey numbers are integers 1–99
 
-The Stage 2 admin player form keeps **at most one membership row per player** (create/update reuses that row). The table can hold more than one membership later without another migration.
+The Stage 2 admin player form keeps **at most two active membership rows per player** (Victor 2026-09-08). Create/update replaces the active set (1 or 2 teams). A player may join their **natural computed age band or exactly one band higher** on `U6 → U8 → U10 → U12 → U15 → U18 → senior` — never lower. `public.age_band` has no U9/U11, so U8 play-up is **U10**. `reserve` is a team classification, not a step on this ladder. Database trigger + `admin_set_player_memberships` enforce the cap and band rule so SQL cannot bypass them. Jersey uniqueness stays `UNIQUE (team_id, jersey_number)`.
 
 Jersey uniqueness is a **full** unique constraint, including inactive memberships (hypothesis: do not silently reuse a number while the row still exists). Stage 2 has no hard-delete UI; change the number or mark the player/membership inactive without freeing the number until the membership row is removed in SQL.
 
@@ -367,6 +367,8 @@ Stage 5B (`20260907120000_stage5b_public_matches.sql`): **Victor: paste the SQL 
 
 Stage 6P.1: **two separate SQL Editor Runs** on **staging only**, then the regrant. First paste contents of [`supabase/migrations/20260909000000_stage6p1_session_kind_friendly.sql`](supabase/migrations/20260909000000_stage6p1_session_kind_friendly.sql). After that succeeds, paste contents of [`supabase/migrations/20260909010000_stage6p1_friendly_matches.sql`](supabase/migrations/20260909010000_stage6p1_friendly_matches.sql). Then paste [`supabase/migrations/20260909020000_regrant_stage6p1_privileges.sql`](supabase/migrations/20260909020000_regrant_stage6p1_privileges.sql). Do not concatenate step 1 and step 2. Optional check: paste [`supabase/stage6p1_verification.sql`](supabase/stage6p1_verification.sql) contents. Do not run on production. If you skip step 1, step 2 fails with `invalid input value for enum session_kind: "friendly"`.
 
+Multi-team membership (Victor 2026-09-08): **two SQL Editor Runs** on **staging only**. First paste contents of [`supabase/migrations/20260909100000_multi_team_membership_rules.sql`](supabase/migrations/20260909100000_multi_team_membership_rules.sql). Then paste [`supabase/migrations/20260909110000_regrant_multi_team_membership_privileges.sql`](supabase/migrations/20260909110000_regrant_multi_team_membership_privileges.sql). Optional check: paste [`supabase/multi_team_membership_verification.sql`](supabase/multi_team_membership_verification.sql) contents (TMT-1 third active rejected, TMT-2 U8+U6 rejected / U8+U10 allowed, TMT-3 two valid then third rejected). Do not run on production. Do not put secrets in git.
+
 ### How to verify the migration
 
 - Table Editor shows the five Stage 2 tables above, with RLS enabled, plus `guardian_player_links` after Stage 3.
@@ -381,6 +383,7 @@ Stage 6P.1: **two separate SQL Editor Runs** on **staging only**, then the regra
 - Optional: paste [`supabase/stage5_verification.sql`](supabase/stage5_verification.sql) after Stage 5. Asserts JSONB 1–5 validators and write RPC signatures. Rolls back.
 - Optional: paste [`supabase/stage5b_verification.sql`](supabase/stage5b_verification.sql) after Stage 5B. Asserts `match_publications` / RPCs exist and that cup/league debit C4 is unchanged. Rolls back.
 - Optional: paste [`supabase/stage6p1_verification.sql`](supabase/stage6p1_verification.sql) after **both** Stage 6P.1 files (enum `friendly` in one Run, then match RPC/debit updates in a second Run). Asserts `session_kind.friendly` and friendly `match_debit`. Rolls back.
+- Optional: paste [`supabase/multi_team_membership_verification.sql`](supabase/multi_team_membership_verification.sql) after the multi-team membership migration. Asserts TMT-1 / TMT-2 / TMT-3 (max two active; U8 natural cannot join U6; U8+U10 play-up allowed). Rolls back.
 - Optional: paste [`supabase/guardian_link_dedupe_verification.sql`](supabase/guardian_link_dedupe_verification.sql) after **both** cleanup files (enum `revoked` in one Run, then the dedupe UPDATE in a second Run). Lists remaining open duplicates (expect none), asserts the unique index, and has a commented unique-insert check that rolls back.
 - Optional: the RLS block at the bottom of the Stage 2 file, with real user UUIDs.
 
@@ -419,7 +422,7 @@ Boundary examples (T2-4), as of 2026:
 | 2008-08-15 | 2026-08-15 | 2026-08-15 | 18 | senior |
 | 2008-08-16 | 2026-08-15 | 2026-08-15 | 17 | U18 |
 
-The player form and player detail screen show the suggested band. Saving is still allowed if it does not match the team’s band.
+The player form and player detail screen show the suggested band and the allowed play-up band. Saving a **lower** band, a skip of more than one step, or a third active membership is rejected (UI + server action + DB trigger).
 
 ## Enable Phone Auth (staging Dashboard)
 
@@ -498,10 +501,15 @@ SMS/OTP is required to **create** a session (or a second user such as a coach/pa
 
 | ID | Check |
 | --- | --- |
-| T2-1 | Admin creates a team, then a player with English given + family and at least one of zh/ja, DOB, team, jersey → saved. Suggested age band appears on the form/detail. |
+| T2-1 | Admin creates a team, then a player with English given + family and at least one of zh/ja, DOB, **one or two** teams, jersey → saved. Suggested age band and allowed play-up band appear on the form/detail. |
 | T2-2 | Same jersey on the same team → rejected (UI error and/or DB `23505`). |
 | T2-3 | Same jersey on a different team → allowed. |
 | T2-4 | Age-band examples around 15 Aug: `npm test` and the table above. |
+| TMT-1 | A third **active** membership is rejected (admin form + trigger/RPC). |
+| TMT-2 | Natural U8 cannot join U6. Natural U8 may join U8 and/or U10 (next higher in the computed ladder; there is no U9). |
+| TMT-3 | Two valid bands (same + one higher) save; adding a third is rejected. |
+| TMT-4 | `nextHigherComputedAgeBand` / `isTeamAgeBandAllowedForPlayer` unit tests (`npm test`). |
+| TMT-5 | `npm run lint`, `npm run typecheck`, and `npm test` pass. |
 | T2-5 | Coach assigned to team A sees A on `/app/roster`, not team B. Coach cannot use admin CRUD (`/app/admin` shows access denied). |
 | T2-6 | Parent (no coach/admin) opening `/app/admin` or `/app/admin/teams/new` sees access denied, not the forms. |
 | T2-7 | `npm run lint`, `npm run typecheck`, and `npm test` pass. |

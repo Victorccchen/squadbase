@@ -14,8 +14,10 @@ import {
   parseGuardianSearch,
   parseJersey,
   parseLinkDecision,
+  parseMembershipSlots,
   parsePlayerNames,
   playerNamesError,
+  membershipWriteErrorKey,
   teamDeleteErrorKey,
   teamHasNoDeleteBlockers,
 } from "./parse.ts";
@@ -67,6 +69,93 @@ describe("isJerseyUniqueViolation", () => {
         details: "Key (player_id, team_id)=(abc, def) already exists.",
       }),
       false,
+    );
+  });
+});
+
+describe("parseMembershipSlots", () => {
+  function form(entries: Record<string, string>): FormData {
+    const data = new FormData();
+    for (const [key, value] of Object.entries(entries)) {
+      data.set(key, value);
+    }
+    return data;
+  }
+
+  it("requires at least one team and jersey", () => {
+    assert.deepEqual(parseMembershipSlots(form({})), {
+      ok: false,
+      errorKey: "missingTeam",
+    });
+  });
+
+  it("accepts one or two distinct teams", () => {
+    assert.deepEqual(
+      parseMembershipSlots(
+        form({
+          team_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          jersey_number: "7",
+        }),
+      ),
+      {
+        ok: true,
+        memberships: [{ teamId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", jersey: 7 }],
+      },
+    );
+    assert.deepEqual(
+      parseMembershipSlots(
+        form({
+          team_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          jersey_number: "7",
+          team_id_2: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          jersey_number_2: "10",
+        }),
+      ),
+      {
+        ok: true,
+        memberships: [
+          { teamId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", jersey: 7 },
+          { teamId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", jersey: 10 },
+        ],
+      },
+    );
+  });
+
+  it("rejects the same team twice", () => {
+    assert.deepEqual(
+      parseMembershipSlots(
+        form({
+          team_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          jersey_number: "7",
+          team_id_2: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          jersey_number_2: "8",
+        }),
+      ),
+      { ok: false, errorKey: "duplicateMembershipTeam" },
+    );
+  });
+});
+
+describe("membershipWriteErrorKey", () => {
+  it("maps TMT trigger/RPC messages", () => {
+    assert.equal(
+      membershipWriteErrorKey({
+        message: "player already has 2 active memberships",
+      }),
+      "tooManyActiveMemberships",
+    );
+    assert.equal(
+      membershipWriteErrorKey({
+        message: "team age band not allowed for this player",
+      }),
+      "membershipBandNotAllowed",
+    );
+    assert.equal(
+      membershipWriteErrorKey({
+        code: "23505",
+        message: 'duplicate key value violates unique constraint "team_memberships_team_jersey_key"',
+      }),
+      "jerseyTaken",
     );
   });
 });

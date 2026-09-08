@@ -34,6 +34,7 @@ export default async function EditPlayerPage({ params }: EditPlayerPageProps) {
           action={action}
           player={player}
           membership={player.membership}
+          memberships={player.memberships}
           teams={teams}
           submitLabel={t("save")}
         />

@@ -4,7 +4,7 @@ import { AccessDenied } from "@/components/access-denied";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { canRenderAdminPage } from "@/lib/auth/admin-page";
-import { listPlayers } from "@/lib/org/queries";
+import { listPlayers, formatActiveMembershipSummary } from "@/lib/org/queries";
 import { localizedPlayerName } from "@/lib/org/display-name";
 import { ageBandFromBirthDate } from "@/lib/age-band";
 import { primaryButtonClassName } from "@/lib/ui";
@@ -48,9 +48,7 @@ export default async function AdminPlayersPage() {
                       {localizedPlayerName(player, locale)}
                     </span>
                     <span className="text-sm text-zinc-500">
-                      {player.membership?.team
-                        ? `${player.membership.team.name} · #${player.membership.jersey_number}`
-                        : org("noTeam")}
+                      {formatActiveMembershipSummary(player.memberships) ?? org("noTeam")}
                       {" · "}
                       {band ? org(`ageBands.${band}`) : org("ageBandUnknown")}
                     </span>

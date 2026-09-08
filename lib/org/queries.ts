@@ -10,8 +10,11 @@ import type {
   TeamMembership,
 } from "@/lib/supabase/database.types";
 
+export type MembershipWithTeam = TeamMembership & { team: Team | null };
+
 export type PlayerWithMembership = Player & {
-  membership: (TeamMembership & { team: Team | null }) | null;
+  membership: MembershipWithTeam | null;
+  memberships: MembershipWithTeam[];
 };
 
 export type CoachWithProfile = Coach & {
@@ -107,32 +110,58 @@ export async function getTeam(id: string): Promise<Team | null> {
   return data;
 }
 
-function pickCurrentMembership(
-  rows: (TeamMembership & { teams: Team | Team[] | null })[] | null,
-): (TeamMembership & { team: Team | null }) | null {
-  if (!rows || rows.length === 0) {
-    return null;
-  }
-
-  const sorted = [...rows].sort((a, b) =>
-    a.updated_at < b.updated_at ? 1 : -1,
-  );
-  const current = sorted[0];
-  const nestedTeam = current.teams;
+function mapMembershipRow(
+  row: TeamMembership & { teams: Team | Team[] | null },
+): MembershipWithTeam {
+  const nestedTeam = row.teams;
   const team = Array.isArray(nestedTeam) ? nestedTeam[0] ?? null : nestedTeam;
-
   return {
-    id: current.id,
-    player_id: current.player_id,
-    team_id: current.team_id,
-    jersey_number: current.jersey_number,
-    status: current.status,
-    created_at: current.created_at,
-    updated_at: current.updated_at,
-    created_by: current.created_by,
-    updated_by: current.updated_by,
+    id: row.id,
+    player_id: row.player_id,
+    team_id: row.team_id,
+    jersey_number: row.jersey_number,
+    status: row.status,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    created_by: row.created_by,
+    updated_by: row.updated_by,
     team,
   };
+}
+
+function sortMemberships(rows: MembershipWithTeam[]): MembershipWithTeam[] {
+  return [...rows].sort((a, b) => {
+    if (a.status === "active" && b.status !== "active") {
+      return -1;
+    }
+    if (a.status !== "active" && b.status === "active") {
+      return 1;
+    }
+    return a.updated_at < b.updated_at ? 1 : -1;
+  });
+}
+
+function mapPlayerMemberships(
+  rows: (TeamMembership & { teams: Team | Team[] | null })[] | null,
+): { membership: MembershipWithTeam | null; memberships: MembershipWithTeam[] } {
+  const memberships = sortMemberships((rows ?? []).map(mapMembershipRow));
+  const current =
+    memberships.find((row) => row.status === "active") ?? memberships[0] ?? null;
+  return { membership: current, memberships };
+}
+
+export function formatActiveMembershipSummary(
+  memberships: MembershipWithTeam[] | undefined,
+): string | null {
+  const labels = (memberships ?? [])
+    .filter((row): row is MembershipWithTeam & { team: Team } =>
+      row.status === "active" && row.team !== null,
+    )
+    .map((row) => `${row.team.name} · #${row.jersey_number}`);
+  if (labels.length === 0) {
+    return null;
+  }
+  return labels.join(" · ");
 }
 
 export async function listPlayers(): Promise<PlayerWithMembership[]> {
@@ -152,7 +181,7 @@ export async function listPlayers(): Promise<PlayerWithMembership[]> {
     const { team_memberships, ...player } = row;
     return {
       ...(player as Player),
-      membership: pickCurrentMembership(
+      ...mapPlayerMemberships(
         team_memberships as (TeamMembership & { teams: Team | Team[] | null })[] | null,
       ),
     };
@@ -179,7 +208,7 @@ export async function getPlayer(id: string): Promise<PlayerWithMembership | null
   const { team_memberships, ...player } = data;
   return {
     ...(player as Player),
-    membership: pickCurrentMembership(
+    ...mapPlayerMemberships(
       team_memberships as (TeamMembership & { teams: Team | Team[] | null })[] | null,
     ),
   };
@@ -358,12 +387,6 @@ export type GuardianLinkWithPlayer = GuardianPlayerLink & {
   guardian: Profile | null;
 };
 
-function mapMembershipEmbed(
-  rows: (TeamMembership & { teams: Team | Team[] | null })[] | null,
-): (TeamMembership & { team: Team | null }) | null {
-  return pickCurrentMembership(rows);
-}
-
 function mapPlayerEmbed(
   player: (Player & { team_memberships?: (TeamMembership & { teams: Team | Team[] | null })[] | null }) | Player[] | null,
 ): PlayerWithMembership | null {
@@ -376,7 +399,7 @@ function mapPlayerEmbed(
   };
   return {
     ...(rest as Player),
-    membership: mapMembershipEmbed(team_memberships ?? null),
+    ...mapPlayerMemberships(team_memberships ?? null),
   };
 }
 

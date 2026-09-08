@@ -47,6 +47,16 @@ const REQUIRED_KEYS = [
   "admin.resetListWindow",
   "admin.listWindowEmptyTitle",
   "admin.listWindowEmptyBody",
+  "org.firstTeam",
+  "org.secondTeam",
+  "org.addSecondTeam",
+  "org.removeSecondTeam",
+  "org.membershipRuleHint",
+  "org.ageBandNotAllowed",
+  "org.playingUpNote",
+  "org.errors.tooManyActiveMemberships",
+  "org.errors.membershipBandNotAllowed",
+  "org.errors.duplicateMembershipTeam",
 ];
 
 describe("T6P-9 locale smoke", () => {

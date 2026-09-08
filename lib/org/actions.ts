@@ -7,18 +7,18 @@ import { getPublicSupabaseEnv } from "@/lib/env";
 import { loadSignedInAccount } from "@/lib/auth/session";
 import { canAccessAdmin } from "@/lib/auth/roles";
 import { createClient } from "@/lib/supabase/server";
-import { todayInClubTimeZone, formatIsoDate } from "@/lib/age-band";
+import { todayInClubTimeZone, formatIsoDate, ageBandFromBirthDate, isTeamAgeBandAllowedForPlayer } from "@/lib/age-band";
 import {
-  isJerseyUniqueViolation,
   isPlayersCjkNameCheckViolation,
   parseAgeBand,
   parseBirthDate,
-  parseJersey,
+  parseMembershipSlots,
   parseOrgStatus,
   parsePlayerNames,
   parseUuid,
   playerNamesError,
   readString,
+  membershipWriteErrorKey,
   teamDeleteErrorKey,
 } from "@/lib/org/parse";
 import { type OrgActionState, type OrgErrorKey } from "@/lib/org/errors";
@@ -224,93 +224,64 @@ export async function deleteTeam(
   return ok();
 }
 
-async function upsertMembership(
+async function setPlayerMemberships(
   supabase: Awaited<ReturnType<typeof createClient>>,
   playerId: string,
-  teamId: string,
-  jerseyNumber: number,
-  actorId: string,
+  memberships: { teamId: string; jersey: number }[],
+  birthDate: string,
 ): Promise<OrgErrorKey | null> {
-  const { data: existing, error: loadError } = await supabase
-    .from("team_memberships")
-    .select("id")
-    .eq("player_id", playerId)
-    .order("updated_at", { ascending: false });
+  const teamIds = memberships.map((row) => row.teamId);
+  const { data: teams, error: teamError } = await supabase
+    .from("teams")
+    .select("id, age_band")
+    .in("id", teamIds);
 
-  if (loadError) {
-    console.error("upsertMembership load", loadError.message);
+  if (teamError) {
+    console.error("setPlayerMemberships teams", teamError.message);
     return "generic";
   }
+  if (!teams || teams.length !== teamIds.length) {
+    return "teamNotFound";
+  }
 
-  const current = existing?.[0];
-  const extras = (existing ?? []).slice(1);
-
-  if (current) {
-    const { error } = await supabase
-      .from("team_memberships")
-      .update({
-        team_id: teamId,
-        jersey_number: jerseyNumber,
-        status: "active",
-        updated_by: actorId,
-      })
-      .eq("id", current.id);
-
-    if (error) {
-      if (isJerseyUniqueViolation(error)) {
-        return "jerseyTaken";
-      }
-      console.error("upsertMembership update", error.message);
-      return "generic";
+  const natural = ageBandFromBirthDate(birthDate);
+  for (const membership of memberships) {
+    const team = teams.find((row) => row.id === membership.teamId);
+    if (!team) {
+      return "teamNotFound";
     }
-  } else {
-    const { error } = await supabase.from("team_memberships").insert({
-      player_id: playerId,
-      team_id: teamId,
-      jersey_number: jerseyNumber,
-      status: "active",
-      created_by: actorId,
-      updated_by: actorId,
-    });
-
-    if (error) {
-      if (isJerseyUniqueViolation(error)) {
-        return "jerseyTaken";
-      }
-      console.error("upsertMembership insert", error.message);
-      return "generic";
+    if (!isTeamAgeBandAllowedForPlayer(natural, team.age_band)) {
+      return "membershipBandNotAllowed";
     }
   }
 
-  if (extras.length > 0) {
-    const { error } = await supabase
-      .from("team_memberships")
-      .delete()
-      .in(
-        "id",
-        extras.map((row) => row.id),
-      );
-    if (error) {
-      console.error("upsertMembership extras", error.message);
-    }
+  const { error } = await supabase.rpc("admin_set_player_memberships", {
+    p_player_id: playerId,
+    p_team_ids: teamIds,
+    p_jersey_numbers: memberships.map((row) => row.jersey),
+  });
+
+  if (error) {
+    console.error("setPlayerMemberships", error.message);
+    return membershipWriteErrorKey(error);
   }
 
   return null;
 }
 
-function playerFields(formData: FormData) {
+function playerIdentityFields(formData: FormData) {
   const names = parsePlayerNames(formData);
   const birthRaw = readString(formData, "birth_date");
   const today = formatIsoDate(todayInClubTimeZone());
   const birthDate = parseBirthDate(birthRaw, today);
   const status = parseOrgStatus(readString(formData, "status")) ?? "active";
-  const teamId = readString(formData, "team_id");
-  const jersey = parseJersey(readString(formData, "jersey_number"));
 
-  return { ...names, birthDate, status, teamId, jersey };
+  return { ...names, birthDate, status };
 }
 
-function validatePlayerFields(fields: ReturnType<typeof playerFields>): OrgErrorKey | null {
+function validatePlayerIdentity(
+  fields: ReturnType<typeof playerIdentityFields>,
+): OrgErrorKey | null {
   const nameError = playerNamesError(fields);
   if (nameError) {
     return nameError;
@@ -320,12 +291,6 @@ function validatePlayerFields(fields: ReturnType<typeof playerFields>): OrgError
   }
   if (!fields.birthDate) {
     return "invalidBirthDate";
-  }
-  if (!fields.teamId) {
-    return "missingTeam";
-  }
-  if (fields.jersey === null) {
-    return "invalidJersey";
   }
   return null;
 }
@@ -349,10 +314,15 @@ export async function createPlayer(
     return fail(actor.errorKey);
   }
 
-  const fields = playerFields(formData);
-  const invalid = validatePlayerFields(fields);
+  const fields = playerIdentityFields(formData);
+  const invalid = validatePlayerIdentity(fields);
   if (invalid) {
     return fail(invalid);
+  }
+
+  const parsedMemberships = parseMembershipSlots(formData);
+  if (!parsedMemberships.ok) {
+    return fail(parsedMemberships.errorKey);
   }
 
   const { data: player, error } = await actor.supabase
@@ -374,12 +344,11 @@ export async function createPlayer(
     return fail(playerWriteError(error));
   }
 
-  const membershipError = await upsertMembership(
+  const membershipError = await setPlayerMemberships(
     actor.supabase,
     player.id,
-    fields.teamId,
-    fields.jersey as number,
-    actor.user.id,
+    parsedMemberships.memberships,
+    fields.birthDate as string,
   );
 
   if (membershipError) {
@@ -402,10 +371,15 @@ export async function updatePlayer(
     return fail(actor.errorKey);
   }
 
-  const fields = playerFields(formData);
-  const invalid = validatePlayerFields(fields);
+  const fields = playerIdentityFields(formData);
+  const invalid = validatePlayerIdentity(fields);
   if (invalid) {
     return fail(invalid);
+  }
+
+  const parsedMemberships = parseMembershipSlots(formData);
+  if (!parsedMemberships.ok) {
+    return fail(parsedMemberships.errorKey);
   }
 
   const { error } = await actor.supabase
@@ -425,12 +399,11 @@ export async function updatePlayer(
     return fail(playerWriteError(error));
   }
 
-  const membershipError = await upsertMembership(
+  const membershipError = await setPlayerMemberships(
     actor.supabase,
     playerId,
-    fields.teamId,
-    fields.jersey as number,
-    actor.user.id,
+    parsedMemberships.memberships,
+    fields.birthDate as string,
   );
 
   if (membershipError) {
