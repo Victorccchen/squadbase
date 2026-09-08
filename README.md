@@ -2,7 +2,7 @@
 
 Responsive web + PWA for a football **Club** (球團) operations app: training squads, courses, attendance, assessments, and matches/events.
 
-This repository is currently **Stage 6A** plus **Stage N**: Stages 1–6P.1 plus Stage ST (梯隊 / 隊伍), **admin Excel/CSV import** (players, coaches, matches, plus match URL assist), and admin LINE-group **generate + copy** (no send). 梯隊 (age squad) is the roster band for every registered player and for training. 隊伍 (competition team) is the external match side; only continuing trainees may join, with at most two active 隊伍 and no two sharing the same `layer_key`. Parent nav still lists **訓練** (`/app/sessions`) separately from **賽事** (`/app/competitions`). Training attaches to 梯隊; matches attach to 隊伍. Dual membership **replaces** the PR #22 one-ladder-step-up rule. Admins import master data from `/app/admin/import` (preview then confirm; create-only) and generate notice copy from `/app/admin/notices`.
+This repository is currently **Stage 6A** plus **Stage N** plus **Stage P**: Stages 1–6P.1 plus Stage ST (梯隊 / 隊伍), **admin Excel/CSV import**, admin LINE-group **generate + copy** (no send), and **private player headshots / ID photos** bound to each player. 梯隊 (age squad) is the roster band for every registered player and for training. 隊伍 (competition team) is the external match side; only continuing trainees may join, with at most two active 隊伍 and no two sharing the same `layer_key`. Parent nav still lists **訓練** (`/app/sessions`) separately from **賽事** (`/app/competitions`). Training attaches to 梯隊; matches attach to 隊伍. Dual membership **replaces** the PR #22 one-ladder-step-up rule. Admins import master data from `/app/admin/import` (preview then confirm; create-only) and generate notice copy from `/app/admin/notices`. Each player may have one current private headshot (and an optional PDF) for league ID cards; public match pages never show it.
 
 Parents can request a link to an **existing** player (the club creates the player record first). Until an admin approves, the parent cannot read that player’s private fields. After approval, the parent sees a basic “my children” list (names, birth date, team, jersey) and may **register that child for training sessions** on the child’s team. The parent may **withdraw a pending request**; only an **admin** may revoke an **approved** link. After revoke or withdraw, `is_approved_guardian_for_player` is false and the same pair may apply again. Session signup checks `guardian_player_links.status = approved`.
 
@@ -96,6 +96,18 @@ Jersey uniqueness is a **full** unique constraint, including inactive membership
 Stage 2 uses **active/inactive status** for day-to-day roster turnover. Membership and assignment foreign keys are `ON DELETE RESTRICT` on teams. Admins can **deactivate** a squad (it disappears from parent-facing active lists such as `list_active_teams_for_link`) without deleting history. **Hard delete** is allowed when there are **no active** `team_memberships`. Inactive/ended memberships and `coach_team_assignments` are removed in the same `admin_delete_team` transaction. Players are never cascade-deleted. If **active** memberships remain, the admin list shows a zh-Hant (and en/ja) reason next to Delete and in the confirm dialog; move or end those memberships first, or keep the team deactivated.
 
 `coaches.profile_id` is 1:1 with `profiles` (and therefore `auth.users`). `coach_team_assignments(coach_id, team_id)` controls which squads a coach may read.
+
+## Schema choice (Stage P)
+
+Player ID photos are bound to **`players`**, not to teams or matches:
+
+| Column | Purpose |
+| --- | --- |
+| `photo_path` | Current headshot object key in the private `player-photos` bucket |
+| `photo_updated_at` | Set when `photo_path` changes; null when cleared |
+| `id_pdf_path` | Optional league-submission PDF in the same bucket |
+
+There is one current image per player (replacing it writes a new object key and deletes the old one). Uploads are **admin** or an **approved linked parent** for that child. Assigned coaches may **view** signed URLs on `/app/roster` but cannot upload. Files never appear on public `/matches` or published lineups. Staging apply steps: [`docs/staging-player-photos.md`](docs/staging-player-photos.md).
 
 Age band is stored on **teams** (the squad’s intended band). It is **not** stored on players. The app computes a suggested band from `birth_date` and the 15 August season rule (see below).
 
@@ -822,7 +834,7 @@ lib/supabase/          Browser, server, and proxy (cookie) clients
 messages/              zh-Hant, en, ja copy
 supabase/migrations/   SQL (apply on staging only)
 .github/workflows/     PR CI (lint, typecheck, unit tests; no deploy)
-docs/                  Staging Vercel CD (Connect GitHub → env → Auth redirect)
+docs/                  Staging Vercel CD (Connect GitHub → env → Auth redirect); Stage P Storage notes
 ```
 
 Auth uses the official `@supabase/ssr` cookie pattern for Next.js, composed in `proxy.ts` with `next-intl` (Next.js 16 proxy, not the old `middleware.ts` filename). Server pages call `getUser()`; the proxy refreshes/validates with `getClaims()`. Clients receive only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
@@ -831,12 +843,12 @@ Auth uses the official `@supabase/ssr` cookie pattern for Next.js, composed in `
 
 `app/manifest.ts` publishes a web app manifest. Placeholder icons live in `public/icons/`. Installability and offline caching are not Stage 4A goals.
 
-## Out of scope (Stage 6P)
+## Out of scope (Stage 6P / Stage P)
 
 - Live scores / external federation feeds
 - Ticket sales / payments beyond Stage 4B bank-transfer claims
 - LINE Messaging API auto-send, official account binding, or push notifications
-- Official CTFA PDF export or claiming CTFA certification
+- Official CTFA PDF export, auto ID-card layout, face detect/crop, or batch ZIP
 - Changing Stage 4B debit math or Stage 5 assessment scoring
 - Auto-creating `session_series` for Victory League shells
 - OAuth calendar sync (Google/Apple/Outlook one-tap add only)

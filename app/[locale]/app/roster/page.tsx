@@ -8,6 +8,9 @@ import { loadSignedInAccount } from "@/lib/auth/session";
 import { canAccessRoster } from "@/lib/auth/roles";
 import { listRoster } from "@/lib/org/queries";
 import { listCoachSessions, listCoachRegisteredPlayers } from "@/lib/org/session-queries";
+import { signPlayerStoragePaths } from "@/lib/org/player-photo-queries";
+import { playerHasIdPdf } from "@/lib/org/player-photos";
+import { PlayerPhotoThumb } from "@/components/players/player-photo-thumb";
 import { localizedPlayerName, playerNameList } from "@/lib/org/display-name";
 import { ageBandFromBirthDate } from "@/lib/age-band";
 import { formatClubDateTimeRange } from "@/lib/org/session-time";
@@ -29,6 +32,8 @@ export default async function RosterPage() {
     listCoachSessions(),
     listCoachRegisteredPlayers(),
   ]);
+  const photosT = await getTranslations("photos");
+  const signed = await signPlayerStoragePaths(rows.map((row) => row.player.photo_path));
 
   const byTeam = new Map<string, typeof rows>();
   for (const row of rows) {
@@ -64,7 +69,18 @@ export default async function RosterPage() {
                       key={row.membership.id}
                       className="flex flex-col gap-1 rounded-2xl border border-zinc-200 bg-white px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900 sm:flex-row sm:items-center sm:justify-between"
                     >
-                      <span className="font-medium">
+                      <span className="flex items-center gap-3 font-medium">
+                        <PlayerPhotoThumb
+                          url={
+                            row.player.photo_path
+                              ? (signed.get(row.player.photo_path) ?? null)
+                              : null
+                          }
+                          alt={localizedPlayerName(row.player, locale)}
+                          missingLabel={photosT("missing")}
+                          hasPdf={playerHasIdPdf(row.player)}
+                          pdfLabel={photosT("hasPdf")}
+                        />
                         #{row.membership.jersey_number} {localizedPlayerName(row.player, locale)}
                       </span>
                       <span className="flex flex-col gap-1 text-sm text-zinc-500 sm:items-end">

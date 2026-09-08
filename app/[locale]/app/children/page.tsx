@@ -6,8 +6,10 @@ import { RequestLinkForm } from "@/components/children/request-link-form";
 import { CancelLinkForm } from "@/components/children/cancel-link-form";
 import { LinkStatusBadge } from "@/components/bindings/link-status-badge";
 import { AssessmentSummary } from "@/components/assessments/assessment-summary";
+import { PlayerPhotoPanel } from "@/components/players/player-photo-panel";
 import { listLatestAssessmentsByPlayerId } from "@/lib/assessments/queries";
 import { listActiveTeamsForLink, listOwnGuardianLinks, formatActiveMembershipSummary } from "@/lib/org/queries";
+import { signPlayerStoragePaths } from "@/lib/org/player-photo-queries";
 import { uniqueApprovedLinksByPlayerId } from "@/lib/org/guardian-links";
 import { localizedPlayerName, playerNameList } from "@/lib/org/display-name";
 import { canParentCancelLink } from "@/lib/org/parse";
@@ -33,6 +35,7 @@ export default async function ChildrenPage() {
       .map((link) => link.player?.id)
       .filter((id): id is string => Boolean(id)),
   );
+  const signed = await signPlayerStoragePaths(approved.map((link) => link.player?.photo_path));
 
   return (
     <>
@@ -97,6 +100,17 @@ export default async function ChildrenPage() {
                     ) : (
                       <p className="mt-2 text-sm text-zinc-500">{t("noAssessment")}</p>
                     )}
+                    <div className="mt-3">
+                      <PlayerPhotoPanel
+                        playerId={player.id}
+                        photoPath={player.photo_path}
+                        idPdfPath={player.id_pdf_path}
+                        signedUrl={
+                          player.photo_path ? (signed.get(player.photo_path) ?? null) : null
+                        }
+                        canWrite
+                      />
+                    </div>
                     <Link href="/app/credits" className="mt-2 text-sm font-medium underline underline-offset-2">
                       {t("openCredits")}
                     </Link>

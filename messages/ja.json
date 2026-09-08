@@ -13,7 +13,7 @@
   "home": {
     "eyebrow": "ステージ 6A＋N · 管理者取込とお知らせ文案",
     "headline": "クラブ管理システムへようこそ",
-    "lead": "来場者はログインなしで公開日程を見られ、試合をカレンダーに追加できます。保護者のログイン後は練習と試合が別リストになり、同じシリーズをまとめて参加または取消できます。管理者と担当コーチは試合状況4項目と選手特性4項目を1–5で記録します。能力の詳細と単位は公開ページに出ません。",
+    "lead": "来場者はログインなしで公開日程を見られ、試合をカレンダーに追加できます。保護者のログイン後は練習と試合が別リストになり、同じシリーズをまとめて参加または取消できます。管理者と担当コーチは試合状況4項目と選手特性4項目を1–5で記録します。能力の詳細、単位、選手の証明写真は公開ページに出ません。",
     "openDashboard": "ダッシュボードを開く",
     "openMatches": "試合日程",
     "sampleLabel": "サンプル文言",
@@ -322,7 +322,7 @@
   },
   "roster": {
     "title": "名簿",
-    "lead": "割り当てられたチームの選手です。この一覧は読み取り専用です。",
+    "lead": "割り当てられたチームの選手です。証明写真は閲覧できます。変更できるのは管理者または承認済みの保護者だけです。",
     "emptyTitle": "担当選手はいません",
     "emptyBody": "管理者が選手のいるチームにあなたを割り当てると、ここに表示されます。",
     "sessionsTitle": "セッション申込",
@@ -330,6 +330,30 @@
     "sessionsEmptyTitle": "担当セッションはありません",
     "sessionsEmptyBody": "管理者が担当チームにセッションを作成すると、ここに表示されます。",
     "openAssessment": "能力評価"
+  },
+  "photos": {
+    "title": "証明写真",
+    "missing": "未登録",
+    "missingFilter": "顔写真なし",
+    "showAll": "全選手を表示",
+    "listMissingEmptyTitle": "顔写真が未登録の選手はいません",
+    "listMissingEmptyBody": "この一覧の選手はすでに写真があるか、選手がまだいません。",
+    "upload": "写真をアップロード",
+    "replace": "写真を差し替え",
+    "remove": "写真を削除",
+    "uploading": "アップロード中…",
+    "removing": "削除中…",
+    "imageHint": "JPEG / PNG / WebP。最大 5 MB。長辺が 2000 px を超える場合は縮小します。",
+    "pdfHint": "連盟提出用の任意 PDF。最大 8 MB。一覧は写真サムネイルを優先します。",
+    "hasPdf": "PDF あり",
+    "noPdf": "PDF なし",
+    "previewAlt": "選手の顔写真",
+    "chooseImage": "写真を選択",
+    "choosePdf": "PDF を選択",
+    "uploadPdf": "PDF をアップロード",
+    "removePdf": "PDF を削除",
+    "viewOnly": "この写真は閲覧できます。変更できるのは管理者または承認済みの保護者だけです。",
+    "privacyHint": "写真は非公開です。公開日程や公開メンバー表には出ません。"
   },
   "org": {
     "teamName": "チーム名",
@@ -512,7 +536,12 @@
       "blockedUrl": "その URL は許可されません。公開 http(s) ページを使ってください。プライベート、localhost、metadata アドレスは遮断します。",
       "urlFetchFailed": "そのページを取得できませんでした（サイズ、種類、または HTTP エラー）。",
       "urlTimeout": "ページの取得がタイムアウトしました。",
-      "missingProfile": "そのプロフィールは見つかりませんでした。"
+      "missingProfile": "そのプロフィールは見つかりませんでした。",
+      "invalidPhotoType": "JPEG、PNG、または WebP の画像を使ってください。",
+      "photoTooLarge": "その写真は 5 MB を超えています。",
+      "invalidPdfType": "PDF ファイルを使ってください。",
+      "pdfTooLarge": "その PDF は 8 MB を超えています。",
+      "invalidPhotoPath": "その写真パスは無効です。"
     }
   },
   "children": {

@@ -104,6 +104,11 @@ export type OrgErrorKey =
   | "urlFetchFailed"
   | "urlTimeout"
   | "missingProfile"
+  | "invalidPhotoType"
+  | "photoTooLarge"
+  | "invalidPdfType"
+  | "pdfTooLarge"
+  | "invalidPhotoPath"
   | "generic";
 
 export type TeamCreateRowResult = {
