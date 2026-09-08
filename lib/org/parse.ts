@@ -203,14 +203,38 @@ export function isUniqueViolation(error: PgLikeError): boolean {
 }
 
 export function isJerseyUniqueViolation(error: PgLikeError): boolean {
+  const text = errorBlob(error);
+  if (text.includes("jersey_number already used")) {
+    return true;
+  }
   if (!isUniqueViolation(error)) {
     return false;
   }
-  const text = errorBlob(error);
   return (
     text.includes("team_memberships_team_jersey") ||
     text.includes("jersey_number") ||
     text.includes("(team_id, jersey_number)")
+  );
+}
+
+export type JerseyHolder = {
+  player_id: string;
+  team_id: string;
+  jersey_number: number;
+};
+
+/** Unique (team_id, jersey_number) excluding this player — own jersey changes are not a clash. */
+export function jerseyNumberTakenOnTeam(options: {
+  playerId: string;
+  teamId: string;
+  jersey: number;
+  holders: JerseyHolder[];
+}): boolean {
+  return options.holders.some(
+    (row) =>
+      row.team_id === options.teamId &&
+      row.jersey_number === options.jersey &&
+      row.player_id !== options.playerId,
   );
 }
 

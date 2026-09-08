@@ -10,8 +10,15 @@ import type {
   TeamKind,
   TeamMembership,
 } from "@/lib/supabase/database.types";
+import {
+  formatActiveMembershipSummary,
+  sortMemberships,
+  splitMemberships,
+  type MembershipWithTeam,
+} from "@/lib/org/membership-display";
 
-export type MembershipWithTeam = TeamMembership & { team: Team | null };
+export type { MembershipWithTeam };
+export { formatActiveMembershipSummary, sortMemberships, splitMemberships };
 
 export type PlayerWithMembership = Player & {
   membership: MembershipWithTeam | null;
@@ -131,18 +138,6 @@ function mapMembershipRow(
   };
 }
 
-function sortMemberships(rows: MembershipWithTeam[]): MembershipWithTeam[] {
-  return [...rows].sort((a, b) => {
-    if (a.status === "active" && b.status !== "active") {
-      return -1;
-    }
-    if (a.status !== "active" && b.status === "active") {
-      return 1;
-    }
-    return a.updated_at < b.updated_at ? 1 : -1;
-  });
-}
-
 function mapPlayerMemberships(
   rows: (TeamMembership & { teams: Team | Team[] | null })[] | null,
 ): { membership: MembershipWithTeam | null; memberships: MembershipWithTeam[] } {
@@ -150,31 +145,6 @@ function mapPlayerMemberships(
   const { ageSquad, competition } = splitMemberships(memberships);
   const current = ageSquad ?? competition[0] ?? memberships[0] ?? null;
   return { membership: current, memberships };
-}
-
-export function formatActiveMembershipSummary(
-  memberships: MembershipWithTeam[] | undefined,
-): string | null {
-  const labels = (memberships ?? [])
-    .filter((row): row is MembershipWithTeam & { team: Team } =>
-      row.status === "active" && row.team !== null,
-    )
-    .map((row) => `${row.team.name} · #${row.jersey_number}`);
-  if (labels.length === 0) {
-    return null;
-  }
-  return labels.join(" · ");
-}
-
-export function splitMemberships(memberships: MembershipWithTeam[]): {
-  ageSquad: MembershipWithTeam | null;
-  competition: MembershipWithTeam[];
-} {
-  const active = memberships.filter((row) => row.status === "active");
-  return {
-    ageSquad: active.find((row) => row.team?.kind === "age_squad") ?? null,
-    competition: active.filter((row) => row.team?.kind === "competition_team"),
-  };
 }
 
 export async function listPlayers(): Promise<PlayerWithMembership[]> {

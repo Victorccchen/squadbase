@@ -65,6 +65,7 @@ const REQUIRED_KEYS = [
   "org.errors.continuesTrainingRequired",
   "org.errors.invalidTeamKind",
   "org.errors.duplicateMembershipTeam",
+  "org.errors.jerseyTaken",
   "org.errors.partialTeamCreates",
   "admin.createAgeSquad",
   "admin.createCompetitionTeam",

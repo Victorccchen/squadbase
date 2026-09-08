@@ -409,7 +409,7 @@
       "missingTeam": "Choose a team.",
       "missingAgeSquad": "Choose a 梯隊.",
       "partialTeamCreates": "Created for some teams. Failures are listed below; successful teams already have entries in the list.",
-      "jerseyTaken": "That jersey number is already used on this unit.",
+      "jerseyTaken": "That jersey number is already used on this 梯隊 or 隊伍. Choose a free number from 1–99 on that unit.",
       "tooManyActiveMemberships": "This player already has two active 隊伍 memberships.",
       "membershipBandNotAllowed": "This 梯隊 does not match the player’s birth-age roster band.",
       "membershipBirthNotEligible": "This player’s birth age is not eligible for that 隊伍.",

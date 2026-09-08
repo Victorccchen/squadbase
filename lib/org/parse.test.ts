@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   isJerseyUniqueViolation,
+  jerseyNumberTakenOnTeam,
   isLinkNotApprovedViolation,
   isOpenGuardianLinkViolation,
   isOpenSessionRegistrationViolation,
@@ -70,6 +71,70 @@ describe("isJerseyUniqueViolation", () => {
         details: "Key (player_id, team_id)=(abc, def) already exists.",
       }),
       false,
+    );
+  });
+
+  it("maps the admin RPC self-update unique remap", () => {
+    assert.equal(
+      isJerseyUniqueViolation({
+        code: "23505",
+        message: "jersey_number already used on this team",
+      }),
+      true,
+    );
+    assert.equal(
+      membershipWriteErrorKey({
+        message: "jersey_number already used on this team",
+      }),
+      "jerseyTaken",
+    );
+  });
+});
+
+describe("jerseyNumberTakenOnTeam", () => {
+  const futuro = "futuro-u8";
+  const squad = "age-squad-u8";
+  const player = "player-liu";
+  const other = "player-other";
+
+  it("allows a player to change their own jersey when the new number is free", () => {
+    const holders = [
+      { player_id: player, team_id: futuro, jersey_number: 99 },
+      { player_id: player, team_id: squad, jersey_number: 91 },
+    ];
+    assert.equal(
+      jerseyNumberTakenOnTeam({
+        playerId: player,
+        teamId: futuro,
+        jersey: 91,
+        holders,
+      }),
+      false,
+    );
+    assert.equal(
+      jerseyNumberTakenOnTeam({
+        playerId: player,
+        teamId: futuro,
+        jersey: 99,
+        holders,
+      }),
+      false,
+    );
+  });
+
+  it("rejects a number already held by another player on that same team", () => {
+    const holders = [
+      { player_id: player, team_id: futuro, jersey_number: 99 },
+      { player_id: other, team_id: futuro, jersey_number: 91 },
+    ];
+    assert.equal(
+      jerseyNumberTakenOnTeam({
+        playerId: player,
+        teamId: futuro,
+        jersey: 91,
+        holders,
+      }),
+      true,
     );
   });
 });
