@@ -8,6 +8,7 @@ export type AgeBand =
   | "U18"
   | "reserve"
   | "senior";
+export type TeamKind = "age_squad" | "competition_team";
 export type OrgStatus = "active" | "inactive";
 export type GuardianRelation = "parent" | "guardian" | "other";
 export type LinkStatus = "pending" | "approved" | "rejected" | "revoked";
@@ -73,6 +74,9 @@ export type Team = {
   id: string;
   name: string;
   age_band: AgeBand;
+  kind: TeamKind;
+  layer_key: string | null;
+  eligible_birth_ages: string[] | null;
   status: OrgStatus;
   created_at: string;
   updated_at: string;
@@ -88,6 +92,7 @@ export type Player = {
   name_ja: string | null;
   birth_date: string;
   status: OrgStatus;
+  continues_training: boolean;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -420,11 +425,17 @@ export type Database = {
           id?: string;
           name: string;
           age_band: AgeBand;
+          kind?: TeamKind;
+          layer_key?: string | null;
+          eligible_birth_ages?: string[] | null;
           status?: OrgStatus;
         } & TimestampInsert;
         Update: {
           name?: string;
           age_band?: AgeBand;
+          kind?: TeamKind;
+          layer_key?: string | null;
+          eligible_birth_ages?: string[] | null;
           status?: OrgStatus;
           updated_at?: string;
           updated_by?: string | null;
@@ -441,6 +452,7 @@ export type Database = {
           name_ja?: string | null;
           birth_date: string;
           status?: OrgStatus;
+          continues_training?: boolean;
         } & TimestampInsert;
         Update: {
           name_zh?: string | null;
@@ -449,6 +461,7 @@ export type Database = {
           name_ja?: string | null;
           birth_date?: string;
           status?: OrgStatus;
+          continues_training?: boolean;
           updated_at?: string;
           updated_by?: string | null;
         };
@@ -1097,7 +1110,37 @@ export type Database = {
         };
         Returns: undefined;
       };
+      admin_set_player_age_squad: {
+        Args: {
+          p_player_id: string;
+          p_squad_id: string;
+          p_jersey_number: number;
+        };
+        Returns: undefined;
+      };
+      admin_set_player_competition_teams: {
+        Args: {
+          p_player_id: string;
+          p_team_ids: string[];
+          p_jersey_numbers: number[];
+        };
+        Returns: undefined;
+      };
       computed_age_band_from_birth_date: {
+        Args: {
+          p_birth_date: string;
+          p_as_of: string;
+        };
+        Returns: AgeBand;
+      };
+      birth_age_label_from_birth_date: {
+        Args: {
+          p_birth_date: string;
+          p_as_of: string;
+        };
+        Returns: string;
+      };
+      age_squad_band_from_birth_date: {
         Args: {
           p_birth_date: string;
           p_as_of: string;
@@ -1393,6 +1436,7 @@ export type Database = {
     Enums: {
       app_role: AppRole;
       age_band: AgeBand;
+      team_kind: TeamKind;
       org_status: OrgStatus;
       guardian_relation: GuardianRelation;
       link_status: LinkStatus;

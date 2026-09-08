@@ -83,7 +83,7 @@ export default async function AdminSessionsPage({ searchParams }: AdminSessionsP
       startsFrom,
       startsToExclusive,
     }),
-    listTeams(),
+    listTeams({ kind: "age_squad" }),
     query.view === "list"
       ? probeSessionsForAdmin({
           kinds,

@@ -59,7 +59,7 @@ export default async function ParentSessionDetailPage({
   const noteRaw = Array.isArray(query.note) ? (query.note[0] ?? "") : (query.note ?? "");
   const showNoteSaved = noteRaw === "1";
   const links = await listOwnGuardianLinks();
-  const children = approvedChildrenFromLinks(links);
+  const children = approvedChildrenFromLinks(links, "age_squad");
   const playerIds = [...new Set(children.map((child) => child.player.id))];
   const registrations = await listOwnSessionRegistrations(playerIds);
 

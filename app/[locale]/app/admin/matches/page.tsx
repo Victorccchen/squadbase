@@ -73,7 +73,7 @@ export default async function AdminMatchesPage({ searchParams }: AdminMatchesPag
       startsFrom,
       startsToExclusive,
     }),
-    listTeams(),
+    listTeams({ kind: "competition_team" }),
     query.view === "list"
       ? probeMatchesForAdmin({
           kinds,

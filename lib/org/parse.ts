@@ -4,6 +4,13 @@ import {
   MAX_ACTIVE_MEMBERSHIPS,
   parseIsoDate,
 } from "../age-band.ts";
+import {
+  isLayerKey,
+  isTeamKind,
+  parseEligibleBirthAges,
+  type LayerKey,
+  type TeamKind,
+} from "./squad-team.ts";
 import type { AgeBand, OrgStatus } from "../supabase/database.types.ts";
 
 export function readString(formData: FormData, key: string): string {
@@ -29,6 +36,16 @@ export function parseOrgStatus(value: string): OrgStatus | null {
 export function parseAgeBand(value: string): AgeBand | null {
   return isAgeBand(value) ? value : null;
 }
+
+export function parseTeamKind(value: string): TeamKind | null {
+  return isTeamKind(value) ? value : null;
+}
+
+export function parseLayerKey(value: string): LayerKey | null {
+  return isLayerKey(value) ? value : null;
+}
+
+export { parseEligibleBirthAges };
 
 export function parseJersey(value: string): number | null {
   if (!/^\d{1,2}$/.test(value)) {
@@ -57,6 +74,11 @@ export type ParseMembershipSlotsResult =
         | "tooManyActiveMemberships";
     };
 
+export type ParseAgeSquadSlotResult =
+  | { ok: true; squad: ParsedMembershipSlot }
+  | { ok: false; errorKey: "missingAgeSquad" | "invalidJersey" };
+
+/** 隊伍 slots: 0–2 distinct teams. Empty is allowed. */
 export function parseMembershipSlots(formData: FormData): ParseMembershipSlotsResult {
   const slots = [
     {
@@ -90,13 +112,28 @@ export function parseMembershipSlots(formData: FormData): ParseMembershipSlotsRe
     memberships.push({ teamId: slot.teamId, jersey });
   }
 
-  if (memberships.length === 0) {
-    return { ok: false, errorKey: "missingTeam" };
-  }
   if (memberships.length > MAX_ACTIVE_MEMBERSHIPS) {
     return { ok: false, errorKey: "tooManyActiveMemberships" };
   }
   return { ok: true, memberships };
+}
+
+export function parseAgeSquadSlot(formData: FormData): ParseAgeSquadSlotResult {
+  const teamId = readString(formData, "age_squad_id");
+  const jerseyRaw = readString(formData, "age_squad_jersey");
+  if (!teamId) {
+    return { ok: false, errorKey: "missingAgeSquad" };
+  }
+  const jersey = parseJersey(jerseyRaw);
+  if (jersey === null) {
+    return { ok: false, errorKey: "invalidJersey" };
+  }
+  return { ok: true, squad: { teamId, jersey } };
+}
+
+export function parseContinuesTraining(formData: FormData): boolean {
+  const raw = readString(formData, "continues_training").toLowerCase();
+  return raw === "true" || raw === "on" || raw === "1" || raw === "yes";
 }
 
 export function optionalTrimmed(value: string): string | null {
@@ -180,10 +217,15 @@ export function isJerseyUniqueViolation(error: PgLikeError): boolean {
 type MembershipWriteErrorKey =
   | "forbidden"
   | "missingTeam"
+  | "missingAgeSquad"
   | "invalidJersey"
   | "jerseyTaken"
   | "tooManyActiveMemberships"
   | "membershipBandNotAllowed"
+  | "membershipBirthNotEligible"
+  | "membershipLayerConflict"
+  | "continuesTrainingRequired"
+  | "invalidTeamKind"
   | "duplicateMembershipTeam"
   | "teamNotFound"
   | "generic";
@@ -196,8 +238,24 @@ export function membershipWriteErrorKey(error: PgLikeError): MembershipWriteErro
   if (text.includes("player already has 2 active memberships")) {
     return "tooManyActiveMemberships";
   }
-  if (text.includes("team age band not allowed")) {
+  if (text.includes("competition team on this layer")) {
+    return "membershipLayerConflict";
+  }
+  if (text.includes("does not continue training")) {
+    return "continuesTrainingRequired";
+  }
+  if (text.includes("birth age not eligible")) {
+    return "membershipBirthNotEligible";
+  }
+  if (
+    text.includes("age squad band not allowed") ||
+    text.includes("already has an active age squad") ||
+    text.includes("team age band not allowed")
+  ) {
     return "membershipBandNotAllowed";
+  }
+  if (text.includes("team kind must be") || text.includes("session kind does not match")) {
+    return "invalidTeamKind";
   }
   if (text.includes("duplicate team in memberships")) {
     return "duplicateMembershipTeam";
@@ -421,6 +479,7 @@ type SessionRpcErrorKey =
   | "invalidWeekdays"
   | "endsBeforeStart"
   | "teamNotFound"
+  | "invalidTeamKind"
   | "generic";
 
 export function sessionRpcErrorKey(error: PgLikeError): SessionRpcErrorKey {
@@ -460,6 +519,9 @@ export function sessionRpcErrorKey(error: PgLikeError): SessionRpcErrorKey {
   }
   if (text.includes("invalid session kind")) {
     return "invalidSessionKind";
+  }
+  if (text.includes("session kind does not match") || text.includes("team kind must be")) {
+    return "invalidTeamKind";
   }
   if (text.includes("recurrence cannot use both")) {
     return "recurrenceMutex";

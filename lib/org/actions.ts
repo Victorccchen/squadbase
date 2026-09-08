@@ -7,20 +7,34 @@ import { getPublicSupabaseEnv } from "@/lib/env";
 import { loadSignedInAccount } from "@/lib/auth/session";
 import { canAccessAdmin } from "@/lib/auth/roles";
 import { createClient } from "@/lib/supabase/server";
-import { todayInClubTimeZone, formatIsoDate, ageBandFromBirthDate, isTeamAgeBandAllowedForPlayer } from "@/lib/age-band";
+import { todayInClubTimeZone, formatIsoDate, ageBandFromBirthDate, birthAgeLabelFromBirthDate } from "@/lib/age-band";
 import {
   isPlayersCjkNameCheckViolation,
   parseAgeBand,
+  parseAgeSquadSlot,
   parseBirthDate,
+  parseContinuesTraining,
+  parseEligibleBirthAges,
+  parseLayerKey,
   parseMembershipSlots,
   parseOrgStatus,
   parsePlayerNames,
+  parseTeamKind,
   parseUuid,
   playerNamesError,
   readString,
+  readAllStrings,
   membershipWriteErrorKey,
   teamDeleteErrorKey,
 } from "@/lib/org/parse";
+import {
+  ageBandFromLayerKey,
+  competitionMembershipDecision,
+  isAgeSquadAllowedForPlayer,
+  isCompetitionTeam,
+  isAgeSquad,
+} from "@/lib/org/squad-team";
+import type { AgeBand } from "@/lib/supabase/database.types";
 import { type OrgActionState, type OrgErrorKey } from "@/lib/org/errors";
 
 function fail(errorKey: OrgErrorKey): OrgActionState {
@@ -81,21 +95,18 @@ export async function createTeam(
     return fail(actor.errorKey);
   }
 
-  const name = readString(formData, "name");
-  const ageBand = parseAgeBand(readString(formData, "age_band"));
-  const status = parseOrgStatus(readString(formData, "status")) ?? "active";
-
-  if (!name) {
-    return fail("invalidName");
-  }
-  if (!ageBand) {
-    return fail("invalidAgeBand");
+  const parsed = parseTeamFields(formData);
+  if (!parsed.ok) {
+    return fail(parsed.errorKey);
   }
 
   const { error } = await actor.supabase.from("teams").insert({
-    name,
-    age_band: ageBand,
-    status,
+    name: parsed.name,
+    age_band: parsed.ageBand,
+    kind: parsed.kind,
+    layer_key: parsed.layerKey,
+    eligible_birth_ages: parsed.eligibleBirthAges,
+    status: parsed.status,
     created_by: actor.user.id,
     updated_by: actor.user.id,
   });
@@ -120,26 +131,20 @@ export async function updateTeam(
     return fail(actor.errorKey);
   }
 
-  const name = readString(formData, "name");
-  const ageBand = parseAgeBand(readString(formData, "age_band"));
-  const status = parseOrgStatus(readString(formData, "status"));
-
-  if (!name) {
-    return fail("invalidName");
-  }
-  if (!ageBand) {
-    return fail("invalidAgeBand");
-  }
-  if (!status) {
-    return fail("invalidStatus");
+  const parsed = parseTeamFields(formData);
+  if (!parsed.ok) {
+    return fail(parsed.errorKey);
   }
 
   const { error } = await actor.supabase
     .from("teams")
     .update({
-      name,
-      age_band: ageBand,
-      status,
+      name: parsed.name,
+      age_band: parsed.ageBand,
+      kind: parsed.kind,
+      layer_key: parsed.layerKey,
+      eligible_birth_ages: parsed.eligibleBirthAges,
+      status: parsed.status,
       updated_by: actor.user.id,
     })
     .eq("id", teamId);
@@ -152,6 +157,62 @@ export async function updateTeam(
   revalidateOrg();
   redirectAdmin(`/app/admin/teams/${teamId}`, formData);
   return ok();
+}
+
+type ParsedTeamFields =
+  | {
+      ok: true;
+      name: string;
+      kind: "age_squad" | "competition_team";
+      ageBand: AgeBand;
+      layerKey: string | null;
+      eligibleBirthAges: string[] | null;
+      status: "active" | "inactive";
+    }
+  | { ok: false; errorKey: OrgErrorKey };
+
+function parseTeamFields(formData: FormData): ParsedTeamFields {
+  const name = readString(formData, "name");
+  const kind = parseTeamKind(readString(formData, "kind")) ?? "age_squad";
+  const status = parseOrgStatus(readString(formData, "status")) ?? "active";
+  if (!name) {
+    return { ok: false, errorKey: "invalidName" };
+  }
+
+  if (kind === "age_squad") {
+    const ageBand = parseAgeBand(readString(formData, "age_band"));
+    if (!ageBand) {
+      return { ok: false, errorKey: "invalidAgeBand" };
+    }
+    return {
+      ok: true,
+      name,
+      kind,
+      ageBand,
+      layerKey: null,
+      eligibleBirthAges: null,
+      status,
+    };
+  }
+
+  const layerKey = parseLayerKey(readString(formData, "layer_key"));
+  if (!layerKey) {
+    return { ok: false, errorKey: "invalidLayerKey" };
+  }
+  const eligible = parseEligibleBirthAges(readAllStrings(formData, "eligible_birth_ages"));
+  if (eligible.length === 0) {
+    return { ok: false, errorKey: "missingEligibleBirthAges" };
+  }
+  const ageBand = parseAgeBand(readString(formData, "age_band")) ?? ageBandFromLayerKey(layerKey);
+  return {
+    ok: true,
+    name,
+    kind,
+    ageBand,
+    layerKey,
+    eligibleBirthAges: eligible,
+    status,
+  };
 }
 
 export async function setTeamStatus(
@@ -224,45 +285,85 @@ export async function deleteTeam(
   return ok();
 }
 
-async function setPlayerMemberships(
+async function setPlayerAssignments(
   supabase: Awaited<ReturnType<typeof createClient>>,
   playerId: string,
+  ageSquad: { teamId: string; jersey: number },
   memberships: { teamId: string; jersey: number }[],
   birthDate: string,
+  continuesTraining: boolean,
 ): Promise<OrgErrorKey | null> {
+  const squadIds = [ageSquad.teamId];
   const teamIds = memberships.map((row) => row.teamId);
-  const { data: teams, error: teamError } = await supabase
+  const { data: units, error: teamError } = await supabase
     .from("teams")
-    .select("id, age_band")
-    .in("id", teamIds);
+    .select("id, age_band, kind, layer_key, eligible_birth_ages")
+    .in("id", [...squadIds, ...teamIds]);
 
   if (teamError) {
-    console.error("setPlayerMemberships teams", teamError.message);
+    console.error("setPlayerAssignments teams", teamError.message);
     return "generic";
   }
-  if (!teams || teams.length !== teamIds.length) {
+
+  const squad = units?.find((row) => row.id === ageSquad.teamId);
+  if (!squad || !isAgeSquad(squad)) {
+    return "missingAgeSquad";
+  }
+  const naturalSquad = ageBandFromBirthDate(birthDate);
+  if (!isAgeSquadAllowedForPlayer(naturalSquad, squad.age_band)) {
+    return "membershipBandNotAllowed";
+  }
+
+  const birthAge = birthAgeLabelFromBirthDate(birthDate);
+  const competitionUnits = (units ?? []).filter((row) => teamIds.includes(row.id));
+  if (competitionUnits.length !== teamIds.length) {
     return "teamNotFound";
   }
-
-  const natural = ageBandFromBirthDate(birthDate);
+  const { data: existingRows, error: existingError } = await supabase
+    .from("team_memberships")
+    .select("team_id")
+    .eq("player_id", playerId)
+    .eq("status", "active");
+  if (existingError) {
+    console.error("setPlayerAssignments existing", existingError.message);
+    return "generic";
+  }
+  const existingIds = new Set((existingRows ?? []).map((row) => row.team_id));
   for (const membership of memberships) {
-    const team = teams.find((row) => row.id === membership.teamId);
-    if (!team) {
-      return "teamNotFound";
+    const team = competitionUnits.find((row) => row.id === membership.teamId);
+    if (!team || !isCompetitionTeam(team)) {
+      return "invalidTeamKind";
     }
-    if (!isTeamAgeBandAllowedForPlayer(natural, team.age_band)) {
-      return "membershipBandNotAllowed";
+    const decision = competitionMembershipDecision({
+      birthAge,
+      continuesTraining,
+      team,
+      otherActiveTeams: competitionUnits.filter((row) => row.id !== team.id),
+      isExistingMembership: existingIds.has(team.id),
+    });
+    if (!decision.ok) {
+      return decision.errorKey;
     }
   }
 
-  const { error } = await supabase.rpc("admin_set_player_memberships", {
+  const { error: squadError } = await supabase.rpc("admin_set_player_age_squad", {
+    p_player_id: playerId,
+    p_squad_id: ageSquad.teamId,
+    p_jersey_number: ageSquad.jersey,
+  });
+  if (squadError) {
+    console.error("setPlayerAssignments age squad", squadError.message);
+    return membershipWriteErrorKey(squadError);
+  }
+
+  const { error } = await supabase.rpc("admin_set_player_competition_teams", {
     p_player_id: playerId,
     p_team_ids: teamIds,
     p_jersey_numbers: memberships.map((row) => row.jersey),
   });
 
   if (error) {
-    console.error("setPlayerMemberships", error.message);
+    console.error("setPlayerAssignments competition", error.message);
     return membershipWriteErrorKey(error);
   }
 
@@ -275,8 +376,9 @@ function playerIdentityFields(formData: FormData) {
   const today = formatIsoDate(todayInClubTimeZone());
   const birthDate = parseBirthDate(birthRaw, today);
   const status = parseOrgStatus(readString(formData, "status")) ?? "active";
+  const continuesTraining = parseContinuesTraining(formData);
 
-  return { ...names, birthDate, status };
+  return { ...names, birthDate, status, continuesTraining };
 }
 
 function validatePlayerIdentity(
@@ -320,6 +422,11 @@ export async function createPlayer(
     return fail(invalid);
   }
 
+  const parsedSquad = parseAgeSquadSlot(formData);
+  if (!parsedSquad.ok) {
+    return fail(parsedSquad.errorKey);
+  }
+
   const parsedMemberships = parseMembershipSlots(formData);
   if (!parsedMemberships.ok) {
     return fail(parsedMemberships.errorKey);
@@ -334,6 +441,7 @@ export async function createPlayer(
       name_ja: fields.nameJa,
       birth_date: fields.birthDate as string,
       status: fields.status,
+      continues_training: fields.continuesTraining,
       created_by: actor.user.id,
       updated_by: actor.user.id,
     })
@@ -344,11 +452,13 @@ export async function createPlayer(
     return fail(playerWriteError(error));
   }
 
-  const membershipError = await setPlayerMemberships(
+  const membershipError = await setPlayerAssignments(
     actor.supabase,
     player.id,
+    parsedSquad.squad,
     parsedMemberships.memberships,
     fields.birthDate as string,
+    fields.continuesTraining,
   );
 
   if (membershipError) {
@@ -377,6 +487,11 @@ export async function updatePlayer(
     return fail(invalid);
   }
 
+  const parsedSquad = parseAgeSquadSlot(formData);
+  if (!parsedSquad.ok) {
+    return fail(parsedSquad.errorKey);
+  }
+
   const parsedMemberships = parseMembershipSlots(formData);
   if (!parsedMemberships.ok) {
     return fail(parsedMemberships.errorKey);
@@ -391,6 +506,7 @@ export async function updatePlayer(
       name_ja: fields.nameJa,
       birth_date: fields.birthDate as string,
       status: fields.status,
+      continues_training: fields.continuesTraining,
       updated_by: actor.user.id,
     })
     .eq("id", playerId);
@@ -399,11 +515,13 @@ export async function updatePlayer(
     return fail(playerWriteError(error));
   }
 
-  const membershipError = await setPlayerMemberships(
+  const membershipError = await setPlayerAssignments(
     actor.supabase,
     playerId,
+    parsedSquad.squad,
     parsedMemberships.memberships,
     fields.birthDate as string,
+    fields.continuesTraining,
   );
 
   if (membershipError) {

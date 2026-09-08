@@ -33,7 +33,7 @@ export default async function MatchGroupPage({ params }: MatchGroupPageProps) {
   const common = await getTranslations("common");
   const locale = await getLocale();
   const links = await listOwnGuardianLinks();
-  const children = approvedChildrenFromLinks(links);
+  const children = approvedChildrenFromLinks(links, "competition_team");
   const teamIds = [...new Set(children.map((child) => child.teamId))];
   const playerIds = [...new Set(children.map((child) => child.player.id))];
   const [sessions, registrations] = await Promise.all([

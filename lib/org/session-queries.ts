@@ -527,6 +527,7 @@ export function openSessionsForChildTeam(
 
 export function approvedChildrenFromLinks(
   links: GuardianLinkWithPlayer[],
+  teamKind?: "age_squad" | "competition_team",
 ): EligibleChild[] {
   const result: EligibleChild[] = [];
   for (const link of uniqueApprovedLinksByPlayerId(links)) {
@@ -534,12 +535,17 @@ export function approvedChildrenFromLinks(
       continue;
     }
     const memberships = (link.player.memberships ?? []).filter(
-      (row) => row.status === "active" && row.team,
+      (row) =>
+        row.status === "active" &&
+        row.team &&
+        (!teamKind || row.team.kind === teamKind),
     );
     const rows =
       memberships.length > 0
         ? memberships
-        : link.player.membership?.status === "active" && link.player.membership.team
+        : link.player.membership?.status === "active" &&
+            link.player.membership.team &&
+            (!teamKind || link.player.membership.team.kind === teamKind)
           ? [link.player.membership]
           : [];
     for (const membership of rows) {

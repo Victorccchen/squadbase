@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { getPlayer, formatActiveMembershipSummary } from "@/lib/org/queries";
 import { localizedPlayerName, displayOptionalName } from "@/lib/org/display-name";
-import { ageBandFromBirthDate, formatIsoDate, seasonStartForBirthDate } from "@/lib/age-band";
+import { ageBandFromBirthDate, birthAgeLabelFromBirthDate, formatIsoDate, seasonStartForBirthDate } from "@/lib/age-band";
 import { secondaryButtonClassName } from "@/lib/ui";
 
 type PlayerDetailPageProps = {
@@ -29,6 +29,7 @@ export default async function PlayerDetailPage({ params }: PlayerDetailPageProps
   const common = await getTranslations("common");
   const locale = await getLocale();
   const band = ageBandFromBirthDate(player.birth_date);
+  const birthAge = birthAgeLabelFromBirthDate(player.birth_date);
   const seasonStart = seasonStartForBirthDate();
 
   return (
@@ -75,10 +76,14 @@ export default async function PlayerDetailPage({ params }: PlayerDetailPageProps
             <dd className="font-medium">{player.birth_date}</dd>
           </div>
           <div className="flex justify-between gap-4">
-            <dt className="text-zinc-500">{org("suggestedAgeBand")}</dt>
+            <dt className="text-zinc-500">{org("suggestedAgeSquad")}</dt>
             <dd className="font-medium">
               {band ? org(`ageBands.${band}`) : org("ageBandUnknown")}
             </dd>
+          </div>
+          <div className="flex justify-between gap-4">
+            <dt className="text-zinc-500">{org("birthAgeLabel")}</dt>
+            <dd className="font-medium">{birthAge ?? org("ageBandUnknown")}</dd>
           </div>
           {seasonStart ? (
             <div className="flex justify-between gap-4">
@@ -86,6 +91,12 @@ export default async function PlayerDetailPage({ params }: PlayerDetailPageProps
               <dd className="font-medium">{formatIsoDate(seasonStart)}</dd>
             </div>
           ) : null}
+          <div className="flex justify-between gap-4">
+            <dt className="text-zinc-500">{org("continuesTraining")}</dt>
+            <dd className="font-medium">
+              {org(player.continues_training ? "continuesTrainingYes" : "continuesTrainingNo")}
+            </dd>
+          </div>
           <div className="flex justify-between gap-4">
             <dt className="text-zinc-500">{org("teams")}</dt>
             <dd className="text-right font-medium">

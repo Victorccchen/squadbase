@@ -49,7 +49,7 @@ export default async function AdminMatchDetailPage({ params }: AdminMatchDetailP
   const common = await getTranslations("common");
   const locale = await getLocale();
   const [teams, roster, teamRoster] = await Promise.all([
-    listTeams(),
+    listTeams({ kind: "competition_team" }),
     listMatchRosterForStaff(match.id),
     match.team_id ? listActiveRosterForTeam(match.team_id) : Promise.resolve([]),
   ]);

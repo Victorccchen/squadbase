@@ -5,65 +5,67 @@ import { useTranslations } from "next-intl";
 import { LocaleHiddenField } from "@/components/admin/locale-hidden-field";
 import {
   ageBandFromBirthDate,
-  allowedTeamAgeBands,
+  birthAgeLabelFromBirthDate,
   formatIsoDate,
-  isTeamAgeBandAllowedForPlayer,
-  nextHigherComputedAgeBand,
   seasonStartForBirthDate,
 } from "@/lib/age-band";
 import { INITIAL_ORG_ACTION_STATE } from "@/lib/org/errors";
 import type { OrgActionState } from "@/lib/org/errors";
-import type { AgeBand, Player, Team, TeamMembership } from "@/lib/supabase/database.types";
+import {
+  competitionMembershipDecision,
+  isAgeSquad,
+  isCompetitionTeam,
+} from "@/lib/org/squad-team";
+import type { Player, Team, TeamMembership } from "@/lib/supabase/database.types";
 import { inputClassName, primaryButtonClassName, quietButtonClassName } from "@/lib/ui";
 
 type PlayerFormProps = {
   action: (prev: OrgActionState, formData: FormData) => Promise<OrgActionState>;
   player?: Pick<
     Player,
-    "name_zh" | "name_en_given" | "name_en_family" | "name_ja" | "birth_date" | "status"
+    | "name_zh"
+    | "name_en_given"
+    | "name_en_family"
+    | "name_ja"
+    | "birth_date"
+    | "status"
+    | "continues_training"
   >;
   membership?: Pick<TeamMembership, "team_id" | "jersey_number" | "status"> | null;
-  memberships?: Pick<TeamMembership, "team_id" | "jersey_number" | "status">[];
-  teams: Pick<Team, "id" | "name" | "age_band" | "status">[];
+  memberships?: (Pick<TeamMembership, "team_id" | "jersey_number" | "status"> & {
+    team?: Pick<Team, "kind"> | null;
+  })[];
+  teams: Pick<Team, "id" | "name" | "age_band" | "status" | "kind" | "layer_key" | "eligible_birth_ages">[];
   submitLabel: string;
 };
 
-function initialActiveSlots(
-  memberships: Pick<TeamMembership, "team_id" | "jersey_number" | "status">[] | undefined,
-  membership: Pick<TeamMembership, "team_id" | "jersey_number" | "status"> | null | undefined,
+function initialSlots(
+  memberships: PlayerFormProps["memberships"],
+  teams: PlayerFormProps["teams"],
 ) {
   const active = (memberships ?? []).filter((row) => row.status === "active");
-  const first = active[0] ?? membership ?? null;
-  const second = active[1] ?? null;
+  const squad = active.find((row) => {
+    const team = teams.find((unit) => unit.id === row.team_id);
+    return team ? isAgeSquad(team) : row.team?.kind === "age_squad";
+  });
+  const competition = active.filter((row) => {
+    const team = teams.find((unit) => unit.id === row.team_id);
+    return team ? isCompetitionTeam(team) : row.team?.kind === "competition_team";
+  });
   return {
-    teamId: first?.team_id ?? "",
-    jersey: first?.jersey_number != null ? String(first.jersey_number) : "",
-    teamId2: second?.team_id ?? "",
-    jersey2: second?.jersey_number != null ? String(second.jersey_number) : "",
-    showSecond: Boolean(second),
+    squadId: squad?.team_id ?? "",
+    squadJersey: squad?.jersey_number != null ? String(squad.jersey_number) : "",
+    teamId: competition[0]?.team_id ?? "",
+    jersey: competition[0]?.jersey_number != null ? String(competition[0].jersey_number) : "",
+    teamId2: competition[1]?.team_id ?? "",
+    jersey2: competition[1]?.jersey_number != null ? String(competition[1].jersey_number) : "",
+    showSecond: Boolean(competition[1]),
   };
-}
-
-function slotState(
-  suggestedBand: ReturnType<typeof ageBandFromBirthDate>,
-  teamBand: AgeBand | undefined,
-): "ok" | "playUp" | "notAllowed" {
-  if (!suggestedBand || !teamBand) {
-    return "ok";
-  }
-  if (teamBand === suggestedBand) {
-    return "ok";
-  }
-  if (nextHigherComputedAgeBand(suggestedBand) === teamBand) {
-    return "playUp";
-  }
-  return "notAllowed";
 }
 
 export function PlayerForm({
   action,
   player,
-  membership,
   memberships,
   teams,
   submitLabel,
@@ -71,30 +73,43 @@ export function PlayerForm({
   const t = useTranslations("org");
   const [state, formAction, pending] = useActionState(action, INITIAL_ORG_ACTION_STATE);
   const [birthDate, setBirthDate] = useState(player?.birth_date ?? "");
-  const initial = initialActiveSlots(memberships, membership);
+  const [continuesTraining, setContinuesTraining] = useState(player?.continues_training ?? true);
+  const initial = initialSlots(memberships, teams);
+  const [squadId, setSquadId] = useState(initial.squadId);
   const [teamId, setTeamId] = useState(initial.teamId);
   const [teamId2, setTeamId2] = useState(initial.teamId2);
   const [showSecond, setShowSecond] = useState(initial.showSecond);
 
-  const suggestedBand = useMemo(
+  const ageSquads = teams.filter((team) => isAgeSquad(team));
+  const competitionTeams = teams.filter((team) => isCompetitionTeam(team));
+  const suggestedSquad = useMemo(
     () => (birthDate ? ageBandFromBirthDate(birthDate) : null),
     [birthDate],
   );
+  const birthAge = useMemo(
+    () => (birthDate ? birthAgeLabelFromBirthDate(birthDate) : null),
+    [birthDate],
+  );
   const seasonStart = seasonStartForBirthDate();
-  const allowedBands = suggestedBand ? allowedTeamAgeBands(suggestedBand) : [];
-  const selectedTeam = teams.find((team) => team.id === teamId);
-  const selectedTeam2 = teams.find((team) => team.id === teamId2);
-  const firstState = slotState(suggestedBand, selectedTeam?.age_band);
-  const secondState = slotState(suggestedBand, selectedTeam2?.age_band);
 
-  function teamOptionDisabled(team: (typeof teams)[number], otherTeamId: string) {
+  function competitionDisabled(
+    team: (typeof competitionTeams)[number],
+    otherTeamId: string,
+  ): boolean {
     if (team.id === otherTeamId) {
       return true;
     }
-    if (!suggestedBand) {
-      return false;
-    }
-    return !isTeamAgeBandAllowedForPlayer(suggestedBand, team.age_band);
+    const others = [teamId, teamId2]
+      .filter((id) => id && id !== team.id)
+      .map((id) => competitionTeams.find((row) => row.id === id))
+      .filter((row): row is NonNullable<typeof row> => Boolean(row));
+    const decision = competitionMembershipDecision({
+      birthAge,
+      continuesTraining,
+      team,
+      otherActiveTeams: others,
+    });
+    return !decision.ok;
   }
 
   return (
@@ -123,19 +138,11 @@ export function PlayerForm({
       <p className="text-sm font-normal text-zinc-500">{t("nameCjkHint")}</p>
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         {t("nameZh")}
-        <input
-          name="name_zh"
-          defaultValue={player?.name_zh ?? ""}
-          className={inputClassName}
-        />
+        <input name="name_zh" defaultValue={player?.name_zh ?? ""} className={inputClassName} />
       </label>
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         {t("nameJa")}
-        <input
-          name="name_ja"
-          defaultValue={player?.name_ja ?? ""}
-          className={inputClassName}
-        />
+        <input name="name_ja" defaultValue={player?.name_ja ?? ""} className={inputClassName} />
       </label>
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         {t("birthDate")}
@@ -149,40 +156,52 @@ export function PlayerForm({
         />
       </label>
       <p className="rounded-xl bg-zinc-100 px-4 py-3 text-sm leading-6 dark:bg-zinc-800">
-        {t("suggestedAgeBand")}:{" "}
-        <strong>{suggestedBand ? t(`ageBands.${suggestedBand}`) : t("ageBandUnknown")}</strong>
+        {t("suggestedAgeSquad")}:{" "}
+        <strong>{suggestedSquad ? t(`ageBands.${suggestedSquad}`) : t("ageBandUnknown")}</strong>
+        {birthAge ? (
+          <>
+            <br />
+            {t("birthAgeLabel")}: <strong>{birthAge}</strong>
+          </>
+        ) : null}
         {seasonStart ? (
           <>
             <br />
             {t("seasonStartLabel", { date: formatIsoDate(seasonStart) })}
           </>
         ) : null}
-        {allowedBands.length > 0 ? (
-          <>
-            <br />
-            {t("membershipRuleHint", {
-              bands: allowedBands.map((band) => t(`ageBands.${band}`)).join(" / "),
-            })}
-          </>
-        ) : null}
+        <br />
+        {t("membershipRuleHint")}
       </p>
+      <label className="flex items-center gap-2 text-sm font-medium">
+        <input
+          type="checkbox"
+          name="continues_training"
+          value="true"
+          checked={continuesTraining}
+          onChange={(event) => setContinuesTraining(event.target.checked)}
+        />
+        {t("continuesTraining")}
+      </label>
+      <p className="text-xs font-normal text-zinc-500">{t("continuesTrainingHint")}</p>
+
       <fieldset className="flex flex-col gap-3">
-        <legend className="text-sm font-medium">{t("firstTeam")}</legend>
+        <legend className="text-sm font-medium">{t("ageSquad")}</legend>
         <label className="flex flex-col gap-1.5 text-sm font-medium">
-          {t("team")}
+          {t("ageSquad")}
           <select
-            name="team_id"
+            name="age_squad_id"
             required
-            value={teamId}
-            onChange={(event) => setTeamId(event.target.value)}
+            value={squadId}
+            onChange={(event) => setSquadId(event.target.value)}
             className={inputClassName}
           >
-            <option value="">{t("selectTeam")}</option>
-            {teams.map((team) => (
+            <option value="">{t("selectAgeSquad")}</option>
+            {ageSquads.map((team) => (
               <option
                 key={team.id}
                 value={team.id}
-                disabled={teamOptionDisabled(team, teamId2) && team.id !== teamId}
+                disabled={Boolean(suggestedSquad) && team.age_band !== suggestedSquad && team.id !== squadId}
               >
                 {team.name} ({t(`ageBands.${team.age_band}`)})
                 {team.status === "inactive" ? ` · ${t("statusInactive")}` : ""}
@@ -190,19 +209,45 @@ export function PlayerForm({
             ))}
           </select>
         </label>
-        {firstState === "notAllowed" ? (
-          <p
-            role="alert"
-            className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800 dark:bg-red-950 dark:text-red-100"
+        <label className="flex flex-col gap-1.5 text-sm font-medium">
+          {t("jerseyNumber")}
+          <input
+            name="age_squad_jersey"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={99}
+            required
+            defaultValue={initial.squadJersey}
+            className={inputClassName}
+          />
+          <span className="font-normal text-zinc-500">{t("jerseyHintSquad")}</span>
+        </label>
+      </fieldset>
+
+      <fieldset className="flex flex-col gap-3">
+        <legend className="text-sm font-medium">{t("firstCompetitionTeam")}</legend>
+        <label className="flex flex-col gap-1.5 text-sm font-medium">
+          {t("competitionTeam")}
+          <select
+            name="team_id"
+            value={teamId}
+            onChange={(event) => setTeamId(event.target.value)}
+            className={inputClassName}
           >
-            {t("ageBandNotAllowed")}
-          </p>
-        ) : null}
-        {firstState === "playUp" ? (
-          <p className="rounded-xl bg-zinc-100 px-4 py-3 text-sm dark:bg-zinc-800">
-            {t("playingUpNote")}
-          </p>
-        ) : null}
+            <option value="">{t("selectCompetitionTeamOptional")}</option>
+            {competitionTeams.map((team) => (
+              <option
+                key={team.id}
+                value={team.id}
+                disabled={competitionDisabled(team, teamId2) && team.id !== teamId}
+              >
+                {team.name}
+                {team.status === "inactive" ? ` · ${t("statusInactive")}` : ""}
+              </option>
+            ))}
+          </select>
+        </label>
         <label className="flex flex-col gap-1.5 text-sm font-medium">
           {t("jerseyNumber")}
           <input
@@ -211,51 +256,37 @@ export function PlayerForm({
             inputMode="numeric"
             min={1}
             max={99}
-            required
             defaultValue={initial.jersey}
             className={inputClassName}
           />
           <span className="font-normal text-zinc-500">{t("jerseyHint")}</span>
         </label>
       </fieldset>
+
       {showSecond ? (
         <fieldset className="flex flex-col gap-3">
-          <legend className="text-sm font-medium">{t("secondTeam")}</legend>
+          <legend className="text-sm font-medium">{t("secondCompetitionTeam")}</legend>
           <label className="flex flex-col gap-1.5 text-sm font-medium">
-            {t("team")}
+            {t("competitionTeam")}
             <select
               name="team_id_2"
-              required
               value={teamId2}
               onChange={(event) => setTeamId2(event.target.value)}
               className={inputClassName}
             >
-              <option value="">{t("selectTeam")}</option>
-              {teams.map((team) => (
+              <option value="">{t("selectCompetitionTeamOptional")}</option>
+              {competitionTeams.map((team) => (
                 <option
                   key={team.id}
                   value={team.id}
-                  disabled={teamOptionDisabled(team, teamId) && team.id !== teamId2}
+                  disabled={competitionDisabled(team, teamId) && team.id !== teamId2}
                 >
-                  {team.name} ({t(`ageBands.${team.age_band}`)})
+                  {team.name}
                   {team.status === "inactive" ? ` · ${t("statusInactive")}` : ""}
                 </option>
               ))}
             </select>
           </label>
-          {secondState === "notAllowed" ? (
-            <p
-              role="alert"
-              className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800 dark:bg-red-950 dark:text-red-100"
-            >
-              {t("ageBandNotAllowed")}
-            </p>
-          ) : null}
-          {secondState === "playUp" ? (
-            <p className="rounded-xl bg-zinc-100 px-4 py-3 text-sm dark:bg-zinc-800">
-              {t("playingUpNote")}
-            </p>
-          ) : null}
           <label className="flex flex-col gap-1.5 text-sm font-medium">
             {t("jerseyNumber")}
             <input
@@ -264,11 +295,9 @@ export function PlayerForm({
               inputMode="numeric"
               min={1}
               max={99}
-              required
               defaultValue={initial.jersey2}
               className={inputClassName}
             />
-            <span className="font-normal text-zinc-500">{t("jerseyHint")}</span>
           </label>
           <button
             type="button"
@@ -285,18 +314,16 @@ export function PlayerForm({
         <button
           type="button"
           className={quietButtonClassName}
+          disabled={!continuesTraining}
           onClick={() => setShowSecond(true)}
         >
           {t("addSecondTeam")}
         </button>
       )}
+
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         {t("status")}
-        <select
-          name="status"
-          defaultValue={player?.status ?? "active"}
-          className={inputClassName}
-        >
+        <select name="status" defaultValue={player?.status ?? "active"} className={inputClassName}>
           <option value="active">{t("statusActive")}</option>
           <option value="inactive">{t("statusInactive")}</option>
         </select>

@@ -7,6 +7,7 @@ import { PlayerForm } from "@/components/admin/player-form";
 import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { createPlayer } from "@/lib/org/actions";
 import { listTeams } from "@/lib/org/queries";
+import { isAgeSquad } from "@/lib/org/squad-team";
 import { primaryButtonClassName } from "@/lib/ui";
 
 export default async function NewPlayerPage() {
@@ -22,7 +23,7 @@ export default async function NewPlayerPage() {
     <>
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-6 py-12">
         <PageHeader title={t("createPlayer")} description={t("playersBody")} />
-        {teams.length === 0 ? (
+        {teams.filter(isAgeSquad).length === 0 ? (
           <>
             <EmptyState title={t("playersNeedTeamTitle")} body={t("playersNeedTeamBody")} />
             <p>

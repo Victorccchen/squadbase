@@ -73,7 +73,7 @@ export default async function ParentSessionsPage({ searchParams }: ParentSession
     ? (params.registered[0] ?? "")
     : (params.registered ?? "");
   const showRegistered = registeredRaw === "1";
-  const children = approvedChildrenFromLinks(links);
+  const children = approvedChildrenFromLinks(links, "age_squad");
   const teamIds = [...new Set(children.map((child) => child.teamId))];
   const playerIds = [...new Set(children.map((child) => child.player.id))];
   const startsWindow = {

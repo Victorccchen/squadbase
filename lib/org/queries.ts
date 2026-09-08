@@ -7,6 +7,7 @@ import type {
   Player,
   Profile,
   Team,
+  TeamKind,
   TeamMembership,
 } from "@/lib/supabase/database.types";
 
@@ -28,12 +29,13 @@ export type RosterRow = {
   team: Team;
 };
 
-export async function listTeams(): Promise<Team[]> {
+export async function listTeams(filter?: { kind?: TeamKind }): Promise<Team[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("teams")
-    .select("*")
-    .order("name");
+  let query = supabase.from("teams").select("*").order("name");
+  if (filter?.kind) {
+    query = query.eq("kind", filter.kind);
+  }
+  const { data, error } = await query;
 
   if (error) {
     console.error("listTeams", error.message);
@@ -145,8 +147,8 @@ function mapPlayerMemberships(
   rows: (TeamMembership & { teams: Team | Team[] | null })[] | null,
 ): { membership: MembershipWithTeam | null; memberships: MembershipWithTeam[] } {
   const memberships = sortMemberships((rows ?? []).map(mapMembershipRow));
-  const current =
-    memberships.find((row) => row.status === "active") ?? memberships[0] ?? null;
+  const { ageSquad, competition } = splitMemberships(memberships);
+  const current = ageSquad ?? competition[0] ?? memberships[0] ?? null;
   return { membership: current, memberships };
 }
 
@@ -162,6 +164,17 @@ export function formatActiveMembershipSummary(
     return null;
   }
   return labels.join(" · ");
+}
+
+export function splitMemberships(memberships: MembershipWithTeam[]): {
+  ageSquad: MembershipWithTeam | null;
+  competition: MembershipWithTeam[];
+} {
+  const active = memberships.filter((row) => row.status === "active");
+  return {
+    ageSquad: active.find((row) => row.team?.kind === "age_squad") ?? null,
+    competition: active.filter((row) => row.team?.kind === "competition_team"),
+  };
 }
 
 export async function listPlayers(): Promise<PlayerWithMembership[]> {

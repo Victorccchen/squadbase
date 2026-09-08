@@ -65,7 +65,7 @@ export default async function ParentCompetitionDetailPage({
     listOwnGuardianLinks(),
     getPublishedMatch(session.id),
   ]);
-  const children = approvedChildrenFromLinks(links);
+  const children = approvedChildrenFromLinks(links, "competition_team");
   const playerIds = [...new Set(children.map((child) => child.player.id))];
   const registrations = await listOwnSessionRegistrations(playerIds);
 
