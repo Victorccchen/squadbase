@@ -2,7 +2,7 @@
 
 Responsive web + PWA for a football **Club** (球團) operations app: training squads, courses, attendance, assessments, and matches/events.
 
-This repository is currently **Stage ST**: Stages 1–6P.1 plus a **梯隊 / 隊伍 split**. 梯隊 (age squad) is the roster band for every registered player and for training. 隊伍 (competition team) is the external match side; only continuing trainees may join, with at most two active 隊伍 and no two sharing the same `layer_key`. Parent nav still lists **訓練** (`/app/sessions`) separately from **賽事** (`/app/competitions`). Training attaches to 梯隊; matches attach to 隊伍. Dual membership **replaces** the PR #22 one-ladder-step-up rule.
+This repository is currently **Stage 6A**: Stages 1–6P.1 plus Stage ST (梯隊 / 隊伍) and **admin Excel/CSV import** (players, coaches, matches, plus match URL assist). 梯隊 (age squad) is the roster band for every registered player and for training. 隊伍 (competition team) is the external match side; only continuing trainees may join, with at most two active 隊伍 and no two sharing the same `layer_key`. Parent nav still lists **訓練** (`/app/sessions`) separately from **賽事** (`/app/competitions`). Training attaches to 梯隊; matches attach to 隊伍. Dual membership **replaces** the PR #22 one-ladder-step-up rule. Admins import master data from `/app/admin/import` (preview then confirm; create-only).
 
 Parents can request a link to an **existing** player (the club creates the player record first). Until an admin approves, the parent cannot read that player’s private fields. After approval, the parent sees a basic “my children” list (names, birth date, team, jersey) and may **register that child for training sessions** on the child’s team. The parent may **withdraw a pending request**; only an **admin** may revoke an **approved** link. After revoke or withdraw, `is_approved_guardian_for_player` is false and the same pair may apply again. Session signup checks `guardian_player_links.status = approved`.
 
@@ -66,7 +66,7 @@ Routes:
 | `/[locale]/app/competitions/[id]` | Parent: one cup/league/friendly occurrence (signup, calendar, notes) |
 | `/[locale]/app/credits` | Parent: remaining credits, 10/20/30 pack claim with last-5 digits |
 | `/[locale]/app/assessments` | Ability assessments: staff create/edit; approved guardians read their children |
-| `/[locale]/app/admin/*` | Admin CRUD (teams, players, coaches, sessions, matches), binding approvals, payment claims, packages. Parents/coaches without admin see an access-denied page. |
+| `/[locale]/app/admin/*` | Admin CRUD (teams, players, coaches, sessions, matches), **data import**, binding approvals, payment claims, packages. Parents/coaches without admin see an access-denied page. |
 | `/[locale]/app/roster` | Coach (or admin) roster of assigned teams, session signups, attendance, and assessment links |
 
 ## Checks (CI)
@@ -741,7 +741,40 @@ Admin **訓練** multi-select lists **梯隊** only. Admin **比賽** multi-sele
 
 Optional SQL: [`supabase/stage_st_verification.sql`](supabase/stage_st_verification.sql) (rollback). Unit tests: [`lib/org/squad-team.test.ts`](lib/org/squad-team.test.ts).
 
-Out of scope: 6A import, notifications, production deploy, merge to `main`, debit amount changes, auto-create U12+ 隊伍.
+Out of scope: 6A import (now Stage 6A), notifications, production deploy, merge to `main`, debit amount changes, auto-create U12+ 隊伍.
+
+## Schema choice (Stage 6A)
+
+Admin data import reuses existing create paths. **No new tables.** Upload never writes; only **Confirm import** inserts.
+
+| Object | Behaviour |
+| --- | --- |
+| `/app/admin/import` | Admin-only. Tabs: players, coaches, matches, match URL. Non-admins see access denied. |
+| Templates | Downloadable `.csv` (UTF-8 BOM) and `.xlsx` with header + example row. |
+| Players | Create-only. Required: EN given + family, birth date, 梯隊 (name or id) + jersey, at least one of zh/ja. Optional 隊伍 + jersey (Stage ST eligibility / layer_key / continues_training). Duplicate = same English names + birth date. Jersey unique per unit. |
+| Coaches | `profile_phone_e164` or `profile_id` must already exist (`admin_link_coach`). Does **not** create `auth.users`. Optional team assignments. |
+| Matches | Create unpublished `cup`/`league`/`friendly` shells on **隊伍** via `admin_create_match`. Opponent may be blank (TBD). `regular`/`special`/`training` kinds rejected. |
+| URL assist | Paste a public http(s) URL → best-effort field suggestions → admin edits → save via existing create RPC. SSRF: no private/link-local/metadata IPs; ~8s timeout; ~1 MB body; limited redirects. HTML is not stored. |
+| Summary | Created / failed with line numbers and reasons. Partial success keeps created rows. |
+
+Out of scope: guardian binding import; assessments; attendance/credits; upsert; auto-publish; LINE/push; scraping auth/paywalled sites; storing raw HTML; training import; production deploy.
+
+Use an **admin** account for UI checks. Unit tests cover T6A-1…T6A-10 in [`lib/org/import.test.ts`](lib/org/import.test.ts). No new SQL.
+
+| ID | Check |
+| --- | --- |
+| T6A-1 | `/app/admin/import` offers CSV and Excel templates with header + example row. |
+| T6A-2 | Player CSV happy path: preview valid, confirm creates player on 梯隊 (optional 隊伍). |
+| T6A-3 | Same EN+birth as an existing player, or jersey already used on that 梯隊/隊伍, blocks the row with a reason. |
+| T6A-4 | Player row with neither `name_zh` nor `name_ja` is invalid (`missingCjkName`). |
+| T6A-5 | Coach row with a phone that is not an existing profile fails (`unknownProfilePhone`). No `auth.users` created. |
+| T6A-6 | Match row with blank opponent and omitted `is_published` previews as unpublished TBD shell on a 隊伍. |
+| T6A-7 | Match kind `regular` / `special` / `training` is rejected (`matchKindRequired`). |
+| T6A-8 | Signed-in non-admin cannot open `/app/admin/import` (access denied). Parent JWT cannot preview/confirm/URL-assist. |
+| T6A-9 | URL assist on a fixture HTML page fills suggested title/kind/kickoff/location/opponent; admin can edit then save via `admin_create_match`. |
+| T6A-10 | URL assist blocks `http://127.0.0.1/`, `localhost`, and `169.254.169.254` without fetching. `npm run lint`, `npm run typecheck`, and `npm test` pass. |
+
+Locale check: import tabs, template buttons, preview/confirm, URL assist, and errors in zh-Hant / en / ja.
 
 ## Staging vs production
 
@@ -764,7 +797,7 @@ i18n/                  next-intl routing, navigation, request config
 lib/age-band.ts        Season-start age band helper
 lib/assessments/       Assessment parse/validation, queries, server actions
 lib/credits/           Debit rules, packages, LINE notice copy, credit queries/actions
-lib/org/               Server actions, queries, display-name helper, binding actions, match helpers
+lib/org/               Server actions, queries, import parse/validate, URL assist, match helpers
 lib/auth/              Phone helpers, session/role guards
 lib/supabase/          Browser, server, and proxy (cookie) clients
 messages/              zh-Hant, en, ja copy

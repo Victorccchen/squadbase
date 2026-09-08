@@ -11,7 +11,7 @@
     "footer": "Production deploys require human approval. Do not publish to production automatically."
   },
   "home": {
-    "eyebrow": "Stage 6P.1 · training vs matches, calendar + list, friendly matches",
+    "eyebrow": "Stage 6A · admin Excel/CSV import and match URL assist",
     "headline": "Welcome to the Club management system",
     "lead": "Visitors can open the public match schedule without signing in and add a match to a calendar. After parents sign in, training and competitions are listed separately; the same series can be attended or declined in one tap. Admins and assigned coaches record 1–5 scores for match situations and player traits. Ability details and credits are never shown on public pages.",
     "openDashboard": "Open dashboard",
@@ -59,7 +59,7 @@
   "app": {
     "eyebrow": "Dashboard",
     "title": "Club dashboard",
-    "welcome": "Parents can request a link to a child, register approved children for training or competitions, see prepaid session credits, and read ability assessments for linked children. Anyone can open the public match schedule and add it to a calendar. Admins manage teams, players, coaches, bindings, sessions, matches, claims, and assessments. Coaches can open assigned rosters, take attendance, and record assessments for players on their teams.",
+    "welcome": "Parents can request a link to a child, register approved children for training or competitions, see prepaid session credits, and read ability assessments for linked children. Anyone can open the public match schedule and add it to a calendar. Admins manage teams, players, coaches, bindings, sessions, matches, claims, assessments, and data import. Coaches can open assigned rosters, take attendance, and record assessments for players on their teams.",
     "accountTitle": "Account",
     "phoneLabel": "Phone",
     "rolesLabel": "Roles",
@@ -144,6 +144,10 @@
         "title": "Public matches",
         "body": "Create cup, league, and friendly matches, publish a lineup of display names and jersey numbers, and set the result."
       },
+      "adminImport": {
+        "title": "Data import",
+        "body": "Download CSV/Excel templates, preview rows, then confirm create-only imports for players, coaches, and matches. Paste a public match URL to fill a draft."
+      },
       "publicMatches": {
         "title": "Public schedule",
         "body": "Visitor schedule: published cup, league, and friendly matches, results, and lineups. Parent signup is on Competitions."
@@ -183,6 +187,7 @@
     "claims": "Claims",
     "creditsAdmin": "Credit admin",
     "matches": "Matches",
+    "import": "Import",
     "assessments": "Assessments"
   },
   "access": {
@@ -207,6 +212,8 @@
     "sessionsBody": "Create titled regular or special training on 梯隊 only. Multi-select 梯隊 to create one independent series or session per 梯隊 with the same details. Special is one occurrence. Regular uses selected weekdays plus an end date or a per-weekday week count. Cup, league, and friendly matches belong on Admin → Matches and attach to 隊伍. The default admin view is a month calendar. Inactive hides new parent signup; soft-delete keeps registrations and Q&A. Registration is auto-approved. There is no capacity limit in this stage.",
     "matchesTitle": "Public matches",
     "matchesBody": "Announce cup, league, and friendly matches on the public schedule. Multi-select 隊伍 to create one independent fixture set per 隊伍 with the same title and kickoffs. Choose who appears on the published lineup (display name and jersey only). Cancelled matches are hidden from visitors, not listed as cancelled. Writes are admin-only.",
+    "importTitle": "Data import",
+    "importBody": "Upload Excel or CSV, preview valid and invalid rows, then confirm. Nothing is written on upload alone. Players and coaches are create-only; duplicates block that row. Matches attach to 隊伍 and stay unpublished unless the file says otherwise. URL assist only fills a draft.",
     "createTeam": "Create team",
     "createAgeSquad": "Create 梯隊",
     "createCompetitionTeam": "Create 隊伍",
@@ -488,7 +495,21 @@
       "noteTooLong": "A note cannot be longer than 1000 characters.",
       "invalidAssessedOn": "Enter a valid assessment date.",
       "futureAssessedOn": "The assessment date cannot be in the future.",
-      "assessmentNotFound": "That assessment was not found."
+      "assessmentNotFound": "That assessment was not found.",
+      "duplicatePlayer": "A player with the same English given name, family name, and birth date already exists.",
+      "duplicateInFile": "This row duplicates an earlier row in the same file.",
+      "unknownProfilePhone": "No existing profile matches that phone (or profile id). Coaches must already have signed in; import does not create login accounts.",
+      "coachAlreadyLinked": "That profile is already linked as a coach. Import is create-only.",
+      "ambiguousTeamName": "More than one unit has that name. Use the id column.",
+      "importEmpty": "The file has no data rows.",
+      "importTooLarge": "The file is too large or has too many rows (max 1 MB / 200 rows).",
+      "importInvalidFile": "Could not read that file. Use the CSV or Excel template.",
+      "importNoValidRows": "There are no valid rows to import. Fix the preview errors first.",
+      "importHeaderInvalid": "The header row does not match the template. Download a fresh template.",
+      "blockedUrl": "That URL is not allowed. Use a public http(s) page; private, localhost, and metadata addresses are blocked.",
+      "urlFetchFailed": "Could not fetch that page (size, type, or HTTP error).",
+      "urlTimeout": "Fetching that page timed out.",
+      "missingProfile": "That profile was not found."
     }
   },
   "children": {
@@ -931,6 +952,59 @@
         "Support quickly in front of the ball",
         "Switch play when the press is beaten"
       ]
+    }
+  },
+  "import": {
+    "tabsLabel": "Import type",
+    "tabs": {
+      "players": "Players",
+      "coaches": "Coaches",
+      "matches": "Matches",
+      "url": "Match URL"
+    },
+    "downloadCsv": "Download CSV template",
+    "downloadXlsx": "Download Excel template",
+    "fileLabel": "Upload CSV or Excel",
+    "preview": "Preview (do not import yet)",
+    "previewing": "Parsing…",
+    "confirm": "Confirm import",
+    "importing": "Importing…",
+    "confirmHint": "Upload only parses. Rows stay off the roster until you confirm. Create-only: duplicates and jersey clashes block that row.",
+    "previewCounts": "{valid} valid · {invalid} invalid",
+    "confirmCounts": "Created {created} · failed {failed}",
+    "line": "Line",
+    "status": "Status",
+    "summary": "Summary",
+    "reason": "Reason",
+    "valid": "Valid",
+    "invalid": "Invalid",
+    "failedLine": "Line {line}:",
+    "urlLabel": "Public match URL",
+    "extract": "Suggest fields",
+    "extracting": "Fetching…",
+    "suggestionsHint": "Suggestions are editable. Saving uses the existing match create path. Unpublished by default unless you tick publish. HTML is not stored.",
+    "saveMatch": "Create match from draft",
+    "leads": {
+      "players": "Required: English given + family, birth date, 梯隊 name or id, 梯隊 jersey, and at least one of Traditional Chinese or Japanese. Optional 隊伍 + jersey. Duplicate = same English names + birth date.",
+      "coaches": "Required: an existing profile phone (E.164) or profile id. Import will not create login accounts. Optional team names/ids to assign after linking.",
+      "matches": "Required: 隊伍 name or id, title, kind (cup / league / friendly), starts_at (Asia/Taipei). Opponent may be blank (TBD). is_published defaults to false. Training kinds are rejected.",
+      "url": "Paste a public http(s) fixture page. Private, localhost, and cloud-metadata addresses are blocked. Timeout 8s, max 1 MB. Edit the suggested fields, then save."
+    },
+    "errors": {
+      "duplicatePlayer": "A player with the same English given name, family name, and birth date already exists.",
+      "duplicateInFile": "This row duplicates an earlier row in the same file.",
+      "unknownProfilePhone": "No existing profile matches that phone (or profile id). Coaches must already have signed in; import does not create login accounts.",
+      "coachAlreadyLinked": "That profile is already linked as a coach. Import is create-only.",
+      "ambiguousTeamName": "More than one unit has that name. Use the id column.",
+      "importEmpty": "The file has no data rows.",
+      "importTooLarge": "The file is too large or has too many rows (max 1 MB / 200 rows).",
+      "importInvalidFile": "Could not read that file. Use the CSV or Excel template.",
+      "importNoValidRows": "There are no valid rows to import. Fix the preview errors first.",
+      "importHeaderInvalid": "The header row does not match the template. Download a fresh template.",
+      "blockedUrl": "That URL is not allowed. Use a public http(s) page; private, localhost, and metadata addresses are blocked.",
+      "urlFetchFailed": "Could not fetch that page (size, type, or HTTP error).",
+      "urlTimeout": "Fetching that page timed out.",
+      "missingProfile": "That profile was not found."
     }
   }
 }

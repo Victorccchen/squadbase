@@ -87,9 +87,19 @@ const REQUIRED_KEYS = [
   "matches.parentRegisteredBadge",
   "matches.staffRosterTitle",
   "matches.staffRosterHint",
+  "nav.import",
+  "admin.importTitle",
+  "admin.importBody",
+  "app.placeholders.adminImport.title",
+  "import.confirm",
+  "import.tabs.url",
+  "import.errors.unknownProfilePhone",
+  "import.errors.blockedUrl",
+  "org.errors.duplicatePlayer",
+  "org.errors.matchKindRequired",
 ];
 
-describe("T6P-9 locale smoke", () => {
+describe("T6P-9 / T6A locale smoke", () => {
   it("has Stage 6P copy keys in zh-Hant, en, and ja", () => {
     for (const locale of ["zh-Hant", "en", "ja"] as const) {
       const messages = loadMessages(locale);

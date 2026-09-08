@@ -90,6 +90,20 @@ export type OrgErrorKey =
   | "futureAssessedOn"
   | "assessmentNotFound"
   | "partialTeamCreates"
+  | "duplicatePlayer"
+  | "duplicateInFile"
+  | "unknownProfilePhone"
+  | "coachAlreadyLinked"
+  | "ambiguousTeamName"
+  | "importEmpty"
+  | "importTooLarge"
+  | "importInvalidFile"
+  | "importNoValidRows"
+  | "importHeaderInvalid"
+  | "blockedUrl"
+  | "urlFetchFailed"
+  | "urlTimeout"
+  | "missingProfile"
   | "generic";
 
 export type TeamCreateRowResult = {
