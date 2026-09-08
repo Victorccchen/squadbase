@@ -14,6 +14,7 @@ const LINKS = [
   { href: "/app/admin/credits", key: "creditsAdmin" as const, match: "/app/admin/credits" },
   { href: "/app/admin/import", key: "import" as const, match: "/app/admin/import" },
   { href: "/app/admin/notices", key: "notices" as const, match: "/app/admin/notices" },
+  { href: "/app/admin/reports", key: "reports" as const, match: "/app/admin/reports" },
 ];
 
 export function AdminSubnav() {

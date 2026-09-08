@@ -11,7 +11,7 @@
     "footer": "Production deploys require human approval. Do not publish to production automatically."
   },
   "home": {
-    "eyebrow": "Stage 6A + N · admin import and notice copy",
+    "eyebrow": "Stage R · admin reports and Excel/CSV export",
     "headline": "Welcome to the Club management system",
     "lead": "Visitors can open the public match schedule without signing in and add a match to a calendar. After parents sign in, training and competitions are listed separately; the same series can be attended or declined in one tap. Admins and assigned coaches record 1–5 scores for match situations and player traits. Ability details and credits are never shown on public pages.",
     "openDashboard": "Open dashboard",
@@ -59,7 +59,7 @@
   "app": {
     "eyebrow": "Dashboard",
     "title": "Club dashboard",
-    "welcome": "Parents can request a link to a child, register approved children for training or competitions, see prepaid session credits, and read ability assessments for linked children. Anyone can open the public match schedule and add it to a calendar. Admins manage teams, players, coaches, bindings, sessions, matches, claims, assessments, data import, and notice copy. Coaches can open assigned rosters, take attendance, and record assessments for players on their teams.",
+    "welcome": "Parents can request a link to a child, register approved children for training or competitions, see prepaid session credits, and read ability assessments for linked children. Anyone can open the public match schedule and add it to a calendar. Admins manage teams, players, coaches, bindings, sessions, matches, claims, assessments, data import, notice copy, and Excel/CSV reports. Coaches can open assigned rosters, take attendance, and record assessments for players on their teams.",
     "accountTitle": "Account",
     "phoneLabel": "Phone",
     "rolesLabel": "Roles",
@@ -148,6 +148,10 @@
         "title": "Data import",
         "body": "Download CSV/Excel templates, preview rows, then confirm create-only imports for players, coaches, and matches. Paste a public match URL to fill a draft."
       },
+      "adminReports": {
+        "title": "Reports",
+        "body": "Export attendance, registrations, credit ledger, and match roster as Excel or CSV for ops reconciliation. Admin only; no parent phones by default."
+      },
       "publicMatches": {
         "title": "Public schedule",
         "body": "Visitor schedule: published cup, league, and friendly matches, results, and lineups. Parent signup is on Competitions."
@@ -189,7 +193,8 @@
     "matches": "Matches",
     "import": "Import",
     "assessments": "Assessments",
-    "notices": "Notices"
+    "notices": "Notices",
+    "reports": "Reports"
   },
   "access": {
     "deniedTitle": "You cannot open this page",
@@ -318,7 +323,9 @@
     "registrationHistoryTitle": "Cancelled registrations",
     "openAssessment": "Assessment",
     "noticesTitle": "Notice copy",
-    "noticesBody": "Generate short LINE-group text and app deep links for a 梯隊, a 隊伍, or parents already registered on a session. Copy only — this app does not send LINE, SMS, or push."
+    "noticesBody": "Generate short LINE-group text and app deep links for a 梯隊, a 隊伍, or parents already registered on a session. Copy only — this app does not send LINE, SMS, or push.",
+    "reportsTitle": "Reports",
+    "reportsBody": "Download attendance, registrations, credit ledger, and match roster as Excel or CSV. Admin only. Default files omit parent phones and other contact PII. Soft-deleted sessions are excluded unless you include them. At most 5000 rows per download."
   },
   "roster": {
     "title": "Roster",
@@ -512,7 +519,11 @@
       "blockedUrl": "That URL is not allowed. Use a public http(s) page; private, localhost, and metadata addresses are blocked.",
       "urlFetchFailed": "Could not fetch that page (size, type, or HTTP error).",
       "urlTimeout": "Fetching that page timed out.",
-      "missingProfile": "That profile was not found."
+      "missingProfile": "That profile was not found.",
+      "invalidReportType": "Choose a valid report type.",
+      "invalidReportFormat": "Choose CSV or Excel.",
+      "reportInvalidDateRange": "Enter a valid date from and date to (from cannot be after to).",
+      "reportTooManyRows": "This export has more than 5000 rows. Narrow the date range, 梯隊, 隊伍, or session kinds and try again."
     }
   },
   "children": {
@@ -1057,6 +1068,70 @@
       "zh-Hant": "繁中",
       "en": "English",
       "ja": "日本語"
+    }
+  },
+  "reports": {
+    "tabsLabel": "Report type",
+    "types": {
+      "attendance": "Attendance",
+      "registrations": "Registrations",
+      "credit_ledger": "Credit ledger",
+      "match_roster": "Match roster"
+    },
+    "typeHint": {
+      "attendance": "One row per session and player with an attendance mark. Includes credits debited and any leave note.",
+      "registrations": "session_registrations: status, parent note, registered time, and whether Q&A exists (not the thread).",
+      "credit_ledger": "Credit transactions: player, time, type, amount, related session, actor role. Matches the admin credit labels.",
+      "match_roster": "Staff match lineup (published or unpublished): title, date, 隊伍, opponent, player, jersey, publish status."
+    },
+    "privacyHint": "Downloads stay in the browser. Parent phones and other contact PII are not included. Training reports use 梯隊; match roster uses 隊伍.",
+    "dateFrom": "From date",
+    "dateTo": "To date",
+    "dateHint": "Club calendar days (Asia/Taipei). Attendance, registrations, and match roster filter on session/kickoff time. The credit ledger filters on transaction time.",
+    "kindsHint": "Leave all unchecked to include every kind that applies to this report.",
+    "ageSquadHint": "Leave all unchecked to include every 梯隊. Training sessions attach to 梯隊.",
+    "competitionTeamHint": "Leave all unchecked to include every 隊伍. Matches attach to 隊伍.",
+    "includeDeleted": "Include soft-deleted sessions",
+    "formatCsv": "Download CSV",
+    "formatXlsx": "Download Excel",
+    "downloading": "Preparing download…",
+    "emptyDownload": "The file has headers only (no matching rows).",
+    "shortcutAttendance": "Export attendance",
+    "shortcutRegistrations": "Export registrations",
+    "shortcutRoster": "Export match roster",
+    "yes": "Yes",
+    "no": "No",
+    "actorUnknown": "—",
+    "columns": {
+      "title": "Title",
+      "date": "Date",
+      "kind": "Kind",
+      "unit": "Unit",
+      "player": "Player",
+      "jersey": "Jersey",
+      "attendanceStatus": "Attendance",
+      "creditsDebited": "Credits debited",
+      "leaveNote": "Leave note",
+      "registrationStatus": "Registration status",
+      "parentNote": "Parent note",
+      "registeredAt": "Registered at",
+      "hasQa": "Has Q&A",
+      "time": "Time",
+      "ledgerType": "Type",
+      "amount": "Amount",
+      "relatedSession": "Related session",
+      "actorRole": "Actor role",
+      "opponent": "Opponent",
+      "published": "Publish status",
+      "publicStatus": "Match status"
+    },
+    "ledgerTypes": {
+      "purchase": "Purchase",
+      "attend_debit": "Attend debit",
+      "no_show_debit": "No-show debit",
+      "match_debit": "Match debit",
+      "admin_adjust": "Admin adjust",
+      "reversal": "Reversal"
     }
   }
 }
