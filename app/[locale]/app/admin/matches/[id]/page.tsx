@@ -34,6 +34,7 @@ import {
 import { listActiveRosterForTeam } from "@/lib/credits/queries";
 import { formatMatchScore } from "@/lib/org/match";
 import { formatClubDateTimeRange } from "@/lib/org/session-time";
+import { ReportExportButtons } from "@/components/admin/report-export-buttons";
 import { secondaryButtonClassName } from "@/lib/ui";
 
 type AdminMatchDetailPageProps = {
@@ -54,6 +55,7 @@ export default async function AdminMatchDetailPage({ params }: AdminMatchDetailP
   const t = await getTranslations("admin");
   const matchesT = await getTranslations("matches");
   const noticesT = await getTranslations("notices");
+  const reportsT = await getTranslations("reports");
   const sessionsT = await getTranslations("sessions");
   const org = await getTranslations("org");
   const common = await getTranslations("common");
@@ -188,6 +190,18 @@ export default async function AdminMatchDetailPage({ params }: AdminMatchDetailP
           locale={locale}
           variant="match"
         />
+        <section className="flex flex-col gap-3">
+          <ReportExportButtons
+            reportType="registrations"
+            sessionId={match.id}
+            label={reportsT("shortcutRegistrations")}
+          />
+          <ReportExportButtons
+            reportType="match_roster"
+            sessionId={match.id}
+            label={reportsT("shortcutRoster")}
+          />
+        </section>
         {isDeleted ? null : (
           <section className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">

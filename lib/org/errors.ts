@@ -104,6 +104,10 @@ export type OrgErrorKey =
   | "urlFetchFailed"
   | "urlTimeout"
   | "missingProfile"
+  | "invalidReportType"
+  | "invalidReportFormat"
+  | "reportInvalidDateRange"
+  | "reportTooManyRows"
   | "generic";
 
 export type TeamCreateRowResult = {

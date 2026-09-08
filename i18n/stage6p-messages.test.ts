@@ -102,6 +102,14 @@ const REQUIRED_KEYS = [
   "notices.generateCta",
   "notices.templates.match_notes",
   "admin.noticesTitle",
+  "nav.reports",
+  "admin.reportsTitle",
+  "admin.reportsBody",
+  "app.placeholders.adminReports.title",
+  "reports.types.attendance",
+  "reports.columns.title",
+  "reports.ledgerTypes.attend_debit",
+  "org.errors.reportTooManyRows",
 ];
 
 describe("T6P-9 / T6A locale smoke", () => {
