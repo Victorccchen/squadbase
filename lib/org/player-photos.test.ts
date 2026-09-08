@@ -15,8 +15,13 @@ import {
   inspectIdPdfBuffer,
   isMissingHeadshotFilter,
   isRejectedExecutable,
+  isSafePhotoReturnPath,
   nextHeadshotPath,
   nextIdPdfPath,
+  parsePhotoAlertKey,
+  photoActionRedirectPath,
+  photoAlertFromSearchParams,
+  photoSectionDomId,
   playerHasHeadshot,
   playerIdFromStoragePath,
   replaceUpdatesPath,
@@ -230,5 +235,67 @@ describe("TP-7 PDF attachment flag without replacing the image thumb rule", () =
     assert.equal(attachmentFlag({ photo_path: null, id_pdf_path: "p/a.pdf" }), "pdf-only");
     assert.equal(attachmentFlag({ photo_path: "p/a.jpg", id_pdf_path: null }), "image");
     assert.equal(headshotListMarker({ photo_path: null, id_pdf_path: "p/a.pdf" }), "missing");
+  });
+});
+
+describe("parent children page photo panel markup", () => {
+  it("includes a server-rendered photo section for each approved child", () => {
+    const page = readFileSync(join(root, "app/[locale]/app/children/page.tsx"), "utf8");
+    const panel = readFileSync(join(root, "components/players/player-photo-panel.tsx"), "utf8");
+    const queries = readFileSync(join(root, "lib/org/player-photo-queries.ts"), "utf8");
+
+    assert.match(page, /<PlayerPhotoPanel[\s\S]*canWrite/);
+    assert.match(page, /noAssessment/);
+    assert.match(page, /openCredits/);
+    const noAssessmentAt = page.indexOf("{t(\"noAssessment\")}");
+    const panelAt = page.indexOf("<PlayerPhotoPanel");
+    const creditsAt = page.indexOf("{t(\"openCredits\")}");
+    assert.ok(noAssessmentAt > 0 && panelAt > noAssessmentAt && creditsAt > panelAt);
+
+    assert.equal(panel.trimStart().startsWith("\"use client\""), false);
+    assert.match(panel, /getTranslations\("photos"\)/);
+    assert.match(panel, /data-testid="player-photo-section"/);
+    assert.match(panel, /name="headshot"/);
+    assert.match(panel, /name="return_to"/);
+    assert.match(panel, /action=\{uploadPlayerHeadshot\}/);
+    assert.match(panel, /action=\{removePlayerHeadshot\}/);
+    assert.match(panel, /t\("title"\)/);
+    assert.match(panel, /t\("upload"\)/);
+    assert.match(panel, /t\("replace"\)/);
+    assert.match(panel, /t\("remove"\)/);
+    assert.match(queries, /catch \(error\)/);
+  });
+});
+
+describe("photo form redirect helpers", () => {
+  it("keeps the upload UI path internal and surfaces submit errors in the query", () => {
+    const playerId = "11111111-1111-4111-8111-111111111111";
+    assert.equal(isSafePhotoReturnPath("/zh-Hant/app/children"), true);
+    assert.equal(isSafePhotoReturnPath("/en/app/admin/players/abc/edit"), true);
+    assert.equal(isSafePhotoReturnPath("https://evil.example/zh-Hant/app/children"), false);
+    assert.equal(isSafePhotoReturnPath("//evil/app/children"), false);
+    assert.equal(parsePhotoAlertKey("invalidPhotoType"), "invalidPhotoType");
+    assert.equal(parsePhotoAlertKey("not-a-key"), "generic");
+    assert.equal(parsePhotoAlertKey(""), null);
+    assert.equal(
+      photoActionRedirectPath({
+        returnTo: "/zh-Hant/app/children",
+        playerId,
+        errorKey: "generic",
+      }),
+      `/zh-Hant/app/children?photoAlert=generic&photoPlayer=${playerId}#${photoSectionDomId(playerId)}`,
+    );
+    assert.equal(
+      photoActionRedirectPath({
+        returnTo: "/zh-Hant/app/children",
+        playerId,
+        errorKey: null,
+      }),
+      `/zh-Hant/app/children#${photoSectionDomId(playerId)}`,
+    );
+    assert.deepEqual(photoAlertFromSearchParams({ photoAlert: "photoTooLarge", photoPlayer: playerId }), {
+      errorKey: "photoTooLarge",
+      playerId,
+    });
   });
 });

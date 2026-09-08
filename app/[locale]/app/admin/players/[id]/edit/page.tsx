@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { AccessDenied } from "@/components/access-denied";
 import { PageHeader } from "@/components/page-header";
 import { PlayerForm } from "@/components/admin/player-form";
@@ -8,12 +8,14 @@ import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { updatePlayer } from "@/lib/org/actions";
 import { getPlayer, listTeams } from "@/lib/org/queries";
 import { signPlayerStoragePaths } from "@/lib/org/player-photo-queries";
+import { photoAlertFromSearchParams } from "@/lib/org/player-photos";
 
 type EditPlayerPageProps = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ photoAlert?: string | string[]; photoPlayer?: string | string[] }>;
 };
 
-export default async function EditPlayerPage({ params }: EditPlayerPageProps) {
+export default async function EditPlayerPage({ params, searchParams }: EditPlayerPageProps) {
   if (!(await canRenderAdminPage())) {
     return <AccessDenied area="admin" />;
   }
@@ -26,9 +28,12 @@ export default async function EditPlayerPage({ params }: EditPlayerPageProps) {
 
   const t = await getTranslations("admin");
   const common = await getTranslations("common");
+  const locale = await getLocale();
   const action = updatePlayer.bind(null, player.id);
   const signed = await signPlayerStoragePaths([player.photo_path]);
   const photoUrl = player.photo_path ? (signed.get(player.photo_path) ?? null) : null;
+  const photoAlert = photoAlertFromSearchParams(await searchParams);
+  const returnTo = `/${locale}/app/admin/players/${player.id}/edit`;
 
   return (
     <>
@@ -48,6 +53,12 @@ export default async function EditPlayerPage({ params }: EditPlayerPageProps) {
           idPdfPath={player.id_pdf_path}
           signedUrl={photoUrl}
           canWrite
+          returnTo={returnTo}
+          alertErrorKey={
+            photoAlert && (!photoAlert.playerId || photoAlert.playerId === player.id)
+              ? photoAlert.errorKey
+              : null
+          }
         />
       </main>
       <footer className="border-t border-zinc-200 px-6 py-4 pb-10 text-sm text-zinc-500 dark:border-zinc-800">

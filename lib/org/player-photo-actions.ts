@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { getPublicSupabaseEnv } from "@/lib/env";
 import { loadSignedInAccount } from "@/lib/auth/session";
 import { canAccessAdmin, hasRole } from "@/lib/auth/roles";
@@ -14,6 +15,7 @@ import {
   inspectIdPdfBuffer,
   nextHeadshotPath,
   nextIdPdfPath,
+  photoActionRedirectPath,
   writeDeniedErrorKey,
 } from "@/lib/org/player-photos";
 import { type OrgActionState, type OrgErrorKey } from "@/lib/org/errors";
@@ -34,6 +36,18 @@ type WriterResult =
 
 function revalidatePlayerPhotos() {
   revalidatePath("/", "layout");
+}
+
+/** Native <form action> posts FormData only (no useActionState prev argument). */
+function finishPhotoForm(formData: FormData, result: OrgActionState): void {
+  const target = photoActionRedirectPath({
+    returnTo: readString(formData, "return_to"),
+    playerId: parseUuid(readString(formData, "player_id")) ?? "",
+    errorKey: result.ok ? null : result.errorKey,
+  });
+  if (target) {
+    redirect(target);
+  }
 }
 
 function photoRpcErrorKey(message: string | undefined): OrgErrorKey {
@@ -123,26 +137,23 @@ async function removeStorageObject(supabase: PhotoClient, path: string | null | 
   }
 }
 
-export async function uploadPlayerHeadshot(
-  _prev: OrgActionState,
-  formData: FormData,
-): Promise<OrgActionState> {
+export async function uploadPlayerHeadshot(formData: FormData): Promise<void> {
   const actor = await requirePhotoWriter(formData);
   if (!actor.ok) {
-    return fail(actor.errorKey);
+    return finishPhotoForm(formData, fail(actor.errorKey));
   }
 
   const uploaded = await readUploadBytes(formData, "headshot");
   if (!uploaded.ok) {
-    return fail(uploaded.errorKey);
+    return finishPhotoForm(formData, fail(uploaded.errorKey));
   }
   if (!uploaded.bytes) {
-    return fail("invalidPhotoType");
+    return finishPhotoForm(formData, fail("invalidPhotoType"));
   }
 
   const inspected = inspectHeadshotBuffer(uploaded.bytes);
   if (!inspected.ok) {
-    return fail(inspected.errorKey);
+    return finishPhotoForm(formData, fail(inspected.errorKey));
   }
 
   const { data: player, error: loadError } = await actor.supabase
@@ -152,16 +163,16 @@ export async function uploadPlayerHeadshot(
     .maybeSingle();
   if (loadError) {
     console.error("uploadPlayerHeadshot load", loadError.message);
-    return fail("generic");
+    return finishPhotoForm(formData, fail("generic"));
   }
   if (!player) {
-    return fail("missingPlayer");
+    return finishPhotoForm(formData, fail("missingPlayer"));
   }
 
   const path = nextHeadshotPath(actor.playerId, inspected.mime);
   const pathError = assertPathBelongsToPlayer(path, actor.playerId);
   if (pathError) {
-    return fail(pathError);
+    return finishPhotoForm(formData, fail(pathError));
   }
 
   const { error: uploadError } = await actor.supabase.storage
@@ -172,7 +183,7 @@ export async function uploadPlayerHeadshot(
     });
   if (uploadError) {
     console.error("uploadPlayerHeadshot storage", uploadError.message);
-    return fail("generic");
+    return finishPhotoForm(formData, fail("generic"));
   }
 
   const { error: rpcError } = await actor.supabase.rpc("set_player_headshot", {
@@ -182,7 +193,7 @@ export async function uploadPlayerHeadshot(
   if (rpcError) {
     await removeStorageObject(actor.supabase, path);
     console.error("uploadPlayerHeadshot rpc", rpcError.message);
-    return fail(photoRpcErrorKey(rpcError.message));
+    return finishPhotoForm(formData, fail(photoRpcErrorKey(rpcError.message)));
   }
 
   if (player.photo_path && player.photo_path !== path) {
@@ -190,16 +201,13 @@ export async function uploadPlayerHeadshot(
   }
 
   revalidatePlayerPhotos();
-  return ok();
+  return finishPhotoForm(formData, ok());
 }
 
-export async function removePlayerHeadshot(
-  _prev: OrgActionState,
-  formData: FormData,
-): Promise<OrgActionState> {
+export async function removePlayerHeadshot(formData: FormData): Promise<void> {
   const actor = await requirePhotoWriter(formData);
   if (!actor.ok) {
-    return fail(actor.errorKey);
+    return finishPhotoForm(formData, fail(actor.errorKey));
   }
 
   const { data: player, error: loadError } = await actor.supabase
@@ -209,10 +217,10 @@ export async function removePlayerHeadshot(
     .maybeSingle();
   if (loadError) {
     console.error("removePlayerHeadshot load", loadError.message);
-    return fail("generic");
+    return finishPhotoForm(formData, fail("generic"));
   }
   if (!player) {
-    return fail("missingPlayer");
+    return finishPhotoForm(formData, fail("missingPlayer"));
   }
 
   const { error: rpcError } = await actor.supabase.rpc("set_player_headshot", {
@@ -221,34 +229,34 @@ export async function removePlayerHeadshot(
   });
   if (rpcError) {
     console.error("removePlayerHeadshot rpc", rpcError.message);
-    return fail(photoRpcErrorKey(rpcError.message));
+    return finishPhotoForm(formData, fail(photoRpcErrorKey(rpcError.message)));
   }
 
   await removeStorageObject(actor.supabase, player.photo_path);
   revalidatePlayerPhotos();
-  return ok();
+  return finishPhotoForm(formData, ok());
 }
 
-export async function uploadPlayerIdPdf(
-  _prev: OrgActionState,
-  formData: FormData,
-): Promise<OrgActionState> {
+export async function uploadPlayerIdPdf(formData: FormData): Promise<void> {
   const actor = await requirePhotoWriter(formData);
   if (!actor.ok) {
-    return fail(actor.errorKey);
+    return finishPhotoForm(formData, fail(actor.errorKey));
   }
 
   const uploaded = await readUploadBytes(formData, "id_pdf");
   if (!uploaded.ok) {
-    return fail(uploaded.errorKey === "invalidPhotoType" ? "invalidPdfType" : uploaded.errorKey);
+    return finishPhotoForm(
+      formData,
+      fail(uploaded.errorKey === "invalidPhotoType" ? "invalidPdfType" : uploaded.errorKey),
+    );
   }
   if (!uploaded.bytes) {
-    return fail("invalidPdfType");
+    return finishPhotoForm(formData, fail("invalidPdfType"));
   }
 
   const inspected = inspectIdPdfBuffer(uploaded.bytes);
   if (!inspected.ok) {
-    return fail(inspected.errorKey);
+    return finishPhotoForm(formData, fail(inspected.errorKey));
   }
 
   const { data: player, error: loadError } = await actor.supabase
@@ -258,16 +266,16 @@ export async function uploadPlayerIdPdf(
     .maybeSingle();
   if (loadError) {
     console.error("uploadPlayerIdPdf load", loadError.message);
-    return fail("generic");
+    return finishPhotoForm(formData, fail("generic"));
   }
   if (!player) {
-    return fail("missingPlayer");
+    return finishPhotoForm(formData, fail("missingPlayer"));
   }
 
   const path = nextIdPdfPath(actor.playerId);
   const pathError = assertPathBelongsToPlayer(path, actor.playerId);
   if (pathError) {
-    return fail(pathError);
+    return finishPhotoForm(formData, fail(pathError));
   }
 
   const { error: uploadError } = await actor.supabase.storage
@@ -278,7 +286,7 @@ export async function uploadPlayerIdPdf(
     });
   if (uploadError) {
     console.error("uploadPlayerIdPdf storage", uploadError.message);
-    return fail("generic");
+    return finishPhotoForm(formData, fail("generic"));
   }
 
   const { error: rpcError } = await actor.supabase.rpc("set_player_id_pdf", {
@@ -288,7 +296,7 @@ export async function uploadPlayerIdPdf(
   if (rpcError) {
     await removeStorageObject(actor.supabase, path);
     console.error("uploadPlayerIdPdf rpc", rpcError.message);
-    return fail(photoRpcErrorKey(rpcError.message));
+    return finishPhotoForm(formData, fail(photoRpcErrorKey(rpcError.message)));
   }
 
   if (player.id_pdf_path && player.id_pdf_path !== path) {
@@ -296,16 +304,13 @@ export async function uploadPlayerIdPdf(
   }
 
   revalidatePlayerPhotos();
-  return ok();
+  return finishPhotoForm(formData, ok());
 }
 
-export async function removePlayerIdPdf(
-  _prev: OrgActionState,
-  formData: FormData,
-): Promise<OrgActionState> {
+export async function removePlayerIdPdf(formData: FormData): Promise<void> {
   const actor = await requirePhotoWriter(formData);
   if (!actor.ok) {
-    return fail(actor.errorKey);
+    return finishPhotoForm(formData, fail(actor.errorKey));
   }
 
   const { data: player, error: loadError } = await actor.supabase
@@ -315,10 +320,10 @@ export async function removePlayerIdPdf(
     .maybeSingle();
   if (loadError) {
     console.error("removePlayerIdPdf load", loadError.message);
-    return fail("generic");
+    return finishPhotoForm(formData, fail("generic"));
   }
   if (!player) {
-    return fail("missingPlayer");
+    return finishPhotoForm(formData, fail("missingPlayer"));
   }
 
   const { error: rpcError } = await actor.supabase.rpc("set_player_id_pdf", {
@@ -327,10 +332,10 @@ export async function removePlayerIdPdf(
   });
   if (rpcError) {
     console.error("removePlayerIdPdf rpc", rpcError.message);
-    return fail(photoRpcErrorKey(rpcError.message));
+    return finishPhotoForm(formData, fail(photoRpcErrorKey(rpcError.message)));
   }
 
   await removeStorageObject(actor.supabase, player.id_pdf_path);
   revalidatePlayerPhotos();
-  return ok();
+  return finishPhotoForm(formData, ok());
 }
