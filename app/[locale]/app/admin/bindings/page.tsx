@@ -6,7 +6,7 @@ import { BindingReviewForm } from "@/components/admin/binding-review-form";
 import { BindingRevokeForm } from "@/components/admin/binding-revoke-form";
 import { LinkStatusBadge } from "@/components/bindings/link-status-badge";
 import { canRenderAdminPage } from "@/lib/auth/admin-page";
-import { listGuardianLinksForAdmin } from "@/lib/org/queries";
+import { listGuardianLinksForAdmin, formatActiveMembershipSummary } from "@/lib/org/queries";
 import { localizedPlayerName, playerNameList } from "@/lib/org/display-name";
 import { canAdminRevokeLink } from "@/lib/org/parse";
 import type { GuardianLinkWithPlayer } from "@/lib/org/queries";
@@ -118,9 +118,7 @@ function BindingCard({
             <div className="flex justify-between gap-4">
               <dt className="text-zinc-500">{childrenT("playerTeam")}</dt>
               <dd className="font-medium">
-                {player.membership?.team
-                  ? `${player.membership.team.name} · #${player.membership.jersey_number}`
-                  : "—"}
+                {formatActiveMembershipSummary(player.memberships) ?? "—"}
               </dd>
             </div>
             <div className="flex justify-between gap-4">

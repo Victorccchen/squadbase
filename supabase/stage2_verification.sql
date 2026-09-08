@@ -1,7 +1,8 @@
 -- Stage 2 verification helpers (staging SQL Editor only).
 -- Do not run against production. These statements use synthetic names, not real PII.
--- Run AFTER applying 20260902120000_stage2_org_master.sql and
--- 20260902140000_players_split_english_names.sql.
+-- Run AFTER applying 20260902120000_stage2_org_master.sql,
+-- 20260902140000_players_split_english_names.sql, and
+-- 20260909100000_multi_team_membership_rules.sql (band + two-active cap).
 
 -- =============================================================================
 -- T2-2 / T2-3: jersey uniqueness (constraint; service role / SQL editor bypasses RLS)
@@ -24,15 +25,15 @@ delete from public.teams
 where name in ('Stage2 Verify Team A', 'Stage2 Verify Team B');
 
 insert into public.teams (name, age_band, status)
-values
-  ('Stage2 Verify Team A', 'U12', 'active'),
-  ('Stage2 Verify Team B', 'U12', 'active');
+select 'Stage2 Verify Team A', public.computed_age_band_from_birth_date('2014-08-15', public.club_today()), 'active'
+union all
+select 'Stage2 Verify Team B', public.computed_age_band_from_birth_date('2014-08-15', public.club_today()), 'active';
 
 insert into public.players (name_zh, name_en_given, name_en_family, name_ja, birth_date, status)
 values
   ('驗證甲', 'Stage2', 'Verify A', '検証A', '2014-08-15', 'active'),
-  ('驗證乙', 'Stage2', 'Verify B', null, '2014-08-16', 'active'),
-  (null, 'Stage2', 'Verify C', '検証C', '2014-08-17', 'active');
+  ('驗證乙', 'Stage2', 'Verify B', null, '2014-08-15', 'active'),
+  (null, 'Stage2', 'Verify C', '検証C', '2014-08-15', 'active');
 
 -- T2-8: both CJK names empty must fail.
 do $$

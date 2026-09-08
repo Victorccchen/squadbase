@@ -8,7 +8,7 @@ import type {
   Team,
   TrainingSession,
 } from "@/lib/supabase/database.types";
-import type { GuardianLinkWithPlayer } from "@/lib/org/queries";
+import type { GuardianLinkWithPlayer, PlayerWithMembership } from "@/lib/org/queries";
 import { uniqueApprovedLinksByPlayerId } from "@/lib/org/guardian-links";
 import { isSessionOpenForSignup } from "@/lib/org/session-time";
 import { parseSessionKind } from "@/lib/org/session-recurrence";
@@ -365,7 +365,7 @@ export async function listCoachRegisteredPlayers(): Promise<SessionRegistrationW
 
 export type EligibleChild = {
   linkId: string;
-  player: Player;
+  player: PlayerWithMembership;
   teamId: string;
   teamName: string;
   jerseyNumber: number;
@@ -421,27 +421,48 @@ export function approvedChildrenFromLinks(
   links: GuardianLinkWithPlayer[],
 ): EligibleChild[] {
   const result: EligibleChild[] = [];
-  const seenPlayers = new Set<string>();
   for (const link of uniqueApprovedLinksByPlayerId(links)) {
     if (!link.player) {
       continue;
     }
-    if (seenPlayers.has(link.player.id)) {
+    const memberships = (link.player.memberships ?? []).filter(
+      (row) => row.status === "active" && row.team,
+    );
+    const rows =
+      memberships.length > 0
+        ? memberships
+        : link.player.membership?.status === "active" && link.player.membership.team
+          ? [link.player.membership]
+          : [];
+    for (const membership of rows) {
+      if (!membership.team) {
+        continue;
+      }
+      result.push({
+        linkId: link.id,
+        player: link.player,
+        teamId: membership.team_id,
+        teamName: membership.team.name,
+        jerseyNumber: membership.jersey_number,
+        teamAgeBand: membership.team.age_band,
+      });
+    }
+  }
+  return result;
+}
+
+/** One row per player, keeping the first (most recently updated active) membership. */
+export function uniqueEligibleChildrenByPlayer(
+  children: EligibleChild[],
+): EligibleChild[] {
+  const seen = new Set<string>();
+  const result: EligibleChild[] = [];
+  for (const child of children) {
+    if (seen.has(child.player.id)) {
       continue;
     }
-    const membership = link.player.membership;
-    if (!membership?.team || membership.status !== "active") {
-      continue;
-    }
-    seenPlayers.add(link.player.id);
-    result.push({
-      linkId: link.id,
-      player: link.player,
-      teamId: membership.team_id,
-      teamName: membership.team.name,
-      jerseyNumber: membership.jersey_number,
-      teamAgeBand: membership.team.age_band,
-    });
+    seen.add(child.player.id);
+    result.push(child);
   }
   return result;
 }

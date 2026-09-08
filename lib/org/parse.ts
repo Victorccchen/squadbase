@@ -1,5 +1,9 @@
 // Relative imports so `npm test` can load this file without the `@/` alias.
-import { isAgeBand, parseIsoDate } from "../age-band.ts";
+import {
+  isAgeBand,
+  MAX_ACTIVE_MEMBERSHIPS,
+  parseIsoDate,
+} from "../age-band.ts";
 import type { AgeBand, OrgStatus } from "../supabase/database.types.ts";
 
 export function readString(formData: FormData, key: string): string {
@@ -35,6 +39,64 @@ export function parseJersey(value: string): number | null {
     return null;
   }
   return n;
+}
+
+export type ParsedMembershipSlot = {
+  teamId: string;
+  jersey: number;
+};
+
+export type ParseMembershipSlotsResult =
+  | { ok: true; memberships: ParsedMembershipSlot[] }
+  | {
+      ok: false;
+      errorKey:
+        | "missingTeam"
+        | "invalidJersey"
+        | "duplicateMembershipTeam"
+        | "tooManyActiveMemberships";
+    };
+
+export function parseMembershipSlots(formData: FormData): ParseMembershipSlotsResult {
+  const slots = [
+    {
+      teamId: readString(formData, "team_id"),
+      jerseyRaw: readString(formData, "jersey_number"),
+    },
+    {
+      teamId: readString(formData, "team_id_2"),
+      jerseyRaw: readString(formData, "jersey_number_2"),
+    },
+  ];
+
+  const memberships: ParsedMembershipSlot[] = [];
+  const seen = new Set<string>();
+
+  for (const slot of slots) {
+    if (!slot.teamId && !slot.jerseyRaw) {
+      continue;
+    }
+    if (!slot.teamId) {
+      return { ok: false, errorKey: "missingTeam" };
+    }
+    const jersey = parseJersey(slot.jerseyRaw);
+    if (jersey === null) {
+      return { ok: false, errorKey: "invalidJersey" };
+    }
+    if (seen.has(slot.teamId)) {
+      return { ok: false, errorKey: "duplicateMembershipTeam" };
+    }
+    seen.add(slot.teamId);
+    memberships.push({ teamId: slot.teamId, jersey });
+  }
+
+  if (memberships.length === 0) {
+    return { ok: false, errorKey: "missingTeam" };
+  }
+  if (memberships.length > MAX_ACTIVE_MEMBERSHIPS) {
+    return { ok: false, errorKey: "tooManyActiveMemberships" };
+  }
+  return { ok: true, memberships };
 }
 
 export function optionalTrimmed(value: string): string | null {
@@ -113,6 +175,46 @@ export function isJerseyUniqueViolation(error: PgLikeError): boolean {
     text.includes("jersey_number") ||
     text.includes("(team_id, jersey_number)")
   );
+}
+
+type MembershipWriteErrorKey =
+  | "forbidden"
+  | "missingTeam"
+  | "invalidJersey"
+  | "jerseyTaken"
+  | "tooManyActiveMemberships"
+  | "membershipBandNotAllowed"
+  | "duplicateMembershipTeam"
+  | "teamNotFound"
+  | "generic";
+
+export function membershipWriteErrorKey(error: PgLikeError): MembershipWriteErrorKey {
+  if (isJerseyUniqueViolation(error)) {
+    return "jerseyTaken";
+  }
+  const text = errorBlob(error);
+  if (text.includes("player already has 2 active memberships")) {
+    return "tooManyActiveMemberships";
+  }
+  if (text.includes("team age band not allowed")) {
+    return "membershipBandNotAllowed";
+  }
+  if (text.includes("duplicate team in memberships")) {
+    return "duplicateMembershipTeam";
+  }
+  if (text.includes("at least one membership required")) {
+    return "missingTeam";
+  }
+  if (text.includes("invalid jersey")) {
+    return "invalidJersey";
+  }
+  if (text.includes("team not found")) {
+    return "teamNotFound";
+  }
+  if (text.includes("not authorized")) {
+    return "forbidden";
+  }
+  return "generic";
 }
 
 export function isPlayersCjkNameCheckViolation(error: PgLikeError): boolean {
