@@ -8,6 +8,7 @@ import { SessionMonthCalendar } from "@/components/admin/session-month-calendar"
 import { SessionDayAgenda } from "@/components/admin/session-day-agenda";
 import { SessionViewToggle } from "@/components/admin/session-kind-legend";
 import { SessionStatusForm } from "@/components/admin/session-status-form";
+import { SessionSoftDeleteForm } from "@/components/admin/session-soft-delete-form";
 import {
   SessionDeletedBadge,
   SessionKindBadge,
@@ -17,7 +18,7 @@ import {
 import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { listTeams } from "@/lib/org/queries";
 import { listSessionsForAdmin, probeSessionsForAdmin } from "@/lib/org/session-queries";
-import { setSessionStatus } from "@/lib/org/session-actions";
+import { setSessionStatus, softDeleteSession } from "@/lib/org/session-actions";
 import { formatClubDateTimeRange } from "@/lib/org/session-time";
 import { TRAINING_SESSION_KINDS, isTrainingSessionKind } from "@/lib/org/session-recurrence";
 import {
@@ -177,6 +178,18 @@ export default async function AdminSessionsPage({ searchParams }: AdminSessionsP
                         count: group.sessions.reduce((sum, row) => sum + row.registeredCount, 0),
                       })}
                       viewLabel={t("edit")}
+                      actions={
+                        next && !next.deleted_at ? (
+                          <SessionSoftDeleteForm
+                            action={softDeleteSession.bind(null, next.id)}
+                            confirmMessage={t("softDeleteOccurrenceConfirm", {
+                              title: next.title,
+                            })}
+                            submitLabel={t("softDeleteSession")}
+                            redirectTo="list"
+                          />
+                        ) : null
+                      }
                     />
                   );
                 }
@@ -238,6 +251,12 @@ export default async function AdminSessionsPage({ searchParams }: AdminSessionsP
                         <SessionStatusForm
                           status={session.status}
                           action={setSessionStatus.bind(null, session.id)}
+                          redirectTo="list"
+                        />
+                        <SessionSoftDeleteForm
+                          action={softDeleteSession.bind(null, session.id)}
+                          confirmMessage={t("softDeleteSessionConfirm", { title: session.title })}
+                          submitLabel={t("softDeleteSession")}
                           redirectTo="list"
                         />
                       </div>
