@@ -27,7 +27,7 @@ export default async function ParentCreditsPage() {
   const common = await getTranslations("common");
   const locale = await getLocale();
   const links = await listOwnGuardianLinks();
-  const children = uniqueEligibleChildrenByPlayer(approvedChildrenFromLinks(links));
+  const children = uniqueEligibleChildrenByPlayer(approvedChildrenFromLinks(links, "age_squad"));
   const playerIds = [...new Set(children.map((child) => child.player.id))];
   const [balances, attended, packages, claims, transferHint] = await Promise.all([
     listBalancesForPlayers(playerIds),

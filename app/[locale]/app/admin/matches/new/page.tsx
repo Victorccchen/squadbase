@@ -14,7 +14,7 @@ export default async function NewMatchPage() {
 
   const t = await getTranslations("admin");
   const common = await getTranslations("common");
-  const teams = await listTeams();
+  const teams = await listTeams({ kind: "competition_team" });
 
   return (
     <>

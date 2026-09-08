@@ -18,6 +18,7 @@
   - [ ] Stage 6P parent training/match split, series RSVP, calendar add
   - [ ] Stage 6P.1 training vs matches split, calendar+list, friendly matches
   - [ ] Admin multi-team create (match new/bulk + training series; per-team RPC; partial success)
+  - [ ] Stage ST: 梯隊 (age squad) vs 隊伍 (competition team); PR #22 ladder-up superseded
 
 ## Verification
 

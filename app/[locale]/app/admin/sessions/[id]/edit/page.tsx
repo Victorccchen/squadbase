@@ -30,7 +30,7 @@ export default async function EditSessionPage({ params }: EditSessionPageProps) 
 
   const t = await getTranslations("admin");
   const common = await getTranslations("common");
-  const teams = await listTeams();
+  const teams = await listTeams({ kind: "age_squad" });
   const action = updateSession.bind(null, session.id);
 
   return (

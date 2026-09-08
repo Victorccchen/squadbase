@@ -59,6 +59,18 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
         />
         <dl className="grid gap-3 rounded-2xl border border-zinc-200 bg-white p-6 text-sm dark:border-zinc-800 dark:bg-zinc-900">
           <div className="flex justify-between gap-4">
+            <dt className="text-zinc-500">{org("teamKind")}</dt>
+            <dd className="font-medium">
+              {org(team.kind === "age_squad" ? "kindAgeSquad" : "kindCompetitionTeam")}
+            </dd>
+          </div>
+          {team.kind === "competition_team" && team.layer_key ? (
+            <div className="flex justify-between gap-4">
+              <dt className="text-zinc-500">{org("layerKey")}</dt>
+              <dd className="font-medium">{team.layer_key}</dd>
+            </div>
+          ) : null}
+          <div className="flex justify-between gap-4">
             <dt className="text-zinc-500">{org("ageBand")}</dt>
             <dd className="font-medium">{org(`ageBands.${team.age_band}`)}</dd>
           </div>

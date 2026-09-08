@@ -38,6 +38,7 @@ import {
 import { isMatchKind } from "@/lib/org/match";
 import { type OrgActionState, type OrgErrorKey, type BulkRsvpState, type TeamCreateRowResult } from "@/lib/org/errors";
 import { decideMultiTeamCreate, parseSelectedTeamIds } from "@/lib/org/multi-team-create";
+import { isTeamKindAllowedForSessionKind } from "@/lib/org/squad-team";
 import { listOwnGuardianLinks } from "@/lib/org/queries";
 import {
   approvedChildrenFromLinks,
@@ -216,6 +217,17 @@ export async function createSession(
   }
   if (!isTrainingSessionKind(kind)) {
     return fail("sessionKindUseMatches");
+  }
+
+  const { data: selectedTeams, error: selectedError } = await actor.supabase
+    .from("teams")
+    .select("id, kind")
+    .in("id", teams.teamIds);
+  if (selectedError || !selectedTeams || selectedTeams.length !== teams.teamIds.length) {
+    return fail("teamNotFound");
+  }
+  if (selectedTeams.some((row) => !isTeamKindAllowedForSessionKind(kind, row.kind))) {
+    return fail("invalidTeamKind");
   }
 
   const schedule = parseSessionSchedule(formData, isRecurringSessionKind(kind));
@@ -714,10 +726,12 @@ function bulkFail(errorKey: OrgErrorKey): BulkRsvpState {
 }
 
 async function loadBulkTarget(formData: FormData) {
-  const links = await listOwnGuardianLinks();
-  const children = approvedChildrenFromLinks(links);
-  const teamIds = [...new Set(children.map((child) => child.teamId))];
   const seriesId = parseUuid(readString(formData, "series_id"));
+  const links = await listOwnGuardianLinks();
+  const children = seriesId
+    ? approvedChildrenFromLinks(links, "age_squad")
+    : approvedChildrenFromLinks(links, "competition_team");
+  const teamIds = [...new Set(children.map((child) => child.teamId))];
   const group = decodeMatchGroupKey(readString(formData, "group_key"));
   if (seriesId) {
     return {

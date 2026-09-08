@@ -14,7 +14,7 @@ export default async function NewSessionPage() {
 
   const t = await getTranslations("admin");
   const common = await getTranslations("common");
-  const teams = await listTeams();
+  const teams = await listTeams({ kind: "age_squad" });
 
   return (
     <>

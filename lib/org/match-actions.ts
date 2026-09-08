@@ -35,9 +35,25 @@ import {
 } from "@/lib/org/match";
 import { type OrgActionState, type OrgErrorKey, type TeamCreateRowResult } from "@/lib/org/errors";
 import { decideMultiTeamCreate, parseSelectedTeamIds } from "@/lib/org/multi-team-create";
+import { isTeamKindAllowedForSessionKind } from "@/lib/org/squad-team";
 
 function fail(errorKey: OrgErrorKey): OrgActionState {
   return { ok: false, errorKey };
+}
+
+async function assertCompetitionTeamIds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  teamIds: string[],
+  kind: "cup" | "league" | "friendly",
+): Promise<OrgErrorKey | null> {
+  const { data, error } = await supabase.from("teams").select("id, kind").in("id", teamIds);
+  if (error || !data || data.length !== teamIds.length) {
+    return "teamNotFound";
+  }
+  if (data.some((row) => !isTeamKindAllowedForSessionKind(kind, row.kind))) {
+    return "invalidTeamKind";
+  }
+  return null;
 }
 
 function ok(): OrgActionState {
@@ -128,6 +144,11 @@ export async function createMatch(
   const kind = parseMatchKind(readString(formData, "kind"));
   if (!kind) {
     return fail("matchKindRequired");
+  }
+
+  const kindError = await assertCompetitionTeamIds(actor.supabase, teams.teamIds, kind);
+  if (kindError) {
+    return fail(kindError);
   }
 
   const title = parseRequiredBoundedText(readString(formData, "title"), MAX_SESSION_TITLE);
@@ -308,6 +329,11 @@ export async function createMatchesBulk(
   const kind = parseMatchKind(readString(formData, "kind"));
   if (!kind) {
     return fail("matchKindRequired");
+  }
+
+  const kindError = await assertCompetitionTeamIds(actor.supabase, teams.teamIds, kind);
+  if (kindError) {
+    return fail(kindError);
   }
 
   const title = parseRequiredBoundedText(readString(formData, "title"), MAX_SESSION_TITLE);

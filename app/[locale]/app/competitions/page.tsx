@@ -73,7 +73,7 @@ export default async function ParentCompetitionsPage({
     ? (params.registered[0] ?? "")
     : (params.registered ?? "");
   const showRegistered = registeredRaw === "1";
-  const children = approvedChildrenFromLinks(links);
+  const children = approvedChildrenFromLinks(links, "competition_team");
   const teamIds = [...new Set(children.map((child) => child.teamId))];
   const playerIds = [...new Set(children.map((child) => child.player.id))];
   const startsWindow = {

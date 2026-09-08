@@ -2,7 +2,7 @@
 
 Responsive web + PWA for a football **Club** (球團) operations app: training squads, courses, attendance, assessments, and matches/events.
 
-This repository is currently **Stage 6P.1**: Stages 1–5B plus a **parent training / competition split**, **calendar + list** views, and **friendly（友誼賽）** matches. Parent nav and dashboard list **訓練** (`/app/sessions`, kinds `regular` / `special`) separately from **賽事** (`/app/competitions`, kinds `cup` / `league` / `friendly`). Admin **訓練場次** (`/app/admin/sessions`) lists only regular/special; cup, league, and friendly belong under **比賽** (`/app/admin/matches`). Same-series training groups by `series_id`; cup/league/friendly fixtures with the same team, kind, and title (including Victory League shells without a DB series) share a series page with bulk attend/decline. Training and competition surfaces (parent + admin) toggle **月曆 / 列表**. Every parent-visible date shows a locale weekday in Asia/Taipei. Public `/matches` stays the visitor schedule and can show **published** friendlies. Anyone can add a session or match to Google, Apple, or Outlook calendars (title, start/end, location, opponent or TBD, kind only). Friendly debit matches cup/league (`match_debit`, 1 per competing player per club calendar day). Coaches and admins still record 1–5 scores for four match situations and four player traits. Ability details are **never** shown on visitor/public pages.
+This repository is currently **Stage ST**: Stages 1–6P.1 plus a **梯隊 / 隊伍 split**. 梯隊 (age squad) is the roster band for every registered player and for training. 隊伍 (competition team) is the external match side; only continuing trainees may join, with at most two active 隊伍 and no two sharing the same `layer_key`. Parent nav still lists **訓練** (`/app/sessions`) separately from **賽事** (`/app/competitions`). Training attaches to 梯隊; matches attach to 隊伍. Dual membership **replaces** the PR #22 one-ladder-step-up rule.
 
 Parents can request a link to an **existing** player (the club creates the player record first). Until an admin approves, the parent cannot read that player’s private fields. After approval, the parent sees a basic “my children” list (names, birth date, team, jersey) and may **register that child for training sessions** on the child’s team. The parent may **withdraw a pending request**; only an **admin** may revoke an **approved** link. After revoke or withdraw, `is_approved_guardian_for_player` is false and the same pair may apply again. Session signup checks `guardian_player_links.status = approved`.
 
@@ -89,7 +89,7 @@ Players do **not** store a primary `team_id`. Membership and jersey number live 
 - `UNIQUE (player_id, team_id)` — a player cannot be listed twice on one team
 - Jersey numbers are integers 1–99
 
-The Stage 2 admin player form keeps **at most two active membership rows per player** (Victor 2026-09-08). Create/update replaces the active set (1 or 2 teams). A player may join their **natural computed age band or exactly one band higher** on `U6 → U8 → U10 → U12 → U15 → U18 → senior` — never lower. `public.age_band` has no U9/U11, so U8 play-up is **U10**. `reserve` is a team classification, not a step on this ladder. Database trigger + `admin_set_player_memberships` enforce the cap and band rule so SQL cannot bypass them. Jersey uniqueness stays `UNIQUE (team_id, jersey_number)`.
+The Stage 2 admin player form originally kept **at most two active membership rows per player**. **Stage ST supersedes that:** exactly one current **梯隊**, and at most two active **隊伍** with different `layer_key` values. Jersey uniqueness stays `UNIQUE (team_id, jersey_number)` (unique within one 梯隊 or one 隊伍; the same number may repeat across units).
 
 Jersey uniqueness is a **full** unique constraint, including inactive memberships (hypothesis: do not silently reuse a number while the row still exists). Stage 2 has no hard-delete UI; change the number or mark the player/membership inactive without freeing the number until the membership row is removed in SQL.
 
@@ -268,6 +268,34 @@ Training and matches stay on `training_sessions`. Friendly is a new `session_kin
 
 Out of scope: Stage 6A import, push/LINE, changing regular/special debit, deleting existing Victory League data.
 
+## Schema choice (Stage ST)
+
+Physical table remains `public.teams` with a discriminator (fits existing FKs on sessions, memberships, and coach assignments):
+
+| Column / object | Meaning |
+| --- | --- |
+| `teams.kind` | `age_squad` = **梯隊** (roster band, training). `competition_team` = **隊伍** (external match side). |
+| `teams.layer_key` | 隊伍 grouping key (`u8` / `u9` / `u10` / …). Null on 梯隊. Two active 隊伍 with the same key are forbidden (no 藍+白). |
+| `teams.eligible_birth_ages` | Birth-age labels allowed on that 隊伍 (e.g. `{U6,U7,U8}`). Null on 梯隊. |
+| `players.continues_training` | Only continuing trainees may be **added** to 隊伍. Default `true`. Historical memberships are not stripped when the flag is later turned off. |
+| Views | `age_squads` / `competition_teams` (documentation; app still queries `teams`). |
+| Membership | Still `team_memberships`. Dual rule applies **only** to 隊伍. Exactly one current 梯隊. |
+| RPCs | `admin_set_player_age_squad` (exactly one 梯隊). `admin_set_player_competition_teams` (0–2 隊伍). `admin_set_player_memberships` is now a 隊伍-only alias. PR #22 ladder-up is superseded. |
+| Sessions | Regular/special must attach to 梯隊. Cup/league/friendly must attach to 隊伍 (trigger + admin create lists). |
+
+Locked Futuro **隊伍** seed names (exception to otherwise-neutral Club wording):
+
+| 隊伍 | Eligible births | layer_key |
+| --- | --- | --- |
+| Futuro U8 | U6, U7, U8 | u8 |
+| Futuro U9 | U8, U9 | u9 |
+| Futuro U10藍 | U9, U10 | u10 |
+| Futuro U10白 | U9, U10 | u10 |
+
+梯隊 ladder (no U9/U11 梯隊): `U6 → U8 → U10 → U12 → U15 → U18 → 預備隊 → 成人隊`. Birth U6–U8 → 梯隊 U8; birth U9–U10 → 梯隊 U10. Ages 0–5 stay 梯隊 U6.
+
+**Apply on staging only.** Do not run against production. Do not put secrets in git.
+
 ### Player discovery (search UX)
 
 Parents must **not** receive a full roster dump. They never `SELECT` from `players` until an approved link exists.
@@ -318,6 +346,10 @@ Apply in order:
 27. [`supabase/migrations/20260909000000_stage6p1_session_kind_friendly.sql`](supabase/migrations/20260909000000_stage6p1_session_kind_friendly.sql) (**Stage 6P.1 step 1; paste this file’s CONTENTS alone and wait** — `alter type session_kind add value if not exists 'friendly'`. PostgreSQL cannot ADD VALUE and USE it in one transaction.)
 28. [`supabase/migrations/20260909010000_stage6p1_friendly_matches.sql`](supabase/migrations/20260909010000_stage6p1_friendly_matches.sql) (**Stage 6P.1 step 2; paste only after step 1 committed** — match create/update/publish RPCs and public visibility allow friendly; `compute_session_debit_plan` treats friendly like cup/league. Does not rewrite earlier 5B files.)
 29. [`supabase/migrations/20260909020000_regrant_stage6p1_privileges.sql`](supabase/migrations/20260909020000_regrant_stage6p1_privileges.sql) (**paste if anon/admins see `permission denied` after the friendly RPC replacements** — re-grants to `anon`/`authenticated`. Does not change RLS. Safe to re-run.)
+30. [`supabase/migrations/20260909100000_multi_team_membership_rules.sql`](supabase/migrations/20260909100000_multi_team_membership_rules.sql) (**PR #22; paste this file’s CONTENTS on staging** — season-start helpers and the old max-2 / ladder-up membership trigger. Stage ST replaces that trigger.)
+31. [`supabase/migrations/20260909110000_regrant_multi_team_membership_privileges.sql`](supabase/migrations/20260909110000_regrant_multi_team_membership_privileges.sql) (**paste after 30** — re-grants PR #22 functions. Does not change RLS.)
+32. [`supabase/migrations/20260910000000_stage_st_age_squads_competition_teams.sql`](supabase/migrations/20260910000000_stage_st_age_squads_competition_teams.sql) (**Stage ST; paste this file’s CONTENTS on staging after 30–31** — `team_kind`, 梯隊 / 隊伍 columns, Futuro 隊伍 seed, membership trigger that supersedes PR #22 ladder-up, session-unit-kind trigger, `admin_set_player_age_squad` / `admin_set_player_competition_teams`. Idempotent.)
+33. [`supabase/migrations/20260910010000_regrant_stage_st_privileges.sql`](supabase/migrations/20260910010000_regrant_stage_st_privileges.sql) (**paste after 32** — re-grants Stage ST types/functions/views to `authenticated`. Does not change RLS. Safe to re-run.)
 
 Steps:
 
@@ -367,7 +399,7 @@ Stage 5B (`20260907120000_stage5b_public_matches.sql`): **Victor: paste the SQL 
 
 Stage 6P.1: **two separate SQL Editor Runs** on **staging only**, then the regrant. First paste contents of [`supabase/migrations/20260909000000_stage6p1_session_kind_friendly.sql`](supabase/migrations/20260909000000_stage6p1_session_kind_friendly.sql). After that succeeds, paste contents of [`supabase/migrations/20260909010000_stage6p1_friendly_matches.sql`](supabase/migrations/20260909010000_stage6p1_friendly_matches.sql). Then paste [`supabase/migrations/20260909020000_regrant_stage6p1_privileges.sql`](supabase/migrations/20260909020000_regrant_stage6p1_privileges.sql). Do not concatenate step 1 and step 2. Optional check: paste [`supabase/stage6p1_verification.sql`](supabase/stage6p1_verification.sql) contents. Do not run on production. If you skip step 1, step 2 fails with `invalid input value for enum session_kind: "friendly"`.
 
-Multi-team membership (Victor 2026-09-08): **two SQL Editor Runs** on **staging only**. First paste contents of [`supabase/migrations/20260909100000_multi_team_membership_rules.sql`](supabase/migrations/20260909100000_multi_team_membership_rules.sql). Then paste [`supabase/migrations/20260909110000_regrant_multi_team_membership_privileges.sql`](supabase/migrations/20260909110000_regrant_multi_team_membership_privileges.sql). Optional check: paste [`supabase/multi_team_membership_verification.sql`](supabase/multi_team_membership_verification.sql) contents (TMT-1 third active rejected, TMT-2 U8+U6 rejected / U8+U10 allowed, TMT-3 two valid then third rejected). Do not run on production. Do not put secrets in git.
+Multi-team membership (PR #22, Victor 2026-09-08): items **30–31** above. Stage ST (items **32–33**) **replaces** the PR #22 one-ladder-step-up membership rule. Optional check after Stage ST: paste [`supabase/stage_st_verification.sql`](supabase/stage_st_verification.sql) contents (T-ST-1…T-ST-5, T-ST-7, T-ST-8). Rolls back. Do not run on production. Do not put secrets in git.
 
 ### How to verify the migration
 
@@ -383,7 +415,8 @@ Multi-team membership (Victor 2026-09-08): **two SQL Editor Runs** on **staging 
 - Optional: paste [`supabase/stage5_verification.sql`](supabase/stage5_verification.sql) after Stage 5. Asserts JSONB 1–5 validators and write RPC signatures. Rolls back.
 - Optional: paste [`supabase/stage5b_verification.sql`](supabase/stage5b_verification.sql) after Stage 5B. Asserts `match_publications` / RPCs exist and that cup/league debit C4 is unchanged. Rolls back.
 - Optional: paste [`supabase/stage6p1_verification.sql`](supabase/stage6p1_verification.sql) after **both** Stage 6P.1 files (enum `friendly` in one Run, then match RPC/debit updates in a second Run). Asserts `session_kind.friendly` and friendly `match_debit`. Rolls back.
-- Optional: paste [`supabase/multi_team_membership_verification.sql`](supabase/multi_team_membership_verification.sql) after the multi-team membership migration. Asserts TMT-1 / TMT-2 / TMT-3 (max two active; U8 natural cannot join U6; U8+U10 play-up allowed). Rolls back.
+- Optional: paste [`supabase/multi_team_membership_verification.sql`](supabase/multi_team_membership_verification.sql) after the PR #22 multi-team membership migration **and before Stage ST**. Asserts the old TMT-1 / TMT-2 / TMT-3 ladder-up rules. After Stage ST, use [`supabase/stage_st_verification.sql`](supabase/stage_st_verification.sql) instead (T-ST-1…8). Both roll back.
+- Optional: paste [`supabase/stage_st_verification.sql`](supabase/stage_st_verification.sql) after Stage ST (items 32–33). Asserts Futuro 隊伍 seed, birth eligibility, max 2, same `layer_key` forbidden, `continues_training`, and jersey uniqueness. Rolls back.
 - Optional: paste [`supabase/guardian_link_dedupe_verification.sql`](supabase/guardian_link_dedupe_verification.sql) after **both** cleanup files (enum `revoked` in one Run, then the dedupe UPDATE in a second Run). Lists remaining open duplicates (expect none), asserts the unique index, and has a commented unique-insert check that rolls back.
 - Optional: the RLS block at the bottom of the Stage 2 file, with real user UUIDs.
 
@@ -398,31 +431,33 @@ Helper: [`lib/age-band.ts`](lib/age-band.ts). Tests: [`lib/age-band.test.ts`](li
 1. Take an “as of” calendar date (default: today in `Asia/Taipei`).
 2. Season start is **15 August of that year** if as-of ≥ 15 Aug; otherwise **15 August of the previous year**.
 3. Compute completed years of age on that season-start date.
-4. Map age to a band:
+4. Map completed age to a **梯隊** (Stage ST; birth-age label is the single-year Un, e.g. age 8 → birth U8):
 
-| Completed age on season start | Band |
-| --- | --- |
-| 0–5 | U6 |
-| 6–7 | U8 |
-| 8–9 | U10 |
-| 10–11 | U12 |
-| 12–14 | U15 |
-| 15–17 | U18 |
-| 18+ | senior |
+| Completed age on season start | Birth-age label | 梯隊 |
+| --- | --- | --- |
+| 0–5 | U6 | U6 |
+| 6–8 | U6, U7, U8 | U8 |
+| 9–10 | U9, U10 | U10 |
+| 11–12 | U11, U12 | U12 |
+| 13–15 | U13, U14, U15 | U15 |
+| 16–17 | U16, U17, U18 | U18 |
+| 18+ | senior | senior |
 
-`reserve` is a **team classification** (reserve squad). The helper never returns `reserve`.
+`reserve` is a **梯隊 classification** (預備隊). The helper never returns `reserve` from date of birth.
 
 Boundary examples (T2-4), as of 2026:
 
-| Birth date | As of | Season start | Age | Band |
-| --- | --- | --- | --- | --- |
-| 2020-08-15 | 2026-08-15 | 2026-08-15 | 6 | U8 |
-| 2020-08-15 | 2026-08-14 | 2025-08-15 | 5 | U6 |
-| 2020-08-16 | 2026-08-15 | 2026-08-15 | 5 | U6 |
-| 2008-08-15 | 2026-08-15 | 2026-08-15 | 18 | senior |
-| 2008-08-16 | 2026-08-15 | 2026-08-15 | 17 | U18 |
+| Birth date | As of | Season start | Age | Birth label | 梯隊 |
+| --- | --- | --- | --- | --- | --- |
+| 2020-08-15 | 2026-08-15 | 2026-08-15 | 6 | U6 | U8 |
+| 2020-08-15 | 2026-08-14 | 2025-08-15 | 5 | U6 | U6 |
+| 2020-08-16 | 2026-08-15 | 2026-08-15 | 5 | U6 | U6 |
+| 2018-08-15 | 2026-08-15 | 2026-08-15 | 8 | U8 | U8 |
+| 2017-08-15 | 2026-08-15 | 2026-08-15 | 9 | U9 | U10 |
+| 2008-08-15 | 2026-08-15 | 2026-08-15 | 18 | senior | senior |
+| 2008-08-16 | 2026-08-15 | 2026-08-15 | 17 | U18 | U18 |
 
-The player form and player detail screen show the suggested band and the allowed play-up band. Saving a **lower** band, a skip of more than one step, or a third active membership is rejected (UI + server action + DB trigger).
+The player form shows suggested 梯隊 and birth-age label. Dual **隊伍** membership uses birth eligibility + `layer_key` (not ladder play-up). Saving a 梯隊 that is not the computed band, a third 隊伍, two 隊伍 with the same `layer_key`, or a 隊伍 the birth age is not eligible for is rejected (UI + server action + DB trigger).
 
 ## Enable Phone Auth (staging Dashboard)
 
@@ -501,15 +536,11 @@ SMS/OTP is required to **create** a session (or a second user such as a coach/pa
 
 | ID | Check |
 | --- | --- |
-| T2-1 | Admin creates a team, then a player with English given + family and at least one of zh/ja, DOB, **one or two** teams, jersey → saved. Suggested age band and allowed play-up band appear on the form/detail. |
-| T2-2 | Same jersey on the same team → rejected (UI error and/or DB `23505`). |
-| T2-3 | Same jersey on a different team → allowed. |
+| T2-1 | Admin creates a 梯隊, then a player with English given + family and at least one of zh/ja, DOB, exactly one 梯隊, jersey → saved. Suggested 梯隊 and birth-age label appear on the form/detail. Continuing trainees may also join 0–2 隊伍. |
+| T2-2 | Same jersey on the same 梯隊 or the same 隊伍 → rejected (UI error and/or DB `23505`). |
+| T2-3 | Same jersey on a different unit → allowed. |
 | T2-4 | Age-band examples around 15 Aug: `npm test` and the table above. |
-| TMT-1 | A third **active** membership is rejected (admin form + trigger/RPC). |
-| TMT-2 | Natural U8 cannot join U6. Natural U8 may join U8 and/or U10 (next higher in the computed ladder; there is no U9). |
-| TMT-3 | Two valid bands (same + one higher) save; adding a third is rejected. |
-| TMT-4 | `nextHigherComputedAgeBand` / `isTeamAgeBandAllowedForPlayer` unit tests (`npm test`). |
-| TMT-5 | `npm run lint`, `npm run typecheck`, and `npm test` pass. |
+| TMT-1–TMT-4 | **Superseded by Stage ST.** PR #22 one-ladder-step-up is no longer the membership rule. Use T-ST-1…8. |
 | T2-5 | Coach assigned to team A sees A on `/app/roster`, not team B. Coach cannot use admin CRUD (`/app/admin` shows access denied). |
 | T2-6 | Parent (no coach/admin) opening `/app/admin` or `/app/admin/teams/new` sees access denied, not the forms. |
 | T2-7 | `npm run lint`, `npm run typecheck`, and `npm test` pass. |
@@ -689,6 +720,26 @@ Admin **new match**, **bulk kickoffs**, and **new training** forms use a team ch
 | TMT-C5 | `npm run lint`, `npm run typecheck`, and `npm test` pass. |
 
 Out of scope: debit rules, parent signup, Stage 6A Excel import, deleting existing Victory League data.
+
+### Stage ST (梯隊 / 隊伍)
+
+Admin **訓練** multi-select lists **梯隊** only. Admin **比賽** multi-select lists **隊伍** only. Parent training RSVP uses 梯隊 membership; competitions/RSVP use 隊伍 membership.
+
+| ID | Check |
+| --- | --- |
+| T-ST-1 | Birth U8: Futuro U8 + U9 OK; third 隊伍 rejected; U10藍 rejected. |
+| T-ST-2 | Birth U9: Futuro U9 + U10藍 OK; U10白 while on 藍 rejected; Futuro U8 rejected. |
+| T-ST-3 | Birth U10: U10白 OK; U9/U8 rejected; U10藍 while on 白 rejected. |
+| T-ST-4 | Birth U7: Futuro U8 OK; U9/U10* rejected. |
+| T-ST-5 | Without `continues_training` cannot add to 隊伍. Historical 隊伍 rows are not stripped. |
+| T-ST-6 | Admin training create lists 梯隊 only; match create lists 隊伍 only. |
+| T-ST-7 | Jersey unique within one 隊伍; same number on a different 隊伍 allowed. |
+| T-ST-8 | Migration keeps Futuro sides as 隊伍 with locked `layer_key` + eligibility; app boots. |
+| T-ST-9 | `npm run lint`, `npm run typecheck`, and `npm test` pass. README + PR template include Stage ST. Staging SQL only; no production deploy. |
+
+Optional SQL: [`supabase/stage_st_verification.sql`](supabase/stage_st_verification.sql) (rollback). Unit tests: [`lib/org/squad-team.test.ts`](lib/org/squad-team.test.ts).
+
+Out of scope: 6A import, notifications, production deploy, merge to `main`, debit amount changes, auto-create U12+ 隊伍.
 
 ## Staging vs production
 

@@ -32,7 +32,7 @@ export default async function TrainingSeriesPage({ params }: TrainingSeriesPageP
   const common = await getTranslations("common");
   const locale = await getLocale();
   const links = await listOwnGuardianLinks();
-  const children = approvedChildrenFromLinks(links);
+  const children = approvedChildrenFromLinks(links, "age_squad");
   const teamIds = [...new Set(children.map((child) => child.teamId))];
   const playerIds = [...new Set(children.map((child) => child.player.id))];
   const [sessions, registrations] = await Promise.all([

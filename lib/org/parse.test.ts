@@ -15,6 +15,7 @@ import {
   parseJersey,
   parseLinkDecision,
   parseMembershipSlots,
+  parseAgeSquadSlot,
   parsePlayerNames,
   playerNamesError,
   membershipWriteErrorKey,
@@ -82,10 +83,10 @@ describe("parseMembershipSlots", () => {
     return data;
   }
 
-  it("requires at least one team and jersey", () => {
+  it("allows zero 隊伍 slots", () => {
     assert.deepEqual(parseMembershipSlots(form({})), {
-      ok: false,
-      errorKey: "missingTeam",
+      ok: true,
+      memberships: [],
     });
   });
 
@@ -136,6 +137,38 @@ describe("parseMembershipSlots", () => {
   });
 });
 
+describe("parseAgeSquadSlot", () => {
+  function form(entries: Record<string, string>): FormData {
+    const data = new FormData();
+    for (const [key, value] of Object.entries(entries)) {
+      data.set(key, value);
+    }
+    return data;
+  }
+
+  it("requires a 梯隊 and jersey", () => {
+    assert.deepEqual(parseAgeSquadSlot(form({})), {
+      ok: false,
+      errorKey: "missingAgeSquad",
+    });
+  });
+
+  it("accepts a 梯隊 slot", () => {
+    assert.deepEqual(
+      parseAgeSquadSlot(
+        form({
+          age_squad_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          age_squad_jersey: "7",
+        }),
+      ),
+      {
+        ok: true,
+        squad: { teamId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", jersey: 7 },
+      },
+    );
+  });
+});
+
 describe("membershipWriteErrorKey", () => {
   it("maps TMT trigger/RPC messages", () => {
     assert.equal(
@@ -146,7 +179,25 @@ describe("membershipWriteErrorKey", () => {
     );
     assert.equal(
       membershipWriteErrorKey({
-        message: "team age band not allowed for this player",
+        message: "player already has a competition team on this layer",
+      }),
+      "membershipLayerConflict",
+    );
+    assert.equal(
+      membershipWriteErrorKey({
+        message: "player does not continue training",
+      }),
+      "continuesTrainingRequired",
+    );
+    assert.equal(
+      membershipWriteErrorKey({
+        message: "birth age not eligible for this competition team",
+      }),
+      "membershipBirthNotEligible",
+    );
+    assert.equal(
+      membershipWriteErrorKey({
+        message: "age squad band not allowed for this player",
       }),
       "membershipBandNotAllowed",
     );

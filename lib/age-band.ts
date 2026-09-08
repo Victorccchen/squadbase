@@ -1,25 +1,23 @@
 /**
  * Season age-band helper.
  *
- * Club seasons cut over every year on 15 August. Age band is the player's
+ * Club seasons cut over every year on 15 August. Age is the player's
  * completed age on that season-start date, not on “today” during the season.
  *
- * Mapping (completed age on season start → band):
+ * Stage ST 梯隊 (roster band) from completed age:
  *   0–5  U6
- *   6–7  U8
- *   8–9  U10
- *   10–11 U12
- *   12–14 U15
- *   15–17 U18
+ *   6–8  U8   (birth labels U6, U7, U8)
+ *   9–10 U10  (birth labels U9, U10)
+ *   11–12 U12
+ *   13–15 U15
+ *   16–17 U18
  *   18+   senior
  *
- * Multi-team membership (Victor 2026-09-08): a player may join the natural
- * computed band or exactly one step higher on this ladder (never lower).
- * There is no U9/U11 enum value, so U8 play-up is U10.
+ * Birth-age labels are the single-year Un from that completed age (age 8 → U8).
+ * Dual 隊伍 membership uses birth eligibility + layer_key (see lib/org/squad-team.ts).
+ * The PR #22 one-ladder-step-up rule is superseded and is not used for membership.
  *
- * `reserve` is a team classification (e.g. reserve squad), not computed from
- * date of birth. The helper never returns `reserve`. `reserve` is not a step
- * on the play-up ladder.
+ * `reserve` is a 梯隊 classification, not computed from date of birth.
  *
  * Default “as of” calendar date uses Asia/Taipei (club local time).
  */
@@ -49,8 +47,27 @@ export const COMPUTED_AGE_BANDS = [
 
 export type ComputedAgeBand = (typeof COMPUTED_AGE_BANDS)[number];
 
-/** Product lock (Victor 2026-09-08): at most two active team_memberships. */
+/** Product lock (Stage ST): at most two active 隊伍 memberships. Dual rule does not apply to 梯隊. */
 export const MAX_ACTIVE_MEMBERSHIPS = 2;
+
+export const BIRTH_AGE_LABELS = [
+  "U6",
+  "U7",
+  "U8",
+  "U9",
+  "U10",
+  "U11",
+  "U12",
+  "U13",
+  "U14",
+  "U15",
+  "U16",
+  "U17",
+  "U18",
+  "senior",
+] as const;
+
+export type BirthAgeLabel = (typeof BIRTH_AGE_LABELS)[number];
 
 export const SEASON_START_MONTH = 8;
 export const SEASON_START_DAY = 15;
@@ -73,9 +90,8 @@ export function isComputedAgeBand(value: string): value is ComputedAgeBand {
 }
 
 /**
- * Official play-up ladder (computed bands only). `reserve` is a team
- * classification and is not a step on this ladder. U9 and U11 are not in
- * `age_band`; the next step above U8 is U10, and above U10 is U12.
+ * @deprecated Stage ST superseded PR #22 ladder-up. Kept only so older tests
+ * can assert the old helper is no longer used for membership.
  */
 export function nextHigherComputedAgeBand(
   band: ComputedAgeBand,
@@ -85,21 +101,6 @@ export function nextHigherComputedAgeBand(
     return null;
   }
   return COMPUTED_AGE_BANDS[index + 1];
-}
-
-export function allowedTeamAgeBands(natural: ComputedAgeBand): ComputedAgeBand[] {
-  const next = nextHigherComputedAgeBand(natural);
-  return next ? [natural, next] : [natural];
-}
-
-export function isTeamAgeBandAllowedForPlayer(
-  natural: ComputedAgeBand | AgeBand | null | undefined,
-  teamBand: AgeBand,
-): boolean {
-  if (!natural || !isComputedAgeBand(natural)) {
-    return false;
-  }
-  return allowedTeamAgeBands(natural).some((band) => band === teamBand);
 }
 
 export function parseIsoDate(value: string): CalendarDate | null {
@@ -200,14 +201,35 @@ export function completedAgeYears(birth: CalendarDate, asOf: CalendarDate): numb
   return age;
 }
 
-export function computedAgeBandFromAge(age: number): ComputedAgeBand {
+export function isBirthAgeLabel(value: string): value is BirthAgeLabel {
+  return (BIRTH_AGE_LABELS as readonly string[]).includes(value);
+}
+
+/** Birth-age Un from completed age on season start (age 8 → U8). */
+export function birthAgeLabelFromCompletedAge(age: number): BirthAgeLabel {
+  if (age < 6) {
+    return "U6";
+  }
+  if (age >= 18) {
+    return "senior";
+  }
+  return `U${age}` as BirthAgeLabel;
+}
+
+/** Roster 梯隊 from completed age. Birth U6–U8 → U8; U9–U10 → U10. */
+export function ageSquadBandFromCompletedAge(age: number): ComputedAgeBand {
   if (age < 6) return "U6";
-  if (age < 8) return "U8";
-  if (age < 10) return "U10";
-  if (age < 12) return "U12";
-  if (age < 15) return "U15";
+  if (age <= 8) return "U8";
+  if (age <= 10) return "U10";
+  if (age <= 12) return "U12";
+  if (age <= 15) return "U15";
   if (age < 18) return "U18";
   return "senior";
+}
+
+/** @deprecated Use ageSquadBandFromCompletedAge. */
+export function computedAgeBandFromAge(age: number): ComputedAgeBand {
+  return ageSquadBandFromCompletedAge(age);
 }
 
 export function ageBandFromBirthDate(
@@ -229,7 +251,26 @@ export function ageBandFromBirthDate(
   if (age < 0) {
     return "U6";
   }
-  return computedAgeBandFromAge(age);
+  return ageSquadBandFromCompletedAge(age);
+}
+
+export function birthAgeLabelFromBirthDate(
+  birthDate: string | CalendarDate,
+  asOf?: string | CalendarDate | Date,
+): BirthAgeLabel | null {
+  const birth = typeof birthDate === "string" ? parseIsoDate(birthDate) : birthDate;
+  if (!birth) {
+    return null;
+  }
+
+  const asOfDate = resolveAsOf(asOf);
+  if (!asOfDate) {
+    return null;
+  }
+
+  const seasonStart = getSeasonStart(asOfDate);
+  const age = Math.max(0, completedAgeYears(birth, seasonStart));
+  return birthAgeLabelFromCompletedAge(age);
 }
 
 export function seasonStartForBirthDate(
