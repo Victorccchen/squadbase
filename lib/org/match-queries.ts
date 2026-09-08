@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getPublicSupabaseEnv } from "@/lib/env";
 import { isMatchKind, parseMatchKind, partitionPublicMatches } from "@/lib/org/match";
 import { parseUuid } from "@/lib/org/parse";
+import { tallyRegisteredCounts } from "@/lib/org/registration-counts";
 import type { SessionWindowProbe } from "@/lib/org/session-calendar";
 import { filterDefaultAdminList } from "@/lib/org/soft-delete";
 import type {
@@ -18,6 +19,7 @@ export type MatchAdminRow = TrainingSession & {
   team: Team | null;
   publication: MatchPublication;
   rosterCount: number;
+  registeredCount: number;
 };
 
 function one<T>(value: T | T[] | null | undefined): T | null {
@@ -131,13 +133,20 @@ export async function listMatchesForAdmin(
 
   const sessionIds = (data ?? []).map((row) => row.session_id);
   const rosterCountBySession = new Map<string, number>();
+  let registeredBySession = new Map<string, number>();
   if (sessionIds.length > 0) {
-    const rosterResult = await supabase
-      .from("match_roster")
-      .select("session_id")
-      .in("session_id", sessionIds);
+    const [rosterResult, countsResult] = await Promise.all([
+      supabase.from("match_roster").select("session_id").in("session_id", sessionIds),
+      supabase
+        .from("session_registrations")
+        .select("session_id, status")
+        .in("session_id", sessionIds),
+    ]);
     if (rosterResult.error) {
       console.error("listMatchesForAdmin roster", rosterResult.error.message);
+    }
+    if (countsResult.error) {
+      console.error("listMatchesForAdmin registrations", countsResult.error.message);
     }
     for (const row of rosterResult.data ?? []) {
       rosterCountBySession.set(
@@ -145,6 +154,7 @@ export async function listMatchesForAdmin(
         (rosterCountBySession.get(row.session_id) ?? 0) + 1,
       );
     }
+    registeredBySession = tallyRegisteredCounts(countsResult.data ?? []);
   }
 
   const rows: MatchAdminRow[] = [];
@@ -168,6 +178,7 @@ export async function listMatchesForAdmin(
       team: one(teams ?? null),
       publication: publication as MatchPublication,
       rosterCount: rosterCountBySession.get(session.id) ?? 0,
+      registeredCount: registeredBySession.get(session.id) ?? 0,
     });
   }
 
@@ -248,16 +259,23 @@ export async function getMatchForStaff(id: string): Promise<MatchAdminRow | null
   }
   const { teams, ...session } = sessionSource;
 
-  const rosterResult = await supabase
-    .from("match_roster")
-    .select("session_id")
-    .eq("session_id", id);
+  const [rosterResult, countsResult] = await Promise.all([
+    supabase.from("match_roster").select("session_id").eq("session_id", id),
+    supabase.from("session_registrations").select("session_id, status").eq("session_id", id),
+  ]);
+  if (rosterResult.error) {
+    console.error("getMatchForStaff roster", rosterResult.error.message);
+  }
+  if (countsResult.error) {
+    console.error("getMatchForStaff registrations", countsResult.error.message);
+  }
 
   return {
     ...(session as TrainingSession),
     team: one(teams ?? null),
     publication: publication as MatchPublication,
     rosterCount: rosterResult.data?.length ?? 0,
+    registeredCount: tallyRegisteredCounts(countsResult.data ?? []).get(id) ?? 0,
   };
 }
 
