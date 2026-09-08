@@ -184,6 +184,105 @@ export function clubRangeToTimestamptz(fromDate: string, toDate: string): {
   };
 }
 
+/** Default list window: start of today (Asia/Taipei) through +8 weeks, inclusive. */
+export const LIST_WINDOW_DAYS = 8 * 7;
+
+export type ListDateWindow = {
+  from: string;
+  to: string;
+};
+
+export type SessionStartsBound = {
+  from: string;
+  toExclusive: string;
+};
+
+export type SessionWindowProbe = {
+  hasEarlier: boolean;
+  hasLater: boolean;
+};
+
+function firstSearchParam(value: string | string[] | undefined): string {
+  if (value == null) {
+    return "";
+  }
+  const raw = Array.isArray(value) ? (value[0] ?? "") : value;
+  return raw.trim();
+}
+
+export function defaultUpcomingListWindow(now = new Date()): ListDateWindow {
+  const from = clubTodayDate(now);
+  const to = addCalendarDays(from, LIST_WINDOW_DAYS) ?? from;
+  return { from, to };
+}
+
+export function isDefaultUpcomingListWindow(
+  window: ListDateWindow,
+  now = new Date(),
+): boolean {
+  const defaults = defaultUpcomingListWindow(now);
+  return window.from === defaults.from && window.to === defaults.to;
+}
+
+export function parseListDateWindow(
+  params: { from?: string | string[]; to?: string | string[] },
+  now = new Date(),
+): ListDateWindow {
+  const defaults = defaultUpcomingListWindow(now);
+  const fromRaw = firstSearchParam(params.from);
+  const toRaw = firstSearchParam(params.to);
+  const from = parseCalendarDateParts(fromRaw) ? fromRaw : defaults.from;
+  const to = parseCalendarDateParts(toRaw) ? toRaw : defaults.to;
+  if (from > to) {
+    return defaults;
+  }
+  return { from, to };
+}
+
+export function expandListDateWindow(
+  window: ListDateWindow,
+  direction: "earlier" | "later",
+): ListDateWindow {
+  if (direction === "earlier") {
+    return {
+      from: addCalendarDays(window.from, -LIST_WINDOW_DAYS) ?? window.from,
+      to: window.to,
+    };
+  }
+  return {
+    from: window.from,
+    to: addCalendarDays(window.to, LIST_WINDOW_DAYS) ?? window.to,
+  };
+}
+
+/**
+ * Visible month grid plus the selected week when it spills outside that grid.
+ * Used so calendar fetches one month (with small padding), not a full season.
+ */
+export function calendarFetchDateRange(
+  query: Pick<AdminSessionsQuery, "year" | "month" | "day">,
+): ListDateWindow {
+  const range = visibleMonthRange(query.year, query.month);
+  const week = weekRangeForDate(query.day);
+  const from = range && week && week.from < range.from ? week.from : (range?.from ?? query.day);
+  const to = range && week && week.to > range.to ? week.to : (range?.to ?? query.day);
+  return { from, to };
+}
+
+/** Date bounds for the active list or calendar surface. Never unbounded. */
+export function sessionsListOrCalendarBounds(
+  query: AdminSessionsQuery,
+  listWindow: ListDateWindow,
+): SessionStartsBound {
+  const range = query.view === "calendar" ? calendarFetchDateRange(query) : listWindow;
+  return (
+    clubRangeToTimestamptz(range.from, range.to) ?? {
+      from: `${range.from}T00:00:00+08:00`,
+      toExclusive: `${addCalendarDays(range.to, 1) ?? range.to}T00:00:00+08:00`,
+    }
+  );
+}
+
 export function asParamList(value: string | string[] | undefined): string[] {
   if (value == null) {
     return [];
@@ -272,6 +371,26 @@ export function calendarListHref(
     search.includeDeleted = "1";
   }
   return { pathname, query: search };
+}
+
+export function listWindowHref(
+  pathname: CalendarListPath,
+  query: AdminSessionsQuery,
+  window: ListDateWindow,
+  now = new Date(),
+): CalendarListHref {
+  const href = calendarListHref(pathname, { ...query, view: "list" });
+  if (isDefaultUpcomingListWindow(window, now)) {
+    return href;
+  }
+  return {
+    ...href,
+    query: {
+      ...href.query,
+      from: window.from,
+      to: window.to,
+    },
+  };
 }
 
 /** Stable string href so next-intl Link always keeps `view` and filters. */

@@ -3,7 +3,12 @@
 import { useTranslations } from "next-intl";
 import { SESSION_KINDS } from "@/lib/org/session-recurrence";
 import type { SessionKind } from "@/lib/supabase/database.types";
-import { formatYearMonth, type AdminSessionsQuery } from "@/lib/org/session-calendar";
+import {
+  formatYearMonth,
+  isDefaultUpcomingListWindow,
+  type AdminSessionsQuery,
+  type ListDateWindow,
+} from "@/lib/org/session-calendar";
 import { secondaryButtonClassName } from "@/lib/ui";
 import type { Team } from "@/lib/supabase/database.types";
 
@@ -12,6 +17,7 @@ type SessionListFiltersFormProps = {
   teams: Pick<Team, "id" | "name" | "age_band">[];
   kinds?: readonly SessionKind[];
   showIncludeDeleted?: boolean;
+  listWindow?: ListDateWindow;
 };
 
 export function SessionListFiltersForm({
@@ -19,6 +25,7 @@ export function SessionListFiltersForm({
   teams,
   kinds = SESSION_KINDS,
   showIncludeDeleted = true,
+  listWindow,
 }: SessionListFiltersFormProps) {
   const t = useTranslations("admin");
   const sessionsT = useTranslations("sessions");
@@ -32,6 +39,12 @@ export function SessionListFiltersForm({
       <input type="hidden" name="month" value={formatYearMonth(query.year, query.month)} />
       <input type="hidden" name="day" value={query.day} />
       <input type="hidden" name="view" value={query.view} />
+      {listWindow && query.view === "list" && !isDefaultUpcomingListWindow(listWindow) ? (
+        <>
+          <input type="hidden" name="from" value={listWindow.from} />
+          <input type="hidden" name="to" value={listWindow.to} />
+        </>
+      ) : null}
       <fieldset className="flex flex-col gap-2">
         <legend className="text-sm font-medium">{sessionsT("kind")}</legend>
         <div className="flex flex-wrap gap-3">

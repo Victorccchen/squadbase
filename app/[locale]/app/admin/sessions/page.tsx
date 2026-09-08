@@ -16,7 +16,7 @@ import {
 } from "@/components/sessions/session-status-badge";
 import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { listTeams } from "@/lib/org/queries";
-import { listSessionsForAdmin } from "@/lib/org/session-queries";
+import { listSessionsForAdmin, probeSessionsForAdmin } from "@/lib/org/session-queries";
 import { setSessionStatus } from "@/lib/org/session-actions";
 import { formatClubDateTimeRange } from "@/lib/org/session-time";
 import { TRAINING_SESSION_KINDS, isTrainingSessionKind } from "@/lib/org/session-recurrence";
@@ -26,14 +26,15 @@ import {
   nextOccurrenceInGroup,
 } from "@/lib/org/parent-series";
 import { SeriesGroupCard } from "@/components/sessions/series-group-card";
+import { ListWindowNav } from "@/components/sessions/list-window-nav";
 import {
   calendarWeekNavHrefs,
-  clubRangeToTimestamptz,
   clubTodayDate,
   parseAdminSessionsQuery,
+  parseListDateWindow,
   resolveSurfaceKinds,
   sessionsInWeek,
-  visibleMonthRange,
+  sessionsListOrCalendarBounds,
   weekRangeForDate,
 } from "@/lib/org/session-calendar";
 import { primaryButtonClassName } from "@/lib/ui";
@@ -46,43 +47,52 @@ type AdminSessionsPageProps = {
     kind?: string | string[];
     team?: string | string[];
     includeDeleted?: string | string[];
+    from?: string | string[];
+    to?: string | string[];
   }>;
 };
 
 export default async function AdminSessionsPage({ searchParams }: AdminSessionsPageProps) {
-  if (!(await canRenderAdminPage())) {
+  const [allowed, params] = await Promise.all([canRenderAdminPage(), searchParams]);
+  if (!allowed) {
     return <AccessDenied area="admin" />;
   }
 
-  const params = await searchParams;
   const query = parseAdminSessionsQuery(params, undefined, {
     allowedKinds: TRAINING_SESSION_KINDS,
     defaultView: "list",
   });
   const kinds = resolveSurfaceKinds(query.kinds, TRAINING_SESSION_KINDS);
-  const range = visibleMonthRange(query.year, query.month);
+  const listWindow = parseListDateWindow(params);
+  const bounds = sessionsListOrCalendarBounds(query, listWindow);
   const week = weekRangeForDate(query.day);
-  const fromDate =
-    range && week && week.from < range.from ? week.from : (range?.from ?? query.day);
-  const toDate = range && week && week.to > range.to ? week.to : (range?.to ?? query.day);
-  const bounds =
-    query.view === "calendar" ? clubRangeToTimestamptz(fromDate, toDate) : null;
   const today = clubTodayDate();
+  const startsFrom = bounds.from;
+  const startsToExclusive = bounds.toExclusive;
 
-  const t = await getTranslations("admin");
-  const sessionsT = await getTranslations("sessions");
-  const org = await getTranslations("org");
-  const common = await getTranslations("common");
-  const locale = await getLocale();
-  const [rawSessions, teams] = await Promise.all([
+  const [t, sessionsT, org, common, locale, rawSessions, teams, probe] = await Promise.all([
+    getTranslations("admin"),
+    getTranslations("sessions"),
+    getTranslations("org"),
+    getTranslations("common"),
+    getLocale(),
     listSessionsForAdmin({
       kinds,
       teamIds: query.teamIds,
       includeDeleted: query.includeDeleted,
-      startsFrom: bounds?.from,
-      startsToExclusive: bounds?.toExclusive,
+      startsFrom,
+      startsToExclusive,
     }),
     listTeams(),
+    query.view === "list"
+      ? probeSessionsForAdmin({
+          kinds,
+          teamIds: query.teamIds,
+          includeDeleted: query.includeDeleted,
+          startsFrom,
+          startsToExclusive,
+        })
+      : Promise.resolve({ hasEarlier: false, hasLater: false }),
   ]);
   const sessions = rawSessions.filter((row) => isTrainingSessionKind(row.kind));
   const groups = groupTrainingSessionsForParent(sessions);
@@ -115,12 +125,37 @@ export default async function AdminSessionsPage({ searchParams }: AdminSessionsP
           listLabel={t("listView")}
           toggleLabel={t("viewToggleLabel")}
         />
-        <SessionListFiltersForm query={query} teams={teams} kinds={TRAINING_SESSION_KINDS} />
+        <SessionListFiltersForm
+          query={query}
+          teams={teams}
+          kinds={TRAINING_SESSION_KINDS}
+          listWindow={listWindow}
+        />
         {query.view === "list" ? (
-          groups.length === 0 ? (
+          <div className="flex flex-col gap-4">
+            <ListWindowNav
+              pathname="/app/admin/sessions"
+              query={query}
+              window={listWindow}
+              hasEarlier={probe.hasEarlier}
+              hasLater={probe.hasLater}
+            />
+            {groups.length === 0 ? (
             <EmptyState
-              title={hasFilters ? t("sessionsFilterEmptyTitle") : t("sessionsEmptyTitle")}
-              body={hasFilters ? t("sessionsFilterEmptyBody") : t("sessionsEmptyBody")}
+              title={
+                probe.hasEarlier || probe.hasLater
+                  ? t("listWindowEmptyTitle")
+                  : hasFilters
+                    ? t("sessionsFilterEmptyTitle")
+                    : t("sessionsEmptyTitle")
+              }
+              body={
+                probe.hasEarlier || probe.hasLater
+                  ? t("listWindowEmptyBody")
+                  : hasFilters
+                    ? t("sessionsFilterEmptyBody")
+                    : t("sessionsEmptyBody")
+              }
             />
           ) : (
             <ul className="grid gap-3">
@@ -211,7 +246,8 @@ export default async function AdminSessionsPage({ searchParams }: AdminSessionsP
                 );
               })}
             </ul>
-          )
+          )}
+          </div>
         ) : (
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
             <div className="min-w-0 flex-1">

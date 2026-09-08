@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getPublicSupabaseEnv } from "@/lib/env";
 import { isMatchKind, parseMatchKind, partitionPublicMatches } from "@/lib/org/match";
 import { parseUuid } from "@/lib/org/parse";
+import type { SessionWindowProbe } from "@/lib/org/session-calendar";
 import type {
   MatchPublication,
   MatchRosterRow,
@@ -166,6 +167,47 @@ export async function listMatchesForAdmin(
   }
 
   return rows.sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+}
+
+export async function probeMatchesForAdmin(
+  filters: AdminMatchListFilters & { startsFrom: string; startsToExclusive: string },
+): Promise<SessionWindowProbe> {
+  const supabase = await createClient();
+  const kinds = (filters.kinds ?? [])
+    .map((value) => parseMatchKind(value))
+    .filter((kind): kind is NonNullable<typeof kind> => kind !== null);
+  const teamIds = (filters.teamIds ?? [])
+    .map((value) => parseUuid(value))
+    .filter((id): id is string => id !== null);
+
+  const base = () => {
+    let query = supabase
+      .from("match_publications")
+      .select("session_id, training_sessions!inner(starts_at)")
+      .limit(1);
+    if (kinds.length > 0) {
+      query = query.in("training_sessions.kind", kinds);
+    }
+    if (teamIds.length > 0) {
+      query = query.in("training_sessions.team_id", teamIds);
+    }
+    return query;
+  };
+
+  const [earlier, later] = await Promise.all([
+    base().lt("training_sessions.starts_at", filters.startsFrom),
+    base().gte("training_sessions.starts_at", filters.startsToExclusive),
+  ]);
+  if (earlier.error) {
+    console.error("probeMatchesForAdmin earlier", earlier.error.message);
+  }
+  if (later.error) {
+    console.error("probeMatchesForAdmin later", later.error.message);
+  }
+  return {
+    hasEarlier: (earlier.data ?? []).length > 0,
+    hasLater: (later.data ?? []).length > 0,
+  };
 }
 
 export async function getMatchForStaff(id: string): Promise<MatchAdminRow | null> {
