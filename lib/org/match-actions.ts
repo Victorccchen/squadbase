@@ -517,6 +517,33 @@ export async function restoreMatch(
   return ok();
 }
 
+export async function softDeleteMatch(
+  sessionId: string,
+  _prev: OrgActionState,
+  formData: FormData,
+): Promise<OrgActionState> {
+  const actor = await requireAdminActor();
+  if (!actor.ok) {
+    return fail(actor.errorKey);
+  }
+
+  const { error } = await actor.supabase.rpc("admin_soft_delete_session", {
+    p_session_id: sessionId,
+  });
+
+  if (error) {
+    console.error("softDeleteMatch", error.message);
+    return fail(matchRpcErrorKey(error));
+  }
+
+  revalidateMatches();
+  if (readString(formData, "next") === "list") {
+    return ok();
+  }
+  redirectAdmin(`/app/admin/matches/${sessionId}`, formData);
+  return ok();
+}
+
 export async function setMatchRoster(
   sessionId: string,
   _prev: OrgActionState,
