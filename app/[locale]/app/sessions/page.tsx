@@ -13,6 +13,7 @@ import {
   SessionKindBadge,
   SessionPlayoffBadge,
 } from "@/components/sessions/session-status-badge";
+import { ListWindowNav } from "@/components/sessions/list-window-nav";
 import { listOwnGuardianLinks } from "@/lib/org/queries";
 import {
   approvedChildrenFromLinks,
@@ -20,6 +21,7 @@ import {
   listOpenTrainingSessionsForParent,
   listOwnSessionRegistrations,
   openRegistrationForPlayer,
+  probeOpenSessionsForParent,
 } from "@/lib/org/session-queries";
 import {
   groupTrainingSessionsForParent,
@@ -34,7 +36,9 @@ import {
   calendarWeekNavHrefs,
   clubTodayDate,
   parseAdminSessionsQuery,
+  parseListDateWindow,
   sessionsInWeek,
+  sessionsListOrCalendarBounds,
   weekRangeForDate,
 } from "@/lib/org/session-calendar";
 
@@ -44,31 +48,44 @@ type ParentSessionsPageProps = {
     month?: string | string[];
     day?: string | string[];
     view?: string | string[];
+    from?: string | string[];
+    to?: string | string[];
   }>;
 };
 
 export default async function ParentSessionsPage({ searchParams }: ParentSessionsPageProps) {
-  const t = await getTranslations("sessions");
-  const admin = await getTranslations("admin");
-  const org = await getTranslations("org");
-  const common = await getTranslations("common");
-  const locale = await getLocale();
-  const params = await searchParams;
+  const [t, admin, org, common, locale, params, links] = await Promise.all([
+    getTranslations("sessions"),
+    getTranslations("admin"),
+    getTranslations("org"),
+    getTranslations("common"),
+    getLocale(),
+    searchParams,
+    listOwnGuardianLinks(),
+  ]);
   const query = parseAdminSessionsQuery(params, undefined, {
     allowedKinds: TRAINING_SESSION_KINDS,
     defaultView: "list",
   });
+  const listWindow = parseListDateWindow(params);
+  const bounds = sessionsListOrCalendarBounds(query, listWindow);
   const registeredRaw = Array.isArray(params.registered)
     ? (params.registered[0] ?? "")
     : (params.registered ?? "");
   const showRegistered = registeredRaw === "1";
-  const links = await listOwnGuardianLinks();
   const children = approvedChildrenFromLinks(links);
   const teamIds = [...new Set(children.map((child) => child.teamId))];
   const playerIds = [...new Set(children.map((child) => child.player.id))];
-  const [sessions, registrations] = await Promise.all([
-    listOpenTrainingSessionsForParent(teamIds),
+  const startsWindow = {
+    startsFrom: bounds.from,
+    startsToExclusive: bounds.toExclusive,
+  };
+  const [sessions, registrations, probe] = await Promise.all([
+    listOpenTrainingSessionsForParent(teamIds, startsWindow),
     listOwnSessionRegistrations(playerIds),
+    query.view === "list"
+      ? probeOpenSessionsForParent(teamIds, TRAINING_SESSION_KINDS, startsWindow)
+      : Promise.resolve({ hasEarlier: false, hasLater: false }),
   ]);
   const groups = groupTrainingSessionsForParent(sessions);
   const openRegistrations = registrations.filter(
@@ -137,9 +154,29 @@ export default async function ParentSessionsPage({ searchParams }: ParentSession
                 />
               </div>
             </div>
-          ) : groups.length === 0 ? (
-            <EmptyState title={t("emptyUpcomingTitle")} body={t("emptyUpcomingBody")} />
           ) : (
+            <>
+              <ListWindowNav
+                pathname="/app/sessions"
+                query={query}
+                window={listWindow}
+                hasEarlier={probe.hasEarlier}
+                hasLater={probe.hasLater}
+              />
+              {groups.length === 0 ? (
+                <EmptyState
+                  title={
+                    probe.hasEarlier || probe.hasLater
+                      ? admin("listWindowEmptyTitle")
+                      : t("emptyUpcomingTitle")
+                  }
+                  body={
+                    probe.hasEarlier || probe.hasLater
+                      ? admin("listWindowEmptyBody")
+                      : t("emptyUpcomingBody")
+                  }
+                />
+              ) : (
             <ul className="grid gap-3">
               {groups.map((group) => {
                 if (group.groupKind === "training-series") {
@@ -186,6 +223,8 @@ export default async function ParentSessionsPage({ searchParams }: ParentSession
                 );
               })}
             </ul>
+              )}
+            </>
           )}
         </section>
 

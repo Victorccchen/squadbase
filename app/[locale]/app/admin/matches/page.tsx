@@ -9,7 +9,7 @@ import { SessionDayAgenda } from "@/components/admin/session-day-agenda";
 import { SessionViewToggle } from "@/components/admin/session-kind-legend";
 import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { listTeams } from "@/lib/org/queries";
-import { listMatchesForAdmin } from "@/lib/org/match-queries";
+import { listMatchesForAdmin, probeMatchesForAdmin } from "@/lib/org/match-queries";
 import { MATCH_KINDS, formatMatchScore, publicOpponentLabel } from "@/lib/org/match";
 import {
   adminGroupHref,
@@ -17,15 +17,16 @@ import {
   nextOccurrenceInGroup,
 } from "@/lib/org/parent-series";
 import { SeriesGroupCard } from "@/components/sessions/series-group-card";
+import { ListWindowNav } from "@/components/sessions/list-window-nav";
 import { formatClubDateTime } from "@/lib/org/session-time";
 import {
   calendarWeekNavHrefs,
-  clubRangeToTimestamptz,
   clubTodayDate,
   parseAdminSessionsQuery,
+  parseListDateWindow,
   resolveSurfaceKinds,
   sessionsInWeek,
-  visibleMonthRange,
+  sessionsListOrCalendarBounds,
   weekRangeForDate,
 } from "@/lib/org/session-calendar";
 import { primaryButtonClassName, secondaryButtonClassName } from "@/lib/ui";
@@ -37,42 +38,50 @@ type AdminMatchesPageProps = {
     view?: string | string[];
     kind?: string | string[];
     team?: string | string[];
+    from?: string | string[];
+    to?: string | string[];
   }>;
 };
 
 export default async function AdminMatchesPage({ searchParams }: AdminMatchesPageProps) {
-  if (!(await canRenderAdminPage())) {
+  const [allowed, params] = await Promise.all([canRenderAdminPage(), searchParams]);
+  if (!allowed) {
     return <AccessDenied area="admin" />;
   }
 
-  const params = await searchParams;
   const query = parseAdminSessionsQuery(params, undefined, {
     allowedKinds: MATCH_KINDS,
     defaultView: "list",
   });
   const kinds = resolveSurfaceKinds(query.kinds, MATCH_KINDS);
-  const range = visibleMonthRange(query.year, query.month);
+  const listWindow = parseListDateWindow(params);
+  const bounds = sessionsListOrCalendarBounds(query, listWindow);
   const week = weekRangeForDate(query.day);
-  const fromDate =
-    range && week && week.from < range.from ? week.from : (range?.from ?? query.day);
-  const toDate = range && week && week.to > range.to ? week.to : (range?.to ?? query.day);
-  const bounds =
-    query.view === "calendar" ? clubRangeToTimestamptz(fromDate, toDate) : null;
   const today = clubTodayDate();
+  const startsFrom = bounds.from;
+  const startsToExclusive = bounds.toExclusive;
 
-  const t = await getTranslations("admin");
-  const matchesT = await getTranslations("matches");
-  const org = await getTranslations("org");
-  const common = await getTranslations("common");
-  const locale = await getLocale();
-  const [matches, teams] = await Promise.all([
+  const [t, matchesT, org, common, locale, matches, teams, probe] = await Promise.all([
+    getTranslations("admin"),
+    getTranslations("matches"),
+    getTranslations("org"),
+    getTranslations("common"),
+    getLocale(),
     listMatchesForAdmin({
       kinds,
       teamIds: query.teamIds,
-      startsFrom: bounds?.from,
-      startsToExclusive: bounds?.toExclusive,
+      startsFrom,
+      startsToExclusive,
     }),
     listTeams(),
+    query.view === "list"
+      ? probeMatchesForAdmin({
+          kinds,
+          teamIds: query.teamIds,
+          startsFrom,
+          startsToExclusive,
+        })
+      : Promise.resolve({ hasEarlier: false, hasLater: false }),
   ]);
   const groups = groupMatchSessionsForParent(matches);
   const weekSessions = sessionsInWeek(matches, query.day);
@@ -112,12 +121,33 @@ export default async function AdminMatchesPage({ searchParams }: AdminMatchesPag
           teams={teams}
           kinds={MATCH_KINDS}
           showIncludeDeleted={false}
+          listWindow={listWindow}
         />
         {query.view === "list" ? (
-          groups.length === 0 ? (
+          <div className="flex flex-col gap-4">
+            <ListWindowNav
+              pathname="/app/admin/matches"
+              query={query}
+              window={listWindow}
+              hasEarlier={probe.hasEarlier}
+              hasLater={probe.hasLater}
+            />
+            {groups.length === 0 ? (
             <EmptyState
-              title={hasFilters ? t("sessionsFilterEmptyTitle") : t("matchesEmptyTitle")}
-              body={hasFilters ? t("sessionsFilterEmptyBody") : t("matchesEmptyBody")}
+              title={
+                probe.hasEarlier || probe.hasLater
+                  ? t("listWindowEmptyTitle")
+                  : hasFilters
+                    ? t("sessionsFilterEmptyTitle")
+                    : t("matchesEmptyTitle")
+              }
+              body={
+                probe.hasEarlier || probe.hasLater
+                  ? t("listWindowEmptyBody")
+                  : hasFilters
+                    ? t("sessionsFilterEmptyBody")
+                    : t("matchesEmptyBody")
+              }
             />
           ) : (
             <ul className="grid gap-3">
@@ -158,7 +188,8 @@ export default async function AdminMatchesPage({ searchParams }: AdminMatchesPag
                 );
               })}
             </ul>
-          )
+          )}
+          </div>
         ) : (
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
             <div className="min-w-0 flex-1">

@@ -18,6 +18,7 @@ import {
   TRAINING_SESSION_KINDS,
   type MatchGroupKey,
 } from "@/lib/org/parent-series";
+import type { SessionWindowProbe } from "@/lib/org/session-calendar";
 
 export type TrainingSessionWithTeam = TrainingSession & {
   team: Team | null;
@@ -75,12 +76,15 @@ function mapRegistrationRow(row: Record<string, unknown>): SessionRegistrationWi
   };
 }
 
-export type AdminSessionListFilters = {
+export type SessionStartsWindow = {
+  startsFrom?: string;
+  startsToExclusive?: string;
+};
+
+export type AdminSessionListFilters = SessionStartsWindow & {
   kinds?: string[];
   teamIds?: string[];
   includeDeleted?: boolean;
-  startsFrom?: string;
-  startsToExclusive?: string;
 };
 
 export async function listSessionsForAdmin(
@@ -148,6 +152,47 @@ export async function listSessionsForAdmin(
   });
 }
 
+export async function probeSessionsForAdmin(
+  filters: AdminSessionListFilters & { startsFrom: string; startsToExclusive: string },
+): Promise<SessionWindowProbe> {
+  const supabase = await createClient();
+  const kinds = (filters.kinds ?? [])
+    .map((value) => parseSessionKind(value))
+    .filter((kind): kind is NonNullable<typeof kind> => kind !== null);
+  const teamIds = (filters.teamIds ?? [])
+    .map((value) => parseUuid(value))
+    .filter((id): id is string => id !== null);
+
+  const base = () => {
+    let query = supabase.from("training_sessions").select("id").limit(1);
+    if (kinds.length > 0) {
+      query = query.in("kind", kinds);
+    }
+    if (teamIds.length > 0) {
+      query = query.in("team_id", teamIds);
+    }
+    if (!filters.includeDeleted) {
+      query = query.is("deleted_at", null);
+    }
+    return query;
+  };
+
+  const [earlier, later] = await Promise.all([
+    base().lt("starts_at", filters.startsFrom),
+    base().gte("starts_at", filters.startsToExclusive),
+  ]);
+  if (earlier.error) {
+    console.error("probeSessionsForAdmin earlier", earlier.error.message);
+  }
+  if (later.error) {
+    console.error("probeSessionsForAdmin later", later.error.message);
+  }
+  return {
+    hasEarlier: (earlier.data ?? []).length > 0,
+    hasLater: (later.data ?? []).length > 0,
+  };
+}
+
 export async function getSession(id: string): Promise<TrainingSessionWithTeam | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -184,14 +229,29 @@ export async function listSessionRegistrations(
   return (data ?? []).map((row) => mapRegistrationRow(row as unknown as Record<string, unknown>));
 }
 
+function applyStartsWindow<
+  T extends { gte: (column: string, value: string) => T; lt: (column: string, value: string) => T },
+>(query: T, window?: SessionStartsWindow): T {
+  let next = query;
+  if (window?.startsFrom) {
+    next = next.gte("starts_at", window.startsFrom);
+  }
+  if (window?.startsToExclusive) {
+    next = next.lt("starts_at", window.startsToExclusive);
+  }
+  return next;
+}
+
 export async function listOpenSessionsForParent(
   teamIds: string[],
   kinds?: readonly SessionKind[],
+  window?: SessionStartsWindow,
 ): Promise<TrainingSessionWithTeam[]> {
   if (teamIds.length === 0) {
     return [];
   }
 
+  const now = new Date();
   const supabase = await createClient();
   let query = supabase
     .from("training_sessions")
@@ -199,11 +259,13 @@ export async function listOpenSessionsForParent(
     .eq("status", "active")
     .is("deleted_at", null)
     .in("team_id", teamIds)
+    .gt("ends_at", now.toISOString())
     .order("starts_at");
 
   if (kinds && kinds.length > 0) {
     query = query.in("kind", kinds);
   }
+  query = applyStartsWindow(query, window);
 
   const { data, error } = await query;
 
@@ -212,22 +274,66 @@ export async function listOpenSessionsForParent(
     return [];
   }
 
-  const now = new Date();
   return (data ?? [])
     .map((row) => mapSessionRow(row as unknown as Record<string, unknown>))
     .filter((session) => isSessionOpenForSignup(session, now));
 }
 
+export async function probeOpenSessionsForParent(
+  teamIds: string[],
+  kinds: readonly SessionKind[] | undefined,
+  window: { startsFrom: string; startsToExclusive: string },
+  now = new Date(),
+): Promise<SessionWindowProbe> {
+  if (teamIds.length === 0) {
+    return { hasEarlier: false, hasLater: false };
+  }
+
+  const supabase = await createClient();
+  const nowIso = now.toISOString();
+
+  const base = () => {
+    let query = supabase
+      .from("training_sessions")
+      .select("id")
+      .eq("status", "active")
+      .is("deleted_at", null)
+      .in("team_id", teamIds)
+      .limit(1);
+    if (kinds && kinds.length > 0) {
+      query = query.in("kind", kinds);
+    }
+    return query;
+  };
+
+  const [earlier, later] = await Promise.all([
+    base().gt("ends_at", nowIso).lt("starts_at", window.startsFrom),
+    base().gte("starts_at", window.startsToExclusive),
+  ]);
+  if (earlier.error) {
+    console.error("probeOpenSessionsForParent earlier", earlier.error.message);
+  }
+  if (later.error) {
+    console.error("probeOpenSessionsForParent later", later.error.message);
+  }
+  return {
+    hasEarlier: (earlier.data ?? []).length > 0,
+    hasLater: (later.data ?? []).length > 0,
+  };
+}
+
 export async function listOpenTrainingSessionsForParent(
   teamIds: string[],
+  window?: SessionStartsWindow,
 ): Promise<TrainingSessionWithTeam[]> {
-  return listOpenSessionsForParent(teamIds, TRAINING_SESSION_KINDS);
+  return listOpenSessionsForParent(teamIds, TRAINING_SESSION_KINDS, window);
 }
 
 export async function listOpenCompetitionSessionsForParent(
   teamIds: string[],
+  window?: SessionStartsWindow,
 ): Promise<TrainingSessionWithTeam[]> {
-  return listOpenSessionsForParent(teamIds, COMPETITION_SESSION_KINDS);
+  return listOpenSessionsForParent(teamIds, COMPETITION_SESSION_KINDS, window);
 }
 
 export async function listOpenSessionsForParentSeries(
@@ -247,6 +353,7 @@ export async function listOpenSessionsForParentSeries(
     .is("deleted_at", null)
     .in("team_id", teamIds)
     .in("kind", TRAINING_SESSION_KINDS)
+    .gt("ends_at", new Date().toISOString())
     .order("starts_at");
 
   if (error) {
@@ -277,6 +384,7 @@ export async function listOpenSessionsForMatchGroup(
     .eq("title", group.title)
     .eq("status", "active")
     .is("deleted_at", null)
+    .gt("ends_at", new Date().toISOString())
     .order("starts_at");
 
   if (error) {

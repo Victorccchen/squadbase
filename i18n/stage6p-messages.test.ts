@@ -41,6 +41,12 @@ const REQUIRED_KEYS = [
   "admin.calendarView",
   "admin.listView",
   "admin.viewToggleLabel",
+  "admin.listWindowHint",
+  "admin.loadMore",
+  "admin.seeEarlier",
+  "admin.resetListWindow",
+  "admin.listWindowEmptyTitle",
+  "admin.listWindowEmptyBody",
 ];
 
 describe("T6P-9 locale smoke", () => {

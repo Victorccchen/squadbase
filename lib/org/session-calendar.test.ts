@@ -2,16 +2,25 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   adminSessionsHref,
+  calendarFetchDateRange,
   calendarHrefPath,
   calendarListHref,
+  clubRangeToTimestamptz,
   defaultDayForMonth,
+  defaultUpcomingListWindow,
+  expandListDateWindow,
   groupSessionsByClubDate,
   groupSessionsByTeam,
   isDateInClubWeek,
+  isDefaultUpcomingListWindow,
+  LIST_WINDOW_DAYS,
+  listWindowHref,
   monthGrid,
   parseAdminSessionsQuery,
+  parseListDateWindow,
   resolveSurfaceKinds,
   sessionsInWeek,
+  sessionsListOrCalendarBounds,
   shiftClubDate,
   uniqueAgeBandAbbrevsOnDate,
   uniqueKindsOnDate,
@@ -313,5 +322,93 @@ describe("defaultDayForMonth", () => {
   it("keeps today when the displayed month contains it", () => {
     assert.equal(defaultDayForMonth(2026, 9, "2026-09-04"), "2026-09-04");
     assert.equal(defaultDayForMonth(2026, 10, "2026-09-04"), "2026-10-01");
+  });
+});
+
+describe("list date window (Stage Perf / 6Q)", () => {
+  const now = new Date("2026-09-08T01:00:00.000Z");
+
+  it("defaults to start of today through +8 weeks in Asia/Taipei", () => {
+    const window = defaultUpcomingListWindow(now);
+    assert.equal(LIST_WINDOW_DAYS, 56);
+    assert.deepEqual(window, { from: "2026-09-08", to: "2026-11-03" });
+    assert.equal(isDefaultUpcomingListWindow(window, now), true);
+    const bounds = clubRangeToTimestamptz(window.from, window.to);
+    assert.deepEqual(bounds, {
+      from: "2026-09-08T00:00:00+08:00",
+      toExclusive: "2026-11-04T00:00:00+08:00",
+    });
+  });
+
+  it("parses from/to and rejects an inverted range", () => {
+    assert.deepEqual(parseListDateWindow({ from: "2026-08-01", to: "2026-10-01" }, now), {
+      from: "2026-08-01",
+      to: "2026-10-01",
+    });
+    assert.deepEqual(parseListDateWindow({ from: "2026-12-01", to: "2026-10-01" }, now), {
+      from: "2026-09-08",
+      to: "2026-11-03",
+    });
+    assert.deepEqual(parseListDateWindow({}, now), { from: "2026-09-08", to: "2026-11-03" });
+  });
+
+  it("expands 8 weeks earlier or later without dropping the other edge", () => {
+    const window = { from: "2026-09-08", to: "2026-11-03" };
+    assert.deepEqual(expandListDateWindow(window, "earlier"), {
+      from: "2026-07-14",
+      to: "2026-11-03",
+    });
+    assert.deepEqual(expandListDateWindow(window, "later"), {
+      from: "2026-09-08",
+      to: "2026-12-29",
+    });
+  });
+
+  it("calendar fetch is the visible month grid plus week padding, not a season dump", () => {
+    const query = parseAdminSessionsQuery(
+      { month: "2026-09", day: "2026-09-08", view: "calendar" },
+      now,
+    );
+    assert.deepEqual(calendarFetchDateRange(query), {
+      from: "2026-08-31",
+      to: "2026-10-04",
+    });
+    const october = parseAdminSessionsQuery(
+      { month: "2026-10", day: "2026-10-01", view: "calendar" },
+      now,
+    );
+    const octoberRange = calendarFetchDateRange(october);
+    assert.equal(octoberRange.from <= "2026-10-01", true);
+    assert.equal(octoberRange.to >= "2026-10-31", true);
+    assert.equal(octoberRange.from >= "2026-09-28", true);
+    assert.equal(octoberRange.to <= "2026-11-08", true);
+    const calendarBounds = sessionsListOrCalendarBounds(october, defaultUpcomingListWindow(now));
+    const listBounds = sessionsListOrCalendarBounds(
+      { ...october, view: "list" },
+      defaultUpcomingListWindow(now),
+    );
+    assert.notDeepEqual(calendarBounds, listBounds);
+    assert.equal(calendarBounds.from.startsWith("2026-09-28"), true);
+    assert.equal(listBounds.from, "2026-09-08T00:00:00+08:00");
+  });
+
+  it("omits from/to on the default upcoming list href", () => {
+    const query = parseAdminSessionsQuery({ view: "list" }, now, { defaultView: "list" });
+    const href = listWindowHref(
+      "/app/sessions",
+      query,
+      defaultUpcomingListWindow(now),
+      now,
+    );
+    assert.equal(href.query.from, undefined);
+    assert.equal(href.query.to, undefined);
+    const expanded = listWindowHref(
+      "/app/sessions",
+      query,
+      expandListDateWindow(defaultUpcomingListWindow(now), "later"),
+      now,
+    );
+    assert.equal(expanded.query.from, "2026-09-08");
+    assert.equal(expanded.query.to, "2026-12-29");
   });
 });
