@@ -19,6 +19,7 @@
   - [ ] Stage 6P.1 training vs matches split, calendar+list, friendly matches
   - [ ] Admin multi-team create (match new/bulk + training series; per-team RPC; partial success)
   - [ ] Stage ST: 梯隊 (age squad) vs 隊伍 (competition team); PR #22 ladder-up superseded
+  - [ ] Admin list/detail soft-delete for training and matches (reuse `admin_soft_delete_session`; cancel stays separate)
 
 ## Verification
 

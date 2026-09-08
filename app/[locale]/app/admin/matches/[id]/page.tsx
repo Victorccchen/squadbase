@@ -10,7 +10,12 @@ import { MatchRosterForm } from "@/components/admin/match-roster-form";
 import { MatchResultForm } from "@/components/admin/match-result-form";
 import { MatchPublishForm } from "@/components/admin/match-publish-form";
 import { MatchCancelForm, MatchRestoreForm } from "@/components/admin/match-cancel-form";
-import { SessionDeletedBadge, SessionKindBadge, SessionPlayoffBadge } from "@/components/sessions/session-status-badge";
+import { SessionSoftDeleteForm } from "@/components/admin/session-soft-delete-form";
+import {
+  SessionDeletedBadge,
+  SessionKindBadge,
+  SessionPlayoffBadge,
+} from "@/components/sessions/session-status-badge";
 import { MatchSideBadge, MatchStatusBadge } from "@/components/matches/match-status-badge";
 import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { listTeams } from "@/lib/org/queries";
@@ -22,6 +27,7 @@ import {
   setMatchPublished,
   setMatchResult,
   setMatchRoster,
+  softDeleteMatch,
   updateMatch,
 } from "@/lib/org/match-actions";
 import { listActiveRosterForTeam } from "@/lib/credits/queries";
@@ -72,9 +78,11 @@ export default async function AdminMatchDetailPage({ params }: AdminMatchDetailP
           description={`${match.team?.name ?? org("unknownTeam")} · ${formatClubDateTimeRange(match.starts_at, match.ends_at, locale)}`}
           actions={
             <span className="flex flex-wrap gap-2">
-              <Link href={`/matches/${match.id}`} className={secondaryButtonClassName}>
-                {matchesT("viewPublic")}
-              </Link>
+              {isDeleted ? null : (
+                <Link href={`/matches/${match.id}`} className={secondaryButtonClassName}>
+                  {matchesT("viewPublic")}
+                </Link>
+              )}
               <Link href={`/app/admin/sessions/${match.id}`} className={secondaryButtonClassName}>
                 {matchesT("openSession")}
               </Link>
@@ -84,11 +92,14 @@ export default async function AdminMatchDetailPage({ params }: AdminMatchDetailP
         <div className="flex flex-wrap gap-2">
           <SessionKindBadge kind={match.kind} label={sessionsT(`kinds.${match.kind}`)} />
           {match.is_playoff ? <SessionPlayoffBadge label={sessionsT("playoff")} /> : null}
-          {isDeleted ? <SessionDeletedBadge label={t("sessionDeleted")} /> : null}
-          <MatchStatusBadge
-            status={match.publication.public_status}
-            label={matchesT(`statuses.${match.publication.public_status}`)}
-          />
+          {isDeleted ? (
+            <SessionDeletedBadge label={matchesT("matchDeleted")} />
+          ) : (
+            <MatchStatusBadge
+              status={match.publication.public_status}
+              label={matchesT(`statuses.${match.publication.public_status}`)}
+            />
+          )}
           <MatchSideBadge label={matchesT(`sides.${match.publication.side}`)} />
           <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium uppercase tracking-wide text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
             {match.publication.is_published ? matchesT("published") : matchesT("unpublished")}
@@ -106,10 +117,15 @@ export default async function AdminMatchDetailPage({ params }: AdminMatchDetailP
         ) : null}
         {isDeleted ? (
           <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:bg-amber-950 dark:text-amber-100">
-            {t("sessionDeletedBanner")}
+            {matchesT("matchDeletedBanner")}
           </p>
-        ) : (
-          <div className="flex flex-col gap-3 sm:flex-row">
+        ) : cancelled ? (
+          <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:bg-amber-950 dark:text-amber-100">
+            {matchesT("cancelledBanner")}
+          </p>
+        ) : null}
+        {isDeleted ? null : (
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             {cancelled ? (
               <MatchRestoreForm action={restoreMatch.bind(null, match.id)} />
             ) : (
@@ -124,13 +140,13 @@ export default async function AdminMatchDetailPage({ params }: AdminMatchDetailP
                 />
               </>
             )}
+            <SessionSoftDeleteForm
+              action={softDeleteMatch.bind(null, match.id)}
+              confirmMessage={matchesT("softDeleteMatchConfirm", { title: match.title })}
+              submitLabel={matchesT("softDeleteMatch")}
+            />
           </div>
         )}
-        {cancelled ? (
-          <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:bg-amber-950 dark:text-amber-100">
-            {matchesT("cancelledBanner")}
-          </p>
-        ) : null}
         {isDeleted ? null : (
           <section className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
@@ -145,7 +161,7 @@ export default async function AdminMatchDetailPage({ params }: AdminMatchDetailP
             />
           </section>
         )}
-        {cancelled || isDeleted ? null : (
+        {isDeleted || cancelled ? null : (
           <section className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
               {matchesT("resultTitle")}
@@ -164,28 +180,30 @@ export default async function AdminMatchDetailPage({ params }: AdminMatchDetailP
           locale={locale}
           variant="match"
         />
-        <section className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
-            {matchesT("staffRosterTitle")}
-          </h2>
-          <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">
-            {matchesT("staffRosterHint")}
-          </p>
-          {isDeleted ? null : teamRoster.length === 0 ? (
-            <EmptyState title={matchesT("rosterEmptyTitle")} body={matchesT("rosterEmptyBody")} />
-          ) : (
-            <MatchRosterForm
-              action={setMatchRoster.bind(null, match.id)}
-              options={teamRoster.map((row) => ({
-                player: row.player,
-                jerseyNumber: row.membership.jersey_number,
-              }))}
-              selectedIds={roster.map((row) => row.player_id)}
-              registeredIds={registeredIds}
-              locale={locale}
-            />
-          )}
-        </section>
+        {isDeleted ? null : (
+          <section className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+              {matchesT("staffRosterTitle")}
+            </h2>
+            <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">
+              {matchesT("staffRosterHint")}
+            </p>
+            {teamRoster.length === 0 ? (
+              <EmptyState title={matchesT("rosterEmptyTitle")} body={matchesT("rosterEmptyBody")} />
+            ) : (
+              <MatchRosterForm
+                action={setMatchRoster.bind(null, match.id)}
+                options={teamRoster.map((row) => ({
+                  player: row.player,
+                  jerseyNumber: row.membership.jersey_number,
+                }))}
+                selectedIds={roster.map((row) => row.player_id)}
+                registeredIds={registeredIds}
+                locale={locale}
+              />
+            )}
+          </section>
+        )}
       </main>
       <footer className="border-t border-zinc-200 px-6 py-4 pb-10 text-sm text-zinc-500 dark:border-zinc-800">
         {common("footer")}

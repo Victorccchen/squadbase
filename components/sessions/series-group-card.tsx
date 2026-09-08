@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
 import { getTranslations } from "next-intl/server";
 import {
@@ -18,6 +19,7 @@ type SeriesGroupCardProps = {
   locale: string;
   detail?: string;
   viewLabel?: string;
+  actions?: ReactNode;
 };
 
 export async function SeriesGroupCard({
@@ -31,16 +33,14 @@ export async function SeriesGroupCard({
   locale,
   detail,
   viewLabel,
+  actions,
 }: SeriesGroupCardProps) {
   const sessionsT = await getTranslations("sessions");
   const t = await getTranslations("competitions");
 
   return (
-    <li>
-      <Link
-        href={href}
-        className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900"
-      >
+    <li className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900">
+      <Link href={href} className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="font-semibold">{title}</span>
           <span className="flex flex-wrap items-center gap-2">
@@ -60,6 +60,7 @@ export async function SeriesGroupCard({
           {viewLabel ?? t("viewSeries")}
         </span>
       </Link>
+      {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
     </li>
   );
 }

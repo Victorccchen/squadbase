@@ -234,7 +234,7 @@ Public cup/league matches reuse `training_sessions` so Stage 4B debit (`match_de
 
 Public RPCs (`list_published_matches`, `get_published_match`, `list_published_match_roster`) return title, kickoff, venue, opponent, side, status, score, team name, and lineup **display-name fields + jersey** only. No phones, emails, guardian info, credits, claims, staff notes, or birth dates. Public pages live under `/[locale]/matches` and do **not** call `ensure_own_profile`.
 
-Writes (`admin_create_match`, `admin_create_matches`, `admin_update_match`, `admin_set_match_roster`, `admin_set_match_published`, `admin_set_match_result`, `admin_cancel_match`) are admin-only. Opponent may be **null** (shown as TBD). Coaches may **read** publications on assigned teams (roster session page). Cancelling a match unpublishes it; it does **not** soft-delete the training session (attendance/debit path stays).
+Writes (`admin_create_match`, `admin_create_matches`, `admin_update_match`, `admin_set_match_roster`, `admin_set_match_published`, `admin_set_match_result`, `admin_cancel_match`, `admin_restore_match`) are admin-only. Opponent may be **null** (shown as TBD). Coaches may **read** publications on assigned teams (roster session page). Cancelling a match unpublishes it; it does **not** soft-delete the training session (attendance/debit path stays). Admin **soft-delete** of a match reuses `admin_soft_delete_session` (`training_sessions.deleted_at`); it is separate from cancel and hides the row from default admin/parent lists even if `public_status` was cancelled.
 
 Out of scope: live scores, federation feeds, tickets, push/LINE, changing Stage 4B debit math, auto-creating `session_series` for league shells, OAuth calendar sync, production deploy.
 
@@ -597,6 +597,7 @@ Use an admin account. Recurrence math is also covered by `npm test` (`lib/org/se
 | T4A-5 | Admin creates **cup** and **league** series. Editing a league occurrence can set **playoff**; parent and admin lists show the playoff badge. No bracket is generated. |
 | T4A-6 | Admin soft-deletes a session. It disappears from parent `/app/sessions`. Admin list with “Include deleted” still shows it. Registrations and Q&A remain on the admin detail. |
 | T4A-7 | Signed-in non-admin cannot open create/soft-delete (access denied). Parent JWT cannot call `admin_create_session_series` / `admin_soft_delete_session`. |
+| T4A-8 | Admin **sessions list** has Delete per row (one-off, or the next occurrence of a series). Confirm → that occurrence leaves the default list; stay on the list. Entire-series delete stays on session **detail** only. |
 
 Locale check: switch zh-Hant / en / ja on create form validation, kind badges, filters, and soft-delete confirm.
 
@@ -664,6 +665,7 @@ Use an admin account for writes. Public checks must be **signed out** (or a priv
 | T5B-7 | Signed-in non-admin cannot open `/app/admin/matches` (access denied). Parent JWT cannot call `admin_create_match`. `npm run lint`, `npm run typecheck`, and `npm test` pass. |
 | T5B-8 | Admin can create/update a match with a **blank opponent**. Public list/detail shows TBD (zh-Hant 對手未定 / en TBD / ja 対戦相手未定), never a fake club name. Existing admin edit can fill the opponent later. |
 | T5B-9 | Admin bulk-creates N unpublished cup/league shells from `/app/admin/matches/bulk` with blank opponent → N `training_sessions` + `match_publications` rows. |
+| T5B-10 | Admin **matches list** has Delete per row (that fixture / next occurrence in a title group). Match **detail** keeps Cancel/Restore and adds Soft-delete. Soft-delete uses `admin_soft_delete_session` (`deleted_at`); no new SQL. Item leaves default admin/parent lists. |
 
 Locale check: schedule empty states, status/side badges, admin forms, calendar add, and errors in zh-Hant / en / ja.
 

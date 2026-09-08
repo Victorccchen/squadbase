@@ -11,12 +11,14 @@ import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { listTeams } from "@/lib/org/queries";
 import { listMatchesForAdmin, probeMatchesForAdmin } from "@/lib/org/match-queries";
 import { MATCH_KINDS, formatMatchScore, publicOpponentLabel } from "@/lib/org/match";
+import { softDeleteMatch } from "@/lib/org/match-actions";
 import {
   adminGroupHref,
   groupMatchSessionsForParent,
   nextOccurrenceInGroup,
 } from "@/lib/org/parent-series";
 import { SeriesGroupCard } from "@/components/sessions/series-group-card";
+import { SessionSoftDeleteForm } from "@/components/admin/session-soft-delete-form";
 import { ListWindowNav } from "@/components/sessions/list-window-nav";
 import { formatClubDateTime } from "@/lib/org/session-time";
 import {
@@ -177,7 +179,7 @@ export default async function AdminMatchesPage({ searchParams }: AdminMatchesPag
                   next ? formatClubDateTime(next.starts_at, locale) : null,
                   t("rosterCount", { count: registeredSum }),
                   matchesT("rosterCount", { count: rosterSum }),
-                  next?.deleted_at ? t("sessionDeleted") : null,
+                  next?.deleted_at ? matchesT("matchDeleted") : null,
                 ].filter((part): part is string => Boolean(part));
                 return (
                   <SeriesGroupCard
@@ -192,6 +194,18 @@ export default async function AdminMatchesPage({ searchParams }: AdminMatchesPag
                     locale={locale}
                     detail={detailParts.join(" · ")}
                     viewLabel={t("edit")}
+                    actions={
+                      next && !next.deleted_at ? (
+                        <SessionSoftDeleteForm
+                          action={softDeleteMatch.bind(null, next.id)}
+                          confirmMessage={matchesT("softDeleteMatchConfirm", {
+                            title: next.title,
+                          })}
+                          submitLabel={matchesT("softDeleteMatch")}
+                          redirectTo="list"
+                        />
+                      ) : null
+                    }
                   />
                 );
               })}

@@ -20,6 +20,7 @@ import {
 } from "@/lib/org/parent-series";
 import { tallyRegisteredCounts } from "@/lib/org/registration-counts";
 import type { SessionWindowProbe } from "@/lib/org/session-calendar";
+import { filterDefaultAdminList, filterParentDefaultList } from "@/lib/org/soft-delete";
 
 export type TrainingSessionWithTeam = TrainingSession & {
   team: Team | null;
@@ -139,13 +140,14 @@ export async function listSessionsForAdmin(
     registeredBySession = tallyRegisteredCounts(countsResult.data ?? []);
   }
 
-  return (sessionsResult.data ?? []).map((row) => {
+  const rows = (sessionsResult.data ?? []).map((row) => {
     const session = mapSessionRow(row as unknown as Record<string, unknown>);
     return {
       ...session,
       registeredCount: registeredBySession.get(session.id) ?? 0,
     };
   });
+  return filterDefaultAdminList(rows, Boolean(filters.includeDeleted));
 }
 
 export async function probeSessionsForAdmin(
@@ -270,9 +272,11 @@ export async function listOpenSessionsForParent(
     return [];
   }
 
-  return (data ?? [])
-    .map((row) => mapSessionRow(row as unknown as Record<string, unknown>))
-    .filter((session) => isSessionOpenForSignup(session, now));
+  return filterParentDefaultList(
+    (data ?? [])
+      .map((row) => mapSessionRow(row as unknown as Record<string, unknown>))
+      .filter((session) => isSessionOpenForSignup(session, now)),
+  );
 }
 
 export async function probeOpenSessionsForParent(
@@ -358,9 +362,11 @@ export async function listOpenSessionsForParentSeries(
   }
 
   const now = new Date();
-  return (data ?? [])
-    .map((row) => mapSessionRow(row as unknown as Record<string, unknown>))
-    .filter((session) => isSessionOpenForSignup(session, now));
+  return filterParentDefaultList(
+    (data ?? [])
+      .map((row) => mapSessionRow(row as unknown as Record<string, unknown>))
+      .filter((session) => isSessionOpenForSignup(session, now)),
+  );
 }
 
 export async function listOpenSessionsForMatchGroup(
@@ -389,9 +395,11 @@ export async function listOpenSessionsForMatchGroup(
   }
 
   const now = new Date();
-  return (data ?? [])
-    .map((row) => mapSessionRow(row as unknown as Record<string, unknown>))
-    .filter((session) => isSessionOpenForSignup(session, now));
+  return filterParentDefaultList(
+    (data ?? [])
+      .map((row) => mapSessionRow(row as unknown as Record<string, unknown>))
+      .filter((session) => isSessionOpenForSignup(session, now)),
+  );
 }
 
 export async function listOwnSessionRegistrations(

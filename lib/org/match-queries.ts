@@ -4,6 +4,7 @@ import { isMatchKind, parseMatchKind, partitionPublicMatches } from "@/lib/org/m
 import { parseUuid } from "@/lib/org/parse";
 import { tallyRegisteredCounts } from "@/lib/org/registration-counts";
 import type { SessionWindowProbe } from "@/lib/org/session-calendar";
+import { filterDefaultAdminList } from "@/lib/org/soft-delete";
 import type {
   MatchPublication,
   MatchRosterRow,
@@ -89,6 +90,7 @@ export type AdminMatchListFilters = {
   teamIds?: string[];
   startsFrom?: string;
   startsToExclusive?: string;
+  includeDeleted?: boolean;
 };
 
 export async function listMatchesForAdmin(
@@ -117,6 +119,9 @@ export async function listMatchesForAdmin(
   }
   if (filters.startsToExclusive) {
     query = query.lt("training_sessions.starts_at", filters.startsToExclusive);
+  }
+  if (!filters.includeDeleted) {
+    query = query.is("training_sessions.deleted_at", null);
   }
 
   const { data, error } = await query;
@@ -177,7 +182,9 @@ export async function listMatchesForAdmin(
     });
   }
 
-  return rows.sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+  return filterDefaultAdminList(rows, Boolean(filters.includeDeleted)).sort((a, b) =>
+    a.starts_at.localeCompare(b.starts_at),
+  );
 }
 
 export async function probeMatchesForAdmin(
@@ -201,6 +208,9 @@ export async function probeMatchesForAdmin(
     }
     if (teamIds.length > 0) {
       query = query.in("training_sessions.team_id", teamIds);
+    }
+    if (!filters.includeDeleted) {
+      query = query.is("training_sessions.deleted_at", null);
     }
     return query;
   };
