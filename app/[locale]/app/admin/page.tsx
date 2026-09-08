@@ -13,6 +13,7 @@ export default async function AdminHomePage() {
   const common = await getTranslations("common");
 
   const cards = [
+    { href: "/app/admin/dashboard" as const, title: t("dashboardTitle"), body: t("dashboardBody") },
     { href: "/app/admin/teams" as const, title: t("teamsTitle"), body: t("teamsBody") },
     { href: "/app/admin/players" as const, title: t("playersTitle"), body: t("playersBody") },
     { href: "/app/admin/coaches" as const, title: t("coachesTitle"), body: t("coachesBody") },

@@ -2,7 +2,7 @@
 
 Responsive web + PWA for a football **Club** (球團) operations app: training squads, courses, attendance, assessments, and matches/events.
 
-This repository is currently **Stage R** plus **Stage P**: Stages 1–6P.1 plus Stage ST (梯隊 / 隊伍), **admin Excel/CSV import** (Stage 6A), admin LINE-group **generate + copy** (Stage N), **admin Excel/CSV reports** (attendance, registrations, credit ledger, match roster), and **private player headshots / ID photos** bound to each player. 梯隊 (age squad) is the roster band for every registered player and for training. 隊伍 (competition team) is the external match side; only continuing trainees may join, with at most two active 隊伍 and no two sharing the same `layer_key`. Parent nav still lists **訓練** (`/app/sessions`) separately from **賽事** (`/app/competitions`). Training attaches to 梯隊; matches attach to 隊伍. Dual membership **replaces** the PR #22 one-ladder-step-up rule. Admins import master data from `/app/admin/import` (preview then confirm; create-only), generate notice copy from `/app/admin/notices`, and download operational reports from `/app/admin/reports`. Each player may have one current private headshot (and an optional PDF) for league ID cards; public match pages never show it.
+This repository is currently **Stage D** plus **Stage R** and **Stage P**: Stages 1–6P.1 plus Stage ST (梯隊 / 隊伍), **admin Excel/CSV import** (Stage 6A), admin LINE-group **generate + copy** (Stage N), **admin Excel/CSV reports** (attendance, registrations, credit ledger, match roster), an **admin ops dashboard** (attendance rates, approved remittance vs consumed credits, remaining obligation), and **private player headshots / ID photos** bound to each player. 梯隊 (age squad) is the roster band for every registered player and for training. 隊伍 (competition team) is the external match side; only continuing trainees may join, with at most two active 隊伍 and no two sharing the same `layer_key`. Parent nav still lists **訓練** (`/app/sessions`) separately from **賽事** (`/app/competitions`). Training attaches to 梯隊; matches attach to 隊伍. Dual membership **replaces** the PR #22 one-ladder-step-up rule. Admins import master data from `/app/admin/import` (preview then confirm; create-only), generate notice copy from `/app/admin/notices`, download operational reports from `/app/admin/reports`, and open the numeric overview from `/app/admin/dashboard`. Each player may have one current private headshot (and an optional PDF) for league ID cards; public match pages never show it.
 
 Parents can request a link to an **existing** player (the club creates the player record first). Until an admin approves, the parent cannot read that player’s private fields. After approval, the parent sees a basic “my children” list (names, birth date, team, jersey) and may **register that child for training sessions** on the child’s team. The parent may **withdraw a pending request**; only an **admin** may revoke an **approved** link. After revoke or withdraw, `is_approved_guardian_for_player` is false and the same pair may apply again. Session signup checks `guardian_player_links.status = approved`.
 
@@ -66,7 +66,8 @@ Routes:
 | `/[locale]/app/competitions/[id]` | Parent: one cup/league/friendly occurrence (signup, calendar, notes) |
 | `/[locale]/app/credits` | Parent: remaining credits, 10/20/30 pack claim with last-5 digits |
 | `/[locale]/app/assessments` | Ability assessments: staff create/edit; approved guardians read their children |
-| `/[locale]/app/admin/*` | Admin CRUD (teams, players, coaches, sessions, matches), **data import**, **reports export**, notice copy, binding approvals, payment claims, packages. Parents/coaches without admin see an access-denied page. |
+| `/[locale]/app/admin/*` | Admin CRUD (teams, players, coaches, sessions, matches), **data import**, **reports export**, **ops dashboard**, notice copy, binding approvals, payment claims, packages. Parents/coaches without admin see an access-denied page. |
+| `/[locale]/app/admin/dashboard` | Admin ops overview: attendance rates, approved remittance vs consumed credits, remaining obligation (Asia/Taipei date range, optional 梯隊) |
 | `/[locale]/app/roster` | Coach (or admin) roster of assigned teams, session signups, attendance, and assessment links |
 
 ## Checks (CI)
@@ -430,7 +431,7 @@ Multi-team membership (PR #22, Victor 2026-09-08): items **30–31** above. Stag
 - Optional: paste [`supabase/multi_team_membership_verification.sql`](supabase/multi_team_membership_verification.sql) after the PR #22 multi-team membership migration **and before Stage ST**. Asserts the old TMT-1 / TMT-2 / TMT-3 ladder-up rules. After Stage ST, use [`supabase/stage_st_verification.sql`](supabase/stage_st_verification.sql) instead (T-ST-1…8). Both roll back.
 - Optional: paste [`supabase/stage_st_verification.sql`](supabase/stage_st_verification.sql) after Stage ST (items 32–33). Asserts Futuro 隊伍 seed, birth eligibility, max 2, same `layer_key` forbidden, `continues_training`, and jersey uniqueness. Rolls back.
 
-Stage R (admin reports) adds **no new SQL**. Skip this list unless staging already missed a 4B/5B regrant.
+Stage R (admin reports) and Stage D (ops dashboard) add **no new SQL**. Skip this list unless staging already missed a 4B/5B regrant.
 - Optional: paste [`supabase/guardian_link_dedupe_verification.sql`](supabase/guardian_link_dedupe_verification.sql) after **both** cleanup files (enum `revoked` in one Run, then the dedupe UPDATE in a second Run). Lists remaining open duplicates (expect none), asserts the unique index, and has a commented unique-insert check that rolls back.
 - Optional: the RLS block at the bottom of the Stage 2 file, with real user UUIDs.
 
@@ -847,6 +848,36 @@ Use an **admin** account for UI checks. Unit tests cover TR-1…TR-8 in [`lib/or
 
 Locale check: report hub, filters, errors, and CSV headers in zh-Hant / en / ja.
 
+## Schema choice (Stage D)
+
+Admin ops dashboard. **No new tables.** **No new RPCs.** Overview numbers only; row-level files stay on Stage R `/app/admin/reports`. Same admin gate as import/reports.
+
+| Object | Behaviour |
+| --- | --- |
+| `/app/admin/dashboard` | Admin-only. Date range (Asia/Taipei) and optional 梯隊. Non-admins see access denied. |
+| Approved remittance (收入) | Sum of **approved** bank-transfer claim package prices in the selected period (`reviewed_at`; `created_at` if approval time is missing). Pending/rejected excluded. Same helper as Credit admin 家長貢獻 (`parentContributionFromClaims`). |
+| Consumed value (已用堂數換算) | Session-credit **debits** (`attend_debit` / `no_show_debit` / `match_debit`) in the period × that ledger row’s `unit_cost_twd`. Same helper as Credit admin 球員貢獻 (`contributionFromDebits`). Purchase / adjust / reversal are not consumed. |
+| Period remaining (待履行比較) | Approved remittance − consumed value for the date window. Can be negative if the window consumed prior-period credits. Not a cash bank balance. |
+| Outstanding credit liability | Current `credits_available × avg_unit_cost_twd` on `player_session_balances`. Snapshot **now** (not sliced by the date range); the 梯隊 filter still applies. Remaining obligated credits after parents have paid. |
+| Attendance | Rate = present ÷ marked rows (present + excused + unexcused). Overall + per 梯隊. Monthly trend from session `starts_at`. Training groups by the session 梯隊; matches group by the player’s current 梯隊. Soft-deleted sessions omitted. |
+| PII | No parent phones / contact PII. Player names are not listed. |
+
+**No new staging SQL.** Admins already `SELECT` `payment_claims`, `session_packages`, `session_credit_ledger`, `player_session_balances`, `session_attendance`, `training_sessions`, `teams`, and `team_memberships`. If staging shows `permission denied`, re-paste the existing Stage 4B regrant (item 17). Do not run anything on production.
+
+Out of scope: push/LINE; changing claim approval; parent-facing revenue; heavy BI; production deploy.
+
+Use an **admin** account for UI checks. Unit tests cover TD-1…TD-5 in [`lib/org/dashboard.test.ts`](lib/org/dashboard.test.ts) and [`i18n/stage-d-messages.test.ts`](i18n/stage-d-messages.test.ts).
+
+| ID | Check |
+| --- | --- |
+| TD-1 | Approved remittance counts **approved** claims only. Pending/rejected in the same Taipei window are excluded. Window uses `reviewed_at` (claim created on 30 Sep 23:59 +08 is in September; 1 Oct 00:00 +08 is not). |
+| TD-2 | Consumed value matches Credit admin 球員貢獻: debit credits × `unit_cost_twd` via `contributionFromDebits`. Purchase / adjust / reversal ignored. |
+| TD-3 | UI copy explains **period remaining** (date-window remittance − consumed) **and** **current outstanding liability** (remaining credits × avg unit cost). `npm test` asserts both numbers and the copy keys. |
+| TD-4 | Overall attendance rate plus per-梯隊 rates. 隊伍 match attendance groups by the player’s current 梯隊. Soft-deleted sessions omitted. |
+| TD-5 | Signed-in non-admin cannot open `/app/admin/dashboard` (access denied). Parent/coach JWT does not load the aggregations (`forbidden` / `canAccessAdmin` false). `npm run lint`, `npm run typecheck`, and `npm test` pass. |
+
+Locale check: dashboard cards, filters, obligation copy, and empty states in zh-Hant / en / ja.
+
 ## Staging vs production
 
 | Environment | Use |
@@ -868,7 +899,7 @@ i18n/                  next-intl routing, navigation, request config
 lib/age-band.ts        Season-start age band helper
 lib/assessments/       Assessment parse/validation, queries, server actions
 lib/credits/           Debit rules, packages, LINE notice copy, Stage N announcement templates, credit queries/actions
-lib/org/               Server actions, queries, import parse/validate, URL assist, match helpers, admin reports
+lib/org/               Server actions, queries, import parse/validate, URL assist, match helpers, admin reports, ops dashboard aggregations
 lib/auth/              Phone helpers, session/role guards
 lib/supabase/          Browser, server, and proxy (cookie) clients
 messages/              zh-Hant, en, ja copy
@@ -883,7 +914,7 @@ Auth uses the official `@supabase/ssr` cookie pattern for Next.js, composed in `
 
 `app/manifest.ts` publishes a web app manifest. Placeholder icons live in `public/icons/`. Installability and offline caching are not Stage 4A goals.
 
-## Out of scope (Stage 6P / Stage P / Stage R)
+## Out of scope (Stage 6P / Stage P / Stage R / Stage D)
 
 - Live scores / external federation feeds
 - Ticket sales / payments beyond Stage 4B bank-transfer claims

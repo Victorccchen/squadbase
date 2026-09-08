@@ -11,7 +11,7 @@
     "footer": "Production deploys require human approval. Do not publish to production automatically."
   },
   "home": {
-    "eyebrow": "Stage R · admin reports and Excel/CSV export",
+    "eyebrow": "Stage D · admin ops dashboard (attendance, remittance vs credits)",
     "headline": "Welcome to the Club management system",
     "lead": "Visitors can open the public match schedule without signing in and add a match to a calendar. After parents sign in, training and competitions are listed separately; the same series can be attended or declined in one tap. Admins and assigned coaches record 1–5 scores for match situations and player traits. Ability details, credits, and player ID photos are never shown on public pages.",
     "openDashboard": "Open dashboard",
@@ -59,7 +59,7 @@
   "app": {
     "eyebrow": "Dashboard",
     "title": "Club dashboard",
-    "welcome": "Parents can request a link to a child, register approved children for training or competitions, see prepaid session credits, and read ability assessments for linked children. Anyone can open the public match schedule and add it to a calendar. Admins manage teams, players, coaches, bindings, sessions, matches, claims, assessments, data import, notice copy, and Excel/CSV reports. Coaches can open assigned rosters, take attendance, and record assessments for players on their teams.",
+    "welcome": "Parents can request a link to a child, register approved children for training or competitions, see prepaid session credits, and read ability assessments for linked children. Anyone can open the public match schedule and add it to a calendar. Admins manage teams, players, coaches, bindings, sessions, matches, claims, assessments, data import, notice copy, the ops dashboard, and Excel/CSV reports. Coaches can open assigned rosters, take attendance, and record assessments for players on their teams.",
     "accountTitle": "Account",
     "phoneLabel": "Phone",
     "rolesLabel": "Roles",
@@ -81,6 +81,7 @@
     "openCompetitions": "Open competitions",
     "openCredits": "Open credits",
     "openMatches": "Open match schedule",
+    "openOpsDashboard": "Open ops dashboard",
     "roles": {
       "parent": "Parent",
       "coach": "Coach",
@@ -152,6 +153,10 @@
         "title": "Reports",
         "body": "Export attendance, registrations, credit ledger, and match roster as Excel or CSV for ops reconciliation. Admin only; no parent phones by default."
       },
+      "adminDashboard": {
+        "title": "Ops dashboard",
+        "body": "Attendance rates, approved remittance vs consumed credits, and remaining obligation. Admin only; overview here, row download on Reports."
+      },
       "publicMatches": {
         "title": "Public schedule",
         "body": "Visitor schedule: published cup, league, and friendly matches, results, and lineups. Parent signup is on Competitions."
@@ -194,7 +199,8 @@
     "import": "Import",
     "assessments": "Assessments",
     "notices": "Notices",
-    "reports": "Reports"
+    "reports": "Reports",
+    "opsDashboard": "Ops dashboard"
   },
   "access": {
     "deniedTitle": "You cannot open this page",
@@ -325,7 +331,9 @@
     "noticesTitle": "Notice copy",
     "noticesBody": "Generate short LINE-group text and app deep links for a 梯隊, a 隊伍, or parents already registered on a session. Copy only — this app does not send LINE, SMS, or push.",
     "reportsTitle": "Reports",
-    "reportsBody": "Download attendance, registrations, credit ledger, and match roster as Excel or CSV. Admin only. Default files omit parent phones and other contact PII. Soft-deleted sessions are excluded unless you include them. At most 5000 rows per download."
+    "reportsBody": "Download attendance, registrations, credit ledger, and match roster as Excel or CSV. Admin only. Default files omit parent phones and other contact PII. Soft-deleted sessions are excluded unless you include them. At most 5000 rows per download.",
+    "dashboardTitle": "Ops dashboard",
+    "dashboardBody": "Attendance overview, per-梯隊 rates, and remittance vs credit-consumption. Admin only. Complements Excel reports."
   },
   "roster": {
     "title": "Roster",
@@ -1162,5 +1170,48 @@
       "admin_adjust": "Admin adjust",
       "reversal": "Reversal"
     }
+  },
+  "dashboard": {
+    "title": "Ops dashboard",
+    "lead": "Admin-only overview of attendance and prepaid economics. Date range is Asia/Taipei. Optional 梯隊 filter. No parent phones or other contact PII. Download row-level files from Reports.",
+    "applyFilters": "Apply",
+    "dateFrom": "From date",
+    "dateTo": "To date",
+    "dateHint": "Club calendar days (Asia/Taipei). Approved remittance uses claim approval time (reviewed_at; created_at if approval time is missing). Consumed value uses ledger transaction time. Attendance uses session start time. Outstanding credit liability is a current snapshot and is not sliced by this date range.",
+    "ageSquad": "梯隊",
+    "allSquads": "All 梯隊",
+    "ageSquadHint": "Optional. Leave as all 梯隊 to include everyone. Claims, debits, and remaining balances use each player’s current 梯隊. Training attendance groups by the session’s 梯隊; match attendance groups by the player’s current 梯隊.",
+    "reportsLink": "Download detail on Reports",
+    "reportsLinkHint": "This page is the overview. Stage R Excel/CSV reports have the row-level download.",
+    "privacyHint": "Admin only. Parent phones and other contact PII are not shown.",
+    "economicsTitle": "Remittance vs consumption",
+    "approvedRemittance": "Approved remittance (income)",
+    "approvedRemittanceHint": "Sum of approved bank-transfer claim package prices in this period. Pending and rejected claims are excluded. Same conversion as Credit admin parent contribution.",
+    "claimCount": "{count} approved claims",
+    "consumedValue": "Consumed value (credits used)",
+    "consumedValueHint": "Session-credit debits in this period × that entry’s unit cost (ledger unit_cost_twd). Same conversion as Credit admin player contribution (debit × per-credit cost / package rules). Purchase, adjust, and reversal rows are not included.",
+    "debitCount": "{count} debit entries · {credits} credits",
+    "periodRemaining": "Period remaining (comparison)",
+    "periodRemainingHint": "Approved remittance minus consumed value in this date range. Positive: more was paid than consumed in the window. Negative: consumption exceeded remittance here (often prior-period credits). This is a period comparison, not a cash bank balance.",
+    "outstandingLiability": "Outstanding credit liability (current)",
+    "outstandingLiabilityHint": "Current remaining credits × each player’s weighted-average unit cost (player_session_balances). Snapshot now — not filtered by the date range, but the 梯隊 filter still applies. This is the club’s remaining obligation to deliver sessions already paid for.",
+    "outstandingCredits": "{credits} credits remaining",
+    "obligationTitle": "How remaining / 待履行 is calculated",
+    "obligationBody": "Two numbers, on purpose: (1) Period remaining = approved remittance − consumed value for the selected Asia/Taipei dates (period comparison). (2) Outstanding liability = current unused credits × average unit cost (snapshot of remaining obligated credits). Neither is a new price list; both reuse Credit admin contribution math.",
+    "attendanceTitle": "Attendance",
+    "attendanceOverall": "Overall attendance rate",
+    "attendanceRate": "{rate} · {present} present / {marked} marked",
+    "attendanceEmpty": "No marked attendance in this range.",
+    "attendanceHint": "Rate = present ÷ marked attendance rows (present + excused + unexcused). Unmarked registrations are omitted. Soft-deleted sessions are omitted. Session start time is Asia/Taipei.",
+    "perSquadTitle": "By 梯隊",
+    "squad": "梯隊",
+    "present": "Present",
+    "excused": "Excused",
+    "unexcused": "Unexcused",
+    "marked": "Marked",
+    "rate": "Rate",
+    "ungrouped": "No current 梯隊",
+    "monthlyTitle": "Monthly trend",
+    "twd": "NT$ {amount}"
   }
 }

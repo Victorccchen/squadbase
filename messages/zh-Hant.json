@@ -11,7 +11,7 @@
     "footer": "生產環境部署需人工核准，請勿自動發佈到 production。"
   },
   "home": {
-    "eyebrow": "階段 R · 管理員報表與 Excel／CSV 匯出",
+    "eyebrow": "階段 D · 管理員營運看板（出缺席、匯款與堂數）",
     "headline": "歡迎使用球團管理系統",
     "lead": "訪客無需登入即可查看公開賽程，並可把比賽加入行事曆。家長登入後，訓練與賽事分開報名；同一系列可一次參加或取消。管理員與被指派教練可為四個比賽情境與四項特質打 1–5 分。能力細節、堂數與球員證件照不會出現在公開頁面。",
     "openDashboard": "進入儀表板",
@@ -59,7 +59,7 @@
   "app": {
     "eyebrow": "儀表板",
     "title": "球團儀表板",
-    "welcome": "家長可申請連結子女，為已核准的子女分別報名訓練或賽事、查看預付堂數，並閱讀已連結子女的能力評量。任何人都可以開啟公開賽程並加入行事曆。管理員可管理隊伍、球員、教練、連結審核、場次、比賽、匯款申請、評量、資料匯入、通知文案，以及 Excel／CSV 報表。教練可開啟被指派的名單、登記出缺席，並為該隊球員記錄評量。",
+    "welcome": "家長可申請連結子女，為已核准的子女分別報名訓練或賽事、查看預付堂數，並閱讀已連結子女的能力評量。任何人都可以開啟公開賽程並加入行事曆。管理員可管理隊伍、球員、教練、連結審核、場次、比賽、匯款申請、評量、資料匯入、通知文案、營運看板，以及 Excel／CSV 報表。教練可開啟被指派的名單、登記出缺席，並為該隊球員記錄評量。",
     "accountTitle": "帳號",
     "phoneLabel": "手機",
     "rolesLabel": "角色",
@@ -81,6 +81,7 @@
     "openCompetitions": "開啟賽事",
     "openCredits": "開啟堂數",
     "openMatches": "開啟比賽賽程",
+    "openOpsDashboard": "開啟營運看板",
     "roles": {
       "parent": "家長",
       "coach": "教練",
@@ -152,6 +153,10 @@
         "title": "報表",
         "body": "匯出缺席、報名、堂數流水與比賽名單的 Excel 或 CSV，供營運核對。僅限管理員；預設不含家長電話。"
       },
+      "adminDashboard": {
+        "title": "營運看板",
+        "body": "出缺席率、已核准匯款對已用堂數，以及待履行餘額。僅限管理員；這裡是總覽，明細下載在報表。"
+      },
       "publicMatches": {
         "title": "公開賽程",
         "body": "訪客賽程：已發布的盃賽、聯賽與友誼賽、賽果與先發名單。家長報名請用賽事頁。"
@@ -194,7 +199,8 @@
     "import": "匯入",
     "assessments": "能力評量",
     "notices": "通知文案",
-    "reports": "報表"
+    "reports": "報表",
+    "opsDashboard": "營運看板"
   },
   "access": {
     "deniedTitle": "你沒有權限開啟此頁",
@@ -325,7 +331,9 @@
     "noticesTitle": "通知文案",
     "noticesBody": "為梯隊、隊伍，或本場已報名的家長產生 LINE 群短文與 App 連結。只複製、不發送 LINE、簡訊或推播。",
     "reportsTitle": "報表",
-    "reportsBody": "下載出缺席、報名、堂數流水與比賽名單的 Excel 或 CSV。僅限管理員。預設不含家長電話等聯絡個資。軟刪除場次預設排除。每次最多 5000 列。"
+    "reportsBody": "下載出缺席、報名、堂數流水與比賽名單的 Excel 或 CSV。僅限管理員。預設不含家長電話等聯絡個資。軟刪除場次預設排除。每次最多 5000 列。",
+    "dashboardTitle": "營運看板",
+    "dashboardBody": "出缺席總覽、各梯隊到勤率，以及匯款對堂數消耗。僅限管理員。與 Excel 報表互補。"
   },
   "roster": {
     "title": "名單",
@@ -1162,5 +1170,48 @@
       "admin_adjust": "管理員調整",
       "reversal": "沖銷"
     }
+  },
+  "dashboard": {
+    "title": "營運看板",
+    "lead": "僅限管理員的出缺席與預付堂數總覽。日期為 Asia/Taipei。可選梯隊。不含家長電話等聯絡個資。列級明細請到報表下載。",
+    "applyFilters": "套用",
+    "dateFrom": "開始日期",
+    "dateTo": "結束日期",
+    "dateHint": "球團日曆（Asia/Taipei）。已核准匯款依申請核准時間（reviewed_at；若缺則用 created_at）。已用堂數依流水交易時間。出缺席依場次開始時間。目前剩餘堂數負債是當下快照，不受此日期區間切片。",
+    "ageSquad": "梯隊",
+    "allSquads": "全部梯隊",
+    "ageSquadHint": "選填。選「全部梯隊」即包含所有人。匯款、扣堂與剩餘堂數依球員目前梯隊。訓練出缺席依場次所屬梯隊；比賽出缺席依球員目前梯隊。",
+    "reportsLink": "到報表下載明細",
+    "reportsLinkHint": "本頁是總覽。階段 R 的 Excel／CSV 報表提供列級下載。",
+    "privacyHint": "僅限管理員。不顯示家長電話等聯絡個資。",
+    "economicsTitle": "匯款與消耗",
+    "approvedRemittance": "已核准匯款（收入）",
+    "approvedRemittanceHint": "期間內已核准銀行轉帳申請的套裝金額合計。不含待審／駁回。換算方式與堂數管理的「家長貢獻」相同。",
+    "claimCount": "{count} 筆已核准申請",
+    "consumedValue": "已用堂數換算",
+    "consumedValueHint": "期間內堂數扣款 × 該筆單堂成本（ledger unit_cost_twd）。換算方式與堂數管理的「球員貢獻」（扣堂 × 單堂成本／套裝規則）相同。不含儲值、調整、沖銷。",
+    "debitCount": "{count} 筆扣堂 · {credits} 堂",
+    "periodRemaining": "期間待履行（比較）",
+    "periodRemainingHint": "已核准匯款減已用堂數換算（本日期區間）。正數代表本期間匯入多於消耗；負數代表本期間消耗多於匯入（常用到先前期間購入的堂數）。這是期間比較，不是銀行現金餘額。",
+    "outstandingLiability": "目前剩餘堂數負債（快照）",
+    "outstandingLiabilityHint": "現有剩餘堂數 × 各球員加權平均單堂成本（player_session_balances）。當下快照，不受日期篩選切片，但會套用梯隊篩選。代表球團仍需提供、家長已付過的堂數對應金額。",
+    "outstandingCredits": "剩餘 {credits} 堂",
+    "obligationTitle": "待履行怎麼算",
+    "obligationBody": "刻意顯示兩個數字：（1）期間待履行＝已核准匯款 − 已用堂數換算（所選 Asia/Taipei 日期的期間比較）。（2）目前剩餘堂數負債＝現有未用堂數 × 平均單堂成本（剩餘義務堂數快照）。都不是新價目表，皆沿用堂數管理的貢獻計算。",
+    "attendanceTitle": "出缺席",
+    "attendanceOverall": "整體到勤率",
+    "attendanceRate": "{rate} · 出席 {present} / 已登記 {marked}",
+    "attendanceEmpty": "此區間沒有已登記的出缺席。",
+    "attendanceHint": "到勤率＝出席 ÷ 已登記出缺席列（出席＋請假＋無故）。未點名的報名不計入。軟刪除場次排除。場次開始時間為 Asia/Taipei。",
+    "perSquadTitle": "依梯隊",
+    "squad": "梯隊",
+    "present": "出席",
+    "excused": "請假",
+    "unexcused": "無故缺席",
+    "marked": "已登記",
+    "rate": "到勤率",
+    "ungrouped": "目前無梯隊",
+    "monthlyTitle": "每月趨勢",
+    "twd": "NT$ {amount}"
   }
 }

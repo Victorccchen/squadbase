@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 
 const LINKS = [
+  { href: "/app/admin/dashboard", key: "opsDashboard" as const, match: "/app/admin/dashboard" },
   { href: "/app/admin/teams", key: "teams" as const, match: "/app/admin/teams" },
   { href: "/app/admin/players", key: "players" as const, match: "/app/admin/players" },
   { href: "/app/admin/coaches", key: "coaches" as const, match: "/app/admin/coaches" },
