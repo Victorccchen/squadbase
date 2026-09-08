@@ -272,6 +272,7 @@
     "applyFilters": "Apply filters",
     "calendarView": "Calendar",
     "listView": "List",
+    "viewToggleLabel": "Calendar or list",
     "calendarLegend": "Kind colors",
     "calendarEmptyDayTitle": "No sessions this day",
     "calendarEmptyDayBody": "Pick another day, or create a session. Filters apply to the whole month.",

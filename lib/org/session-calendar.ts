@@ -274,6 +274,22 @@ export function calendarListHref(
   return { pathname, query: search };
 }
 
+/** Stable string href so next-intl Link always keeps `view` and filters. */
+export function calendarHrefPath(href: CalendarListHref): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(href.query)) {
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        params.append(key, item);
+      }
+    } else if (value) {
+      params.set(key, value);
+    }
+  }
+  const qs = params.toString();
+  return qs ? `${href.pathname}?${qs}` : href.pathname;
+}
+
 export function adminSessionsHref(
   query: Partial<AdminSessionsQuery> &
     Pick<AdminSessionsQuery, "year" | "month" | "day" | "view" | "kinds" | "teamIds" | "includeDeleted">,

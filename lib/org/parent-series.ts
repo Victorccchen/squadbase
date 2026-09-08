@@ -244,6 +244,28 @@ export function parentGroupPath(group: ParentSeriesGroup): string {
   return first ? parentOccurrencePath(first) : "/app/sessions";
 }
 
+export function nextOccurrenceInGroup<T extends { starts_at: string }>(
+  sessions: readonly T[],
+  now = new Date(),
+): T | null {
+  const sorted = sortByStart([...sessions]);
+  const upcoming = sorted.find((row) => {
+    const start = Date.parse(row.starts_at);
+    return !Number.isNaN(start) && start >= now.getTime();
+  });
+  return upcoming ?? sorted[sorted.length - 1] ?? null;
+}
+
+export function adminGroupHref(group: ParentSeriesGroup, now = new Date()): string {
+  const next = nextOccurrenceInGroup(group.sessions, now);
+  if (!next) {
+    return group.groupKind === "match-group" ? "/app/admin/matches" : "/app/admin/sessions";
+  }
+  return isMatchKind(group.sessionKind)
+    ? `/app/admin/matches/${next.id}`
+    : `/app/admin/sessions/${next.id}`;
+}
+
 export type ParentReturnTo =
   | "sessions"
   | "session"

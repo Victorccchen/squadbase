@@ -272,6 +272,7 @@
     "applyFilters": "套用篩選",
     "calendarView": "月曆",
     "listView": "列表",
+    "viewToggleLabel": "月曆或列表",
     "calendarLegend": "種類顏色",
     "calendarEmptyDayTitle": "這天沒有場次",
     "calendarEmptyDayBody": "請點其他日期，或新增場次。篩選會套用到整個月份。",

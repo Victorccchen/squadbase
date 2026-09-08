@@ -6,6 +6,8 @@ import {
   filterSessionsByKinds,
   groupMatchSessionsForParent,
   groupTrainingSessionsForParent,
+  adminGroupHref,
+  nextOccurrenceInGroup,
   parentGroupPath,
   parentOccurrencePath,
   parentReturnPath,
@@ -327,5 +329,61 @@ describe("parentReturnPath", () => {
       parentReturnPath({ returnTo: "competition-group", groupKey: "../evil" }),
       "/app/competitions",
     );
+  });
+});
+
+describe("T6P1-9 / T6P1-10 admin series collapse", () => {
+  it("collapses training by series_id and points admin cards at the next occurrence", () => {
+    const seriesId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    const grouped = groupTrainingSessionsForParent([
+      session({
+        id: "r1",
+        kind: "regular",
+        title: "Tue training",
+        series_id: seriesId,
+        starts_at: "2026-09-01T10:00:00.000Z",
+      }),
+      session({
+        id: "r2",
+        kind: "regular",
+        title: "Tue training",
+        series_id: seriesId,
+        starts_at: "2026-09-15T10:00:00.000Z",
+      }),
+    ]);
+    assert.equal(grouped.length, 1);
+    assert.equal(grouped[0]?.sessions.length, 2);
+    const now = new Date("2026-09-08T00:00:00.000Z");
+    assert.equal(nextOccurrenceInGroup(grouped[0]!.sessions, now)?.id, "r2");
+    assert.equal(adminGroupHref(grouped[0]!, now), "/app/admin/sessions/r2");
+  });
+
+  it("collapses matches by team, kind, and title (T6P1-10)", () => {
+    const grouped = groupMatchSessionsForParent([
+      session({
+        id: "f1",
+        kind: "friendly",
+        title: "Saturday friendly",
+        starts_at: "2026-09-05T07:00:00.000Z",
+      }),
+      session({
+        id: "f2",
+        kind: "friendly",
+        title: "Saturday friendly",
+        starts_at: "2026-09-12T07:00:00.000Z",
+      }),
+      session({
+        id: "c1",
+        kind: "cup",
+        title: "Spring Cup",
+        starts_at: "2026-09-20T07:00:00.000Z",
+      }),
+    ]);
+    assert.equal(grouped.length, 2);
+    const friendly = grouped.find((group) => group.title === "Saturday friendly");
+    assert.equal(friendly?.sessions.length, 2);
+    const now = new Date("2026-09-08T00:00:00.000Z");
+    assert.equal(nextOccurrenceInGroup(friendly!.sessions, now)?.id, "f2");
+    assert.equal(adminGroupHref(friendly!, now), "/app/admin/matches/f2");
   });
 });

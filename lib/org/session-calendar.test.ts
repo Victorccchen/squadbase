@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   adminSessionsHref,
+  calendarHrefPath,
   calendarListHref,
   defaultDayForMonth,
   groupSessionsByClubDate,
@@ -51,6 +52,18 @@ describe("monthGrid", () => {
 describe("parseAdminSessionsQuery", () => {
   const now = new Date("2026-09-04T01:00:00.000Z");
 
+  it("honours defaultView list for parent-style surfaces", () => {
+    const query = parseAdminSessionsQuery({}, now, {
+      allowedKinds: TRAINING_SESSION_KINDS,
+      defaultView: "list",
+    });
+    assert.equal(query.view, "list");
+    assert.equal(
+      parseAdminSessionsQuery({ view: "calendar" }, now, { defaultView: "list" }).view,
+      "calendar",
+    );
+  });
+
   it("defaults to calendar view, today, and the club month", () => {
     const query = parseAdminSessionsQuery({}, now);
     assert.equal(query.view, "calendar");
@@ -79,6 +92,38 @@ describe("parseAdminSessionsQuery", () => {
     assert.deepEqual(query.kinds, ["regular", "cup"]);
     assert.deepEqual(query.teamIds, ["aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"]);
     assert.equal(query.includeDeleted, true);
+  });
+});
+
+describe("calendarHrefPath T6P1-7/8", () => {
+  it("emits a string href with view=calendar for parent surfaces", () => {
+    const href = calendarHrefPath(
+      calendarListHref("/app/sessions", {
+        year: 2026,
+        month: 9,
+        day: "2026-09-08",
+        view: "calendar",
+        kinds: [],
+        teamIds: [],
+        includeDeleted: false,
+      }),
+    );
+    assert.equal(href.startsWith("/app/sessions?"), true);
+    assert.match(href, /view=calendar/);
+    assert.match(href, /month=2026-09/);
+    const competitions = calendarHrefPath(
+      calendarListHref("/app/competitions", {
+        year: 2026,
+        month: 9,
+        day: "2026-09-08",
+        view: "calendar",
+        kinds: [],
+        teamIds: [],
+        includeDeleted: false,
+      }),
+    );
+    assert.match(competitions, /^\/app\/competitions\?/);
+    assert.match(competitions, /view=calendar/);
   });
 });
 

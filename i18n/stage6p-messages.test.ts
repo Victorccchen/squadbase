@@ -40,6 +40,7 @@ const REQUIRED_KEYS = [
   "sessions.kinds.friendly",
   "admin.calendarView",
   "admin.listView",
+  "admin.viewToggleLabel",
 ];
 
 describe("T6P-9 locale smoke", () => {

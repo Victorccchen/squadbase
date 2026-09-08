@@ -246,8 +246,8 @@ Parent surfaces split **training** from **competitions** without a new debit tab
 | --- | --- | --- |
 | `/app/sessions` | `regular`, `special` | `series_id` when present; otherwise one-off. Calendar + list. |
 | `/app/competitions` | `cup`, `league`, `friendly` | `(team_id, kind, title)` for upcoming non-deleted sessions. Calendar + list. |
-| `/app/admin/sessions` | `regular`, `special` only | Month calendar + list (Stage 4A.1). Cup/league/friendly are not listed. |
-| `/app/admin/matches` | `cup`, `league`, `friendly` | Month calendar + list. Bulk create supports friendly. |
+| `/app/admin/sessions` | `regular`, `special` only | Month calendar + series-collapsed list. Kind/team filters. Cup/league/friendly are not listed. |
+| `/app/admin/matches` | `cup`, `league`, `friendly` | Month calendar + series-collapsed list. Kind/team filters. Bulk create supports friendly. |
 | `/matches` | published cup/league/friendly | Visitor schedule |
 
 Bulk 參加本系列 / 取消本系列已報名 loops the existing `register_player_for_session` and `cancel_session_registration` RPCs (same approved-guardian check, membership check, and 24h cancel lock). Partial success returns per-occurrence reasons. Calendar add is client-side Google / Outlook links plus a downloaded `.ics`; payloads never include phones, assessments, credits, or guardian fields.
@@ -659,6 +659,10 @@ Apply Stage 6P.1 SQL **file contents** (not path strings) on **staging only** (e
 | T6P1-4 | Debit: friendly → `match_debit` same as cup/league (1/day, skip if already match-debited). Covered by `npm test`. Regular/special debit unchanged. |
 | T6P1-5 | Public `/matches` lists a **published** friendly; an unpublished friendly is hidden (same as cup/league). |
 | T6P1-6 | `npm run lint`, `npm run typecheck`, and `npm test` pass. README + PR template include Stage 6P.1. |
+| T6P1-7 | Parent `/app/sessions` shows a visible **月曆 / 列表** toggle. Calendar view renders the month grid + day agenda for training occurrences. Default stays list. |
+| T6P1-8 | Parent `/app/competitions` shows the same toggle. Calendar view renders cup/league/friendly on the month grid. |
+| T6P1-9 | Admin `/app/admin/sessions` list collapses same-series rows by `series_id`, has the same toggle, and kind/team filters (regular/special only). |
+| T6P1-10 | Admin `/app/admin/matches` list collapses by `(team_id, kind, title)`, has the same toggle, and kind/team filters (friendly/cup/league). |
 
 Locale check: friendly kind label (友誼賽 / Friendly / 親善試合) and updated admin/parent copy in zh-Hant / en / ja.
 

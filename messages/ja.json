@@ -272,6 +272,7 @@
     "applyFilters": "絞り込み",
     "calendarView": "カレンダー",
     "listView": "リスト",
+    "viewToggleLabel": "カレンダーまたはリスト",
     "calendarLegend": "種類の色",
     "calendarEmptyDayTitle": "この日のセッションはありません",
     "calendarEmptyDayBody": "別の日を選ぶか、セッションを作成してください。絞り込みは月全体に適用されます。",

@@ -90,18 +90,14 @@ export default async function ParentCompetitionsPage({
           query.view === "calendar" ? "max-w-6xl" : "max-w-3xl"
         }`}
       >
-        <PageHeader
-          title={t("title")}
-          description={t("lead")}
-          actions={
-            <SessionViewToggle
-              calendarHref={calendarHref}
-              listHref={listHref}
-              view={query.view}
-              calendarLabel={admin("calendarView")}
-              listLabel={admin("listView")}
-            />
-          }
+        <PageHeader title={t("title")} description={t("lead")} />
+        <SessionViewToggle
+          calendarHref={calendarHref}
+          listHref={listHref}
+          view={query.view}
+          calendarLabel={admin("calendarView")}
+          listLabel={admin("listView")}
+          toggleLabel={admin("viewToggleLabel")}
         />
 
         {showRegistered ? (
@@ -120,32 +116,28 @@ export default async function ParentCompetitionsPage({
           {children.length === 0 ? (
             <EmptyState title={t("emptyUpcomingTitle")} body={t("needApprovedChild")} />
           ) : query.view === "calendar" ? (
-            sessions.length === 0 ? (
-              <EmptyState title={t("emptyUpcomingTitle")} body={t("emptyUpcomingBody")} />
-            ) : (
-              <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-                <div className="min-w-0 flex-1">
-                  <SessionMonthCalendar
-                    query={query}
-                    sessions={sessions}
-                    today={today}
-                    pathname="/app/competitions"
-                    legendKinds={COMPETITION_SESSION_KINDS}
-                  />
-                </div>
-                <div className="min-w-0 flex-1 lg:max-w-md">
-                  <SessionDayAgenda
-                    selectedDate={query.day}
-                    weekFrom={week?.from ?? query.day}
-                    weekTo={week?.to ?? query.day}
-                    sessions={weekSessions}
-                    occurrenceHref={(id) => `/app/competitions/${id}`}
-                    prevHref={prevWeekHref}
-                    nextHref={nextWeekHref}
-                  />
-                </div>
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+              <div className="min-w-0 flex-1">
+                <SessionMonthCalendar
+                  query={query}
+                  sessions={sessions}
+                  today={today}
+                  pathname="/app/competitions"
+                  legendKinds={COMPETITION_SESSION_KINDS}
+                />
               </div>
-            )
+              <div className="min-w-0 flex-1 lg:max-w-md">
+                <SessionDayAgenda
+                  selectedDate={query.day}
+                  weekFrom={week?.from ?? query.day}
+                  weekTo={week?.to ?? query.day}
+                  sessions={weekSessions}
+                  occurrenceHref={(id) => `/app/competitions/${id}`}
+                  prevHref={prevWeekHref}
+                  nextHref={nextWeekHref}
+                />
+              </div>
+            </div>
           ) : groups.length === 0 ? (
             <EmptyState title={t("emptyUpcomingTitle")} body={t("emptyUpcomingBody")} />
           ) : (

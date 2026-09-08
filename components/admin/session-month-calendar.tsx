@@ -4,6 +4,7 @@ import {
   ISO_WEEKDAYS,
 } from "@/lib/org/session-recurrence";
 import {
+  calendarHrefPath,
   calendarListHref,
   defaultDayForMonth,
   monthGrid,
@@ -58,7 +59,7 @@ export async function SessionMonthCalendar({
     <section className="flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
       <div className="flex items-center justify-between gap-3">
         <Link
-          href={prevHref}
+          href={calendarHrefPath(prevHref)}
           className="rounded-full border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
         >
           {admin("prevMonth")}
@@ -67,7 +68,7 @@ export async function SessionMonthCalendar({
           {formatClubMonth(query.year, query.month, locale)}
         </h2>
         <Link
-          href={nextHref}
+          href={calendarHrefPath(nextHref)}
           className="rounded-full border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
         >
           {admin("nextMonth")}
@@ -99,7 +100,7 @@ export async function SessionMonthCalendar({
           return (
             <Link
               key={cell.date}
-              href={href}
+              href={calendarHrefPath(href)}
               aria-current={selected ? "date" : undefined}
               aria-label={cell.date}
               className={`flex min-h-16 flex-col items-center gap-1 rounded-xl border px-1 py-1.5 text-sm ${

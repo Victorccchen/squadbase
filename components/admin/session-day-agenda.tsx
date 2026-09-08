@@ -7,7 +7,11 @@ import {
   SessionPlayoffBadge,
   SessionStatusBadge,
 } from "@/components/sessions/session-status-badge";
-import { groupSessionsByClubDate, type CalendarListHref } from "@/lib/org/session-calendar";
+import {
+  calendarHrefPath,
+  groupSessionsByClubDate,
+  type CalendarListHref,
+} from "@/lib/org/session-calendar";
 import { formatClubDate, formatClubTime } from "@/lib/org/session-time";
 import type { OrgStatus, SessionKind, Team } from "@/lib/supabase/database.types";
 
@@ -53,7 +57,7 @@ export async function SessionDayAgenda({
     <section className="flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
       <div className="flex items-center justify-between gap-3">
         <Link
-          href={prevHref}
+          href={calendarHrefPath(prevHref)}
           className="rounded-full border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
         >
           {t("prevWeek")}
@@ -70,7 +74,7 @@ export async function SessionDayAgenda({
           </h2>
         </div>
         <Link
-          href={nextHref}
+          href={calendarHrefPath(nextHref)}
           className="rounded-full border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
         >
           {t("nextWeek")}
