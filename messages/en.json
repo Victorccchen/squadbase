@@ -183,7 +183,8 @@
     "claims": "Claims",
     "creditsAdmin": "Credit admin",
     "matches": "Matches",
-    "assessments": "Assessments"
+    "assessments": "Assessments",
+    "notices": "Notices"
   },
   "access": {
     "deniedTitle": "You cannot open this page",
@@ -207,6 +208,8 @@
     "sessionsBody": "Create titled regular or special training on 梯隊 only. Multi-select 梯隊 to create one independent series or session per 梯隊 with the same details. Special is one occurrence. Regular uses selected weekdays plus an end date or a per-weekday week count. Cup, league, and friendly matches belong on Admin → Matches and attach to 隊伍. The default admin view is a month calendar. Inactive hides new parent signup; soft-delete keeps registrations and Q&A. Registration is auto-approved. There is no capacity limit in this stage.",
     "matchesTitle": "Public matches",
     "matchesBody": "Announce cup, league, and friendly matches on the public schedule. Multi-select 隊伍 to create one independent fixture set per 隊伍 with the same title and kickoffs. Choose who appears on the published lineup (display name and jersey only). Cancelled matches are hidden from visitors, not listed as cancelled. Writes are admin-only.",
+    "noticesTitle": "Notice copy",
+    "noticesBody": "Generate short LINE-group text and app deep links for a 梯隊, a 隊伍, or parents already registered on a session. Copy only — this app does not send LINE, SMS, or push.",
     "createTeam": "Create team",
     "createAgeSquad": "Create 梯隊",
     "createCompetitionTeam": "Create 隊伍",
@@ -931,6 +934,55 @@
         "Support quickly in front of the ball",
         "Switch play when the press is beaten"
       ]
+    }
+  },
+  "notices": {
+    "title": "Notice copy",
+    "lead": "Generate a short LINE-group message and app deep links, then copy and paste into existing parent groups. This app does not send LINE, SMS, or push. The app is the source of truth; LINE is only a reminder.",
+    "generateCta": "Generate notice copy",
+    "templateLabel": "Template",
+    "audienceLabel": "Audience",
+    "sourceLabel": "Session or match",
+    "sourcePlaceholder": "Choose training or a match",
+    "teamLabel": "Unit",
+    "teamPlaceholder": "Choose a 梯隊 or 隊伍",
+    "copyLocaleLabel": "Copy language",
+    "copy": "Copy",
+    "copied": "Copied",
+    "kit": "Kit",
+    "gear": "Gear",
+    "gather": "Meet-up",
+    "recap": "Recap note",
+    "kitPlaceholder": "e.g. boots, shinguards (omit if blank)",
+    "gearPlaceholder": "e.g. water, snacks (omit if blank)",
+    "gatherPlaceholder": "e.g. 17:30 at the gate (omit if blank)",
+    "recapPlaceholder": "Short note — do not include parent names or phones",
+    "dualPasteHint": "This 隊伍 spans two 梯隊 parent groups. Copy each block into the matching LINE group. The app link is the same.",
+    "pasteForGroup": "Paste into the {band} parent group",
+    "registeredMeta": "{count} currently registered (total only)",
+    "noSourceTitle": "No session selected",
+    "noSourceBody": "Choose a training session or match to generate copy. You can also open this page from session or match detail.",
+    "noPiiHint": "Group copy never includes parent names or phone numbers. Do not paste personal data into the note fields.",
+    "noSendHint": "Generate and copy only. No push, LINE Messaging API, SMS, or official-account send.",
+    "coexistHint": "Bank-transfer and debit notice copy stay on the session detail “Copy notice” panel. This page does not replace them.",
+    "previewTitle": "Preview",
+    "templates": {
+      "regular_training_signup": "Regular training signup",
+      "special_training_signup": "Special training signup",
+      "match_signup": "Match signup",
+      "match_notes": "Match notes (kit / gear / meet-up)",
+      "thanks": "Thank you",
+      "match_report": "Match recap"
+    },
+    "audiences": {
+      "age_squad": "梯隊 (age squad)",
+      "competition_team": "隊伍 (competition team)",
+      "session_registrations": "Registered on this session"
+    },
+    "locales": {
+      "zh-Hant": "繁中",
+      "en": "English",
+      "ja": "日本語"
     }
   }
 }

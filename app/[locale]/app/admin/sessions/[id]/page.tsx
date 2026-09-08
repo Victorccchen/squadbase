@@ -34,6 +34,7 @@ import {
 } from "@/lib/credits/queries";
 import { creditsApplyToAgeBand, defaultNoticeDebit } from "@/lib/credits/debit-rules";
 import { sessionSignupUrl } from "@/lib/credits/notice";
+import { suggestedNoticeAudience, suggestedNoticeTemplate } from "@/lib/credits/notice-templates";
 
 type SessionDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -54,6 +55,7 @@ export default async function AdminSessionDetailPage({ params }: SessionDetailPa
   const sessionsT = await getTranslations("sessions");
   const matchesT = await getTranslations("matches");
   const creditsT = await getTranslations("credits");
+  const noticesT = await getTranslations("notices");
   const org = await getTranslations("org");
   const common = await getTranslations("common");
   const locale = await getLocale();
@@ -114,6 +116,12 @@ export default async function AdminSessionDetailPage({ params }: SessionDetailPa
                   {t("edit")}
                 </Link>
               )}
+              <Link
+                href={`/app/admin/notices?session=${session.id}&template=${suggestedNoticeTemplate(session.kind)}&audience=${suggestedNoticeAudience(session.team?.kind)}`}
+                className={secondaryButtonClassName}
+              >
+                {noticesT("generateCta")}
+              </Link>
             </span>
           }
         />

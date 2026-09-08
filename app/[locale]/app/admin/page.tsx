@@ -19,6 +19,7 @@ export default async function AdminHomePage() {
     { href: "/app/admin/bindings" as const, title: t("bindingsTitle"), body: t("bindingsBody") },
     { href: "/app/admin/sessions" as const, title: t("sessionsTitle"), body: t("sessionsBody") },
     { href: "/app/admin/matches" as const, title: t("matchesTitle"), body: t("matchesBody") },
+    { href: "/app/admin/notices" as const, title: t("noticesTitle"), body: t("noticesBody") },
   ];
 
   return (

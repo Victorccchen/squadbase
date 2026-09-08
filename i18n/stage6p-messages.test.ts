@@ -87,6 +87,11 @@ const REQUIRED_KEYS = [
   "matches.parentRegisteredBadge",
   "matches.staffRosterTitle",
   "matches.staffRosterHint",
+  "nav.notices",
+  "notices.title",
+  "notices.generateCta",
+  "notices.templates.match_notes",
+  "admin.noticesTitle",
 ];
 
 describe("T6P-9 locale smoke", () => {
