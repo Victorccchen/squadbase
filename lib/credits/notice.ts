@@ -99,3 +99,13 @@ export function sessionSignupUrl(
   const surface = kind && isMatchKind(kind) ? "competitions" : "sessions";
   return `${base}/${locale}/app/${surface}/${sessionId}`;
 }
+
+/** Public visitor match page (Stage 5B). Used by Stage N recap copy. */
+export function publicMatchUrl(
+  origin: string,
+  locale: NoticeLocale,
+  matchId: string,
+): string {
+  const base = origin.replace(/\/$/, "");
+  return `${base}/${locale}/matches/${matchId}`;
+}
