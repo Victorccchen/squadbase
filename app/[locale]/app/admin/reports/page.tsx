@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { AccessDenied } from "@/components/access-denied";
 import { PageHeader } from "@/components/page-header";
 import { AdminReportsPanel } from "@/components/admin/admin-reports-panel";
+import { PhotoPackExportForm } from "@/components/admin/photo-pack-export";
 import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { listTeams } from "@/lib/org/queries";
 import { isReportType, type ReportType } from "@/lib/org/reports";
@@ -44,6 +45,11 @@ export default async function AdminReportsPage({ searchParams }: AdminReportsPag
           competitionTeams={competitionTeams}
           initialType={initialType}
           initialSessionId={initialSessionId}
+        />
+        <PhotoPackExportForm
+          variant="reports"
+          ageSquads={ageSquads}
+          competitionTeams={competitionTeams}
         />
       </main>
       <footer className="border-t border-zinc-200 px-6 py-4 pb-10 text-sm text-zinc-500 dark:border-zinc-800">

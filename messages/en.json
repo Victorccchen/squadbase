@@ -325,7 +325,7 @@
     "noticesTitle": "Notice copy",
     "noticesBody": "Generate short LINE-group text and app deep links for a 梯隊, a 隊伍, or parents already registered on a session. Copy only — this app does not send LINE, SMS, or push.",
     "reportsTitle": "Reports",
-    "reportsBody": "Download attendance, registrations, credit ledger, and match roster as Excel or CSV. Admin only. Default files omit parent phones and other contact PII. Soft-deleted sessions are excluded unless you include them. At most 5000 rows per download."
+    "reportsBody": "Download attendance, registrations, credit ledger, and match roster as Excel or CSV, plus a league-registration ZIP (roster + photos). Admin only. Default files omit parent phones and other contact PII. Soft-deleted sessions are excluded unless you include them. Spreadsheets cap at 5000 rows; photo packs cap at 200 players."
   },
   "roster": {
     "title": "Roster",
@@ -552,7 +552,8 @@
       "photoTooLarge": "That photo is larger than 5 MB.",
       "invalidPdfType": "Use a PDF file.",
       "pdfTooLarge": "That PDF is larger than 8 MB.",
-      "invalidPhotoPath": "That photo path is not valid."
+      "invalidPhotoPath": "That photo path is not valid.",
+      "photoPackTooMany": "This photo pack has more than 200 players. Select fewer 梯隊 or 隊伍 and try again."
     }
   },
   "children": {
@@ -1128,6 +1129,26 @@
     "shortcutAttendance": "Export attendance",
     "shortcutRegistrations": "Export registrations",
     "shortcutRoster": "Export match roster",
+    "photoPack": {
+      "title": "League registration photo pack",
+      "lead": "Download one ZIP with a player roster (Excel + CSV) and a photos/ folder. Optional pdfs/ is included when ID PDFs exist. Players without a photo stay on the roster; missing files do not fail the ZIP. Admin only.",
+      "hint": "Leave 梯隊 and 隊伍 unchecked to include every player with an active membership. Check units to limit the pack.",
+      "download": "Download roster + photos ZIP",
+      "teamDownload": "Download this 隊伍 ZIP",
+      "teamHint": "Active members of this 隊伍: roster.xlsx, manifest.csv, photos/, and pdfs/ when present.",
+      "downloading": "Preparing ZIP…",
+      "columns": {
+        "jersey": "Jersey",
+        "player": "Player",
+        "nameEn": "English name",
+        "birthDate": "Birth date",
+        "unit": "Unit",
+        "hasPhoto": "Has photo",
+        "hasPdf": "Has PDF",
+        "photoFile": "Photo file",
+        "pdfFile": "PDF file"
+      }
+    },
     "yes": "Yes",
     "no": "No",
     "actorUnknown": "—",

@@ -42,6 +42,12 @@ const REQUIRED_KEYS = [
   "org.errors.invalidPhotoPath",
   "org.errors.notApprovedGuardian",
   "org.errors.reportTooManyRows",
+  "org.errors.photoPackTooMany",
+  "reports.photoPack.title",
+  "reports.photoPack.download",
+  "reports.photoPack.teamDownload",
+  "reports.photoPack.columns.hasPhoto",
+  "reports.photoPack.columns.hasPdf",
 ];
 
 describe("Stage P locale smoke", () => {

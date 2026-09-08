@@ -42,6 +42,10 @@ Object keys look like `{player_uuid}/headshot-{ts}-{nonce}.jpg` or `{player_uuid
 
 Signed read URLs are created on the server (1 hour). Public `/matches` and published lineups never request them.
 
+## Admin ZIP (Stage P.1)
+
+Admins download a league-registration pack from `/app/admin/reports` (scope by 梯隊 / 隊伍) or one-click from a **隊伍** detail page. The ZIP is assembled on the server from the private `player-photos` bucket: `roster.xlsx`, `manifest.csv`, `photos/`, and `pdfs/` when ID PDFs exist. Missing objects skip that file; the player stays on the roster. Parents and coaches cannot export.
+
 ## Out of scope
 
-Auto ID-card PDF layout, face detect/crop, batch ZIP, ops dashboard, production deploy.
+Auto ID-card PDF layout, face detect/crop, parent/coach batch download, ops dashboard, production deploy.

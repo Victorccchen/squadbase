@@ -325,7 +325,7 @@
     "noticesTitle": "通知文案",
     "noticesBody": "為梯隊、隊伍，或本場已報名的家長產生 LINE 群短文與 App 連結。只複製、不發送 LINE、簡訊或推播。",
     "reportsTitle": "報表",
-    "reportsBody": "下載出缺席、報名、堂數流水與比賽名單的 Excel 或 CSV。僅限管理員。預設不含家長電話等聯絡個資。軟刪除場次預設排除。每次最多 5000 列。"
+    "reportsBody": "下載出缺席、報名、堂數流水與比賽名單的 Excel 或 CSV，以及聯盟報名用 ZIP（名冊 + 照片）。僅限管理員。預設不含家長電話等聯絡個資。軟刪除場次預設排除。試算表每次最多 5000 列；證件照片包最多 200 人。"
   },
   "roster": {
     "title": "名單",
@@ -552,7 +552,8 @@
       "photoTooLarge": "這張照片超過 5 MB。",
       "invalidPdfType": "請使用 PDF 檔。",
       "pdfTooLarge": "這個 PDF 超過 8 MB。",
-      "invalidPhotoPath": "照片路徑無效。"
+      "invalidPhotoPath": "照片路徑無效。",
+      "photoPackTooMany": "此證件照片包超過 200 名球員。請減少勾選的梯隊或隊伍後再試。"
     }
   },
   "children": {
@@ -1128,6 +1129,26 @@
     "shortcutAttendance": "匯出本場出缺席",
     "shortcutRegistrations": "匯出本場報名",
     "shortcutRoster": "匯出比賽名單",
+    "photoPack": {
+      "title": "聯盟報名證件照片包",
+      "lead": "下載一個 ZIP：球員名冊（Excel + CSV）與 photos/ 資料夾。有身分 PDF 時另含 pdfs/。沒有照片的球員仍留在名冊；缺檔不會讓整個 ZIP 失敗。僅限管理員。",
+      "hint": "梯隊與隊伍都不勾選，表示包含每位有啟用會籍的球員。勾選單位可縮小範圍。",
+      "download": "下載名冊 + 照片 ZIP",
+      "teamDownload": "下載此隊伍 ZIP",
+      "teamHint": "此隊伍的啟用成員：roster.xlsx、manifest.csv、photos/，有 PDF 時含 pdfs/。",
+      "downloading": "準備 ZIP…",
+      "columns": {
+        "jersey": "背號",
+        "player": "球員",
+        "nameEn": "英文姓名",
+        "birthDate": "出生日期",
+        "unit": "單位",
+        "hasPhoto": "有照片",
+        "hasPdf": "有 PDF",
+        "photoFile": "照片檔名",
+        "pdfFile": "PDF 檔名"
+      }
+    },
     "yes": "是",
     "no": "否",
     "actorUnknown": "—",
