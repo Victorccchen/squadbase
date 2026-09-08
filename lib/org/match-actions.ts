@@ -33,7 +33,8 @@ import {
   parseMatchSide,
   planBulkMatchCreates,
 } from "@/lib/org/match";
-import { type OrgActionState, type OrgErrorKey } from "@/lib/org/errors";
+import { type OrgActionState, type OrgErrorKey, type TeamCreateRowResult } from "@/lib/org/errors";
+import { decideMultiTeamCreate, parseSelectedTeamIds } from "@/lib/org/multi-team-create";
 
 function fail(errorKey: OrgErrorKey): OrgActionState {
   return { ok: false, errorKey };
@@ -119,9 +120,9 @@ export async function createMatch(
     return fail(actor.errorKey);
   }
 
-  const teamId = parseUuid(readString(formData, "team_id"));
-  if (!teamId) {
-    return fail("missingTeam");
+  const teams = parseSelectedTeamIds(readAllStrings(formData, "team_id"));
+  if (!teams.ok) {
+    return fail(teams.errorKey);
   }
 
   const kind = parseMatchKind(readString(formData, "kind"));
@@ -154,28 +155,50 @@ export async function createMatch(
   const isPlayoff = kind === "league" && readString(formData, "is_playoff") === "true";
   const isPublished = readString(formData, "is_published") === "true";
 
-  const { data, error } = await actor.supabase.rpc("admin_create_match", {
-    p_team_id: teamId,
-    p_title: title,
-    p_kind: kind,
-    p_starts_at: schedule.startsAt,
-    p_ends_at: schedule.endsAt,
-    p_location: location,
-    p_notes: notes,
-    p_opponent: opponentParsed.opponent,
-    p_side: side,
-    p_is_playoff: isPlayoff,
-    p_is_published: isPublished,
-  });
-
-  if (error || !data) {
-    console.error("createMatch", error?.message);
-    return fail(matchRpcErrorKey(error));
+  const results: TeamCreateRowResult[] = [];
+  for (const teamId of teams.teamIds) {
+    const { data, error } = await actor.supabase.rpc("admin_create_match", {
+      p_team_id: teamId,
+      p_title: title,
+      p_kind: kind,
+      p_starts_at: schedule.startsAt,
+      p_ends_at: schedule.endsAt,
+      p_location: location,
+      p_notes: notes,
+      p_opponent: opponentParsed.opponent,
+      p_side: side,
+      p_is_playoff: isPlayoff,
+      p_is_published: isPublished,
+    });
+    if (error || !data) {
+      console.error("createMatch", teamId, error?.message);
+      results.push({
+        teamId,
+        ok: false,
+        errorKey: matchRpcErrorKey(error),
+        createdId: null,
+      });
+    } else {
+      results.push({ teamId, ok: true, errorKey: null, createdId: data });
+    }
   }
 
-  revalidateMatches();
-  redirectAdmin(`/app/admin/matches/${data}`, formData);
-  return ok();
+  const decision = decideMultiTeamCreate({
+    results,
+    preferDetailWhenSingle: true,
+  });
+  if (results.some((row) => row.ok)) {
+    revalidateMatches();
+  }
+  if (decision.action === "redirect") {
+    if (decision.hrefKind === "detail" && decision.createdId) {
+      redirectAdmin(`/app/admin/matches/${decision.createdId}`, formData);
+    } else {
+      redirectAdmin("/app/admin/matches", formData);
+    }
+    return ok();
+  }
+  return decision.state;
 }
 
 export async function updateMatch(
@@ -277,9 +300,9 @@ export async function createMatchesBulk(
     return fail(actor.errorKey);
   }
 
-  const teamId = parseUuid(readString(formData, "team_id"));
-  if (!teamId) {
-    return fail("missingTeam");
+  const teams = parseSelectedTeamIds(readAllStrings(formData, "team_id"));
+  if (!teams.ok) {
+    return fail(teams.errorKey);
   }
 
   const kind = parseMatchKind(readString(formData, "kind"));
@@ -314,28 +337,46 @@ export async function createMatchesBulk(
   const isPlayoff = kind === "league" && readString(formData, "is_playoff") === "true";
   const isPublished = readString(formData, "is_published") === "true";
 
-  const { data, error } = await actor.supabase.rpc("admin_create_matches", {
-    p_team_id: teamId,
-    p_title: title,
-    p_kind: kind,
-    p_starts_at: planned.rows.map((row) => row.startsAt),
-    p_ends_at: planned.rows.map((row) => row.endsAt),
-    p_location: location,
-    p_notes: notes,
-    p_opponent: opponentParsed.opponent,
-    p_side: side,
-    p_is_playoff: isPlayoff,
-    p_is_published: isPublished,
-  });
-
-  if (error || !data?.length) {
-    console.error("createMatchesBulk", error?.message);
-    return fail(matchRpcErrorKey(error));
+  const results: TeamCreateRowResult[] = [];
+  for (const teamId of teams.teamIds) {
+    const { data, error } = await actor.supabase.rpc("admin_create_matches", {
+      p_team_id: teamId,
+      p_title: title,
+      p_kind: kind,
+      p_starts_at: planned.rows.map((row) => row.startsAt),
+      p_ends_at: planned.rows.map((row) => row.endsAt),
+      p_location: location,
+      p_notes: notes,
+      p_opponent: opponentParsed.opponent,
+      p_side: side,
+      p_is_playoff: isPlayoff,
+      p_is_published: isPublished,
+    });
+    if (error || !data?.length) {
+      console.error("createMatchesBulk", teamId, error?.message);
+      results.push({
+        teamId,
+        ok: false,
+        errorKey: matchRpcErrorKey(error),
+        createdId: null,
+      });
+    } else {
+      results.push({ teamId, ok: true, errorKey: null, createdId: data[0] ?? null });
+    }
   }
 
-  revalidateMatches();
-  redirectAdmin("/app/admin/matches", formData);
-  return ok();
+  const decision = decideMultiTeamCreate({
+    results,
+    preferDetailWhenSingle: false,
+  });
+  if (results.some((row) => row.ok)) {
+    revalidateMatches();
+  }
+  if (decision.action === "redirect") {
+    redirectAdmin("/app/admin/matches", formData);
+    return ok();
+  }
+  return decision.state;
 }
 
 export async function setMatchPublished(

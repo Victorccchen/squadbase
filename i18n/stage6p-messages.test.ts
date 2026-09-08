@@ -57,6 +57,11 @@ const REQUIRED_KEYS = [
   "org.errors.tooManyActiveMemberships",
   "org.errors.membershipBandNotAllowed",
   "org.errors.duplicateMembershipTeam",
+  "org.errors.partialTeamCreates",
+  "admin.multiTeamNone",
+  "admin.multiTeamRowOk",
+  "matches.createTeamsHint",
+  "sessions.createTeamsHint",
 ];
 
 describe("T6P-9 locale smoke", () => {

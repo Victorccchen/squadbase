@@ -82,11 +82,20 @@ export type OrgErrorKey =
   | "invalidAssessedOn"
   | "futureAssessedOn"
   | "assessmentNotFound"
+  | "partialTeamCreates"
   | "generic";
+
+export type TeamCreateRowResult = {
+  teamId: string;
+  ok: boolean;
+  errorKey: OrgErrorKey | null;
+  createdId?: string | null;
+};
 
 export type OrgActionState = {
   ok: boolean;
   errorKey: OrgErrorKey | null;
+  teamResults?: TeamCreateRowResult[];
 };
 
 export const INITIAL_ORG_ACTION_STATE: OrgActionState = {

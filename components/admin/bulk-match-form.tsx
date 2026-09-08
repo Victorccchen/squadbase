@@ -3,6 +3,8 @@
 import { useActionState, useState } from "react";
 import { useTranslations } from "next-intl";
 import { LocaleHiddenField } from "@/components/admin/locale-hidden-field";
+import { TeamCheckboxList } from "@/components/admin/team-checkbox-list";
+import { TeamCreateResults } from "@/components/admin/team-create-results";
 import { INITIAL_ORG_ACTION_STATE } from "@/lib/org/errors";
 import type { OrgActionState } from "@/lib/org/errors";
 import type { Team } from "@/lib/supabase/database.types";
@@ -32,17 +34,12 @@ export function BulkMatchForm({ action, teams, submitLabel }: BulkMatchFormProps
         {t("titleLabel")}
         <input name="title" required maxLength={200} className={inputClassName} />
       </label>
-      <label className="flex flex-col gap-1.5 text-sm font-medium">
-        {org("team")}
-        <select name="team_id" required className={inputClassName}>
-          <option value="">{org("selectTeam")}</option>
-          {activeTeams.map((team) => (
-            <option key={team.id} value={team.id}>
-              {team.name}
-            </option>
-          ))}
-        </select>
-      </label>
+      <TeamCheckboxList
+        teams={activeTeams}
+        legend={org("teams")}
+        hint={t("createTeamsHint")}
+        emptyLabel={org("selectTeam")}
+      />
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         {sessionsT("kind")}
         <select
@@ -132,11 +129,7 @@ export function BulkMatchForm({ action, teams, submitLabel }: BulkMatchFormProps
         <input type="checkbox" name="is_published" value="true" />
         {t("publishNow")}
       </label>
-      {state.errorKey ? (
-        <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800 dark:bg-red-950 dark:text-red-100">
-          {org(`errors.${state.errorKey}`)}
-        </p>
-      ) : null}
+      <TeamCreateResults state={state} teams={activeTeams} />
       <button type="submit" disabled={pending} className={primaryButtonClassName}>
         {pending ? org("saving") : submitLabel}
       </button>

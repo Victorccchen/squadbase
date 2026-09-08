@@ -3,6 +3,8 @@
 import { useActionState, useState } from "react";
 import { useTranslations } from "next-intl";
 import { LocaleHiddenField } from "@/components/admin/locale-hidden-field";
+import { TeamCheckboxList } from "@/components/admin/team-checkbox-list";
+import { TeamCreateResults } from "@/components/admin/team-create-results";
 import { INITIAL_ORG_ACTION_STATE } from "@/lib/org/errors";
 import type { OrgActionState } from "@/lib/org/errors";
 import type { SessionKind, Team, TrainingSession } from "@/lib/supabase/database.types";
@@ -72,24 +74,35 @@ export function SessionForm({
           className={inputClassName}
         />
       </label>
-      <label className="flex flex-col gap-1.5 text-sm font-medium">
-        {org("team")}
-        <select
-          name="team_id"
-          required
-          defaultValue={session?.team_id ?? ""}
-          disabled={lockTeam}
-          className={inputClassName}
-        >
-          <option value="">{org("selectTeam")}</option>
-          {activeTeams.map((team) => (
-            <option key={team.id} value={team.id}>
-              {team.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      {lockTeam && session ? <input type="hidden" name="team_id" value={session.team_id} /> : null}
+      {isEdit || lockTeam ? (
+        <>
+          <label className="flex flex-col gap-1.5 text-sm font-medium">
+            {org("team")}
+            <select
+              name="team_id"
+              required
+              defaultValue={session?.team_id ?? ""}
+              disabled={lockTeam}
+              className={inputClassName}
+            >
+              <option value="">{org("selectTeam")}</option>
+              {activeTeams.map((team) => (
+                <option key={team.id} value={team.id}>
+                  {team.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          {lockTeam && session ? <input type="hidden" name="team_id" value={session.team_id} /> : null}
+        </>
+      ) : (
+        <TeamCheckboxList
+          teams={activeTeams}
+          legend={org("teams")}
+          hint={t("createTeamsHint")}
+          emptyLabel={org("selectTeam")}
+        />
+      )}
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         {t("kind")}
         {isEdit ? (
@@ -272,11 +285,7 @@ export function SessionForm({
           <option value="inactive">{org("statusInactive")}</option>
         </select>
       </label>
-      {state.errorKey ? (
-        <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800 dark:bg-red-950 dark:text-red-100">
-          {org(`errors.${state.errorKey}`)}
-        </p>
-      ) : null}
+      <TeamCreateResults state={state} teams={activeTeams} />
       <button type="submit" disabled={pending} className={primaryButtonClassName}>
         {pending ? org("saving") : submitLabel}
       </button>

@@ -36,7 +36,8 @@ import {
   parseWeekdays,
 } from "@/lib/org/session-recurrence";
 import { isMatchKind } from "@/lib/org/match";
-import { type OrgActionState, type OrgErrorKey, type BulkRsvpState } from "@/lib/org/errors";
+import { type OrgActionState, type OrgErrorKey, type BulkRsvpState, type TeamCreateRowResult } from "@/lib/org/errors";
+import { decideMultiTeamCreate, parseSelectedTeamIds } from "@/lib/org/multi-team-create";
 import { listOwnGuardianLinks } from "@/lib/org/queries";
 import {
   approvedChildrenFromLinks,
@@ -204,9 +205,9 @@ export async function createSession(
     return fail(actor.errorKey);
   }
 
-  const teamId = parseUuid(readString(formData, "team_id"));
-  if (!teamId) {
-    return fail("missingTeam");
+  const teams = parseSelectedTeamIds(readAllStrings(formData, "team_id"));
+  if (!teams.ok) {
+    return fail(teams.errorKey);
   }
 
   const kind = parseSessionKind(readString(formData, "kind"));
@@ -275,28 +276,46 @@ export async function createSession(
     }
   }
 
-  const { error } = await actor.supabase.rpc("admin_create_session_series", {
-    p_team_id: teamId,
-    p_title: title,
-    p_kind: kind,
-    p_starts_at: schedule.startsAt,
-    p_ends_at: schedule.endsAt,
-    p_location: location,
-    p_notes: notes,
-    p_status: status,
-    p_until_date: untilDate,
-    p_week_count: weekCount,
-    p_weekdays: weekdays,
-  });
-
-  if (error) {
-    console.error("createSession", error.message);
-    return fail(sessionRpcErrorKey(error));
+  const results: TeamCreateRowResult[] = [];
+  for (const teamId of teams.teamIds) {
+    const { error } = await actor.supabase.rpc("admin_create_session_series", {
+      p_team_id: teamId,
+      p_title: title,
+      p_kind: kind,
+      p_starts_at: schedule.startsAt,
+      p_ends_at: schedule.endsAt,
+      p_location: location,
+      p_notes: notes,
+      p_status: status,
+      p_until_date: untilDate,
+      p_week_count: weekCount,
+      p_weekdays: weekdays,
+    });
+    if (error) {
+      console.error("createSession", teamId, error.message);
+      results.push({
+        teamId,
+        ok: false,
+        errorKey: sessionRpcErrorKey(error),
+        createdId: null,
+      });
+    } else {
+      results.push({ teamId, ok: true, errorKey: null });
+    }
   }
 
-  revalidateSessions();
-  redirectAdmin("/app/admin/sessions", formData);
-  return ok();
+  const decision = decideMultiTeamCreate({
+    results,
+    preferDetailWhenSingle: false,
+  });
+  if (results.some((row) => row.ok)) {
+    revalidateSessions();
+  }
+  if (decision.action === "redirect") {
+    redirectAdmin("/app/admin/sessions", formData);
+    return ok();
+  }
+  return decision.state;
 }
 
 export async function updateSession(

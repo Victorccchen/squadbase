@@ -3,6 +3,8 @@
 import { useActionState, useState } from "react";
 import { useTranslations } from "next-intl";
 import { LocaleHiddenField } from "@/components/admin/locale-hidden-field";
+import { TeamCheckboxList } from "@/components/admin/team-checkbox-list";
+import { TeamCreateResults } from "@/components/admin/team-create-results";
 import { INITIAL_ORG_ACTION_STATE } from "@/lib/org/errors";
 import type { OrgActionState } from "@/lib/org/errors";
 import type { MatchPublication, Team, TrainingSession } from "@/lib/supabase/database.types";
@@ -53,24 +55,35 @@ export function MatchForm({
           className={inputClassName}
         />
       </label>
-      <label className="flex flex-col gap-1.5 text-sm font-medium">
-        {org("team")}
-        <select
-          name="team_id"
-          required
-          defaultValue={session?.team_id ?? ""}
-          disabled={isEdit}
-          className={inputClassName}
-        >
-          <option value="">{org("selectTeam")}</option>
-          {activeTeams.map((team) => (
-            <option key={team.id} value={team.id}>
-              {team.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      {isEdit && session ? <input type="hidden" name="team_id" value={session.team_id} /> : null}
+      {isEdit && session ? (
+        <>
+          <label className="flex flex-col gap-1.5 text-sm font-medium">
+            {org("team")}
+            <select
+              name="team_id"
+              required
+              defaultValue={session.team_id}
+              disabled
+              className={inputClassName}
+            >
+              <option value="">{org("selectTeam")}</option>
+              {activeTeams.map((team) => (
+                <option key={team.id} value={team.id}>
+                  {team.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <input type="hidden" name="team_id" value={session.team_id} />
+        </>
+      ) : (
+        <TeamCheckboxList
+          teams={activeTeams}
+          legend={org("teams")}
+          hint={t("createTeamsHint")}
+          emptyLabel={org("selectTeam")}
+        />
+      )}
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         {sessionsT("kind")}
         {isEdit ? (
@@ -196,11 +209,7 @@ export function MatchForm({
           {t("publishNow")}
         </label>
       ) : null}
-      {state.errorKey ? (
-        <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800 dark:bg-red-950 dark:text-red-100">
-          {org(`errors.${state.errorKey}`)}
-        </p>
-      ) : null}
+      <TeamCreateResults state={state} teams={activeTeams} />
       <button type="submit" disabled={pending} className={primaryButtonClassName}>
         {pending ? org("saving") : submitLabel}
       </button>
