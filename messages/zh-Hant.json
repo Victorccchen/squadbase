@@ -13,7 +13,7 @@
   "home": {
     "eyebrow": "階段 R · 管理員報表與 Excel／CSV 匯出",
     "headline": "歡迎使用球團管理系統",
-    "lead": "訪客無需登入即可查看公開賽程，並可把比賽加入行事曆。家長登入後，訓練與賽事分開報名；同一系列可一次參加或取消。管理員與被指派教練可為四個比賽情境與四項特質打 1–5 分。能力細節與堂數不會出現在公開頁面。",
+    "lead": "訪客無需登入即可查看公開賽程，並可把比賽加入行事曆。家長登入後，訓練與賽事分開報名；同一系列可一次參加或取消。管理員與被指派教練可為四個比賽情境與四項特質打 1–5 分。能力細節、堂數與球員證件照不會出現在公開頁面。",
     "openDashboard": "進入儀表板",
     "openMatches": "比賽賽程",
     "sampleLabel": "範例文案",
@@ -194,7 +194,6 @@
     "import": "匯入",
     "assessments": "能力評量",
     "notices": "通知文案",
-    "reports": "報表",
     "reports": "報表"
   },
   "access": {
@@ -330,7 +329,7 @@
   },
   "roster": {
     "title": "名單",
-    "lead": "顯示你被指派隊伍的球員。此列表為唯讀。",
+    "lead": "顯示你被指派隊伍的球員。你可以查看證件照；只有管理員或已核准連結的家長可以更改。",
     "emptyTitle": "沒有被指派的球員",
     "emptyBody": "管理員把你指派到有球員的隊伍後，名單會出現在這裡。",
     "sessionsTitle": "訓練場次報名",
@@ -338,6 +337,30 @@
     "sessionsEmptyTitle": "沒有被指派的場次",
     "sessionsEmptyBody": "管理員建立場次並把你指派到該隊伍後，會出現在這裡。",
     "openAssessment": "能力評量"
+  },
+  "photos": {
+    "title": "證件照片",
+    "missing": "尚未上傳",
+    "missingFilter": "缺大頭照",
+    "showAll": "顯示全部球員",
+    "listMissingEmptyTitle": "沒有缺少大頭照的球員",
+    "listMissingEmptyBody": "這份名單的球員都已有目前照片，或尚未建立球員。",
+    "upload": "上傳照片",
+    "replace": "更換照片",
+    "remove": "移除照片",
+    "uploading": "上傳中…",
+    "removing": "移除中…",
+    "imageHint": "JPEG、PNG 或 WebP，上限 5 MB。最長邊超過 2000 px 時會縮小。",
+    "pdfHint": "選填的聯盟繳交 PDF，上限 8 MB。列表仍優先顯示照片縮圖。",
+    "hasPdf": "已有 PDF",
+    "noPdf": "尚未附加 PDF",
+    "previewAlt": "球員大頭照",
+    "chooseImage": "選擇照片",
+    "choosePdf": "選擇 PDF",
+    "uploadPdf": "上傳 PDF",
+    "removePdf": "移除 PDF",
+    "viewOnly": "你可以查看這張照片。只有管理員或已核准連結的家長可以更改。",
+    "privacyHint": "照片為私密資料，不會出現在公開賽程或公開出賽名單。"
   },
   "org": {
     "teamName": "隊伍名稱",
@@ -524,7 +547,12 @@
       "invalidReportType": "請選擇有效的報表類型。",
       "invalidReportFormat": "請選擇 CSV 或 Excel。",
       "reportInvalidDateRange": "請輸入有效的起始與結束日期（起始不可晚於結束）。",
-      "reportTooManyRows": "此匯出超過 5000 列。請縮小日期區間、梯隊、隊伍或場次類型後再試。"
+      "reportTooManyRows": "此匯出超過 5000 列。請縮小日期區間、梯隊、隊伍或場次類型後再試。",
+      "invalidPhotoType": "請使用 JPEG、PNG 或 WebP 圖片。",
+      "photoTooLarge": "這張照片超過 5 MB。",
+      "invalidPdfType": "請使用 PDF 檔。",
+      "pdfTooLarge": "這個 PDF 超過 8 MB。",
+      "invalidPhotoPath": "照片路徑無效。"
     }
   },
   "children": {

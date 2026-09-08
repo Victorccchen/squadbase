@@ -23,6 +23,7 @@
   - [ ] Stage 6A: admin Excel/CSV import (players, coaches, matches) + match URL assist; preview then confirm; create-only
   - [ ] Stage N: admin notice templates + audiences (generate + copy LINE-group text; no send)
   - [ ] Stage R: admin Excel/CSV reports (attendance, registrations, credit ledger, match roster); admin-only; browser download
+  - [ ] Stage P: player headshots / ID photos bound to players (private Storage)
 
 ## Verification
 

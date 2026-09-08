@@ -13,7 +13,7 @@
   "home": {
     "eyebrow": "Stage R · admin reports and Excel/CSV export",
     "headline": "Welcome to the Club management system",
-    "lead": "Visitors can open the public match schedule without signing in and add a match to a calendar. After parents sign in, training and competitions are listed separately; the same series can be attended or declined in one tap. Admins and assigned coaches record 1–5 scores for match situations and player traits. Ability details and credits are never shown on public pages.",
+    "lead": "Visitors can open the public match schedule without signing in and add a match to a calendar. After parents sign in, training and competitions are listed separately; the same series can be attended or declined in one tap. Admins and assigned coaches record 1–5 scores for match situations and player traits. Ability details, credits, and player ID photos are never shown on public pages.",
     "openDashboard": "Open dashboard",
     "openMatches": "Match schedule",
     "sampleLabel": "Sample copy",
@@ -329,7 +329,7 @@
   },
   "roster": {
     "title": "Roster",
-    "lead": "Players on teams assigned to you. This list is read-only.",
+    "lead": "Players on teams assigned to you. You can view ID photos; only an admin or a linked parent can change them.",
     "emptyTitle": "No assigned players",
     "emptyBody": "When an admin assigns you to a team that has players, they will show up here.",
     "sessionsTitle": "Session signups",
@@ -337,6 +337,30 @@
     "sessionsEmptyTitle": "No assigned sessions",
     "sessionsEmptyBody": "When an admin creates a session on a team assigned to you, it will show up here.",
     "openAssessment": "Assessment"
+  },
+  "photos": {
+    "title": "ID photo",
+    "missing": "No photo",
+    "missingFilter": "Missing headshot",
+    "showAll": "Show all players",
+    "listMissingEmptyTitle": "No players missing a headshot",
+    "listMissingEmptyBody": "Every player on this list already has a current photo, or there are no players yet.",
+    "upload": "Upload photo",
+    "replace": "Replace photo",
+    "remove": "Remove photo",
+    "uploading": "Uploading…",
+    "removing": "Removing…",
+    "imageHint": "JPEG, PNG, or WebP. Max 5 MB. The longest edge is resized to 2000 px if larger.",
+    "pdfHint": "Optional PDF for league submission. Max 8 MB. The list still prefers the photo thumbnail.",
+    "hasPdf": "Has PDF",
+    "noPdf": "No PDF attachment",
+    "previewAlt": "Player headshot",
+    "chooseImage": "Choose photo",
+    "choosePdf": "Choose PDF",
+    "uploadPdf": "Upload PDF",
+    "removePdf": "Remove PDF",
+    "viewOnly": "You can view this photo. Only an admin or a linked parent can change it.",
+    "privacyHint": "Photos are private. They never appear on the public match schedule or public lineup."
   },
   "org": {
     "teamName": "Team name",
@@ -523,7 +547,12 @@
       "invalidReportType": "Choose a valid report type.",
       "invalidReportFormat": "Choose CSV or Excel.",
       "reportInvalidDateRange": "Enter a valid date from and date to (from cannot be after to).",
-      "reportTooManyRows": "This export has more than 5000 rows. Narrow the date range, 梯隊, 隊伍, or session kinds and try again."
+      "reportTooManyRows": "This export has more than 5000 rows. Narrow the date range, 梯隊, 隊伍, or session kinds and try again.",
+      "invalidPhotoType": "Use a JPEG, PNG, or WebP image.",
+      "photoTooLarge": "That photo is larger than 5 MB.",
+      "invalidPdfType": "Use a PDF file.",
+      "pdfTooLarge": "That PDF is larger than 8 MB.",
+      "invalidPhotoPath": "That photo path is not valid."
     }
   },
   "children": {

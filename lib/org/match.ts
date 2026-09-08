@@ -69,6 +69,9 @@ export const FORBIDDEN_PUBLIC_MATCH_KEYS = [
   "no_debit",
   "debit_override_n",
   "guardian_user_id",
+  "photo_path",
+  "photo_updated_at",
+  "id_pdf_path",
 ] as const;
 
 export function isMatchSide(value: string): value is MatchSide {

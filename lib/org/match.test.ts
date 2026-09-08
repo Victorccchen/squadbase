@@ -198,6 +198,7 @@ describe("public payload keys", () => {
     assert.equal(publicPayloadHasForbiddenKeys({ title: "Cup", phone: "0912" }), true);
     assert.equal(publicPayloadHasForbiddenKeys({ title: "Cup", birth_date: "2018-01-01" }), true);
     assert.equal(publicPayloadHasForbiddenKeys({ title: "Cup", last5: "12345" }), true);
+    assert.equal(publicPayloadHasForbiddenKeys({ title: "Cup", photo_path: "x/headshot.jpg" }), true);
     assert.equal(publicPayloadHasForbiddenKeys({ title: "Cup", opponent: "Rivals" }), false);
   });
 
@@ -245,8 +246,10 @@ describe("public payload keys", () => {
         jersey_number: 7,
         birth_date: "2018-01-01",
         phone: "+886",
+        photo_path: "secret/headshot.jpg",
+        id_pdf_path: "secret/id.pdf",
       }),
-      ["birth_date", "phone"],
+      ["birth_date", "phone", "photo_path", "id_pdf_path"],
     );
   });
 });

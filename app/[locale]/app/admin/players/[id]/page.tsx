@@ -4,7 +4,9 @@ import { Link } from "@/i18n/navigation";
 import { AccessDenied } from "@/components/access-denied";
 import { PageHeader } from "@/components/page-header";
 import { canRenderAdminPage } from "@/lib/auth/admin-page";
+import { PlayerPhotoPanel } from "@/components/players/player-photo-panel";
 import { getPlayer, formatActiveMembershipSummary } from "@/lib/org/queries";
+import { signPlayerStoragePaths } from "@/lib/org/player-photo-queries";
 import { localizedPlayerName, displayOptionalName } from "@/lib/org/display-name";
 import { ageBandFromBirthDate, birthAgeLabelFromBirthDate, formatIsoDate, seasonStartForBirthDate } from "@/lib/age-band";
 import { secondaryButtonClassName } from "@/lib/ui";
@@ -31,6 +33,8 @@ export default async function PlayerDetailPage({ params }: PlayerDetailPageProps
   const band = ageBandFromBirthDate(player.birth_date);
   const birthAge = birthAgeLabelFromBirthDate(player.birth_date);
   const seasonStart = seasonStartForBirthDate();
+  const signed = await signPlayerStoragePaths([player.photo_path]);
+  const photoUrl = player.photo_path ? (signed.get(player.photo_path) ?? null) : null;
 
   return (
     <>
@@ -110,6 +114,13 @@ export default async function PlayerDetailPage({ params }: PlayerDetailPageProps
             </dd>
           </div>
         </dl>
+        <PlayerPhotoPanel
+          playerId={player.id}
+          photoPath={player.photo_path}
+          idPdfPath={player.id_pdf_path}
+          signedUrl={photoUrl}
+          canWrite
+        />
       </main>
       <footer className="border-t border-zinc-200 px-6 py-4 pb-10 text-sm text-zinc-500 dark:border-zinc-800">
         {common("footer")}

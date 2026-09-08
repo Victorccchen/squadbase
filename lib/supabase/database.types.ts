@@ -93,6 +93,9 @@ export type Player = {
   birth_date: string;
   status: OrgStatus;
   continues_training: boolean;
+  photo_path: string | null;
+  photo_updated_at: string | null;
+  id_pdf_path: string | null;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -453,6 +456,9 @@ export type Database = {
           birth_date: string;
           status?: OrgStatus;
           continues_training?: boolean;
+          photo_path?: string | null;
+          photo_updated_at?: string | null;
+          id_pdf_path?: string | null;
         } & TimestampInsert;
         Update: {
           name_zh?: string | null;
@@ -462,6 +468,9 @@ export type Database = {
           birth_date?: string;
           status?: OrgStatus;
           continues_training?: boolean;
+          photo_path?: string | null;
+          photo_updated_at?: string | null;
+          id_pdf_path?: string | null;
           updated_at?: string;
           updated_by?: string | null;
         };
@@ -1063,6 +1072,26 @@ export type Database = {
       is_approved_guardian_for_player: {
         Args: { p_player_id: string };
         Returns: boolean;
+      };
+      player_id_from_storage_name: {
+        Args: { object_name: string };
+        Returns: string | null;
+      };
+      can_write_player_photo: {
+        Args: { p_player_id: string };
+        Returns: boolean;
+      };
+      can_read_player_photo: {
+        Args: { p_player_id: string };
+        Returns: boolean;
+      };
+      set_player_headshot: {
+        Args: { p_player_id: string; p_photo_path: string | null };
+        Returns: undefined;
+      };
+      set_player_id_pdf: {
+        Args: { p_player_id: string; p_id_pdf_path: string | null };
+        Returns: undefined;
       };
       guardian_can_read_team: {
         Args: { p_team_id: string };

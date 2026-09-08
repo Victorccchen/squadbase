@@ -123,3 +123,5 @@ When reviewing app PRs after Vercel is connected:
 - [ ] Merge to `main` will auto-deploy **staging** only.
 - [ ] Production remains **manual approval** — this merge is not a production release.
 - [ ] Do not attach a public club domain to `squadbase-staging` without Victor’s approval.
+
+Player photos (Stage P): after merge, apply [`docs/staging-player-photos.md`](staging-player-photos.md) on the **staging** Supabase project (SQL Editor paste + private `player-photos` bucket). Do not apply on production.

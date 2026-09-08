@@ -108,6 +108,11 @@ export type OrgErrorKey =
   | "invalidReportFormat"
   | "reportInvalidDateRange"
   | "reportTooManyRows"
+  | "invalidPhotoType"
+  | "photoTooLarge"
+  | "invalidPdfType"
+  | "pdfTooLarge"
+  | "invalidPhotoPath"
   | "generic";
 
 export type TeamCreateRowResult = {
