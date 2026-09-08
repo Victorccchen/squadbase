@@ -1089,6 +1089,32 @@ export type Database = {
         };
         Returns: string;
       };
+      admin_set_player_memberships: {
+        Args: {
+          p_player_id: string;
+          p_team_ids: string[];
+          p_jersey_numbers: number[];
+        };
+        Returns: undefined;
+      };
+      computed_age_band_from_birth_date: {
+        Args: {
+          p_birth_date: string;
+          p_as_of: string;
+        };
+        Returns: AgeBand;
+      };
+      next_higher_computed_age_band: {
+        Args: { p_band: AgeBand };
+        Returns: AgeBand | null;
+      };
+      team_age_band_allowed_for_player: {
+        Args: {
+          p_natural: AgeBand;
+          p_team: AgeBand;
+        };
+        Returns: boolean;
+      };
       guardian_can_read_session: {
         Args: { p_session_id: string };
         Returns: boolean;

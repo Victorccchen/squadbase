@@ -4,8 +4,8 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { ClaimForm } from "@/components/credits/claim-form";
 import { CopyTextButton } from "@/components/credits/copy-text-button";
-import { listOwnGuardianLinks } from "@/lib/org/queries";
-import { approvedChildrenFromLinks } from "@/lib/org/session-queries";
+import { listOwnGuardianLinks, formatActiveMembershipSummary } from "@/lib/org/queries";
+import { approvedChildrenFromLinks, uniqueEligibleChildrenByPlayer } from "@/lib/org/session-queries";
 import {
   getBankTransferHint,
   listAttendedCounts,
@@ -27,7 +27,7 @@ export default async function ParentCreditsPage() {
   const common = await getTranslations("common");
   const locale = await getLocale();
   const links = await listOwnGuardianLinks();
-  const children = approvedChildrenFromLinks(links);
+  const children = uniqueEligibleChildrenByPlayer(approvedChildrenFromLinks(links));
   const playerIds = [...new Set(children.map((child) => child.player.id))];
   const [balances, attended, packages, claims, transferHint] = await Promise.all([
     listBalancesForPlayers(playerIds),
@@ -78,7 +78,9 @@ export default async function ParentCreditsPage() {
                       {localizedPlayerName(child.player, locale)}
                     </span>
                     <span className="text-sm text-zinc-500">
-                      {child.teamName} · #{child.jerseyNumber} · {org(`ageBands.${child.teamAgeBand}`)}
+                      {formatActiveMembershipSummary(child.player.memberships) ??
+                        `${child.teamName} · #${child.jerseyNumber}`}{" "}
+                      · {org(`ageBands.${child.teamAgeBand}`)}
                     </span>
                     {applies ? (
                       <>

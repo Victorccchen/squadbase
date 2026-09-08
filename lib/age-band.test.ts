@@ -2,9 +2,12 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   ageBandFromBirthDate,
+  allowedTeamAgeBands,
   completedAgeYears,
   formatIsoDate,
   getSeasonStart,
+  isTeamAgeBandAllowedForPlayer,
+  nextHigherComputedAgeBand,
   parseIsoDate,
   type CalendarDate,
 } from "./age-band.ts";
@@ -86,5 +89,35 @@ describe("completedAgeYears", () => {
 describe("formatIsoDate", () => {
   it("zero-pads month and day", () => {
     assert.equal(formatIsoDate(d(2026, 8, 5)), "2026-08-05");
+  });
+});
+
+describe("TMT-4 band-up helper (computed ladder, no U9/U11)", () => {
+  it("uses the adjacent higher computed band, not a missing U9/U11", () => {
+    assert.equal(nextHigherComputedAgeBand("U6"), "U8");
+    assert.equal(nextHigherComputedAgeBand("U8"), "U10");
+    assert.equal(nextHigherComputedAgeBand("U10"), "U12");
+    assert.equal(nextHigherComputedAgeBand("U12"), "U15");
+    assert.equal(nextHigherComputedAgeBand("U15"), "U18");
+    assert.equal(nextHigherComputedAgeBand("U18"), "senior");
+    assert.equal(nextHigherComputedAgeBand("senior"), null);
+  });
+
+  it("allows the natural band and exactly one step up (TMT-2)", () => {
+    assert.deepEqual(allowedTeamAgeBands("U8"), ["U8", "U10"]);
+    assert.equal(isTeamAgeBandAllowedForPlayer("U8", "U8"), true);
+    assert.equal(isTeamAgeBandAllowedForPlayer("U8", "U10"), true);
+    assert.equal(isTeamAgeBandAllowedForPlayer("U8", "U6"), false);
+    assert.equal(isTeamAgeBandAllowedForPlayer("U8", "U12"), false);
+    assert.equal(isTeamAgeBandAllowedForPlayer("U8", "reserve"), false);
+  });
+
+  it("allows two valid bands and nothing below senior’s natural band", () => {
+    assert.deepEqual(allowedTeamAgeBands("U6"), ["U6", "U8"]);
+    assert.deepEqual(allowedTeamAgeBands("senior"), ["senior"]);
+    assert.equal(isTeamAgeBandAllowedForPlayer("senior", "senior"), true);
+    assert.equal(isTeamAgeBandAllowedForPlayer("senior", "U18"), false);
+    assert.equal(isTeamAgeBandAllowedForPlayer("U18", "senior"), true);
+    assert.equal(isTeamAgeBandAllowedForPlayer("U18", "reserve"), false);
   });
 });

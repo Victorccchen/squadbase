@@ -4,7 +4,7 @@ import { Link } from "@/i18n/navigation";
 import { AccessDenied } from "@/components/access-denied";
 import { PageHeader } from "@/components/page-header";
 import { canRenderAdminPage } from "@/lib/auth/admin-page";
-import { getPlayer } from "@/lib/org/queries";
+import { getPlayer, formatActiveMembershipSummary } from "@/lib/org/queries";
 import { localizedPlayerName, displayOptionalName } from "@/lib/org/display-name";
 import { ageBandFromBirthDate, formatIsoDate, seasonStartForBirthDate } from "@/lib/age-band";
 import { secondaryButtonClassName } from "@/lib/ui";
@@ -87,13 +87,9 @@ export default async function PlayerDetailPage({ params }: PlayerDetailPageProps
             </div>
           ) : null}
           <div className="flex justify-between gap-4">
-            <dt className="text-zinc-500">{org("team")}</dt>
-            <dd className="font-medium">{player.membership?.team?.name ?? org("noTeam")}</dd>
-          </div>
-          <div className="flex justify-between gap-4">
-            <dt className="text-zinc-500">{org("jerseyNumber")}</dt>
-            <dd className="font-medium">
-              {player.membership ? `#${player.membership.jersey_number}` : "—"}
+            <dt className="text-zinc-500">{org("teams")}</dt>
+            <dd className="text-right font-medium">
+              {formatActiveMembershipSummary(player.memberships) ?? org("noTeam")}
             </dd>
           </div>
           <div className="flex justify-between gap-4">

@@ -13,8 +13,13 @@
  *   15–17 U18
  *   18+   senior
  *
+ * Multi-team membership (Victor 2026-09-08): a player may join the natural
+ * computed band or exactly one step higher on this ladder (never lower).
+ * There is no U9/U11 enum value, so U8 play-up is U10.
+ *
  * `reserve` is a team classification (e.g. reserve squad), not computed from
- * date of birth. The helper never returns `reserve`.
+ * date of birth. The helper never returns `reserve`. `reserve` is not a step
+ * on the play-up ladder.
  *
  * Default “as of” calendar date uses Asia/Taipei (club local time).
  */
@@ -44,6 +49,9 @@ export const COMPUTED_AGE_BANDS = [
 
 export type ComputedAgeBand = (typeof COMPUTED_AGE_BANDS)[number];
 
+/** Product lock (Victor 2026-09-08): at most two active team_memberships. */
+export const MAX_ACTIVE_MEMBERSHIPS = 2;
+
 export const SEASON_START_MONTH = 8;
 export const SEASON_START_DAY = 15;
 export const CLUB_TIME_ZONE = "Asia/Taipei";
@@ -58,6 +66,40 @@ const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 export function isAgeBand(value: string): value is AgeBand {
   return (AGE_BANDS as readonly string[]).includes(value);
+}
+
+export function isComputedAgeBand(value: string): value is ComputedAgeBand {
+  return (COMPUTED_AGE_BANDS as readonly string[]).includes(value);
+}
+
+/**
+ * Official play-up ladder (computed bands only). `reserve` is a team
+ * classification and is not a step on this ladder. U9 and U11 are not in
+ * `age_band`; the next step above U8 is U10, and above U10 is U12.
+ */
+export function nextHigherComputedAgeBand(
+  band: ComputedAgeBand,
+): ComputedAgeBand | null {
+  const index = COMPUTED_AGE_BANDS.indexOf(band);
+  if (index < 0 || index >= COMPUTED_AGE_BANDS.length - 1) {
+    return null;
+  }
+  return COMPUTED_AGE_BANDS[index + 1];
+}
+
+export function allowedTeamAgeBands(natural: ComputedAgeBand): ComputedAgeBand[] {
+  const next = nextHigherComputedAgeBand(natural);
+  return next ? [natural, next] : [natural];
+}
+
+export function isTeamAgeBandAllowedForPlayer(
+  natural: ComputedAgeBand | AgeBand | null | undefined,
+  teamBand: AgeBand,
+): boolean {
+  if (!natural || !isComputedAgeBand(natural)) {
+    return false;
+  }
+  return allowedTeamAgeBands(natural).some((band) => band === teamBand);
 }
 
 export function parseIsoDate(value: string): CalendarDate | null {

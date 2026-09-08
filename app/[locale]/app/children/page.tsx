@@ -7,7 +7,7 @@ import { CancelLinkForm } from "@/components/children/cancel-link-form";
 import { LinkStatusBadge } from "@/components/bindings/link-status-badge";
 import { AssessmentSummary } from "@/components/assessments/assessment-summary";
 import { listLatestAssessmentsByPlayerId } from "@/lib/assessments/queries";
-import { listActiveTeamsForLink, listOwnGuardianLinks } from "@/lib/org/queries";
+import { listActiveTeamsForLink, listOwnGuardianLinks, formatActiveMembershipSummary } from "@/lib/org/queries";
 import { uniqueApprovedLinksByPlayerId } from "@/lib/org/guardian-links";
 import { localizedPlayerName, playerNameList } from "@/lib/org/display-name";
 import { canParentCancelLink } from "@/lib/org/parse";
@@ -86,9 +86,7 @@ export default async function ChildrenPage() {
                       {playerNameList(player)}
                     </span>
                     <span className="text-sm text-zinc-500">
-                      {player.membership?.team
-                        ? `${player.membership.team.name} · #${player.membership.jersey_number}`
-                        : org("noTeam")}
+                      {formatActiveMembershipSummary(player.memberships) ?? org("noTeam")}
                       {" · "}
                       {player.birth_date}
                       {band ? ` · ${org(`ageBands.${band}`)}` : ""}
