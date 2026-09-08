@@ -230,3 +230,69 @@ export const PUBLIC_PLAYER_PHOTO_KEYS = [
   "photo_updated_at",
   "id_pdf_path",
 ] as const;
+
+/** Error keys the photo forms may surface after submit (never hide the upload UI). */
+export const PHOTO_ALERT_KEYS = [
+  "forbidden",
+  "notConfigured",
+  "generic",
+  "missingPlayer",
+  "invalidPhotoType",
+  "photoTooLarge",
+  "invalidPdfType",
+  "pdfTooLarge",
+  "invalidPhotoPath",
+  "notApprovedGuardian",
+] as const satisfies readonly OrgErrorKey[];
+
+export function photoSectionDomId(playerId: string): string {
+  return `player-photo-${playerId}`;
+}
+
+export function parsePhotoAlertKey(value: string | string[] | null | undefined): OrgErrorKey | null {
+  const raw = (Array.isArray(value) ? value[0] : value)?.trim();
+  if (!raw) {
+    return null;
+  }
+  return (PHOTO_ALERT_KEYS as readonly string[]).includes(raw) ? (raw as OrgErrorKey) : "generic";
+}
+
+export function firstSearchParam(value: string | string[] | null | undefined): string | null {
+  const raw = (Array.isArray(value) ? value[0] : value)?.trim();
+  return raw ? raw : null;
+}
+
+export function photoAlertFromSearchParams(params: {
+  photoAlert?: string | string[];
+  photoPlayer?: string | string[];
+}): { errorKey: OrgErrorKey; playerId: string | null } | null {
+  const errorKey = parsePhotoAlertKey(params.photoAlert);
+  if (!errorKey) {
+    return null;
+  }
+  return { errorKey, playerId: firstSearchParam(params.photoPlayer) };
+}
+
+export function isSafePhotoReturnPath(path: string): boolean {
+  return /^\/(zh-Hant|en|ja)\/app(\/[\w.-]+)*$/.test(path);
+}
+
+export function photoActionRedirectPath(input: {
+  returnTo: string;
+  playerId: string;
+  errorKey: string | null;
+}): string | null {
+  if (!input.playerId || !isSafePhotoReturnPath(input.returnTo)) {
+    return null;
+  }
+  const hash = `#${photoSectionDomId(input.playerId)}`;
+  if (!input.errorKey) {
+    return `${input.returnTo}${hash}`;
+  }
+  const key = parsePhotoAlertKey(input.errorKey) ?? "generic";
+  const query = new URLSearchParams({
+    photoAlert: key,
+    photoPlayer: input.playerId,
+  });
+  return `${input.returnTo}?${query.toString()}${hash}`;
+}

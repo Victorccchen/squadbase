@@ -7,15 +7,17 @@ import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { PlayerPhotoPanel } from "@/components/players/player-photo-panel";
 import { getPlayer, formatActiveMembershipSummary } from "@/lib/org/queries";
 import { signPlayerStoragePaths } from "@/lib/org/player-photo-queries";
+import { photoAlertFromSearchParams } from "@/lib/org/player-photos";
 import { localizedPlayerName, displayOptionalName } from "@/lib/org/display-name";
 import { ageBandFromBirthDate, birthAgeLabelFromBirthDate, formatIsoDate, seasonStartForBirthDate } from "@/lib/age-band";
 import { secondaryButtonClassName } from "@/lib/ui";
 
 type PlayerDetailPageProps = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ photoAlert?: string | string[]; photoPlayer?: string | string[] }>;
 };
 
-export default async function PlayerDetailPage({ params }: PlayerDetailPageProps) {
+export default async function PlayerDetailPage({ params, searchParams }: PlayerDetailPageProps) {
   if (!(await canRenderAdminPage())) {
     return <AccessDenied area="admin" />;
   }
@@ -35,6 +37,8 @@ export default async function PlayerDetailPage({ params }: PlayerDetailPageProps
   const seasonStart = seasonStartForBirthDate();
   const signed = await signPlayerStoragePaths([player.photo_path]);
   const photoUrl = player.photo_path ? (signed.get(player.photo_path) ?? null) : null;
+  const photoAlert = photoAlertFromSearchParams(await searchParams);
+  const returnTo = `/${locale}/app/admin/players/${player.id}`;
 
   return (
     <>
@@ -120,6 +124,12 @@ export default async function PlayerDetailPage({ params }: PlayerDetailPageProps
           idPdfPath={player.id_pdf_path}
           signedUrl={photoUrl}
           canWrite
+          returnTo={returnTo}
+          alertErrorKey={
+            photoAlert && (!photoAlert.playerId || photoAlert.playerId === player.id)
+              ? photoAlert.errorKey
+              : null
+          }
         />
       </main>
       <footer className="border-t border-zinc-200 px-6 py-4 pb-10 text-sm text-zinc-500 dark:border-zinc-800">

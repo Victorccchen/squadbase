@@ -10,17 +10,24 @@ import { PlayerPhotoPanel } from "@/components/players/player-photo-panel";
 import { listLatestAssessmentsByPlayerId } from "@/lib/assessments/queries";
 import { listActiveTeamsForLink, listOwnGuardianLinks, formatActiveMembershipSummary } from "@/lib/org/queries";
 import { signPlayerStoragePaths } from "@/lib/org/player-photo-queries";
+import { photoAlertFromSearchParams } from "@/lib/org/player-photos";
 import { uniqueApprovedLinksByPlayerId } from "@/lib/org/guardian-links";
 import { localizedPlayerName, playerNameList } from "@/lib/org/display-name";
 import { canParentCancelLink } from "@/lib/org/parse";
 import { ageBandFromBirthDate } from "@/lib/age-band";
 import { secondaryButtonClassName } from "@/lib/ui";
 
-export default async function ChildrenPage() {
+type ChildrenPageProps = {
+  searchParams: Promise<{ photoAlert?: string | string[]; photoPlayer?: string | string[] }>;
+};
+
+export default async function ChildrenPage({ searchParams }: ChildrenPageProps) {
   const t = await getTranslations("children");
   const org = await getTranslations("org");
   const common = await getTranslations("common");
   const locale = await getLocale();
+  const photoAlert = photoAlertFromSearchParams(await searchParams);
+  const returnTo = `/${locale}/app/children`;
   const [links, teams] = await Promise.all([
     listOwnGuardianLinks(),
     listActiveTeamsForLink(),
@@ -80,7 +87,7 @@ export default async function ChildrenPage() {
                 return (
                   <li
                     key={link.id}
-                    className="flex flex-col gap-1 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900"
+                    className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900"
                   >
                     <span className="font-semibold">
                       {localizedPlayerName(player, locale)}
@@ -100,17 +107,21 @@ export default async function ChildrenPage() {
                     ) : (
                       <p className="mt-2 text-sm text-zinc-500">{t("noAssessment")}</p>
                     )}
-                    <div className="mt-3">
-                      <PlayerPhotoPanel
-                        playerId={player.id}
-                        photoPath={player.photo_path}
-                        idPdfPath={player.id_pdf_path}
-                        signedUrl={
-                          player.photo_path ? (signed.get(player.photo_path) ?? null) : null
-                        }
-                        canWrite
-                      />
-                    </div>
+                    <PlayerPhotoPanel
+                      playerId={player.id}
+                      photoPath={player.photo_path}
+                      idPdfPath={player.id_pdf_path}
+                      signedUrl={
+                        player.photo_path ? (signed.get(player.photo_path) ?? null) : null
+                      }
+                      canWrite
+                      returnTo={returnTo}
+                      alertErrorKey={
+                        photoAlert && (!photoAlert.playerId || photoAlert.playerId === player.id)
+                          ? photoAlert.errorKey
+                          : null
+                      }
+                    />
                     <Link href="/app/credits" className="mt-2 text-sm font-medium underline underline-offset-2">
                       {t("openCredits")}
                     </Link>
