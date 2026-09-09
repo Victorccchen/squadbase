@@ -15,12 +15,16 @@ import {
   canExportPhotoPack,
   encodePhotoPackZip,
   filterActiveMembersForCompetitionTeam,
+  jerseyForScope,
   parsePhotoPackFormData,
   photoPackCapError,
   photoPackFileStem,
+  photoPackIdShort,
   photoPackTable,
   playersInPhotoPackScope,
+  sanitizePhotoPackAsciiPart,
   storagePathsToDownload,
+  uniquePhotoPackStem,
   type PhotoPackCopy,
   type PhotoPackSourceRow,
 } from "./photo-pack.ts";
@@ -116,7 +120,7 @@ describe("TD-1 Admin roster+photos ZIP has xlsx + images for players with photos
     const namesInZip = listed.map((entry) => entry.name);
     assert.ok(namesInZip.includes(PHOTO_PACK_ROSTER_XLSX));
     assert.ok(namesInZip.includes(PHOTO_PACK_MANIFEST_CSV));
-    const photoName = `photos/${photoPackFileStem({ jersey: 7, displayName: "Kai Chen", playerId: PLAYER_A })}.jpg`;
+    const photoName = "photos/Kai_Chen_7.jpg";
     assert.ok(namesInZip.includes(photoName), namesInZip.join(","));
     assert.equal(namesInZip.some((name) => name.startsWith("photos/") && name.includes("Lin")), false);
 
@@ -199,7 +203,7 @@ describe("TD-4 Missing photo does not fail ZIP", () => {
     });
     const noPath = source({ playerId: PLAYER_B, jersey: 9 });
     const downloaded = new Map<string, Uint8Array>();
-    const packed = allocatePackedFiles([missingPath, noPath], "en", downloaded);
+    const packed = allocatePackedFiles([missingPath, noPath], downloaded);
     assert.equal(packed.get(PLAYER_A)?.photoZipPath, null);
     assert.equal(storagePathsToDownload([missingPath, noPath]).includes(missingPath.photoPath!), true);
     const { entries } = buildPhotoPackZipEntries({
@@ -247,5 +251,109 @@ describe("photo pack form parse", () => {
       assert.equal(parsed.scope.teamId, TEAM_A);
       assert.equal(parsed.scope.locale, "zh-Hant");
     }
+  });
+});
+
+describe("ZIP entry names use English given_family_jersey", () => {
+  it("maps Liam Chen #24 to Liam_Chen_24.jpg and a related PDF name", () => {
+    assert.equal(
+      photoPackFileStem({ given: "Liam", family: "Chen", jersey: 24, playerId: PLAYER_A }),
+      "Liam_Chen_24",
+    );
+    const liam = source({
+      playerId: PLAYER_A,
+      jersey: 24,
+      player: names({ given: "Liam", family: "Chen" }),
+      photoPath: `${PLAYER_A}/headshot-opaque.jpg`,
+      idPdfPath: `${PLAYER_A}/id-opaque.pdf`,
+    });
+    const pdf = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34]);
+    const { entries } = buildPhotoPackZipEntries({
+      rows: [liam],
+      downloaded: new Map([
+        [liam.photoPath!, jpegBytes()],
+        [liam.idPdfPath!, pdf],
+      ]),
+      copy: copy(),
+      locale: "zh-Hant",
+    });
+    const zip = encodePhotoPackZip(entries);
+    const listed = listZipStoreEntries(zip);
+    const namesInZip = listed.map((entry) => entry.name);
+    assert.ok(namesInZip.includes("photos/Liam_Chen_24.jpg"), namesInZip.join(","));
+    assert.ok(namesInZip.includes("pdfs/Liam_Chen_24.pdf"), namesInZip.join(","));
+    const xlsx = listed.find((entry) => entry.name === PHOTO_PACK_ROSTER_XLSX);
+    assert.ok(xlsx);
+    const parsed = parseXlsxTable(xlsx.data);
+    assert.equal(parsed[1]?.[7], "photos/Liam_Chen_24.jpg");
+    assert.equal(parsed[1]?.[8], "pdfs/Liam_Chen_24.pdf");
+  });
+
+  it("sanitizes odd characters, uses X without jersey, and id slug when English is empty", () => {
+    assert.equal(sanitizePhotoPackAsciiPart("O'Brien"), "OBrien");
+    assert.equal(sanitizePhotoPackAsciiPart("Mary Jane"), "Mary_Jane");
+    assert.equal(
+      photoPackFileStem({ given: "Mary Jane", family: "O'Brien", jersey: 10, playerId: PLAYER_A }),
+      "Mary_Jane_OBrien_10",
+    );
+    assert.equal(
+      photoPackFileStem({ given: "Liam", family: "Chen", jersey: null, playerId: PLAYER_A }),
+      "Liam_Chen_X",
+    );
+    assert.equal(
+      photoPackFileStem({ given: "  ", family: "", jersey: 3, playerId: PLAYER_A }),
+      `${photoPackIdShort(PLAYER_A)}_3`,
+    );
+  });
+
+  it("appends a short player id when two files would share a stem", () => {
+    const used = new Set<string>();
+    assert.equal(uniquePhotoPackStem("Liam_Chen_24", used, PLAYER_A), "Liam_Chen_24");
+    assert.equal(
+      uniquePhotoPackStem("Liam_Chen_24", used, PLAYER_B),
+      `Liam_Chen_24_${photoPackIdShort(PLAYER_B)}`,
+    );
+    const first = source({
+      playerId: PLAYER_A,
+      jersey: 24,
+      player: names({ given: "Liam", family: "Chen" }),
+      photoPath: `${PLAYER_A}/a.jpg`,
+    });
+    const second = source({
+      playerId: PLAYER_B,
+      jersey: 24,
+      player: names({ given: "Liam", family: "Chen" }),
+      photoPath: `${PLAYER_B}/b.jpg`,
+    });
+    const packed = allocatePackedFiles(
+      [first, second],
+      new Map([
+        [first.photoPath!, jpegBytes()],
+        [second.photoPath!, jpegBytes()],
+      ]),
+    );
+    assert.equal(packed.get(PLAYER_A)?.photoZipPath, "photos/Liam_Chen_24.jpg");
+    assert.equal(packed.get(PLAYER_B)?.photoZipPath, `photos/Liam_Chen_24_${photoPackIdShort(PLAYER_B)}.jpg`);
+  });
+
+  it("prefers the active 隊伍 jersey for an unscoped reports pack", () => {
+    const jersey = jerseyForScope(
+      [
+        { status: "active", team_id: TEAM_B, jersey_number: 8, team: { kind: "age_squad" } },
+        { status: "active", team_id: TEAM_A, jersey_number: 24, team: { kind: "competition_team" } },
+      ],
+      [],
+    );
+    assert.equal(jersey, 24);
+    assert.equal(
+      jerseyForScope(
+        [
+          { status: "active", team_id: TEAM_B, jersey_number: 8, team: { kind: "age_squad" } },
+          { status: "active", team_id: TEAM_A, jersey_number: 24, team: { kind: "competition_team" } },
+        ],
+        [TEAM_B],
+      ),
+      8,
+    );
   });
 });
