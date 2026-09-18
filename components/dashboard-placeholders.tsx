@@ -55,6 +55,7 @@ function LinkCard({
     | "/app/admin/matches"
     | "/app/admin/import"
     | "/app/admin/reports"
+    | "/app/admin/dashboard"
     | "/matches";
   title: string;
   body: string;
@@ -177,6 +178,12 @@ export async function DashboardPlaceholders({ roles }: DashboardPlaceholdersProp
             {t("adminSection")}
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
+            <LinkCard
+              href="/app/admin/dashboard"
+              title={t("placeholders.adminDashboard.title")}
+              body={t("placeholders.adminDashboard.body")}
+              action={t("openOpsDashboard")}
+            />
             <LinkCard
               href="/app/admin/teams"
               title={t("placeholders.teams.title")}
