@@ -72,6 +72,7 @@ export function photoPackCapError(playerCount: number): "photoPackTooMany" | nul
   return playerCount > PHOTO_PACK_PLAYER_CAP ? "photoPackTooMany" : null;
 }
 
+/** Outer ZIP download name (team label may be CJK). */
 export function sanitizePhotoPackNamePart(value: string): string {
   const cleaned = value
     .normalize("NFKC")
@@ -82,18 +83,44 @@ export function sanitizePhotoPackNamePart(value: string): string {
   return cleaned.slice(0, 40) || "player";
 }
 
+/** Photo/PDF entry names: ASCII letters, digits, underscore, hyphen only. */
+export function sanitizePhotoPackAsciiPart(value: string): string {
+  const cleaned = value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "_")
+    .replace(/[^A-Za-z0-9_-]/g, "")
+    .replace(/_+/g, "_")
+    .replace(/^_|_$/g, "");
+  return cleaned.slice(0, 40);
+}
+
 export function photoPackIdShort(playerId: string): string {
   return playerId.replace(/-/g, "").slice(0, 8).toLowerCase();
 }
 
+export function photoPackJerseyToken(jersey: number | null): string {
+  return jersey != null ? String(jersey) : "X";
+}
+
+/**
+ * `{given}_{family}_{jersey}` e.g. Liam Chen #24 → Liam_Chen_24.
+ * Empty English names fall back to a short player id slug.
+ */
 export function photoPackFileStem(input: {
+  given: string;
+  family: string;
   jersey: number | null;
-  displayName: string;
   playerId: string;
 }): string {
-  const jersey = input.jersey != null ? String(input.jersey) : "x";
-  const name = sanitizePhotoPackNamePart(input.displayName);
-  return `${jersey}_${name}_${photoPackIdShort(input.playerId)}`;
+  const given = sanitizePhotoPackAsciiPart(input.given);
+  const family = sanitizePhotoPackAsciiPart(input.family);
+  const jersey = photoPackJerseyToken(input.jersey);
+  const name = [given, family].filter((part) => part.length > 0).join("_");
+  if (name) {
+    return `${name}_${jersey}`;
+  }
+  return `${photoPackIdShort(input.playerId)}_${jersey}`;
 }
 
 export function extensionFromStoragePath(path: string): string {
@@ -109,19 +136,21 @@ export function extensionFromStoragePath(path: string): string {
   return "bin";
 }
 
-export function uniqueZipPath(desired: string, used: Set<string>): string {
-  if (!used.has(desired)) {
-    used.add(desired);
-    return desired;
+export function uniquePhotoPackStem(stem: string, used: Set<string>, playerId: string): string {
+  if (!used.has(stem)) {
+    used.add(stem);
+    return stem;
   }
-  const dot = desired.lastIndexOf(".");
-  const stem = dot >= 0 ? desired.slice(0, dot) : desired;
-  const ext = dot >= 0 ? desired.slice(dot) : "";
+  const suffixed = `${stem}_${photoPackIdShort(playerId)}`;
+  if (!used.has(suffixed)) {
+    used.add(suffixed);
+    return suffixed;
+  }
   let n = 2;
-  let next = `${stem}_${n}${ext}`;
+  let next = `${suffixed}_${n}`;
   while (used.has(next)) {
     n += 1;
-    next = `${stem}_${n}${ext}`;
+    next = `${suffixed}_${n}`;
   }
   used.add(next);
   return next;
@@ -186,13 +215,24 @@ export function unitLabelForScope(
 }
 
 export function jerseyForScope(
-  memberships: { status: string; team_id: string; jersey_number: number }[],
+  memberships: {
+    status: string;
+    team_id: string;
+    jersey_number: number;
+    team?: { kind?: string | null } | null;
+  }[],
   teamIds: readonly string[],
 ): number | null {
   const units = new Set(teamIds);
   const active = memberships.filter((row) => row.status === "active");
-  const matched = units.size === 0 ? active : active.filter((row) => units.has(row.team_id));
-  return matched[0]?.jersey_number ?? active[0]?.jersey_number ?? null;
+  const inScope = units.size === 0 ? active : active.filter((row) => units.has(row.team_id));
+  const competition = inScope.filter((row) => row.team?.kind === "competition_team");
+  return (
+    competition[0]?.jersey_number ??
+    inScope[0]?.jersey_number ??
+    active[0]?.jersey_number ??
+    null
+  );
 }
 
 export function parsePhotoPackFormData(formData: FormData):
@@ -222,17 +262,21 @@ export function parsePhotoPackFormData(formData: FormData):
 
 export function allocatePackedFiles(
   rows: readonly PhotoPackSourceRow[],
-  locale: string,
   downloaded: ReadonlyMap<string, Uint8Array>,
 ): Map<string, PackedPhotoFiles> {
-  const used = new Set<string>();
+  const usedStems = new Set<string>();
   const out = new Map<string, PackedPhotoFiles>();
   for (const row of rows) {
-    const stem = photoPackFileStem({
-      jersey: row.jersey,
-      displayName: localizedPlayerName(row.player, locale) || englishPlayerName(row.player),
-      playerId: row.playerId,
-    });
+    const stem = uniquePhotoPackStem(
+      photoPackFileStem({
+        given: row.player.name_en_given,
+        family: row.player.name_en_family,
+        jersey: row.jersey,
+        playerId: row.playerId,
+      }),
+      usedStems,
+      row.playerId,
+    );
     let photoZipPath: string | null = null;
     let pdfZipPath: string | null = null;
     const photoBytes = row.photoPath ? downloaded.get(row.photoPath) : undefined;
@@ -241,11 +285,11 @@ export function allocatePackedFiles(
       const ext = sniffed
         ? extensionForHeadshotMime(sniffed)
         : extensionFromStoragePath(row.photoPath ?? "");
-      photoZipPath = uniqueZipPath(`${PHOTO_PACK_PHOTOS_DIR}/${stem}.${ext}`, used);
+      photoZipPath = `${PHOTO_PACK_PHOTOS_DIR}/${stem}.${ext}`;
     }
     const pdfBytes = row.idPdfPath ? downloaded.get(row.idPdfPath) : undefined;
     if (pdfBytes && pdfBytes.length > 0) {
-      pdfZipPath = uniqueZipPath(`${PHOTO_PACK_PDFS_DIR}/${stem}.pdf`, used);
+      pdfZipPath = `${PHOTO_PACK_PDFS_DIR}/${stem}.pdf`;
     }
     out.set(row.playerId, { photoZipPath, pdfZipPath });
   }
@@ -292,7 +336,7 @@ export function buildPhotoPackZipEntries(input: {
   copy: PhotoPackCopy;
   locale: string;
 }): { entries: ZipStoreEntry[]; table: string[][] } {
-  const packed = allocatePackedFiles(input.rows, input.locale, input.downloaded);
+  const packed = allocatePackedFiles(input.rows, input.downloaded);
   const table = photoPackTable(input.rows, packed, input.copy, input.locale);
   const entries: ZipStoreEntry[] = [
     { name: PHOTO_PACK_ROSTER_XLSX, data: workbookToXlsx(table) },
