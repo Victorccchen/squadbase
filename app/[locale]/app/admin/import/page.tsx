@@ -5,13 +5,20 @@ import { AdminImportPanel } from "@/components/admin/admin-import-panel";
 import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { listTeams } from "@/lib/org/queries";
 
-export default async function AdminImportPage() {
+type AdminImportPageProps = {
+  params: Promise<{ locale: string }>;
+};
+
+export default async function AdminImportPage({ params }: AdminImportPageProps) {
   if (!(await canRenderAdminPage())) {
     return <AccessDenied area="admin" />;
   }
 
-  const t = await getTranslations("admin");
-  const common = await getTranslations("common");
+  const { locale } = await params;
+  // Pass locale explicitly so post-action RSC re-render does not call
+  // next/root-params (forbidden while Next still marks the request as an action).
+  const t = await getTranslations({ locale, namespace: "admin" });
+  const common = await getTranslations({ locale, namespace: "common" });
   const teams = await listTeams({ kind: "competition_team" });
 
   return (

@@ -1,9 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 import { formatIsoDate, todayInClubTimeZone } from "@/lib/age-band";
 import { getPublicSupabaseEnv } from "@/lib/env";
-import { loadSignedInAccount } from "@/lib/auth/session";
+import { getAuthUser, loadOwnAccount } from "@/lib/auth/session";
 import { canAccessAdmin } from "@/lib/auth/roles";
 import { createClient } from "@/lib/supabase/server";
 import { type OrgErrorKey } from "@/lib/org/errors";
@@ -95,8 +96,14 @@ async function requireAdminActor(): Promise<AdminActorResult> {
   if (!getPublicSupabaseEnv().isConfigured) {
     return { ok: false, errorKey: "notConfigured" };
   }
-  const { user, roles } = await loadSignedInAccount();
-  if (!user || !canAccessAdmin(roles)) {
+  // Do not use loadSignedInAccount()/getLocale(): next-intl reads
+  // next/root-params, which throws during the Server Action phase.
+  const user = await getAuthUser();
+  if (!user) {
+    return { ok: false, errorKey: "forbidden" };
+  }
+  const { roles } = await loadOwnAccount(user.id);
+  if (!canAccessAdmin(roles)) {
     return { ok: false, errorKey: "forbidden" };
   }
   const supabase = await createClient();
@@ -196,6 +203,7 @@ export async function previewOrgImport(
       attempted: true,
     };
   } catch (error) {
+    unstable_rethrow(error);
     console.error("previewOrgImport", error);
     return { ok: false, errorKey: "generic", previewJson: null, attempted: true };
   }
@@ -397,6 +405,7 @@ export async function confirmOrgImport(
       }
     }
   } catch (error) {
+    unstable_rethrow(error);
     console.error("confirmOrgImport", error);
     return { ...INITIAL_IMPORT_CONFIRM_STATE, errorKey: "generic", attempted: true };
   }
