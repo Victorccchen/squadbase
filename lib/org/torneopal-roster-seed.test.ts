@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import { parseCsv, stringifyCsv } from "./import-csv.ts";
-import { PLAYER_TEMPLATE_HEADERS } from "./import-templates.ts";
+import { PLAYER_TEMPLATE_HEADERS } from "./import-validate.ts";
 import { applyTorneopalRosterPlan, type RosterSeedStore } from "./torneopal-roster-apply.ts";
 import {
   TORNEOPAL_EN_PLACEHOLDER,
