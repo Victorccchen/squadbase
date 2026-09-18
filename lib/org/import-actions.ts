@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 import { formatIsoDate, todayInClubTimeZone } from "@/lib/age-band";
 import { getPublicSupabaseEnv } from "@/lib/env";
 import { loadSignedInAccount } from "@/lib/auth/session";
@@ -10,7 +11,9 @@ import { type OrgErrorKey } from "@/lib/org/errors";
 import { parseImportBuffer } from "@/lib/org/import-file";
 import {
   buildImportPreview,
+  emptyImportCatalog,
   headersAreValid,
+  importCatalogSlicesFor,
   resolvedCoachProfile,
   resolvedMatchTeam,
   resolvedPlayerIds,
@@ -99,21 +102,52 @@ async function requireAdminActor(): Promise<AdminActorResult> {
   return { ok: true, userId: user.id, supabase };
 }
 
-async function loadImportCatalog(supabase: AdminClient): Promise<ImportCatalog> {
+async function loadImportCatalog(
+  supabase: AdminClient,
+  kind: ImportKind,
+): Promise<{ ok: true; catalog: ImportCatalog } | { ok: false }> {
+  const slices = new Set(importCatalogSlicesFor(kind));
   const [teams, players, jerseyHolders, profiles, coaches] = await Promise.all([
-    supabase.from("teams").select("id, name, kind, age_band, layer_key, eligible_birth_ages, status"),
-    supabase.from("players").select("id, name_en_given, name_en_family, birth_date"),
-    supabase.from("team_memberships").select("player_id, team_id, jersey_number"),
-    supabase.from("profiles").select("id, phone"),
-    supabase.from("coaches").select("id, profile_id"),
+    slices.has("teams")
+      ? supabase
+          .from("teams")
+          .select("id, name, kind, age_band, layer_key, eligible_birth_ages, status")
+      : Promise.resolve(null),
+    slices.has("players")
+      ? supabase.from("players").select("id, name_en_given, name_en_family, birth_date")
+      : Promise.resolve(null),
+    slices.has("jerseyHolders")
+      ? supabase.from("team_memberships").select("player_id, team_id, jersey_number")
+      : Promise.resolve(null),
+    slices.has("profiles")
+      ? supabase.from("profiles").select("id, phone")
+      : Promise.resolve(null),
+    slices.has("coaches")
+      ? supabase.from("coaches").select("id, profile_id")
+      : Promise.resolve(null),
   ]);
-  return {
-    teams: teams.data ?? [],
-    players: players.data ?? [],
-    jerseyHolders: jerseyHolders.data ?? [],
-    profiles: profiles.data ?? [],
-    coaches: coaches.data ?? [],
-  };
+
+  const labeled = [
+    ["teams", teams],
+    ["players", players],
+    ["jerseyHolders", jerseyHolders],
+    ["profiles", profiles],
+    ["coaches", coaches],
+  ] as const;
+  for (const [slice, result] of labeled) {
+    if (result?.error) {
+      console.error(`loadImportCatalog ${slice}`, result.error.message);
+      return { ok: false };
+    }
+  }
+
+  const catalog = emptyImportCatalog();
+  catalog.teams = teams?.data ?? [];
+  catalog.players = players?.data ?? [];
+  catalog.jerseyHolders = jerseyHolders?.data ?? [];
+  catalog.profiles = profiles?.data ?? [];
+  catalog.coaches = coaches?.data ?? [];
+  return { ok: true, catalog };
 }
 
 function readKind(formData: FormData): ImportKind | null {
@@ -125,38 +159,52 @@ export async function previewOrgImport(
   _prev: ImportPreviewState,
   formData: FormData,
 ): Promise<ImportPreviewState> {
-  const actor = await requireAdminActor();
-  if (!actor.ok) {
-    return { ok: false, errorKey: actor.errorKey, preview: null, attempted: true };
+  try {
+    const actor = await requireAdminActor();
+    if (!actor.ok) {
+      return { ok: false, errorKey: actor.errorKey, preview: null, attempted: true };
+    }
+    const kind = readKind(formData);
+    if (!kind) {
+      return { ok: false, errorKey: "importHeaderInvalid", preview: null, attempted: true };
+    }
+    const file = formData.get("file");
+    if (!(file instanceof File) || file.size === 0) {
+      return { ok: false, errorKey: "importEmpty", preview: null, attempted: true };
+    }
+    const buffer = new Uint8Array(await file.arrayBuffer());
+    const parsed = parseImportBuffer(buffer);
+    if (!parsed.ok) {
+      return { ok: false, errorKey: parsed.errorKey, preview: null, attempted: true };
+    }
+    if (!headersAreValid(kind, parsed.headers)) {
+      return { ok: false, errorKey: "importHeaderInvalid", preview: null, attempted: true };
+    }
+    const catalog = await loadImportCatalog(actor.supabase, kind);
+    if (!catalog.ok) {
+      return { ok: false, errorKey: "generic", preview: null, attempted: true };
+    }
+    const today = formatIsoDate(todayInClubTimeZone());
+    const preview = buildImportPreview(kind, parsed.records, catalog.catalog, today);
+    if (!preview.ok) {
+      return { ok: false, errorKey: preview.errorKey, preview: null, attempted: true };
+    }
+    return {
+      ok: true,
+      errorKey: null,
+      preview: {
+        kind: preview.kind,
+        rows: preview.rows,
+        validCount: preview.validCount,
+        invalidCount: preview.invalidCount,
+      },
+      attempted: true,
+    };
+  } catch (error) {
+    unstable_rethrow(error);
+    console.error("previewOrgImport", error);
+    return { ok: false, errorKey: "generic", preview: null, attempted: true };
   }
-  const kind = readKind(formData);
-  if (!kind) {
-    return { ok: false, errorKey: "importHeaderInvalid", preview: null, attempted: true };
-  }
-  const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0) {
-    return { ok: false, errorKey: "importEmpty", preview: null, attempted: true };
-  }
-  const buffer = new Uint8Array(await file.arrayBuffer());
-  const parsed = parseImportBuffer(buffer);
-  if (!parsed.ok) {
-    return { ok: false, errorKey: parsed.errorKey, preview: null, attempted: true };
-  }
-  if (!headersAreValid(kind, parsed.headers)) {
-    return { ok: false, errorKey: "importHeaderInvalid", preview: null, attempted: true };
-  }
-  const catalog = await loadImportCatalog(actor.supabase);
-  const today = formatIsoDate(todayInClubTimeZone());
-  const preview = buildImportPreview(kind, parsed.records, catalog, today);
-  if (!preview.ok) {
-    return { ok: false, errorKey: preview.errorKey, preview: null, attempted: true };
-  }
-  return {
-    ok: true,
-    errorKey: null,
-    preview,
-    attempted: true,
-  };
 }
 
 function parsePreviewPayload(formData: FormData): ImportPreview | null {
@@ -317,50 +365,68 @@ export async function confirmOrgImport(
   _prev: ImportConfirmState,
   formData: FormData,
 ): Promise<ImportConfirmState> {
-  const actor = await requireAdminActor();
-  if (!actor.ok) {
-    return { ...INITIAL_IMPORT_CONFIRM_STATE, errorKey: actor.errorKey, attempted: true };
-  }
-  const preview = parsePreviewPayload(formData);
-  if (!preview) {
-    return { ...INITIAL_IMPORT_CONFIRM_STATE, errorKey: "importEmpty", attempted: true };
-  }
-  const validRows = preview.rows.filter((row) => row.valid && row.draft);
-  if (validRows.length === 0) {
-    return { ...INITIAL_IMPORT_CONFIRM_STATE, errorKey: "importNoValidRows", attempted: true };
-  }
-
-  const catalog = await loadImportCatalog(actor.supabase);
-  const created: ImportConfirmRow[] = [];
-  const failed: ImportConfirmRow[] = [];
-
-  for (const row of validRows) {
-    let result: ImportConfirmRow;
-    if (preview.kind === "players") {
-      result = await confirmPlayerRow(actor, row, catalog);
-    } else if (preview.kind === "coaches") {
-      result = await confirmCoachRow(actor, row, catalog);
-    } else {
-      result = await confirmMatchRow(actor, row, catalog);
+  try {
+    const actor = await requireAdminActor();
+    if (!actor.ok) {
+      return { ...INITIAL_IMPORT_CONFIRM_STATE, errorKey: actor.errorKey, attempted: true };
     }
-    if (result.ok) {
-      created.push(result);
-    } else {
-      failed.push(result);
+    const preview = parsePreviewPayload(formData);
+    if (!preview) {
+      return { ...INITIAL_IMPORT_CONFIRM_STATE, errorKey: "importEmpty", attempted: true };
     }
-  }
+    const validRows = preview.rows.filter((row) => row.valid && row.draft);
+    if (validRows.length === 0) {
+      return { ...INITIAL_IMPORT_CONFIRM_STATE, errorKey: "importNoValidRows", attempted: true };
+    }
 
-  if (created.length > 0) {
-    revalidatePath("/", "layout");
-  }
+    const loaded = await loadImportCatalog(actor.supabase, preview.kind);
+    if (!loaded.ok) {
+      return { ...INITIAL_IMPORT_CONFIRM_STATE, errorKey: "generic", attempted: true };
+    }
+    const catalog = loaded.catalog;
+    const created: ImportConfirmRow[] = [];
+    const failed: ImportConfirmRow[] = [];
 
-  return {
-    ok: failed.length === 0,
-    errorKey: failed.length > 0 && created.length > 0 ? "partialTeamCreates" : failed[0]?.errorKeys[0] ?? null,
-    created,
-    failed,
-    attempted: true,
-  };
+    for (const row of validRows) {
+      let result: ImportConfirmRow;
+      switch (preview.kind) {
+        case "players":
+          result = await confirmPlayerRow(actor, row, catalog);
+          break;
+        case "coaches":
+          result = await confirmCoachRow(actor, row, catalog);
+          break;
+        case "matches":
+          result = await confirmMatchRow(actor, row, catalog);
+          break;
+        default: {
+          const _never: never = preview.kind;
+          throw new Error(`Unhandled import kind: ${_never}`);
+        }
+      }
+      if (result.ok) {
+        created.push(result);
+      } else {
+        failed.push(result);
+      }
+    }
+
+    if (created.length > 0) {
+      revalidatePath("/", "layout");
+    }
+
+    return {
+      ok: failed.length === 0,
+      errorKey: failed.length > 0 && created.length > 0 ? "partialTeamCreates" : failed[0]?.errorKeys[0] ?? null,
+      created,
+      failed,
+      attempted: true,
+    };
+  } catch (error) {
+    unstable_rethrow(error);
+    console.error("confirmOrgImport", error);
+    return { ...INITIAL_IMPORT_CONFIRM_STATE, errorKey: "generic", attempted: true };
+  }
 }
 
 export async function assistMatchUrl(

@@ -18,7 +18,9 @@ import {
 } from "./import-templates.ts";
 import {
   buildImportPreview,
+  emptyImportCatalog,
   headersAreValid,
+  importCatalogSlicesFor,
   type ImportCatalog,
 } from "./import-validate.ts";
 import { workbookToXlsx } from "./import-xlsx-write.ts";
@@ -275,6 +277,69 @@ describe("T6A-6 blank opponent unpublished", () => {
     }
     assert.equal(preview.rows[0]?.valid, true);
     assert.match(preview.rows[0]?.summary ?? "", /published=false/);
+  });
+});
+
+describe("match catalog load by kind", () => {
+  it("does not require players, profiles, or coaches for match preview", () => {
+    assert.deepEqual([...importCatalogSlicesFor("matches")], ["teams"]);
+    assert.ok(!importCatalogSlicesFor("matches").includes("players"));
+    assert.ok(!importCatalogSlicesFor("matches").includes("jerseyHolders"));
+    assert.ok(!importCatalogSlicesFor("matches").includes("profiles"));
+    assert.ok(!importCatalogSlicesFor("matches").includes("coaches"));
+    assert.deepEqual([...importCatalogSlicesFor("players")].sort(), [
+      "jerseyHolders",
+      "players",
+      "teams",
+    ]);
+    assert.deepEqual([...importCatalogSlicesFor("coaches")].sort(), [
+      "coaches",
+      "profiles",
+      "teams",
+    ]);
+  });
+
+  it("previews a one-row league CSV against a teams-only catalog", () => {
+    const csv = stringifyCsv([
+      [...MATCH_TEMPLATE_HEADERS],
+      [
+        "",
+        "Futuro U8",
+        "台中聯賽 vs Rivals",
+        "league",
+        "2026-09-20T10:00",
+        "2026-09-20T11:10",
+        "",
+        "",
+        "home",
+        "false",
+        "false",
+        "",
+      ],
+    ]);
+    const parsed = parseImportBuffer(new TextEncoder().encode(csv));
+    assert.equal(parsed.ok, true);
+    if (!parsed.ok) {
+      return;
+    }
+    assert.equal(headersAreValid("matches", parsed.headers), true);
+    const teamsOnly: ImportCatalog = {
+      ...emptyImportCatalog(),
+      teams: catalog().teams,
+    };
+    const preview = buildImportPreview("matches", parsed.records, teamsOnly, TODAY);
+    assert.equal(preview.ok, true);
+    if (!preview.ok) {
+      return;
+    }
+    assert.equal(preview.validCount, 1);
+    assert.equal(preview.invalidCount, 0);
+    assert.equal(preview.rows[0]?.valid, true);
+    const draft = preview.rows[0]?.draft;
+    assert.ok(draft && "kind" in draft && draft.kind === "league");
+    if (draft && "isPublished" in draft) {
+      assert.equal(draft.isPublished, false);
+    }
   });
 });
 

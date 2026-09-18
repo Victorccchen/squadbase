@@ -59,6 +59,40 @@ export type ImportCatalog = {
   coaches: { id: string; profile_id: string }[];
 };
 
+export const IMPORT_CATALOG_SLICES = [
+  "teams",
+  "players",
+  "jerseyHolders",
+  "profiles",
+  "coaches",
+] as const;
+export type ImportCatalogSlice = (typeof IMPORT_CATALOG_SLICES)[number];
+
+export function emptyImportCatalog(): ImportCatalog {
+  return {
+    teams: [],
+    players: [],
+    jerseyHolders: [],
+    profiles: [],
+    coaches: [],
+  };
+}
+
+export function importCatalogSlicesFor(kind: ImportKind): readonly ImportCatalogSlice[] {
+  switch (kind) {
+    case "players":
+      return ["teams", "players", "jerseyHolders"];
+    case "coaches":
+      return ["teams", "profiles", "coaches"];
+    case "matches":
+      return ["teams"];
+    default: {
+      const _never: never = kind;
+      throw new Error(`Unhandled import kind: ${_never}`);
+    }
+  }
+}
+
 export type ImportDraft = PlayerImportDraft | CoachImportDraft | MatchImportDraft;
 
 export type ImportPreviewRow = {
@@ -374,12 +408,20 @@ export function buildImportPreview(
     return { ok: false, errorKey: "importTooLarge" };
   }
   let rows: ImportPreviewRow[];
-  if (kind === "players") {
-    rows = previewPlayerRecords(records, catalog, todayIso);
-  } else if (kind === "coaches") {
-    rows = previewCoachRecords(records, catalog);
-  } else {
-    rows = previewMatchRecords(records, catalog);
+  switch (kind) {
+    case "players":
+      rows = previewPlayerRecords(records, catalog, todayIso);
+      break;
+    case "coaches":
+      rows = previewCoachRecords(records, catalog);
+      break;
+    case "matches":
+      rows = previewMatchRecords(records, catalog);
+      break;
+    default: {
+      const _never: never = kind;
+      throw new Error(`Unhandled import kind: ${_never}`);
+    }
   }
   return {
     ok: true,
