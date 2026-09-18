@@ -21,6 +21,7 @@
   - [ ] Stage ST: 梯隊 (age squad) vs 隊伍 (competition team); PR #22 ladder-up superseded
   - [ ] Admin list/detail soft-delete for training and matches (reuse `admin_soft_delete_session`; cancel stays separate)
   - [ ] Stage 6A: admin Excel/CSV import (players, coaches, matches) + match URL assist; preview then confirm; create-only
+  - [ ] Stage L: admin Torneopal schedule/team URL → server fetch/parse → preview mapped 隊伍 → confirm unpublished league shells (create-only; skip duplicates)
   - [ ] Stage N: admin notice templates + audiences (generate + copy LINE-group text; no send)
   - [ ] Stage R: admin Excel/CSV reports (attendance, registrations, credit ledger, match roster); admin-only; browser download
   - [ ] Stage D: admin ops dashboard (attendance, remittance vs consumed credits, remaining obligation); admin-only
