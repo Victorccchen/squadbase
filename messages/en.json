@@ -1056,7 +1056,8 @@
       "blockedUrl": "That URL is not allowed. Use a public http(s) page; private, localhost, and metadata addresses are blocked.",
       "urlFetchFailed": "Could not fetch that page (size, type, or HTTP error).",
       "urlTimeout": "Fetching that page timed out.",
-      "missingProfile": "That profile was not found."
+      "missingProfile": "That profile was not found.",
+      "generic": "Could not preview or import this file. Please try again."
     }
   },
   "notices": {

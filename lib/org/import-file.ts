@@ -39,3 +39,15 @@ export function parseImportBuffer(buffer: Uint8Array):
     return { ok: false, errorKey: "importInvalidFile" };
   }
 }
+
+export async function readImportUploadBytes(
+  value: FormDataEntryValue | null,
+): Promise<{ ok: true; bytes: Uint8Array } | { ok: false; errorKey: "importEmpty" }> {
+  if (value == null || typeof value === "string") {
+    return { ok: false, errorKey: "importEmpty" };
+  }
+  if (typeof Blob === "undefined" || !(value instanceof Blob) || value.size === 0) {
+    return { ok: false, errorKey: "importEmpty" };
+  }
+  return { ok: true, bytes: new Uint8Array(await value.arrayBuffer()) };
+}

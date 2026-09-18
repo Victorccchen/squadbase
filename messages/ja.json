@@ -1056,7 +1056,8 @@
       "blockedUrl": "その URL は許可されません。公開 http(s) ページを使ってください。プライベート、localhost、metadata アドレスは遮断します。",
       "urlFetchFailed": "そのページを取得できませんでした（サイズ、種類、または HTTP エラー）。",
       "urlTimeout": "ページの取得がタイムアウトしました。",
-      "missingProfile": "そのプロフィールは見つかりませんでした。"
+      "missingProfile": "そのプロフィールは見つかりませんでした。",
+      "generic": "このファイルをプレビューまたは取り込みできませんでした。もう一度お試しください。"
     }
   },
   "notices": {

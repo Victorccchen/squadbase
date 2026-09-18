@@ -17,7 +17,7 @@ import {
 } from "./squad-team.ts";
 import { jerseyNumberTakenOnTeam } from "./parse.ts";
 import type { OrgErrorKey } from "./errors.ts";
-import type { ImportKind } from "./import-templates.ts";
+import { isImportKind, type ImportKind } from "./import-templates.ts";
 import {
   parseCoachImportValues,
   parseMatchImportValues,
@@ -109,6 +109,34 @@ export type ImportPreview = {
   validCount: number;
   invalidCount: number;
 };
+
+/** Plain JSON for Server Action / hidden-field transport. Strips non-enumerable extras. */
+export function serializeImportPreview(preview: ImportPreview): string {
+  return JSON.stringify({
+    kind: preview.kind,
+    rows: preview.rows.map((row) => ({
+      line: row.line,
+      valid: row.valid,
+      errorKeys: [...row.errorKeys],
+      summary: row.summary,
+      draft: row.draft,
+    })),
+    validCount: preview.validCount,
+    invalidCount: preview.invalidCount,
+  });
+}
+
+export function parseImportPreviewJson(raw: string): ImportPreview | null {
+  try {
+    const parsed = JSON.parse(raw) as ImportPreview;
+    if (!parsed || !isImportKind(parsed.kind) || !Array.isArray(parsed.rows)) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
 
 export type ImportPreviewResult =
   | ({ ok: true } & ImportPreview)

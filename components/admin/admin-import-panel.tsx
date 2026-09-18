@@ -15,6 +15,9 @@ import {
 } from "@/lib/org/import-actions";
 import { IMPORT_KINDS, templateCsv, templateFilename, templateXlsx, type ImportKind } from "@/lib/org/import-templates";
 import type { OrgErrorKey } from "@/lib/org/errors";
+import { parseImportPreviewJson, type ImportPreview } from "@/lib/org/import-validate";
+import type { Team } from "@/lib/supabase/database.types";
+import { inputClassName, primaryButtonClassName, secondaryButtonClassName } from "@/lib/ui";
 
 const IMPORT_ERROR_KEYS = new Set<OrgErrorKey>([
   "duplicatePlayer",
@@ -31,9 +34,8 @@ const IMPORT_ERROR_KEYS = new Set<OrgErrorKey>([
   "urlFetchFailed",
   "urlTimeout",
   "missingProfile",
+  "generic",
 ]);
-import type { Team } from "@/lib/supabase/database.types";
-import { inputClassName, primaryButtonClassName, secondaryButtonClassName } from "@/lib/ui";
 
 type AdminImportPanelProps = {
   teams: Pick<Team, "id" | "name" | "age_band" | "status">[];
@@ -98,13 +100,19 @@ function FileImportSection({ kind }: { kind: ImportKind }) {
     INITIAL_IMPORT_CONFIRM_STATE,
   );
 
-  const previewJson = useMemo(
-    () => (previewState.preview ? JSON.stringify(previewState.preview) : ""),
-    [previewState.preview],
-  );
+  const preview = useMemo((): ImportPreview | null => {
+    if (!previewState.previewJson) {
+      return null;
+    }
+    return parseImportPreviewJson(previewState.previewJson);
+  }, [previewState.previewJson]);
 
   function errorText(key: OrgErrorKey) {
-    return IMPORT_ERROR_KEYS.has(key) ? t(`errors.${key}`) : org(`errors.${key}`);
+    try {
+      return IMPORT_ERROR_KEYS.has(key) ? t(`errors.${key}`) : org(`errors.${key}`);
+    } catch {
+      return key;
+    }
   }
 
   return (
@@ -156,12 +164,12 @@ function FileImportSection({ kind }: { kind: ImportKind }) {
         </button>
       </form>
 
-      {previewState.preview ? (
+      {preview ? (
         <div className="flex flex-col gap-4">
           <p className="text-sm text-zinc-600 dark:text-zinc-300">
             {t("previewCounts", {
-              valid: previewState.preview.validCount,
-              invalid: previewState.preview.invalidCount,
+              valid: preview.validCount,
+              invalid: preview.invalidCount,
             })}
           </p>
           <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
@@ -175,7 +183,7 @@ function FileImportSection({ kind }: { kind: ImportKind }) {
                 </tr>
               </thead>
               <tbody>
-                {previewState.preview.rows.map((row) => (
+                {preview.rows.map((row) => (
                   <tr key={row.line} className="border-t border-zinc-200 dark:border-zinc-800">
                     <td className="px-3 py-2">{row.line}</td>
                     <td className="px-3 py-2">{row.valid ? t("valid") : t("invalid")}</td>
@@ -190,7 +198,7 @@ function FileImportSection({ kind }: { kind: ImportKind }) {
           </div>
           <form action={confirmAction} className="flex max-w-xl flex-col gap-3">
             <LocaleHiddenField />
-            <input type="hidden" name="preview_json" value={previewJson} />
+            <input type="hidden" name="preview_json" value={previewState.previewJson ?? ""} />
             {confirmState.errorKey ? (
               <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
                 {errorText(confirmState.errorKey)}
@@ -198,7 +206,7 @@ function FileImportSection({ kind }: { kind: ImportKind }) {
             ) : null}
             <button
               type="submit"
-              disabled={confirmPending || previewState.preview.validCount === 0}
+              disabled={confirmPending || preview.validCount === 0}
               className={primaryButtonClassName}
             >
               {confirmPending ? t("importing") : t("confirm")}

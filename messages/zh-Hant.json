@@ -1056,7 +1056,8 @@
       "blockedUrl": "這個網址不被允許。請用公開的 http(s) 頁面；私網、localhost 與 metadata 位址會被擋下。",
       "urlFetchFailed": "無法抓取該頁（大小、類型或 HTTP 錯誤）。",
       "urlTimeout": "抓取該頁逾時。",
-      "missingProfile": "找不到這個 profile。"
+      "missingProfile": "找不到這個 profile。",
+      "generic": "無法預覽或匯入此檔案，請再試一次。"
     }
   },
   "notices": {

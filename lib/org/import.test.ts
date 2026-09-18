@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { canAccessAdmin } from "../auth/roles.ts";
 import { parseCsv, recordsFromTable, stringifyCsv } from "./import-csv.ts";
-import { parseImportBuffer } from "./import-file.ts";
+import { parseImportBuffer, readImportUploadBytes } from "./import-file.ts";
 import {
   parseCoachImportValues,
   parseMatchImportValues,
@@ -21,6 +21,8 @@ import {
   emptyImportCatalog,
   headersAreValid,
   importCatalogSlicesFor,
+  parseImportPreviewJson,
+  serializeImportPreview,
   type ImportCatalog,
 } from "./import-validate.ts";
 import { workbookToXlsx } from "./import-xlsx-write.ts";
@@ -340,6 +342,15 @@ describe("match catalog load by kind", () => {
     if (draft && "isPublished" in draft) {
       assert.equal(draft.isPublished, false);
     }
+    const json = serializeImportPreview(preview);
+    const parsedJson = JSON.parse(json) as { ok?: unknown };
+    assert.equal("ok" in parsedJson, false);
+    const roundTrip = parseImportPreviewJson(json);
+    assert.equal(roundTrip?.rows[0]?.summary.includes("台中聯賽"), true);
+    assert.equal(roundTrip?.rows[0]?.valid, true);
+    if (roundTrip?.rows[0]?.draft && "startsAt" in roundTrip.rows[0].draft) {
+      assert.match(roundTrip.rows[0].draft.startsAt, /2026-09-20T10:00:00\+08:00/);
+    }
   });
 });
 
@@ -436,5 +447,38 @@ describe("csv quoted fields", () => {
     ];
     const parsed = recordsFromTable(parseCsv(stringifyCsv(table)));
     assert.equal(parsed.records[0]?.values.title, 'Cup, "final"');
+  });
+});
+
+describe("match preview serialization", () => {
+  it("does not throw on Chinese ellipsis titles or Taipei local times", () => {
+    const parsed = parseMatchImportValues({
+      team_name: "Futuro U8",
+      title: "台中聯賽 vs …",
+      kind: "league",
+      starts_at: "2026-09-20T10:00",
+      ends_at: "2026-09-20T11:10",
+      side: "home",
+      is_playoff: "false",
+      is_published: "false",
+    });
+    assert.equal(parsed.ok, true);
+    if (!parsed.ok) {
+      return;
+    }
+    assert.equal(parsed.draft.title, "台中聯賽 vs …");
+    assert.match(parsed.draft.startsAt, /\+08:00$/);
+  });
+
+  it("reads a Blob upload the same way as a File", async () => {
+    const csv = stringifyCsv([["title"], ["台中"]]);
+    const blob = new Blob([csv], { type: "text/csv" });
+    const uploaded = await readImportUploadBytes(blob);
+    assert.equal(uploaded.ok, true);
+    if (!uploaded.ok) {
+      return;
+    }
+    const parsed = parseImportBuffer(uploaded.bytes);
+    assert.equal(parsed.ok, true);
   });
 });
