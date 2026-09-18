@@ -2,7 +2,7 @@
 
 Responsive web + PWA for a football **Club** (球團) operations app: training squads, courses, attendance, assessments, and matches/events.
 
-This repository is currently **Stage D** plus **Stage R**, **Stage P / P.1**, and **Stage L**: Stages 1–6P.1 plus Stage ST (梯隊 / 隊伍), **admin Excel/CSV import** (Stage 6A), **admin Torneopal schedule link** (Stage L), admin LINE-group **generate + copy** (Stage N), **admin Excel/CSV reports** (attendance, registrations, credit ledger, match roster), an **admin ops dashboard** (attendance rates, approved remittance vs consumed credits, remaining obligation), **private player headshots / ID photos** bound to each player, and **admin league-registration ZIP** (roster + photos). 梯隊 (age squad) is the roster band for every registered player and for training. 隊伍 (competition team) is the external match side; only continuing trainees may join, with at most two active 隊伍 and no two sharing the same `layer_key`. Parent nav still lists **訓練** (`/app/sessions`) separately from **賽事** (`/app/competitions`). Training attaches to 梯隊; matches attach to 隊伍. Dual membership **replaces** the PR #22 one-ladder-step-up rule. Admins import master data from `/app/admin/import` (preview then confirm; create-only), paste a Torneopal schedule/team URL at `/app/admin/torneopal` to create unpublished league shells, generate notice copy from `/app/admin/notices`, download operational reports from `/app/admin/reports` (including a ZIP of roster + private headshots), and open the numeric overview from `/app/admin/dashboard`. Each player may have one current private headshot (and an optional PDF) for league ID cards; public match pages never show it.
+This repository is currently **Stage D** plus **Stage R** / **Stage R1**, **Stage P / P.1**, and **Stage L**: Stages 1–6P.1 plus Stage ST (梯隊 / 隊伍), **admin Excel/CSV import** (Stage 6A), **admin Torneopal schedule link** (Stage L), **Torneopal FUTURO roster seed** (zh name + jersey on staging), admin LINE-group **generate + copy** (Stage N), **admin Excel/CSV reports** (attendance, registrations, credit ledger, match roster), an **admin ops dashboard** (attendance rates, approved remittance vs consumed credits, remaining obligation), **private player headshots / ID photos** bound to each player, and **admin league-registration ZIP** (roster + photos). 梯隊 (age squad) is the roster band for every registered player and for training. 隊伍 (competition team) is the external match side; only continuing trainees may join, with at most two active 隊伍 and no two sharing the same `layer_key`. Parent nav still lists **訓練** (`/app/sessions`) separately from **賽事** (`/app/competitions`). Training attaches to 梯隊; matches attach to 隊伍. Dual membership **replaces** the PR #22 one-ladder-step-up rule. Admins import master data from `/app/admin/import` (preview then confirm; create-only), paste a Torneopal schedule/team URL at `/app/admin/torneopal` to create unpublished league shells, generate notice copy from `/app/admin/notices`, download operational reports from `/app/admin/reports` (including a ZIP of roster + private headshots), and open the numeric overview from `/app/admin/dashboard`. Each player may have one current private headshot (and an optional PDF) for league ID cards; public match pages never show it.
 
 Parents can request a link to an **existing** player (the club creates the player record first). Until an admin approves, the parent cannot read that player’s private fields. After approval, the parent sees a basic “my children” list (names, birth date, team, jersey) and may **register that child for training sessions** on the child’s team. The parent may **withdraw a pending request**; only an **admin** may revoke an **approved** link. After revoke or withdraw, `is_approved_guardian_for_player` is false and the same pair may apply again. Session signup checks `guardian_player_links.status = approved`.
 
@@ -304,6 +304,10 @@ Locked Futuro **隊伍** seed names (exception to otherwise-neutral Club wording
 | Futuro U9 | U8, U9 | u9 |
 | Futuro U10藍 | U9, U10 | u10 |
 | Futuro U10白 | U9, U10 | u10 |
+| Futuro U10 | U9, U10 | u10 |
+| Futuro U11 | U10, U11 | u11 |
+| Futuro U12 黃 | U11, U12 | u12 |
+| Futuro U12 藍 | U11, U12 | u12 |
 
 梯隊 ladder (no U9/U11 梯隊): `U6 → U8 → U10 → U12 → U15 → U18 → 預備隊 → 成人隊`. Birth U6–U8 → 梯隊 U8; birth U9–U10 → 梯隊 U10. Ages 0–5 stay 梯隊 U6.
 
@@ -363,6 +367,7 @@ Apply in order:
 31. [`supabase/migrations/20260909110000_regrant_multi_team_membership_privileges.sql`](supabase/migrations/20260909110000_regrant_multi_team_membership_privileges.sql) (**paste after 30** — re-grants PR #22 functions. Does not change RLS.)
 32. [`supabase/migrations/20260910000000_stage_st_age_squads_competition_teams.sql`](supabase/migrations/20260910000000_stage_st_age_squads_competition_teams.sql) (**Stage ST; paste this file’s CONTENTS on staging after 30–31** — `team_kind`, 梯隊 / 隊伍 columns, Futuro 隊伍 seed, membership trigger that supersedes PR #22 ladder-up, session-unit-kind trigger, `admin_set_player_age_squad` / `admin_set_player_competition_teams`. Idempotent.)
 33. [`supabase/migrations/20260910010000_regrant_stage_st_privileges.sql`](supabase/migrations/20260910010000_regrant_stage_st_privileges.sql) (**paste after 32** — re-grants Stage ST types/functions/views to `authenticated`. Does not change RLS. Safe to re-run.)
+34. [`supabase/migrations/20260918010000_stage_r1_futuro_competition_teams.sql`](supabase/migrations/20260918010000_stage_r1_futuro_competition_teams.sql) (**Stage R1; paste this file’s CONTENTS on staging** — Futuro U10 / U11 / U12 黃 / U12 藍 隊伍 and `u11` eligibility. Does not drop U10藍/白. Idempotent. Then seed players with `npm run seed:torneopal-roster`. See [`docs/stage-r1-torneopal-roster-seed.md`](docs/stage-r1-torneopal-roster-seed.md).)
 
 Steps:
 
@@ -817,6 +822,23 @@ Victor staging (after this PR is on staging): sign in as admin → `/zh-Hant/app
 
 Out of scope: CSV/Excel import repair; updating existing matches; auto-publish; storing raw HTML; live network in CI; production deploy.
 
+### Stage R1 (Torneopal FUTURO roster seed)
+
+Idempotent **staging** seed of competition-team players from a zh-name + jersey CSV. English names stay `Pending`. Birthdates are documented age-band placeholders. Match existing players by Chinese full name; do not duplicate. Cross-listed Torneopal names become one player with up to two 隊伍. Apply steps: [`docs/stage-r1-torneopal-roster-seed.md`](docs/stage-r1-torneopal-roster-seed.md).
+
+Paste item **34** on staging first (Futuro U10 / U11 / U12 黃 / U12 藍). Then:
+
+```bash
+npm run seed:torneopal-roster -- --csv data/staging/torneopal-futuro-players.csv
+npm run seed:torneopal-roster -- --csv data/staging/torneopal-futuro-players.csv --apply
+```
+
+The CLI reads `SUPABASE_SERVICE_ROLE_KEY` from the environment and never prints it. It refuses any project URL other than staging (`ffksqfgscuezjwdbktcd`) and refuses `NEXT_PUBLIC_APP_ENV=production`. Real youth names stay out of git (`.gitignore`). Example format: [`data/staging/torneopal-futuro-players.example.csv`](data/staging/torneopal-futuro-players.example.csv).
+
+Unit tests: [`lib/org/torneopal-roster-seed.test.ts`](lib/org/torneopal-roster-seed.test.ts). Optional SQL check: [`supabase/stage_r1_verification.sql`](supabase/stage_r1_verification.sql) (rollback).
+
+Out of scope: inventing romanizations; production deploy; committing the 87-row PII CSV.
+
 ### Stage N (notice templates + audiences)
 
 Admin **generate + copy** only. LINE groups stay manual paste. The app is the source of truth; LINE is a wake-up plus deep link. Stage 4B debit/bank-transfer notice copy on session detail is unchanged.
@@ -925,13 +947,15 @@ i18n/                  next-intl routing, navigation, request config
 lib/age-band.ts        Season-start age band helper
 lib/assessments/       Assessment parse/validation, queries, server actions
 lib/credits/           Debit rules, packages, LINE notice copy, Stage N announcement templates, credit queries/actions
-lib/org/               Server actions, queries, import parse/validate, URL assist, match helpers, admin reports, ops dashboard aggregations
+lib/org/               Server actions, queries, import parse/validate, Torneopal schedule link, Torneopal roster seed, URL assist, match helpers, admin reports, ops dashboard aggregations
 lib/auth/              Phone helpers, session/role guards
 lib/supabase/          Browser, server, and proxy (cookie) clients
 messages/              zh-Hant, en, ja copy
+scripts/               Staging-only CLIs (Torneopal roster seed; refuses production)
+data/staging/          Staging seed CSV examples (real youth roster is gitignored)
 supabase/migrations/   SQL (apply on staging only)
 .github/workflows/     PR CI (lint, typecheck, unit tests; no deploy)
-docs/                  Staging Vercel CD (Connect GitHub → env → Auth redirect); Stage P Storage notes
+docs/                  Staging Vercel CD; Stage P Storage notes; Stage R1 roster seed apply steps
 ```
 
 Auth uses the official `@supabase/ssr` cookie pattern for Next.js, composed in `proxy.ts` with `next-intl` (Next.js 16 proxy, not the old `middleware.ts` filename). Server pages call `getUser()`; the proxy refreshes/validates with `getClaims()`. Clients receive only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.

@@ -41,6 +41,7 @@ export const LAYER_KEYS = [
   "u8",
   "u9",
   "u10",
+  "u11",
   "u12",
   "u15",
   "u18",
@@ -92,6 +93,52 @@ export const FUTURO_COMPETITION_TEAMS = [
 
 export type FuturoCompetitionTeam = (typeof FUTURO_COMPETITION_TEAMS)[number];
 
+/**
+ * Stage R1 Torneopal 隊伍. U10 白/藍 collapse to one Futuro U10 side.
+ * U10藍/白 rows from Stage ST stay in the database; seed writes to these names.
+ */
+export const TORNEOPAL_FUTURO_COMPETITION_TEAMS = [
+  {
+    name: "Futuro U8",
+    layerKey: "u8" as const,
+    ageBand: "U8" as const,
+    eligibleBirthAges: ["U6", "U7", "U8"] as const,
+  },
+  {
+    name: "Futuro U9",
+    layerKey: "u9" as const,
+    ageBand: "U8" as const,
+    eligibleBirthAges: ["U8", "U9"] as const,
+  },
+  {
+    name: "Futuro U10",
+    layerKey: "u10" as const,
+    ageBand: "U10" as const,
+    eligibleBirthAges: ["U9", "U10"] as const,
+  },
+  {
+    name: "Futuro U11",
+    layerKey: "u11" as const,
+    ageBand: "U12" as const,
+    eligibleBirthAges: ["U10", "U11"] as const,
+  },
+  {
+    name: "Futuro U12 黃",
+    layerKey: "u12" as const,
+    ageBand: "U12" as const,
+    eligibleBirthAges: ["U11", "U12"] as const,
+  },
+  {
+    name: "Futuro U12 藍",
+    layerKey: "u12" as const,
+    ageBand: "U12" as const,
+    eligibleBirthAges: ["U11", "U12"] as const,
+  },
+] as const;
+
+export type TorneopalFuturoCompetitionTeam =
+  (typeof TORNEOPAL_FUTURO_COMPETITION_TEAMS)[number];
+
 export function isTeamKind(value: string): value is TeamKind {
   return (TEAM_KINDS as readonly string[]).includes(value);
 }
@@ -117,6 +164,8 @@ export function ageBandFromLayerKey(layerKey: LayerKey): AgeBand {
       return "U8";
     case "u10":
       return "U10";
+    case "u11":
+      return "U12";
     case "u12":
       return "U12";
     case "u15":
@@ -127,6 +176,10 @@ export function ageBandFromLayerKey(layerKey: LayerKey): AgeBand {
       return "reserve";
     case "senior":
       return "senior";
+    default: {
+      const _never: never = layerKey;
+      throw new Error(`Unhandled layer key: ${_never}`);
+    }
   }
 }
 
@@ -140,6 +193,8 @@ export function defaultEligibleBirthAges(layerKey: LayerKey): BirthAgeLabel[] {
       return ["U8", "U9"];
     case "u10":
       return ["U9", "U10"];
+    case "u11":
+      return ["U10", "U11"];
     case "u12":
       return ["U11", "U12"];
     case "u15":
@@ -149,6 +204,10 @@ export function defaultEligibleBirthAges(layerKey: LayerKey): BirthAgeLabel[] {
     case "reserve":
     case "senior":
       return ["senior"];
+    default: {
+      const _never: never = layerKey;
+      throw new Error(`Unhandled layer key: ${_never}`);
+    }
   }
 }
 
@@ -264,4 +323,35 @@ export function parseEligibleBirthAges(values: readonly string[]): BirthAgeLabel
 
 export function futuroTeamByName(name: string): FuturoCompetitionTeam | undefined {
   return FUTURO_COMPETITION_TEAMS.find((team) => team.name === name);
+}
+
+export function torneopalFuturoTeamByName(
+  name: string,
+): TorneopalFuturoCompetitionTeam | undefined {
+  return TORNEOPAL_FUTURO_COMPETITION_TEAMS.find((team) => team.name === name);
+}
+
+/** Birth-age labels that map onto a 梯隊 band (15 Aug rule). */
+export function birthAgeLabelsForSquadBand(band: AgeBand): BirthAgeLabel[] {
+  switch (band) {
+    case "U6":
+      return ["U6"];
+    case "U8":
+      return ["U6", "U7", "U8"];
+    case "U10":
+      return ["U9", "U10"];
+    case "U12":
+      return ["U11", "U12"];
+    case "U15":
+      return ["U13", "U14", "U15"];
+    case "U18":
+      return ["U16", "U17", "U18"];
+    case "reserve":
+    case "senior":
+      return ["senior"];
+    default: {
+      const _never: never = band;
+      throw new Error(`Unhandled 梯隊 band: ${_never}`);
+    }
+  }
 }

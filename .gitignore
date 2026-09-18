@@ -38,6 +38,6 @@ yarn-error.log*
 # vercel
 .vercel
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# Real youth roster CSV (Chinese names). Keep out of git.
+/data/staging/torneopal-futuro-players.csv
+
