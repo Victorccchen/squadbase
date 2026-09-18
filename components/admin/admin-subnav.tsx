@@ -14,7 +14,6 @@ const LINKS = [
   { href: "/app/admin/claims", key: "claims" as const, match: "/app/admin/claims" },
   { href: "/app/admin/credits", key: "creditsAdmin" as const, match: "/app/admin/credits" },
   { href: "/app/admin/import", key: "import" as const, match: "/app/admin/import" },
-  { href: "/app/admin/torneopal", key: "torneopal" as const, match: "/app/admin/torneopal" },
   { href: "/app/admin/notices", key: "notices" as const, match: "/app/admin/notices" },
   { href: "/app/admin/reports", key: "reports" as const, match: "/app/admin/reports" },
 ];

@@ -1,160 +1,83 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { LocaleHiddenField } from "@/components/admin/locale-hidden-field";
-import { MatchForm } from "@/components/admin/match-form";
-import { createMatch } from "@/lib/org/match-actions";
-import {
-  assistMatchUrl,
-  confirmOrgImport,
-  INITIAL_IMPORT_CONFIRM_STATE,
-  INITIAL_IMPORT_PREVIEW_STATE,
-  INITIAL_URL_ASSIST_STATE,
-  previewOrgImport,
-} from "@/lib/org/import-actions";
-import { IMPORT_KINDS, templateCsv, templateFilename, templateXlsx, type ImportKind } from "@/lib/org/import-templates";
 import type { OrgErrorKey } from "@/lib/org/errors";
-import { parseImportPreviewJson, type ImportPreview } from "@/lib/org/import-validate";
-import type { Team } from "@/lib/supabase/database.types";
-import { inputClassName, primaryButtonClassName, secondaryButtonClassName } from "@/lib/ui";
+import { parseTorneopalPreviewJson, type TorneopalPreviewStatus } from "@/lib/org/torneopal-preview";
+import {
+  confirmTorneopalSchedule,
+  previewTorneopalSchedule,
+} from "@/lib/org/torneopal-actions";
+import {
+  INITIAL_TORNEOPAL_CONFIRM_STATE,
+  INITIAL_TORNEOPAL_PREVIEW_STATE,
+} from "@/lib/org/torneopal-state";
+import { inputClassName, primaryButtonClassName } from "@/lib/ui";
 
-const IMPORT_ERROR_KEYS = new Set<OrgErrorKey>([
-  "duplicatePlayer",
-  "duplicateInFile",
-  "unknownProfilePhone",
-  "coachAlreadyLinked",
-  "ambiguousTeamName",
-  "importEmpty",
-  "importTooLarge",
-  "importInvalidFile",
-  "importNoValidRows",
-  "importHeaderInvalid",
-  "blockedUrl",
-  "urlFetchFailed",
-  "urlTimeout",
-  "missingProfile",
-  "generic",
-]);
-
-type AdminImportPanelProps = {
-  teams: Pick<Team, "id" | "name" | "age_band" | "status">[];
-};
-
-function downloadBytes(filename: string, bytes: Uint8Array, type: string) {
-  const copy = Uint8Array.from(bytes);
-  const blob = new Blob([copy], { type });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
-}
-
-function tabClass(active: boolean) {
-  return active
-    ? "rounded-full bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
-    : "rounded-full bg-zinc-100 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700";
-}
-
-export function AdminImportPanel({ teams }: AdminImportPanelProps) {
-  const t = useTranslations("import");
-  const [tab, setTab] = useState<ImportKind | "url">("players");
-
-  return (
-    <div className="flex flex-col gap-8">
-      <nav aria-label={t("tabsLabel")} className="flex flex-wrap gap-2">
-        {IMPORT_KINDS.map((kind) => (
-          <button
-            key={kind}
-            type="button"
-            className={tabClass(tab === kind)}
-            onClick={() => setTab(kind)}
-          >
-            {t(`tabs.${kind}`)}
-          </button>
-        ))}
-        <button type="button" className={tabClass(tab === "url")} onClick={() => setTab("url")}>
-          {t("tabs.url")}
-        </button>
-      </nav>
-      {tab === "url" ? (
-        <UrlAssistSection teams={teams} />
-      ) : (
-        <FileImportSection key={tab} kind={tab} />
-      )}
-    </div>
-  );
-}
-
-function FileImportSection({ kind }: { kind: ImportKind }) {
-  const t = useTranslations("import");
+export function AdminImportPanel() {
+  const t = useTranslations("torneopal");
   const org = useTranslations("org");
   const [previewState, previewAction, previewPending] = useActionState(
-    previewOrgImport,
-    INITIAL_IMPORT_PREVIEW_STATE,
+    previewTorneopalSchedule,
+    INITIAL_TORNEOPAL_PREVIEW_STATE,
   );
   const [confirmState, confirmAction, confirmPending] = useActionState(
-    confirmOrgImport,
-    INITIAL_IMPORT_CONFIRM_STATE,
+    confirmTorneopalSchedule,
+    INITIAL_TORNEOPAL_CONFIRM_STATE,
   );
 
-  const preview = useMemo((): ImportPreview | null => {
+  const preview = useMemo(() => {
     if (!previewState.previewJson) {
       return null;
     }
-    return parseImportPreviewJson(previewState.previewJson);
+    return parseTorneopalPreviewJson(previewState.previewJson);
   }, [previewState.previewJson]);
 
   function errorText(key: OrgErrorKey) {
     try {
-      return IMPORT_ERROR_KEYS.has(key) ? t(`errors.${key}`) : org(`errors.${key}`);
+      return t(`errors.${key}`);
     } catch {
-      return key;
+      try {
+        return org(`errors.${key}`);
+      } catch {
+        return key;
+      }
+    }
+  }
+
+  function statusLabel(status: TorneopalPreviewStatus) {
+    switch (status) {
+      case "create":
+        return t("statusCreate");
+      case "skip":
+        return t("statusSkip");
+      case "error":
+        return t("statusError");
+      default: {
+        const exhaustive: never = status;
+        return exhaustive;
+      }
     }
   }
 
   return (
-    <section className="flex flex-col gap-6">
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          className={secondaryButtonClassName}
-          onClick={() =>
-            downloadBytes(
-              templateFilename(kind, "csv"),
-              new TextEncoder().encode(templateCsv(kind)),
-              "text/csv;charset=utf-8",
-            )
-          }
-        >
-          {t("downloadCsv")}
-        </button>
-        <button
-          type="button"
-          className={secondaryButtonClassName}
-          onClick={() =>
-            downloadBytes(
-              templateFilename(kind, "xlsx"),
-              templateXlsx(kind),
-              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            )
-          }
-        >
-          {t("downloadXlsx")}
-        </button>
-      </div>
-      <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">{t(`leads.${kind}`)}</p>
+    <div className="flex flex-col gap-8">
+      <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">{t("lead")}</p>
       <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">{t("confirmHint")}</p>
       <form action={previewAction} className="flex max-w-xl flex-col gap-4">
         <LocaleHiddenField />
-        <input type="hidden" name="kind" value={kind} />
         <label className="flex flex-col gap-1.5 text-sm font-medium">
-          {t("fileLabel")}
-          <input name="file" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required className={inputClassName} />
+          {t("urlLabel")}
+          <input
+            name="url"
+            type="url"
+            required
+            placeholder={t("urlPlaceholder")}
+            className={inputClassName}
+          />
         </label>
-        {previewState.errorKey ? (
+        {previewState.attempted && previewState.errorKey ? (
           <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
             {errorText(previewState.errorKey)}
           </p>
@@ -167,9 +90,14 @@ function FileImportSection({ kind }: { kind: ImportKind }) {
       {preview ? (
         <div className="flex flex-col gap-4">
           <p className="text-sm text-zinc-600 dark:text-zinc-300">
+            {t("sourcePage", { title: preview.pageTitle || preview.sourceUrl })}
+          </p>
+          <p className="text-sm text-zinc-600 dark:text-zinc-300">{t("unpublishedHint")}</p>
+          <p className="text-sm text-zinc-600 dark:text-zinc-300">
             {t("previewCounts", {
-              valid: preview.validCount,
-              invalid: preview.invalidCount,
+              create: preview.createCount,
+              skip: preview.skipCount,
+              error: preview.errorCount,
             })}
           </p>
           <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
@@ -186,7 +114,7 @@ function FileImportSection({ kind }: { kind: ImportKind }) {
                 {preview.rows.map((row) => (
                   <tr key={row.line} className="border-t border-zinc-200 dark:border-zinc-800">
                     <td className="px-3 py-2">{row.line}</td>
-                    <td className="px-3 py-2">{row.valid ? t("valid") : t("invalid")}</td>
+                    <td className="px-3 py-2">{statusLabel(row.status)}</td>
                     <td className="px-3 py-2">{row.summary}</td>
                     <td className="px-3 py-2">
                       {row.errorKeys.map((key) => errorText(key)).join(" · ")}
@@ -199,17 +127,17 @@ function FileImportSection({ kind }: { kind: ImportKind }) {
           <form action={confirmAction} className="flex max-w-xl flex-col gap-3">
             <LocaleHiddenField />
             <input type="hidden" name="preview_json" value={previewState.previewJson ?? ""} />
-            {confirmState.errorKey ? (
+            {confirmState.attempted && confirmState.errorKey ? (
               <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
                 {errorText(confirmState.errorKey)}
               </p>
             ) : null}
             <button
               type="submit"
-              disabled={confirmPending || preview.validCount === 0}
+              disabled={confirmPending || preview.createCount === 0}
               className={primaryButtonClassName}
             >
-              {confirmPending ? t("importing") : t("confirm")}
+              {confirmPending ? t("confirming") : t("confirm")}
             </button>
           </form>
         </div>
@@ -220,13 +148,24 @@ function FileImportSection({ kind }: { kind: ImportKind }) {
           <p>
             {t("confirmCounts", {
               created: confirmState.created.length,
+              skipped: confirmState.skipped.length,
               failed: confirmState.failed.length,
             })}
           </p>
+          {confirmState.skipped.length > 0 ? (
+            <ul className="mt-3 flex flex-col gap-1">
+              {confirmState.skipped.map((row) => (
+                <li key={`skip-${row.line}`}>
+                  {t("skippedLine", { line: row.line })}{" "}
+                  {row.errorKeys.map((key) => errorText(key)).join(" · ")}
+                </li>
+              ))}
+            </ul>
+          ) : null}
           {confirmState.failed.length > 0 ? (
             <ul className="mt-3 flex flex-col gap-1">
               {confirmState.failed.map((row) => (
-                <li key={row.line}>
+                <li key={`fail-${row.line}`}>
                   {t("failedLine", { line: row.line })}{" "}
                   {row.errorKeys.map((key) => errorText(key)).join(" · ")}
                 </li>
@@ -235,59 +174,6 @@ function FileImportSection({ kind }: { kind: ImportKind }) {
           ) : null}
         </div>
       ) : null}
-    </section>
-  );
-}
-
-function UrlAssistSection({
-  teams,
-}: {
-  teams: Pick<Team, "id" | "name" | "age_band" | "status">[];
-}) {
-  const t = useTranslations("import");
-  const org = useTranslations("org");
-  const [state, action, pending] = useActionState(assistMatchUrl, INITIAL_URL_ASSIST_STATE);
-
-  function errorText(key: OrgErrorKey) {
-    return IMPORT_ERROR_KEYS.has(key) ? t(`errors.${key}`) : org(`errors.${key}`);
-  }
-
-  return (
-    <section className="flex flex-col gap-6">
-      <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">{t("leads.url")}</p>
-      <form action={action} className="flex max-w-xl flex-col gap-4">
-        <LocaleHiddenField />
-        <label className="flex flex-col gap-1.5 text-sm font-medium">
-          {t("urlLabel")}
-          <input
-            name="url"
-            type="url"
-            required
-            placeholder="https://"
-            className={inputClassName}
-          />
-        </label>
-        {state.errorKey ? (
-          <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
-            {errorText(state.errorKey)}
-          </p>
-        ) : null}
-        <button type="submit" disabled={pending} className={primaryButtonClassName}>
-          {pending ? t("extracting") : t("extract")}
-        </button>
-      </form>
-      {state.suggestions ? (
-        <div className="flex flex-col gap-4">
-          <p className="text-sm text-zinc-600 dark:text-zinc-300">{t("suggestionsHint")}</p>
-          <MatchForm
-            key={state.sourceUrl ?? "url-draft"}
-            action={createMatch}
-            teams={teams}
-            draft={state.suggestions}
-            submitLabel={t("saveMatch")}
-          />
-        </div>
-      ) : null}
-    </section>
+    </div>
   );
 }

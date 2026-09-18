@@ -30,7 +30,7 @@ import {
   isAgeSquad,
   isCompetitionTeam,
 } from "./squad-team.ts";
-import { PLAYER_TEMPLATE_HEADERS } from "./import-templates.ts";
+import { PLAYER_TEMPLATE_HEADERS } from "./import-validate.ts";
 
 export const TORNEOPAL_EN_PLACEHOLDER = "Pending";
 export const TORNEOPAL_SEED_NOTE =

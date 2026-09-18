@@ -23,11 +23,11 @@ function at(source: Record<string, unknown>, path: string): unknown {
 }
 
 const REQUIRED_KEYS = [
-  "nav.torneopal",
-  "admin.torneopalTitle",
-  "admin.torneopalBody",
-  "app.placeholders.adminTorneopal.title",
-  "app.placeholders.adminTorneopal.body",
+  "nav.import",
+  "admin.importTitle",
+  "admin.importBody",
+  "app.placeholders.adminImport.title",
+  "app.placeholders.adminImport.body",
   "torneopal.lead",
   "torneopal.urlLabel",
   "torneopal.urlPlaceholder",
@@ -53,8 +53,23 @@ const REQUIRED_KEYS = [
   "org.errors.unmappedTeam",
 ];
 
-describe("Stage L locale smoke", () => {
-  it("has Torneopal schedule-link copy in zh-Hant, en, and ja", () => {
+const REMOVED_KEYS = [
+  "nav.torneopal",
+  "admin.torneopalTitle",
+  "admin.torneopalBody",
+  "app.placeholders.adminTorneopal.title",
+  "app.placeholders.adminTorneopal.body",
+  "import.tabs.players",
+  "import.tabs.coaches",
+  "import.tabs.matches",
+  "import.tabs.url",
+  "import.downloadCsv",
+  "import.downloadXlsx",
+  "import.fileLabel",
+];
+
+describe("Stage L2 locale smoke", () => {
+  it("has Torneopal match-URL import copy in zh-Hant, en, and ja", () => {
     for (const locale of ["zh-Hant", "en", "ja"] as const) {
       const messages = loadMessages(locale);
       for (const key of REQUIRED_KEYS) {
@@ -62,14 +77,18 @@ describe("Stage L locale smoke", () => {
         assert.equal(typeof value, "string", `${locale} missing ${key}`);
         assert.ok(String(value).length > 0, `${locale} empty ${key}`);
       }
+      for (const key of REMOVED_KEYS) {
+        assert.equal(at(messages, key), undefined, `${locale} still has retired ${key}`);
+      }
     }
   });
 
-  it("zh-Hant admin entry describes unpublished league shells", () => {
+  it("zh-Hant import page describes unpublished league shells", () => {
     const zh = loadMessages("zh-Hant");
-    assert.match(String(at(zh, "admin.torneopalTitle")), /Torneopal/);
-    assert.match(String(at(zh, "admin.torneopalBody")), /未公開/);
+    assert.match(String(at(zh, "admin.importTitle")), /Torneopal/);
+    assert.match(String(at(zh, "admin.importBody")), /未公開/);
     assert.match(String(at(zh, "torneopal.unpublishedHint")), /未公開|不公開/);
     assert.match(String(at(zh, "torneopal.confirmHint")), /確認/);
+    assert.doesNotMatch(String(at(zh, "admin.importBody")), /CSV|Excel/);
   });
 });
