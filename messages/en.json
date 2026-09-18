@@ -149,6 +149,10 @@
         "title": "Data import",
         "body": "Download CSV/Excel templates, preview rows, then confirm create-only imports for players, coaches, and matches. Paste a public match URL to fill a draft."
       },
+      "adminTorneopal": {
+        "title": "Link Torneopal schedule",
+        "body": "Paste a Torneopal schedule or team URL, preview mapped 隊伍, then confirm unpublished league match shells."
+      },
       "adminReports": {
         "title": "Reports",
         "body": "Export attendance, registrations, credit ledger, and match roster as Excel or CSV for ops reconciliation. Admin only; no parent phones by default."
@@ -197,6 +201,7 @@
     "creditsAdmin": "Credit admin",
     "matches": "Matches",
     "import": "Import",
+    "torneopal": "Torneopal",
     "assessments": "Assessments",
     "notices": "Notices",
     "reports": "Reports",
@@ -226,6 +231,8 @@
     "matchesBody": "Announce cup, league, and friendly matches on the public schedule. Multi-select 隊伍 to create one independent fixture set per 隊伍 with the same title and kickoffs. Choose who appears on the published lineup (display name and jersey only). Cancelled matches are hidden from visitors, not listed as cancelled. Writes are admin-only.",
     "importTitle": "Data import",
     "importBody": "Upload Excel or CSV, preview valid and invalid rows, then confirm. Nothing is written on upload alone. Players and coaches are create-only; duplicates block that row. Matches attach to 隊伍 and stay unpublished unless the file says otherwise. URL assist only fills a draft.",
+    "torneopalTitle": "Link Torneopal schedule",
+    "torneopalBody": "Paste a Torneopal schedule or team URL. The server fetches it, maps rows onto existing 隊伍, and confirm creates unpublished league match shells. Create-only: same 隊伍, kickoff minute, and opponent are skipped.",
     "createTeam": "Create team",
     "createAgeSquad": "Create 梯隊",
     "createCompetitionTeam": "Create 隊伍",
@@ -554,6 +561,10 @@
       "blockedUrl": "That URL is not allowed. Use a public http(s) page; private, localhost, and metadata addresses are blocked.",
       "urlFetchFailed": "Could not fetch that page (size, type, or HTTP error).",
       "urlTimeout": "Fetching that page timed out.",
+      "torneopalNoFixtures": "That Torneopal page has no parseable fixture rows.",
+      "torneopalNoClubMatches": "That page has no matches that map onto this club’s 隊伍.",
+      "duplicateMatch": "A match already exists for the same 隊伍, kickoff minute, and opponent. Skipped (create-only; existing matches are not updated).",
+      "unmappedTeam": "That Futuro name does not match an existing 隊伍. Check the team catalog (U10 white/blue should map to Futuro U10).",
       "missingProfile": "That profile was not found.",
       "invalidReportType": "Choose a valid report type.",
       "invalidReportFormat": "Choose CSV or Excel.",
@@ -1061,6 +1072,49 @@
       "urlTimeout": "Fetching that page timed out.",
       "missingProfile": "That profile was not found.",
       "generic": "Could not preview or import this file. Please try again."
+    }
+  },
+  "torneopal": {
+    "lead": "Fetches public Torneopal pages only (*.torneopal.com / *.torneopal.fi). Parse and mapping problems stay on the row and do not crash the page. Non-club fixtures are ignored.",
+    "urlLabel": "Torneopal schedule or team URL",
+    "urlPlaceholder": "https://taichung.torneopal.com/",
+    "preview": "Preview (nothing created yet)",
+    "previewing": "Fetching and parsing…",
+    "confirm": "Confirm unpublished league shells",
+    "confirming": "Creating…",
+    "confirmHint": "Preview does not write. Confirm creates unpublished league shells for valid rows only. Same 隊伍, kickoff minute, and opponent are skipped. Existing matches are not updated.",
+    "previewCounts": "Create {create} · skip {skip} · row errors {error}",
+    "confirmCounts": "Created {created} · skipped {skipped} · failed {failed}",
+    "line": "Row",
+    "status": "Status",
+    "summary": "Summary",
+    "reason": "Reason",
+    "statusCreate": "Create",
+    "statusSkip": "Skip",
+    "statusError": "Row error",
+    "skippedLine": "Row {line} skipped:",
+    "failedLine": "Row {line} failed:",
+    "sourcePage": "Source: {title}",
+    "unpublishedHint": "Created shells are league matches and stay unpublished. Parents and visitors will not see them until you publish.",
+    "errors": {
+      "blockedUrl": "Only public Torneopal URLs are allowed (torneopal.com or torneopal.fi). Other hosts, private networks, and localhost are blocked.",
+      "urlFetchFailed": "Could not fetch that Torneopal page (size, type, or HTTP error).",
+      "urlTimeout": "Fetching that Torneopal page timed out.",
+      "torneopalNoFixtures": "That Torneopal page has no parseable fixture rows.",
+      "torneopalNoClubMatches": "That page has no matches that map onto this club’s 隊伍.",
+      "duplicateMatch": "A match already exists for the same 隊伍, kickoff minute, and opponent. Skipped.",
+      "unmappedTeam": "That Futuro name does not match an existing 隊伍. U10 white/blue should map to Futuro U10.",
+      "importEmpty": "There is no preview to confirm. Run preview again.",
+      "importTooLarge": "Too many fixture rows (max 200).",
+      "importNoValidRows": "There are no valid rows to create. Skips and row errors are not written.",
+      "invalidSessionTime": "Could not parse kickoff time (a final score is not a kickoff).",
+      "invalidOpponent": "That opponent name is invalid.",
+      "missingTitle": "The match title is missing.",
+      "matchKindRequired": "Only league shells can be created here.",
+      "generic": "Could not process that URL. Please try again.",
+      "forbidden": "You cannot perform this action.",
+      "notConfigured": "Public Supabase environment variables are not configured.",
+      "partialTeamCreates": "Some shells were created. Failures are listed below."
     }
   },
   "notices": {

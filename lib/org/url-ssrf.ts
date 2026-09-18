@@ -192,6 +192,8 @@ export type FetchPublicHtmlDeps = {
   timeoutMs?: number;
   maxBytes?: number;
   maxRedirects?: number;
+  isAllowedHostname?: (hostname: string) => boolean;
+  userAgent?: string;
 };
 
 export type FetchPublicHtmlResult =
@@ -252,6 +254,9 @@ export async function fetchPublicHtml(
     if (!parsed.ok) {
       return parsed;
     }
+    if (deps.isAllowedHostname && !deps.isAllowedHostname(parsed.url.hostname)) {
+      return { ok: false, errorKey: "blockedUrl" };
+    }
     const resolved = await resolvePublicAddresses(parsed.url.hostname, lookup ?? defaultLookup);
     if (!resolved.ok) {
       return resolved;
@@ -267,7 +272,7 @@ export async function fetchPublicHtml(
         signal: controller.signal,
         headers: {
           Accept: "text/html,application/xhtml+xml,text/plain;q=0.9",
-          "User-Agent": "squadbase-url-assist/1.0",
+          "User-Agent": deps.userAgent ?? "squadbase-url-assist/1.0",
         },
       });
     } catch (error) {
