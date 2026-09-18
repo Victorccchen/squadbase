@@ -5,11 +5,15 @@ import { secondaryButtonClassName } from "@/lib/ui";
 
 export default function AdminImportError({
   error,
+  reset,
   retry,
 }: {
   error: Error & { digest?: string };
-  retry: () => void;
+  reset?: () => void;
+  retry?: () => void;
 }) {
+  const tryAgain = reset ?? retry;
+
   useEffect(() => {
     console.error("AdminImportError", error);
   }, [error]);
@@ -23,11 +27,13 @@ export default function AdminImportError({
       {error.digest ? (
         <p className="font-mono text-xs text-zinc-500">digest {error.digest}</p>
       ) : null}
-      <p>
-        <button type="button" className={secondaryButtonClassName} onClick={() => retry()}>
-          再試一次 / Try again
-        </button>
-      </p>
+      {tryAgain ? (
+        <p>
+          <button type="button" className={secondaryButtonClassName} onClick={() => tryAgain()}>
+            再試一次 / Try again
+          </button>
+        </p>
+      ) : null}
     </main>
   );
 }

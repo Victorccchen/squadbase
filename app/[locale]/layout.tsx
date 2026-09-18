@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { hasLocale } from "next-intl";
 import { NextIntlClientProvider } from "next-intl";
-import { getLocale, getTranslations } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import "../globals.css";
@@ -16,9 +16,13 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("meta");
-  const locale = await getLocale();
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "meta" });
 
   return {
     title: t("title"),
@@ -72,7 +76,7 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} className="h-full antialiased">
       <body className="flex min-h-full flex-col">
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider locale={locale}>{children}</NextIntlClientProvider>
       </body>
     </html>
   );

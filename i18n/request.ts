@@ -1,7 +1,8 @@
 import { hasLocale } from "next-intl";
 import { getRequestConfig } from "next-intl/server";
-import { notFound } from "next/navigation";
+import { notFound, unstable_rethrow } from "next/navigation";
 import * as rootParams from "next/root-params";
+import { localeForRedirect } from "./locale-for-redirect";
 import { routing, type AppLocale } from "./routing";
 
 const messageLoaders: Record<
@@ -14,19 +15,30 @@ const messageLoaders: Record<
 };
 
 export default getRequestConfig(async ({ locale }) => {
-  if (!locale) {
-    const paramValue = await rootParams.locale();
-    if (hasLocale(routing.locales, paramValue)) {
-      locale = paramValue;
-    } else {
-      notFound();
+  let resolved: string | undefined = locale;
+
+  if (!resolved) {
+    try {
+      const paramValue = await rootParams.locale();
+      if (hasLocale(routing.locales, paramValue)) {
+        resolved = paramValue;
+      } else {
+        notFound();
+      }
+    } catch (error) {
+      unstable_rethrow(error);
+      resolved = await localeForRedirect();
     }
   }
 
-  const messages = (await messageLoaders[locale as AppLocale]()).default;
+  if (!hasLocale(routing.locales, resolved)) {
+    notFound();
+  }
+
+  const messages = (await messageLoaders[resolved]).default;
 
   return {
-    locale,
+    locale: resolved,
     messages,
   };
 });

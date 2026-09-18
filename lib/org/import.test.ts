@@ -352,6 +352,68 @@ describe("match catalog load by kind", () => {
       assert.match(roundTrip.rows[0].draft.startsAt, /2026-09-20T10:00:00\+08:00/);
     }
   });
+
+  it("accepts merged Futuro U10 by exact 隊伍 name and does not invent players", () => {
+    const u10Id = "44444444-4444-4444-8444-444444444444";
+    const teamsOnly: ImportCatalog = {
+      ...emptyImportCatalog(),
+      teams: [
+        {
+          id: u10Id,
+          name: "Futuro U10",
+          kind: "competition_team",
+          age_band: "U10",
+          layer_key: "u10",
+          eligible_birth_ages: ["U9", "U10"],
+          status: "active",
+        },
+      ],
+    };
+    const preview = buildImportPreview(
+      "matches",
+      [
+        {
+          line: 2,
+          values: {
+            team_name: "Futuro U10",
+            title: "台中聯賽",
+            kind: "league",
+            starts_at: "2026-09-20T10:00",
+          },
+        },
+      ],
+      teamsOnly,
+      TODAY,
+    );
+    assert.equal(preview.ok, true);
+    if (!preview.ok) {
+      return;
+    }
+    assert.equal(preview.rows[0]?.valid, true);
+    assert.equal(teamsOnly.players.length, 0);
+    const missing = buildImportPreview(
+      "matches",
+      [
+        {
+          line: 2,
+          values: {
+            team_name: "Futuro U10白",
+            title: "台中聯賽",
+            kind: "league",
+            starts_at: "2026-09-20T10:00",
+          },
+        },
+      ],
+      teamsOnly,
+      TODAY,
+    );
+    assert.equal(missing.ok, true);
+    if (!missing.ok) {
+      return;
+    }
+    assert.equal(missing.rows[0]?.valid, false);
+    assert.ok(missing.rows[0]?.errorKeys.includes("teamNotFound"));
+  });
 });
 
 describe("T6A-7 reject training kind for match import", () => {

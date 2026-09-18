@@ -1,5 +1,5 @@
-import { getLocale } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
+import { localeForRedirect } from "@/i18n/locale-for-redirect";
 import { createClient } from "@/lib/supabase/server";
 import { getPublicSupabaseEnv } from "@/lib/env";
 import type { AppRole, Profile } from "@/lib/supabase/database.types";
@@ -23,8 +23,7 @@ export async function requireUser() {
   const user = await getAuthUser();
 
   if (!user) {
-    const locale = await getLocale();
-    redirect({ href: "/login", locale });
+    redirect({ href: "/login", locale: await localeForRedirect() });
     throw new Error("Unauthenticated");
   }
 
