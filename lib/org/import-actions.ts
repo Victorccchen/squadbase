@@ -1,22 +1,23 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { unstable_rethrow } from "next/navigation";
 import { formatIsoDate, todayInClubTimeZone } from "@/lib/age-band";
 import { getPublicSupabaseEnv } from "@/lib/env";
 import { loadSignedInAccount } from "@/lib/auth/session";
 import { canAccessAdmin } from "@/lib/auth/roles";
 import { createClient } from "@/lib/supabase/server";
 import { type OrgErrorKey } from "@/lib/org/errors";
-import { parseImportBuffer } from "@/lib/org/import-file";
+import { parseImportBuffer, readImportUploadBytes } from "@/lib/org/import-file";
 import {
   buildImportPreview,
   emptyImportCatalog,
   headersAreValid,
   importCatalogSlicesFor,
+  parseImportPreviewJson,
   resolvedCoachProfile,
   resolvedMatchTeam,
   resolvedPlayerIds,
+  serializeImportPreview,
   type ImportCatalog,
   type ImportPreview,
   type ImportPreviewRow,
@@ -35,14 +36,14 @@ import { fetchPublicHtml } from "@/lib/org/url-ssrf";
 export type ImportPreviewState = {
   ok: boolean;
   errorKey: OrgErrorKey | null;
-  preview: ImportPreview | null;
+  previewJson: string | null;
   attempted: boolean;
 };
 
 export const INITIAL_IMPORT_PREVIEW_STATE: ImportPreviewState = {
   ok: false,
   errorKey: null,
-  preview: null,
+  previewJson: null,
   attempted: false,
 };
 
@@ -159,51 +160,44 @@ export async function previewOrgImport(
   _prev: ImportPreviewState,
   formData: FormData,
 ): Promise<ImportPreviewState> {
+  const actor = await requireAdminActor();
+  if (!actor.ok) {
+    return { ok: false, errorKey: actor.errorKey, previewJson: null, attempted: true };
+  }
   try {
-    const actor = await requireAdminActor();
-    if (!actor.ok) {
-      return { ok: false, errorKey: actor.errorKey, preview: null, attempted: true };
-    }
     const kind = readKind(formData);
     if (!kind) {
-      return { ok: false, errorKey: "importHeaderInvalid", preview: null, attempted: true };
+      return { ok: false, errorKey: "importHeaderInvalid", previewJson: null, attempted: true };
     }
-    const file = formData.get("file");
-    if (!(file instanceof File) || file.size === 0) {
-      return { ok: false, errorKey: "importEmpty", preview: null, attempted: true };
+    const uploaded = await readImportUploadBytes(formData.get("file"));
+    if (!uploaded.ok) {
+      return { ok: false, errorKey: uploaded.errorKey, previewJson: null, attempted: true };
     }
-    const buffer = new Uint8Array(await file.arrayBuffer());
-    const parsed = parseImportBuffer(buffer);
+    const parsed = parseImportBuffer(uploaded.bytes);
     if (!parsed.ok) {
-      return { ok: false, errorKey: parsed.errorKey, preview: null, attempted: true };
+      return { ok: false, errorKey: parsed.errorKey, previewJson: null, attempted: true };
     }
     if (!headersAreValid(kind, parsed.headers)) {
-      return { ok: false, errorKey: "importHeaderInvalid", preview: null, attempted: true };
+      return { ok: false, errorKey: "importHeaderInvalid", previewJson: null, attempted: true };
     }
     const catalog = await loadImportCatalog(actor.supabase, kind);
     if (!catalog.ok) {
-      return { ok: false, errorKey: "generic", preview: null, attempted: true };
+      return { ok: false, errorKey: "generic", previewJson: null, attempted: true };
     }
     const today = formatIsoDate(todayInClubTimeZone());
     const preview = buildImportPreview(kind, parsed.records, catalog.catalog, today);
     if (!preview.ok) {
-      return { ok: false, errorKey: preview.errorKey, preview: null, attempted: true };
+      return { ok: false, errorKey: preview.errorKey, previewJson: null, attempted: true };
     }
     return {
       ok: true,
       errorKey: null,
-      preview: {
-        kind: preview.kind,
-        rows: preview.rows,
-        validCount: preview.validCount,
-        invalidCount: preview.invalidCount,
-      },
+      previewJson: serializeImportPreview(preview),
       attempted: true,
     };
   } catch (error) {
-    unstable_rethrow(error);
     console.error("previewOrgImport", error);
-    return { ok: false, errorKey: "generic", preview: null, attempted: true };
+    return { ok: false, errorKey: "generic", previewJson: null, attempted: true };
   }
 }
 
@@ -212,15 +206,7 @@ function parsePreviewPayload(formData: FormData): ImportPreview | null {
   if (typeof raw !== "string" || !raw) {
     return null;
   }
-  try {
-    const parsed = JSON.parse(raw) as ImportPreview;
-    if (!parsed || !isImportKind(parsed.kind) || !Array.isArray(parsed.rows)) {
-      return null;
-    }
-    return parsed;
-  } catch {
-    return null;
-  }
+  return parseImportPreviewJson(raw);
 }
 
 async function confirmPlayerRow(
@@ -365,27 +351,27 @@ export async function confirmOrgImport(
   _prev: ImportConfirmState,
   formData: FormData,
 ): Promise<ImportConfirmState> {
-  try {
-    const actor = await requireAdminActor();
-    if (!actor.ok) {
-      return { ...INITIAL_IMPORT_CONFIRM_STATE, errorKey: actor.errorKey, attempted: true };
-    }
-    const preview = parsePreviewPayload(formData);
-    if (!preview) {
-      return { ...INITIAL_IMPORT_CONFIRM_STATE, errorKey: "importEmpty", attempted: true };
-    }
-    const validRows = preview.rows.filter((row) => row.valid && row.draft);
-    if (validRows.length === 0) {
-      return { ...INITIAL_IMPORT_CONFIRM_STATE, errorKey: "importNoValidRows", attempted: true };
-    }
+  const actor = await requireAdminActor();
+  if (!actor.ok) {
+    return { ...INITIAL_IMPORT_CONFIRM_STATE, errorKey: actor.errorKey, attempted: true };
+  }
+  const preview = parsePreviewPayload(formData);
+  if (!preview) {
+    return { ...INITIAL_IMPORT_CONFIRM_STATE, errorKey: "importEmpty", attempted: true };
+  }
+  const validRows = preview.rows.filter((row) => row.valid && row.draft);
+  if (validRows.length === 0) {
+    return { ...INITIAL_IMPORT_CONFIRM_STATE, errorKey: "importNoValidRows", attempted: true };
+  }
 
+  const created: ImportConfirmRow[] = [];
+  const failed: ImportConfirmRow[] = [];
+  try {
     const loaded = await loadImportCatalog(actor.supabase, preview.kind);
     if (!loaded.ok) {
       return { ...INITIAL_IMPORT_CONFIRM_STATE, errorKey: "generic", attempted: true };
     }
     const catalog = loaded.catalog;
-    const created: ImportConfirmRow[] = [];
-    const failed: ImportConfirmRow[] = [];
 
     for (const row of validRows) {
       let result: ImportConfirmRow;
@@ -410,23 +396,22 @@ export async function confirmOrgImport(
         failed.push(result);
       }
     }
-
-    if (created.length > 0) {
-      revalidatePath("/", "layout");
-    }
-
-    return {
-      ok: failed.length === 0,
-      errorKey: failed.length > 0 && created.length > 0 ? "partialTeamCreates" : failed[0]?.errorKeys[0] ?? null,
-      created,
-      failed,
-      attempted: true,
-    };
   } catch (error) {
-    unstable_rethrow(error);
     console.error("confirmOrgImport", error);
     return { ...INITIAL_IMPORT_CONFIRM_STATE, errorKey: "generic", attempted: true };
   }
+
+  if (created.length > 0) {
+    revalidatePath("/", "layout");
+  }
+
+  return {
+    ok: failed.length === 0,
+    errorKey: failed.length > 0 && created.length > 0 ? "partialTeamCreates" : failed[0]?.errorKeys[0] ?? null,
+    created,
+    failed,
+    attempted: true,
+  };
 }
 
 export async function assistMatchUrl(

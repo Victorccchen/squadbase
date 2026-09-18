@@ -95,6 +95,7 @@ const REQUIRED_KEYS = [
   "import.tabs.url",
   "import.errors.unknownProfilePhone",
   "import.errors.blockedUrl",
+  "import.errors.generic",
   "org.errors.duplicatePlayer",
   "org.errors.matchKindRequired",
   "nav.notices",
