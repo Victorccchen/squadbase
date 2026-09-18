@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   FUTURO_COMPETITION_TEAMS,
+  TORNEOPAL_FUTURO_COMPETITION_TEAMS,
   ageSquadBandFromBirthDate,
   ageSquadBandFromCompletedAge,
   birthAgeLabelFromBirthDate,
@@ -193,6 +194,26 @@ describe("T-ST-8 Futuro seed layer keys", () => {
         ["Futuro U9", "u9", ["U8", "U9"]],
         ["Futuro U10藍", "u10", ["U9", "U10"]],
         ["Futuro U10白", "u10", ["U9", "U10"]],
+      ],
+    );
+  });
+});
+
+describe("Stage R1 Torneopal Futuro 隊伍", () => {
+  it("locks U10/U11/U12 黃/藍 names, layer keys, and eligibility", () => {
+    assert.deepEqual(
+      TORNEOPAL_FUTURO_COMPETITION_TEAMS.map((team) => [
+        team.name,
+        team.layerKey,
+        [...team.eligibleBirthAges],
+      ]),
+      [
+        ["Futuro U8", "u8", ["U6", "U7", "U8"]],
+        ["Futuro U9", "u9", ["U8", "U9"]],
+        ["Futuro U10", "u10", ["U9", "U10"]],
+        ["Futuro U11", "u11", ["U10", "U11"]],
+        ["Futuro U12 黃", "u12", ["U11", "U12"]],
+        ["Futuro U12 藍", "u12", ["U11", "U12"]],
       ],
     );
   });
