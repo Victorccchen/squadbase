@@ -10,6 +10,7 @@ import { routing } from "./routing.ts";
 describe("localeFromPathname", () => {
   it("reads the first segment when it is a configured locale", () => {
     assert.equal(localeFromPathname("/zh-Hant/app/admin/import"), "zh-Hant");
+    assert.equal(localeFromPathname("/zh-Hant/app/admin/torneopal"), "zh-Hant");
     assert.equal(localeFromPathname("/en/app/admin/import"), "en");
     assert.equal(localeFromPathname("/ja/app/admin/matches/new"), "ja");
   });

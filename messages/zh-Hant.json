@@ -149,6 +149,10 @@
         "title": "資料匯入",
         "body": "下載 CSV／Excel 範本，預覽列之後再確認匯入球員、教練與比賽。可貼公開賽事網址帶出草稿欄位。"
       },
+      "adminTorneopal": {
+        "title": "連結 Torneopal 賽程",
+        "body": "貼上 Torneopal 賽程或隊伍網址，預覽對應到現有隊伍後，確認建立未公開聯賽場次。"
+      },
       "adminReports": {
         "title": "報表",
         "body": "匯出缺席、報名、堂數流水與比賽名單的 Excel 或 CSV，供營運核對。僅限管理員；預設不含家長電話。"
@@ -197,6 +201,7 @@
     "creditsAdmin": "堂數管理",
     "matches": "比賽",
     "import": "匯入",
+    "torneopal": "Torneopal",
     "assessments": "能力評量",
     "notices": "通知文案",
     "reports": "報表",
@@ -226,6 +231,8 @@
     "matchesBody": "在公開賽程公告盃賽、聯賽與友誼賽。可一次勾選多個隊伍，各自建立相同標題與開賽時間的比賽。勾選要出現在公開名單的球員（只顯示名稱與背號）。已取消的比賽不會出現在訪客列表。寫入僅限管理員。",
     "importTitle": "資料匯入",
     "importBody": "上傳 Excel 或 CSV，先預覽有效／無效列，再按確認匯入。上傳本身不會寫入。球員與教練僅新增（重複列會被擋下）。比賽掛在隊伍上，預設不公開。網址輔助只填草稿。",
+    "torneopalTitle": "連結 Torneopal 賽程",
+    "torneopalBody": "貼上 Torneopal 賽程或隊伍網址。伺服器抓取後對應到現有隊伍，預覽後確認才建立未公開聯賽場次。只新增、不更新；相同隊伍、開賽分鐘與對手會略過。",
     "createTeam": "新增單位",
     "createAgeSquad": "新增梯隊",
     "createCompetitionTeam": "新增隊伍",
@@ -551,6 +558,10 @@
       "blockedUrl": "這個網址不被允許。請用公開的 http(s) 頁面；私網、localhost 與 metadata 位址會被擋下。",
       "urlFetchFailed": "無法抓取該頁（大小、類型或 HTTP 錯誤）。",
       "urlTimeout": "抓取該頁逾時。",
+      "torneopalNoFixtures": "這個 Torneopal 頁面沒有可解析的賽程列。",
+      "torneopalNoClubMatches": "這個頁面沒有可對應到本會隊伍的比賽。",
+      "duplicateMatch": "已有相同隊伍、開賽時間（精確到分）與對手的比賽，已略過（僅新增、不更新）。",
+      "unmappedTeam": "這個 Futuro 名稱對不到現有隊伍。請核對隊伍主檔（U10 白／藍應對到 Futuro U10）。",
       "missingProfile": "找不到這個 profile。",
       "invalidReportType": "請選擇有效的報表類型。",
       "invalidReportFormat": "請選擇 CSV 或 Excel。",
@@ -1058,6 +1069,49 @@
       "urlTimeout": "抓取該頁逾時。",
       "missingProfile": "找不到這個 profile。",
       "generic": "無法預覽或匯入此檔案，請再試一次。"
+    }
+  },
+  "torneopal": {
+    "lead": "只抓取 Torneopal 公開頁（*.torneopal.com／*.torneopal.fi）。解析錯誤會顯示在列上，不會讓整頁當掉。非本會比賽會略過。",
+    "urlLabel": "Torneopal 賽程或隊伍網址",
+    "urlPlaceholder": "https://taichung.torneopal.com/",
+    "preview": "預覽（尚未建立）",
+    "previewing": "抓取與解析中…",
+    "confirm": "確認建立未公開聯賽",
+    "confirming": "建立中…",
+    "confirmHint": "預覽不會寫入。按下確認後，只會為有效列建立未公開聯賽場次。已存在的相同隊伍、開賽分鐘與對手會略過，不會更新。",
+    "previewCounts": "將建立 {create} · 略過 {skip} · 列錯誤 {error}",
+    "confirmCounts": "已新增 {created} · 略過 {skipped} · 失敗 {failed}",
+    "line": "列",
+    "status": "狀態",
+    "summary": "摘要",
+    "reason": "原因",
+    "statusCreate": "將建立",
+    "statusSkip": "略過",
+    "statusError": "列錯誤",
+    "skippedLine": "第 {line} 列已略過：",
+    "failedLine": "第 {line} 列失敗：",
+    "sourcePage": "來源：{title}",
+    "unpublishedHint": "建立的場次為聯賽、預設不公開。家長與訪客在發布前看不到。",
+    "errors": {
+      "blockedUrl": "只允許 Torneopal 公開網址（torneopal.com 或 torneopal.fi）。其他網域、私網與 localhost 會被擋下。",
+      "urlFetchFailed": "無法抓取該 Torneopal 頁（大小、類型或 HTTP 錯誤）。",
+      "urlTimeout": "抓取該 Torneopal 頁逾時。",
+      "torneopalNoFixtures": "這個 Torneopal 頁面沒有可解析的賽程列。",
+      "torneopalNoClubMatches": "這個頁面沒有可對應到本會隊伍的比賽。",
+      "duplicateMatch": "已有相同隊伍、開賽時間（精確到分）與對手的比賽，已略過。",
+      "unmappedTeam": "這個 Futuro 名稱對不到現有隊伍。U10 白／藍應對到 Futuro U10。",
+      "importEmpty": "沒有可確認的預覽。請重新預覽。",
+      "importTooLarge": "賽程列數過多（上限 200 列）。",
+      "importNoValidRows": "沒有可建立的有效列。略過與列錯誤不會寫入。",
+      "invalidSessionTime": "無法解析開賽時間（已完賽比分不會當成開賽）。",
+      "invalidOpponent": "對手名稱無效。",
+      "missingTitle": "缺少比賽標題。",
+      "matchKindRequired": "只能建立聯賽場次。",
+      "generic": "無法處理這個網址，請再試一次。",
+      "forbidden": "你沒有權限執行此操作。",
+      "notConfigured": "尚未設定公開 Supabase 環境變數。",
+      "partialTeamCreates": "部分場次已建立。失敗原因列於下方。"
     }
   },
   "notices": {
