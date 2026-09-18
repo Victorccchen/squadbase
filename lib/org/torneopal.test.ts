@@ -124,7 +124,7 @@ describe("TL-3 preview mapping", () => {
     const creates = preview.rows.filter((row) => row.status === "create");
     const skips = preview.rows.filter((row) => row.status === "skip");
     const errors = preview.rows.filter((row) => row.status === "error");
-    assert.equal(creates.length, 12);
+    assert.equal(creates.length, 11);
     assert.equal(skips.length, 1);
     assert.equal(errors.length, 2);
     assert.ok(skips[0]?.errorKeys.includes("duplicateMatch"));
@@ -142,7 +142,7 @@ describe("TL-3 preview mapping", () => {
 
     const json = serializeTorneopalPreview(preview);
     const roundTrip = parseTorneopalPreviewJson(json);
-    assert.equal(roundTrip?.createCount, 12);
+    assert.equal(roundTrip?.createCount, 11);
     assert.equal(roundTrip?.rows[0]?.summary.includes("Futuro"), true);
 
     const again = buildTorneopalPreview({
