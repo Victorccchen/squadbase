@@ -17,7 +17,6 @@ import {
 } from "./squad-team.ts";
 import { jerseyNumberTakenOnTeam } from "./parse.ts";
 import type { OrgErrorKey } from "./errors.ts";
-import { isImportKind, type ImportKind } from "./import-templates.ts";
 import {
   parseCoachImportValues,
   parseMatchImportValues,
@@ -31,6 +30,13 @@ import type { CsvRecord } from "./import-csv.ts";
 
 export const MAX_IMPORT_ROWS = 200;
 export const MAX_IMPORT_BYTES = 1_000_000;
+
+export const IMPORT_KINDS = ["players", "coaches", "matches"] as const;
+export type ImportKind = (typeof IMPORT_KINDS)[number];
+
+export function isImportKind(value: string): value is ImportKind {
+  return (IMPORT_KINDS as readonly string[]).includes(value);
+}
 
 export type ImportTeam = {
   id: string;

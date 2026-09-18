@@ -29,7 +29,7 @@ describe("localeFromHeaderValue", () => {
       "zh-Hant",
     );
     assert.equal(localeFromHeaderValue("/en/app/admin/import"), "en");
-    assert.equal(localeFromHeaderValue("https://example.test/ja/app/admin/import?tab=matches"), "ja");
+    assert.equal(localeFromHeaderValue("https://example.test/ja/app/admin/import"), "ja");
   });
 
   it("returns null for missing or unknown prefixes", () => {

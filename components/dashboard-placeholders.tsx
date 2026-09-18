@@ -54,7 +54,6 @@ function LinkCard({
     | "/app/admin/credits"
     | "/app/admin/matches"
     | "/app/admin/import"
-    | "/app/admin/torneopal"
     | "/app/admin/reports"
     | "/app/admin/dashboard"
     | "/matches";
@@ -225,12 +224,6 @@ export async function DashboardPlaceholders({ roles }: DashboardPlaceholdersProp
               href="/app/admin/import"
               title={t("placeholders.adminImport.title")}
               body={t("placeholders.adminImport.body")}
-              action={t("openAdmin")}
-            />
-            <LinkCard
-              href="/app/admin/torneopal"
-              title={t("placeholders.adminTorneopal.title")}
-              body={t("placeholders.adminTorneopal.body")}
               action={t("openAdmin")}
             />
             <LinkCard
