@@ -2,7 +2,7 @@
 
 Responsive web + PWA for a football **Club** (球團) operations app: training squads, courses, attendance, assessments, and matches/events.
 
-This repository is currently **Stage D** plus **Stage R** / **Stage R1**, **Stage P / P.1**, **Stage L**, and **Stage L2**: Stages 1–6P.1 plus Stage ST (梯隊 / 隊伍), **admin Torneopal match-URL import** on `/app/admin/import` (Stage L2; Stage 6A CSV/Excel player/coach/match import UI is retired), **Torneopal FUTURO roster seed** (zh name + jersey on staging), admin LINE-group **generate + copy** (Stage N), **admin Excel/CSV reports** (attendance, registrations, credit ledger, match roster), an **admin ops dashboard** (attendance rates, approved remittance vs consumed credits, remaining obligation), **private player headshots / ID photos** bound to each player, and **admin league-registration ZIP** (roster + photos). 梯隊 (age squad) is the roster band for every registered player and for training. 隊伍 (competition team) is the external match side; only continuing trainees may join, with at most two active 隊伍 and no two sharing the same `layer_key`. Parent nav still lists **訓練** (`/app/sessions`) separately from **賽事** (`/app/competitions`). Training attaches to 梯隊; matches attach to 隊伍. Dual membership **replaces** the PR #22 one-ladder-step-up rule. Admins paste a Torneopal schedule/team URL at `/app/admin/import` (preview then confirm; create-only unpublished league shells), generate notice copy from `/app/admin/notices`, download operational reports from `/app/admin/reports` (including a ZIP of roster + private headshots), and open the numeric overview from `/app/admin/dashboard`. Each player may have one current private headshot (and an optional PDF) for league ID cards; public match pages never show it.
+This repository is currently **Stage D** plus **Stage R** / **Stage R1**, **Stage P / P.1**, **Stage L / L2 / L3**: Stages 1–6P.1 plus Stage ST (梯隊 / 隊伍), **admin generic match-URL import** on `/app/admin/import` (Stage L3; not Torneopal-branded; Stage 6A CSV/Excel player/coach/match import UI is retired), **Torneopal FUTURO roster seed** (zh name + jersey on staging), admin LINE-group **generate + copy** (Stage N), **admin Excel/CSV reports** (attendance, registrations, credit ledger, match roster), an **admin ops dashboard** (attendance rates, approved remittance vs consumed credits, remaining obligation), **private player headshots / ID photos** bound to each player, and **admin league-registration ZIP** (roster + photos). 梯隊 (age squad) is the roster band for every registered player and for training. 隊伍 (competition team) is the external match side; only continuing trainees may join, with at most two active 隊伍 and no two sharing the same `layer_key`. Parent nav still lists **訓練** (`/app/sessions`) separately from **賽事** (`/app/competitions`). Training attaches to 梯隊; matches attach to 隊伍. Dual membership **replaces** the PR #22 one-ladder-step-up rule. Admins paste a public competition/cup/league URL at `/app/admin/import` (AI/structured extract, preview, then confirm; create-only unpublished league shells), generate notice copy from `/app/admin/notices`, download operational reports from `/app/admin/reports` (including a ZIP of roster + private headshots), and open the numeric overview from `/app/admin/dashboard`. Each player may have one current private headshot (and an optional PDF) for league ID cards; public match pages never show it.
 
 Parents can request a link to an **existing** player (the club creates the player record first). Until an admin approves, the parent cannot read that player’s private fields. After approval, the parent sees a basic “my children” list (names, birth date, team, jersey) and may **register that child for training sessions** on the child’s team. The parent may **withdraw a pending request**; only an **admin** may revoke an **approved** link. After revoke or withdraw, `is_approved_guardian_for_player` is false and the same pair may apply again. Session signup checks `guardian_player_links.status = approved`.
 
@@ -767,20 +767,20 @@ Out of scope: 6A import (now Stage 6A), notifications, production deploy, merge 
 
 Stage 6A added admin CSV/Excel import and generic match-URL assist. **Stage L2 retires that import UI.** Player, coach, and match CSV/Excel upload, template downloads, and generic URL assist are gone from `/app/admin/import`. Shared CSV/XLSX helpers remain for **reports** and the photo pack. T6A-8 (admin-only) and T6A-10 (SSRF) still apply to the import page fetch path.
 
-### Stage L / L2 (Torneopal match-URL import)
+### Stage L / L2 / L3 (generic match-URL import)
 
-Admin pastes a public Torneopal schedule or team URL on **`/app/admin/import`**. The **server** fetches HTML (Torneopal host allowlist + existing SSRF guards), parses fixtures, maps club sides onto existing 隊伍, and **Confirm** creates unpublished `league` shells via `admin_create_match`. **Create-only.** Existing matches are never updated. Duplicate key = same 隊伍 + kickoff minute + opponent.
+Admin pastes a **public competition / cup / league URL** on **`/app/admin/import`**. The **server** fetches HTML (any public http(s) host + existing SSRF guards), extracts fixture rows (structured/AI extraction from HTML and visible text; Torneopal HTML remains a fast path), maps club sides onto existing 隊伍, and **Confirm** creates unpublished `league` shells via `admin_create_match`. **Create-only.** Existing matches are never updated. Duplicate key = same 隊伍 + kickoff minute + opponent.
 
-There is **no dedicated Torneopal product page**. `/app/admin/torneopal` redirects to `/app/admin/import`. Admin nav, home cards, and dashboard cards do not link to a separate Torneopal item.
+The page is **not** Torneopal-branded. `/app/admin/torneopal` still redirects to `/app/admin/import`. Admin nav, home cards, and dashboard cards do not link to a separate Torneopal item.
 
 | Object | Behaviour |
 | --- | --- |
-| `/app/admin/import` | Admin-only. Match URL only: paste Torneopal URL → preview mapped 隊伍 → confirm unpublished league shells. Non-admins see access denied. Parse/map errors stay on the row; the page must not crash. |
-| Fetch | Server-side only. Allow `*.torneopal.com` and `*.torneopal.fi`. Every redirect hop is re-checked. Private/link-local/metadata IPs still blocked. ~8s timeout; ~1 MB body. HTML is not stored. |
-| Alias map | Torneopal names (including `台中` prefix, U10 白/藍, yellow/blue) resolve to exact 隊伍: Futuro U8, Futuro U9, Futuro U10, Futuro U11, Futuro U12 黃, Futuro U12 藍. U10 白 and U10 藍 both map to **Futuro U10**. |
-| Preview | Shows create / skip / row-error. Non-club matches are ignored. Unmapped Futuro-looking names are `unmappedTeam`. Scores in the kickoff cell are `invalidSessionTime`, not midnight. Derby (黃 vs 藍) emits two shells. Default duration 90 minutes. `is_published = false`. |
+| `/app/admin/import` | Admin-only. Match URL only: paste a public schedule URL → preview mapped 隊伍 → confirm unpublished league shells. Non-admins see access denied. Parse/map errors stay on the row; the page must not crash. Login-walled pages return a clear error. |
+| Fetch | Server-side only. Public http(s) URLs. Every redirect hop is re-checked. Private/link-local/metadata IPs still blocked. ~8s timeout; ~1 MB body. HTML is not stored. |
+| Alias map | Club-side names (including `台中` prefix, U10 白/藍, yellow/blue) resolve to exact 隊伍: Futuro U8, Futuro U9, Futuro U10, Futuro U11, Futuro U12 黃, Futuro U12 藍. U10 白 and U10 藍 both map to **Futuro U10**. |
+| Preview | Shows create / skip / row-error. Non-club matches are ignored. Unmapped club-looking names are `unmappedTeam`. Missing kickoffs are `invalidSessionTime`. Derby (黃 vs 藍) emits two shells. Default duration 90 minutes. `is_published = false`. |
 | Confirm | Inserts create rows only. Re-checks duplicates at confirm time and skips them. Partial success keeps created rows. |
-| Tests | Fixture HTML in [`lib/org/fixtures/torneopal-schedule.html`](lib/org/fixtures/torneopal-schedule.html). Unit tests TL-1…TL-4 in [`lib/org/torneopal.test.ts`](lib/org/torneopal.test.ts) do **not** hit the live network. |
+| Tests | Torneopal fixture HTML in [`lib/org/fixtures/torneopal-schedule.html`](lib/org/fixtures/torneopal-schedule.html). Generic fixture in [`lib/org/fixtures/generic-schedule.html`](lib/org/fixtures/generic-schedule.html). Unit tests do **not** hit the live network. |
 
 **No new SQL.** Reuses `admin_create_match`.
 
@@ -789,13 +789,16 @@ There is **no dedicated Torneopal product page**. `/app/admin/torneopal` redirec
 | TL-1 | Fixture HTML parses schedule date headers and team-page `ml_pvm` dates (`26/27` + month ≥ 8 → season start year). Parser never throws. |
 | TL-2 | Alias map: 台中FUTURO U8…U12 黃/藍, and U10 白/藍 → Futuro U10. U13 stays unmapped. |
 | TL-3 | Preview: unpublished league shells; derby = two rows; three U10 rows on the merged 隊伍; in-file duplicate skipped; unmapped + score errors inline. |
-| TL-4 | `https://example.com/` and `http://127.0.0.1/` are blocked without fetching. Allowlisted `taichung.torneopal.com` may fetch in the mock. |
+| TL-4 | Public hosts such as `https://example.com/` may fetch in the mock. `http://127.0.0.1/` and `file://` are blocked without fetching. |
 | TL2-1 | `/app/admin/import` is match-URL only. No player/coach/match CSV tabs or template downloads. |
-| TL2-2 | `/app/admin/torneopal` is not a product page (redirects to import). No nav/home/dashboard Torneopal link. `npm run lint`, `npm run typecheck`, and `npm test` pass. |
+| TL2-2 | `/app/admin/torneopal` is not a product page (redirects to import). No nav/home/dashboard Torneopal link. |
+| L3-1 | Import title/help/field/placeholder are generic (賽事網址匯入 / AI extracts teams and lists the schedule). No Torneopal product branding. |
+| L3-2 | Generic HTML fixture previews mapped 隊伍 without a live network. Unmapped sides and missing kickoffs are row errors. |
+| L3-5 | SSRF: localhost / private / non-http(s) blocked. Login walls return `urlLoginRequired`. |
 
-Victor staging (after this PR is on staging): sign in as admin → `/zh-Hant/app/admin/import` → paste `https://taichung.torneopal.com/` → preview maps onto the six 隊伍 → confirm creates unpublished league shells → `/app/admin/matches` shows them unpublished → paste the same URL again → those rows skip. Paste a non-Torneopal URL → blocked. Confirm there is no CSV/Excel upload on the import page and no Torneopal item in admin nav. Open `/app/admin/torneopal` → lands on import. Sign in as parent → access denied.
+Victor staging (after this PR is on staging): sign in as admin → `/zh-Hant/app/admin/import` → paste a public schedule URL → preview maps onto club 隊伍 → confirm creates unpublished league shells → `/app/admin/matches` shows them unpublished → paste the same URL again → those rows skip. Paste `http://127.0.0.1/` → blocked. Confirm there is no CSV/Excel upload on the import page and no Torneopal item in admin nav. Open `/app/admin/torneopal` → lands on import. Sign in as parent → access denied.
 
-Out of scope: restoring CSV/Excel import; updating existing matches; auto-publish; storing raw HTML; live network in CI; production deploy.
+Out of scope: restoring CSV/Excel import; updating existing matches; auto-publish; storing raw HTML; scraping behind login walls; live network in CI; production deploy.
 
 ### Stage R1 (Torneopal FUTURO roster seed)
 
@@ -922,7 +925,7 @@ i18n/                  next-intl routing, navigation, request config
 lib/age-band.ts        Season-start age band helper
 lib/assessments/       Assessment parse/validation, queries, server actions
 lib/credits/           Debit rules, packages, LINE notice copy, Stage N announcement templates, credit queries/actions
-lib/org/               Server actions, queries, Torneopal match-URL import, Torneopal roster seed, match helpers, admin reports, ops dashboard aggregations
+lib/org/               Server actions, queries, generic match-URL import, Torneopal roster seed, match helpers, admin reports, ops dashboard aggregations
 lib/auth/              Phone helpers, session/role guards
 lib/supabase/          Browser, server, and proxy (cookie) clients
 messages/              zh-Hant, en, ja copy

@@ -1,30 +1,24 @@
 /**
- * Stage L: allowlisted Torneopal fetch. SSRF still applies on every hop.
+ * Stage L3: fetch public schedule HTML. SSRF still applies on every hop.
+ * Product URLs are not limited to Torneopal hosts.
  */
 
-import { isTorneopalHostname, TORNEOPAL_FETCH_USER_AGENT } from "./torneopal-hosts.ts";
+import { SCHEDULE_FETCH_USER_AGENT } from "./torneopal-hosts.ts";
 import {
-  assertSafePublicUrl,
   fetchPublicHtml,
   type FetchPublicHtmlDeps,
   type FetchPublicHtmlResult,
 } from "./url-ssrf.ts";
 
-export async function fetchTorneopalHtml(
+export async function fetchScheduleHtml(
   rawUrl: string,
   deps: FetchPublicHtmlDeps = {},
 ): Promise<FetchPublicHtmlResult> {
-  const parsed = assertSafePublicUrl(rawUrl);
-  if (!parsed.ok) {
-    return parsed;
-  }
-  if (!isTorneopalHostname(parsed.url.hostname)) {
-    return { ok: false, errorKey: "blockedUrl" };
-  }
   return fetchPublicHtml(rawUrl, {
     ...deps,
-    isAllowedHostname: (hostname) =>
-      isTorneopalHostname(hostname) && (deps.isAllowedHostname?.(hostname) ?? true),
-    userAgent: deps.userAgent ?? TORNEOPAL_FETCH_USER_AGENT,
+    userAgent: deps.userAgent ?? SCHEDULE_FETCH_USER_AGENT,
   });
 }
+
+/** Stage L alias. Fetch policy is the generic public-HTML path. */
+export const fetchTorneopalHtml = fetchScheduleHtml;

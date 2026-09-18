@@ -43,12 +43,14 @@ const REQUIRED_KEYS = [
   "torneopal.statusSkip",
   "torneopal.statusError",
   "torneopal.errors.blockedUrl",
+  "torneopal.errors.urlLoginRequired",
   "torneopal.errors.torneopalNoFixtures",
   "torneopal.errors.torneopalNoClubMatches",
   "torneopal.errors.duplicateMatch",
   "torneopal.errors.unmappedTeam",
   "org.errors.torneopalNoFixtures",
   "org.errors.torneopalNoClubMatches",
+  "org.errors.urlLoginRequired",
   "org.errors.duplicateMatch",
   "org.errors.unmappedTeam",
 ];
@@ -68,8 +70,8 @@ const REMOVED_KEYS = [
   "import.fileLabel",
 ];
 
-describe("Stage L2 locale smoke", () => {
-  it("has Torneopal match-URL import copy in zh-Hant, en, and ja", () => {
+describe("Stage L3 locale smoke", () => {
+  it("has generic match-URL import copy in zh-Hant, en, and ja", () => {
     for (const locale of ["zh-Hant", "en", "ja"] as const) {
       const messages = loadMessages(locale);
       for (const key of REQUIRED_KEYS) {
@@ -83,12 +85,27 @@ describe("Stage L2 locale smoke", () => {
     }
   });
 
-  it("zh-Hant import page describes unpublished league shells", () => {
+  it("zh-Hant import page is generic match-URL copy, not Torneopal-branded", () => {
     const zh = loadMessages("zh-Hant");
-    assert.match(String(at(zh, "admin.importTitle")), /Torneopal/);
-    assert.match(String(at(zh, "admin.importBody")), /未公開/);
+    assert.equal(String(at(zh, "admin.importTitle")), "賽事網址匯入");
+    assert.match(String(at(zh, "admin.importBody")), /AI/);
+    assert.match(String(at(zh, "admin.importBody")), /核可/);
+    assert.equal(String(at(zh, "torneopal.urlLabel")), "賽事網址");
+    assert.equal(String(at(zh, "torneopal.urlPlaceholder")), "https://");
+    assert.equal(String(at(zh, "torneopal.preview")), "預覽（尚未建立）");
+    assert.doesNotMatch(String(at(zh, "admin.importTitle")), /Torneopal/i);
+    assert.doesNotMatch(String(at(zh, "admin.importBody")), /Torneopal/i);
+    assert.doesNotMatch(String(at(zh, "torneopal.lead")), /Torneopal/i);
+    assert.doesNotMatch(String(at(zh, "torneopal.urlLabel")), /Torneopal/i);
+    assert.doesNotMatch(String(at(zh, "torneopal.errors.blockedUrl")), /Torneopal/i);
     assert.match(String(at(zh, "torneopal.unpublishedHint")), /未公開|不公開/);
     assert.match(String(at(zh, "torneopal.confirmHint")), /確認/);
     assert.doesNotMatch(String(at(zh, "admin.importBody")), /CSV|Excel/);
+    for (const locale of ["en", "ja"] as const) {
+      const messages = loadMessages(locale);
+      assert.doesNotMatch(String(at(messages, "admin.importTitle")), /Torneopal/i);
+      assert.doesNotMatch(String(at(messages, "torneopal.urlLabel")), /Torneopal/i);
+      assert.doesNotMatch(String(at(messages, "torneopal.lead")), /Torneopal/i);
+    }
   });
 });

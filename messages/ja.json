@@ -146,8 +146,8 @@
         "body": "カップ、リーグ、親善試合を作成し、表示名と背番号だけのメンバーを公開し、結果を記録します。"
       },
       "adminImport": {
-        "title": "Torneopal 日程を取り込む",
-        "body": "Torneopal の日程またはチーム URL を貼り、既存の隊伍へ対応づけたプレビューを確認してから、未公開のリーグ試合枠を作ります。"
+        "title": "試合URLの取り込み",
+        "body": "大会・カップ・リーグのURLを貼ると、AIがチームを読み取り日程を一覧にします。確認後にクラブサイトへ試合を作成します。"
       },
       "adminReports": {
         "title": "レポート",
@@ -224,8 +224,8 @@
     "sessionsBody": "梯隊にだけタイトル付きの通常または特別練習を作成します。複数の梯隊を選ぶと、同じ内容のシリーズ／セッションが梯隊ごとに独立して作られます。特別は1回のみ。通常練習は選択した曜日と、終了日または曜日ごとの回数で発生します。カップ・リーグ・親善試合は「管理 → 試合」で、隊伍に付けます。管理画面の初期表示は月カレンダーです。無効化は新規申込を一時的に隠し、論理削除は申込とQ&Aを残します。申込は自動承認です。このステージに定員はありません。",
     "matchesTitle": "公開試合",
     "matchesBody": "公開日程にカップ、リーグ、親善試合を載せます。複数の隊伍を選ぶと、同じタイトルとキックオフの試合が隊伍ごとに独立して作られます。公開メンバーに出す選手を選びます（表示名と背番号のみ）。中止した試合は来場者一覧に出ません。書き込みは管理者のみです。",
-    "importTitle": "Torneopal 日程を取り込む",
-    "importBody": "Torneopal の日程またはチーム URL を貼ります。サーバーが取得し、既存の隊伍に対応づけます。確定すると未公開のリーグ試合枠だけを新規作成します。同一隊伍・開始分・対戦相手はスキップし、既存試合は更新しません。",
+    "importTitle": "試合URLの取り込み",
+    "importBody": "大会・カップ・リーグのURLを貼ると、AIがチームを読み取り日程を一覧にします。確認後にクラブサイトへ試合を作成します。",
     "createTeam": "単位を作成",
     "createAgeSquad": "梯隊を作成",
     "createCompetitionTeam": "隊伍を作成",
@@ -554,10 +554,11 @@
       "blockedUrl": "その URL は許可されません。公開 http(s) ページを使ってください。プライベート、localhost、metadata アドレスは遮断します。",
       "urlFetchFailed": "そのページを取得できませんでした（サイズ、種類、または HTTP エラー）。",
       "urlTimeout": "ページの取得がタイムアウトしました。",
-      "torneopalNoFixtures": "その Torneopal ページに解析できる日程行がありません。",
+      "urlLoginRequired": "このURLを読めません（ログインが必要な可能性があります）。公開の日程ページを貼ってください。",
+      "torneopalNoFixtures": "このURLから日程行を解析できませんでした。",
       "torneopalNoClubMatches": "このクラブの隊伍に対応できる試合がありません。",
       "duplicateMatch": "同じ隊伍・キックオフ分・対戦相手の試合が既にあるためスキップしました（新規のみ。既存試合は更新しません）。",
-      "unmappedTeam": "その Futuro 名は既存の隊伍に一致しません。隊伍マスタを確認してください（U10 白／藍は Futuro U10 に対応します）。",
+      "unmappedTeam": "隊伍に対応できません。隊伍マスターを確認してください。",
       "missingProfile": "そのプロフィールは見つかりませんでした。",
       "invalidReportType": "有効なレポート種類を選んでください。",
       "invalidReportFormat": "CSV または Excel を選んでください。",
@@ -1014,9 +1015,9 @@
     }
   },
   "torneopal": {
-    "lead": "公開の Torneopal ページのみ取得します（*.torneopal.com／*.torneopal.fi）。解析や対応づけの問題は行に表示し、ページは落としません。クラブ外の試合は無視します。",
-    "urlLabel": "Torneopal の日程またはチーム URL",
-    "urlPlaceholder": "https://taichung.torneopal.com/",
+    "lead": "公開の http(s) 大会・カップ・リーグ URL を貼ります。AI がチームと日程を整理します。隊伍に対応できない行やキックオフ不明は行に表示し、ページは落としません。",
+    "urlLabel": "試合URL",
+    "urlPlaceholder": "https://",
     "preview": "プレビュー（まだ作成しません）",
     "previewing": "取得と解析中…",
     "confirm": "未公開リーグ枠を作成",
@@ -1036,13 +1037,14 @@
     "sourcePage": "出典：{title}",
     "unpublishedHint": "作成される枠はリーグ試合で、既定では非公開です。公開するまで保護者と来場者には見えません。",
     "errors": {
-      "blockedUrl": "公開の Torneopal URL のみ許可します（torneopal.com または torneopal.fi）。他ホスト、プライベート網、localhost は遮断します。",
-      "urlFetchFailed": "その Torneopal ページを取得できませんでした（サイズ、種類、または HTTP エラー）。",
-      "urlTimeout": "その Torneopal ページの取得がタイムアウトしました。",
-      "torneopalNoFixtures": "その Torneopal ページに解析できる日程行がありません。",
+      "blockedUrl": "このURLを読めません。公開の http(s) ページを使ってください。プライベート網、localhost、metadata アドレスは遮断します。",
+      "urlFetchFailed": "このURLを読めませんでした（サイズ、種類、または HTTP エラー）。",
+      "urlTimeout": "このURLの取得がタイムアウトしました。",
+      "urlLoginRequired": "このURLを読めません（ログインが必要な可能性があります）。公開の日程ページを貼ってください。",
+      "torneopalNoFixtures": "このURLから日程行を解析できませんでした。",
       "torneopalNoClubMatches": "このクラブの隊伍に対応できる試合がありません。",
       "duplicateMatch": "同じ隊伍・キックオフ分・対戦相手の試合が既にあるためスキップしました。",
-      "unmappedTeam": "その Futuro 名は既存の隊伍に一致しません。U10 白／藍は Futuro U10 に対応します。",
+      "unmappedTeam": "隊伍に対応できません。隊伍マスターを確認してください。",
       "importEmpty": "確定できるプレビューがありません。もう一度プレビューしてください。",
       "importTooLarge": "日程行が多すぎます（上限 200 行）。",
       "importNoValidRows": "作成できる有効行がありません。スキップと行エラーは書き込みません。",

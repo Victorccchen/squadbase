@@ -165,27 +165,29 @@ describe("TL-3 preview mapping", () => {
   });
 });
 
-describe("TL-4 allowlist", () => {
-  it("allows Torneopal hosts and blocks others without fetching", async () => {
+describe("TL-4 public fetch + SSRF", () => {
+  it("allows public hosts, keeps Torneopal hostname helper, and blocks SSRF without fetching", async () => {
     assert.equal(isTorneopalHostname("taichung.torneopal.com"), true);
     assert.equal(isTorneopalHostname("victoryleague.torneopal.com"), true);
     assert.equal(isTorneopalHostname("spl.torneopal.fi"), true);
     assert.equal(isTorneopalHostname("example.com"), false);
     assert.equal(assertSafePublicUrl("http://127.0.0.1/").ok, false);
+    assert.equal(assertSafePublicUrl("file:///etc/passwd").ok, false);
 
     let fetched = false;
-    const blocked = await fetchTorneopalHtml("https://example.com/schedule", {
+    const publicHost = await fetchTorneopalHtml("https://example.com/schedule", {
+      lookup: async () => [{ address: "203.0.113.10", family: 4 }],
       fetch: async () => {
         fetched = true;
-        return new Response("<html></html>");
+        return new Response("<html><title>Public</title></html>", {
+          headers: { "content-type": "text/html" },
+        });
       },
     });
-    assert.equal(blocked.ok, false);
-    if (!blocked.ok) {
-      assert.equal(blocked.errorKey, "blockedUrl");
-    }
-    assert.equal(fetched, false);
+    assert.equal(publicHost.ok, true);
+    assert.equal(fetched, true);
 
+    fetched = false;
     const loopback = await fetchTorneopalHtml("http://127.0.0.1/", {
       fetch: async () => {
         fetched = true;

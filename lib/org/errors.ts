@@ -106,6 +106,7 @@ export type OrgErrorKey =
   | "blockedUrl"
   | "urlFetchFailed"
   | "urlTimeout"
+  | "urlLoginRequired"
   | "torneopalNoFixtures"
   | "torneopalNoClubMatches"
   | "duplicateMatch"
