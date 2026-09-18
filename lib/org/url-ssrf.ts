@@ -198,7 +198,13 @@ export type FetchPublicHtmlDeps = {
 
 export type FetchPublicHtmlResult =
   | { ok: true; url: string; html: string }
-  | { ok: false; errorKey: Extract<OrgErrorKey, "blockedUrl" | "urlFetchFailed" | "urlTimeout"> };
+  | {
+      ok: false;
+      errorKey: Extract<
+        OrgErrorKey,
+        "blockedUrl" | "urlFetchFailed" | "urlTimeout" | "urlLoginRequired"
+      >;
+    };
 
 async function readLimitedBody(
   response: Response,
@@ -295,6 +301,10 @@ export async function fetchPublicHtml(
         return { ok: false, errorKey: "blockedUrl" };
       }
       continue;
+    }
+
+    if (response.status === 401 || response.status === 403) {
+      return { ok: false, errorKey: "urlLoginRequired" };
     }
 
     if (!response.ok) {

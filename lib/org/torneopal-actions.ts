@@ -9,8 +9,8 @@ import { createClient } from "@/lib/supabase/server";
 import { matchRpcErrorKey } from "@/lib/org/match";
 import { isCompetitionTeam } from "@/lib/org/squad-team";
 import type { ImportTeam } from "@/lib/org/import-validate";
-import { fetchTorneopalHtml } from "@/lib/org/torneopal-fetch";
-import { parseTorneopalScheduleHtml } from "@/lib/org/torneopal-parse";
+import { parsePublicScheduleHtml } from "@/lib/org/schedule-extract";
+import { fetchScheduleHtml } from "@/lib/org/torneopal-fetch";
 import {
   buildTorneopalPreview,
   matchDuplicateKey,
@@ -118,11 +118,14 @@ export async function previewTorneopalSchedule(
     if (!url) {
       return { ok: false, errorKey: "blockedUrl", previewJson: null, attempted: true };
     }
-    const fetched = await fetchTorneopalHtml(url);
+    const fetched = await fetchScheduleHtml(url);
     if (!fetched.ok) {
       return { ok: false, errorKey: fetched.errorKey, previewJson: null, attempted: true };
     }
-    const parsed = parseTorneopalScheduleHtml(fetched.html);
+    const parsed = parsePublicScheduleHtml(fetched.html);
+    if (parsed.loginWall && parsed.fixtures.length === 0) {
+      return { ok: false, errorKey: "urlLoginRequired", previewJson: null, attempted: true };
+    }
     const teams = await loadCompetitionTeams(actor.supabase);
     if (!teams.ok) {
       return { ok: false, errorKey: "generic", previewJson: null, attempted: true };
