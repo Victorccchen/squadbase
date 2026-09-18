@@ -25,6 +25,7 @@
   - [ ] Stage R: admin Excel/CSV reports (attendance, registrations, credit ledger, match roster); admin-only; browser download
   - [ ] Stage D: admin ops dashboard (attendance, remittance vs consumed credits, remaining obligation); admin-only
   - [ ] Stage P: player headshots / ID photos bound to players (private Storage)
+  - [ ] Stage P.1: admin league-registration ZIP (roster Excel + photos/; optional pdfs/)
 
 ## Verification
 
