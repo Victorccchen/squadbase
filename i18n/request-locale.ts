@@ -7,7 +7,7 @@
  */
 
 import { hasLocale } from "next-intl";
-import { routing, type AppLocale } from "./routing";
+import { routing, type AppLocale } from "./routing.ts";
 
 export function localeFromPathname(pathname: string): AppLocale | null {
   const first = pathname.split("/").find(Boolean);

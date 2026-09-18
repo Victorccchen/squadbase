@@ -35,7 +35,7 @@ export default getRequestConfig(async ({ locale }) => {
     notFound();
   }
 
-  const messages = (await messageLoaders[resolved]).default;
+  const messages = (await messageLoaders[resolved]()).default;
 
   return {
     locale: resolved,
