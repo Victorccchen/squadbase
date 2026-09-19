@@ -22,7 +22,7 @@
     "stackNext": "Next.js App Router + TypeScript",
     "stackI18n": "next-intl (Traditional Chinese / English / Japanese)",
     "stackSupabase": "Supabase phone OTP, profiles, multi-role, org master data, guardian links, training sessions, prepaid credits, player assessments, public matches, and RLS",
-    "stackPwa": "PWA: web app manifest and basic meta",
+    "stackPwa": "PWA: web app manifest, service worker, and Web Push",
     "envTitle": "Environment",
     "envConfigured": "Public Supabase variables are present. Sign-in talks to this project (anon key only).",
     "envMissing": "NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY is not set. The homepage still previews, but sign-in cannot work.",
@@ -176,9 +176,14 @@
       "adminNote": {
         "title": "Role promotion",
         "body": "There is no in-app backdoor. Add an admin row for the user in the Dashboard user_roles table. Linking a coach also grants the coach role."
+      },
+      "settings": {
+        "title": "Notification settings",
+        "body": "Enable or disable PWA push on this device. Parents who have not opted in are skipped."
       }
     },
-    "openAssessments": "Open assessments"
+    "openAssessments": "Open assessments",
+    "openSettings": "Open settings"
   },
   "nav": {
     "label": "App sections",
@@ -200,7 +205,8 @@
     "assessments": "Assessments",
     "notices": "Notices",
     "reports": "Reports",
-    "opsDashboard": "Ops dashboard"
+    "opsDashboard": "Ops dashboard",
+    "settings": "Settings"
   },
   "access": {
     "deniedTitle": "You cannot open this page",
@@ -329,7 +335,7 @@
     "registrationHistoryTitle": "Cancelled registrations",
     "openAssessment": "Assessment",
     "noticesTitle": "Notice copy",
-    "noticesBody": "Generate short LINE-group text and app deep links for a 梯隊, a 隊伍, or parents already registered on a session. Copy only — this app does not send LINE, SMS, or push.",
+    "noticesBody": "Generate short LINE-group text and app deep links for a 梯隊, a 隊伍, or parents already registered on a session. You can also send Web Push to parents who opted in. LINE stays copy-and-paste.",
     "reportsTitle": "Reports",
     "reportsBody": "Download attendance, registrations, credit ledger, and match roster as Excel or CSV, plus a league-registration ZIP (roster + photos). Admin only. Default files omit parent phones and other contact PII. Soft-deleted sessions are excluded unless you include them. Spreadsheets cap at 5000 rows; photo packs cap at 200 players.",
     "dashboardTitle": "Ops dashboard",
@@ -569,7 +575,12 @@
       "invalidPdfType": "Use a PDF file.",
       "pdfTooLarge": "That PDF is larger than 8 MB.",
       "invalidPhotoPath": "That photo path is not valid.",
-      "photoPackTooMany": "This photo pack has more than 200 players. Select fewer 梯隊 or 隊伍 and try again."
+      "photoPackTooMany": "This photo pack has more than 200 players. Select fewer 梯隊 or 隊伍 and try again.",
+      "pushNotConfigured": "VAPID push keys are not configured, so subscribe and send are unavailable.",
+      "pushProductionBlocked": "Production push send is not enabled.",
+      "pushPermissionDenied": "The browser denied notification permission.",
+      "pushSubscribeFailed": "Could not enable push. Add the site to the Home Screen and try again.",
+      "pushUnsupported": "This browser does not support Web Push."
     }
   },
   "children": {
@@ -1060,7 +1071,7 @@
   },
   "notices": {
     "title": "Notice copy",
-    "lead": "Generate a short LINE-group message and app deep links, then copy and paste into existing parent groups. This app does not send LINE, SMS, or push. The app is the source of truth; LINE is only a reminder.",
+    "lead": "Generate a short LINE-group message and app deep links, then copy and paste into existing parent groups. Admins can also send Web Push to parents who opted in. The app is the source of truth.",
     "generateCta": "Generate notice copy",
     "templateLabel": "Template",
     "audienceLabel": "Audience",
@@ -1085,9 +1096,19 @@
     "noSourceTitle": "No session selected",
     "noSourceBody": "Choose a training session or match to generate copy. You can also open this page from session or match detail.",
     "noPiiHint": "Group copy never includes parent names or phone numbers. Do not paste personal data into the note fields.",
-    "noSendHint": "Generate and copy only. No push, LINE Messaging API, SMS, or official-account send.",
+    "noSendHint": "LINE groups stay copy-and-paste. There is no LINE Messaging API, SMS, or official-account send. Web Push goes only to parents who enabled it in Settings.",
     "coexistHint": "Bank-transfer and debit notice copy stay on the session detail “Copy notice” panel. This page does not replace them.",
     "previewTitle": "Preview",
+    "pushTitle": "Push",
+    "pushLead": "Send a short title and deep link to approved guardians. Accounts that have not opted in are skipped. One push per parent even with several children. Coaches are not included by default.",
+    "pushStagingHint": "Send only on staging or local test accounts. Do not enable production send. iOS needs Add to Home Screen first.",
+    "pushIntended": "Intended",
+    "pushSubscribed": "Opted in",
+    "pushSkipped": "Skipped",
+    "pushSend": "Push",
+    "pushSending": "Sending…",
+    "pushKeepLine": "LINE-group copy is still available above.",
+    "pushResult": "Done: intended {intended}, opted in {subscribed}, skipped {skipped}, sent {sent}, failed {failed}.",
     "templates": {
       "regular_training_signup": "Regular training signup",
       "special_training_signup": "Special training signup",
@@ -1233,5 +1254,20 @@
     "ungrouped": "No current 梯隊",
     "monthlyTitle": "Monthly trend",
     "twd": "NT$ {amount}"
+  },
+  "settings": {
+    "title": "Settings",
+    "lead": "Manage Web Push on this device. Parents who have not opted in will not receive admin push. Use staging test accounts.",
+    "pushTitle": "Push notifications",
+    "pushLead": "When enabled, short admin notices from the notice page appear on this device. Payloads are title, short body, and an app link — no phones or rosters.",
+    "iosHint": "iPhone / iPad: open this site in Safari, tap Share → Add to Home Screen, then open the Home Screen icon before enabling push.",
+    "stagingHint": "Staging only for now. Use a test parent account. Production send is not enabled.",
+    "unsupported": "This browser or window does not support Web Push.",
+    "statusOn": "Push is on for this device.",
+    "statusOff": "Push is off for this device.",
+    "permissionDenied": "The browser blocked notifications.",
+    "enable": "Enable push",
+    "disable": "Disable push",
+    "working": "Working…"
   }
 }

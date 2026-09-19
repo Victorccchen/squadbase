@@ -22,7 +22,7 @@
     "stackNext": "Next.js App Router + TypeScript",
     "stackI18n": "next-intl（繁中 / English / 日本語）",
     "stackSupabase": "Supabase Phone OTP、profiles、多角色、組織主檔、家長連結、訓練場次、預付堂數、球員評量、公開比賽與 RLS",
-    "stackPwa": "PWA：網頁應用程式資訊清單與基本 meta",
+    "stackPwa": "PWA：網頁應用程式資訊清單、服務工作執行緒與 Web Push",
     "envTitle": "環境",
     "envConfigured": "已讀取公開 Supabase 變數。登入會連線到此專案（僅使用 anon key）。",
     "envMissing": "尚未設定 NEXT_PUBLIC_SUPABASE_URL 或 NEXT_PUBLIC_SUPABASE_ANON_KEY。首頁仍可預覽，但無法登入。",
@@ -176,9 +176,14 @@
       "adminNote": {
         "title": "角色升級",
         "body": "應用程式內沒有後門。請在 Dashboard 的 user_roles 資料表為使用者新增 admin 角色。連結教練時也會授予 coach 角色。"
+      },
+      "settings": {
+        "title": "通知設定",
+        "body": "在這支裝置開啟或關閉 PWA 推播。未開啟的家長不會收到管理員推播。"
       }
     },
-    "openAssessments": "開啟能力評量"
+    "openAssessments": "開啟能力評量",
+    "openSettings": "開啟設定"
   },
   "nav": {
     "label": "功能區",
@@ -200,7 +205,8 @@
     "assessments": "能力評量",
     "notices": "通知文案",
     "reports": "報表",
-    "opsDashboard": "營運看板"
+    "opsDashboard": "營運看板",
+    "settings": "設定"
   },
   "access": {
     "deniedTitle": "你沒有權限開啟此頁",
@@ -329,7 +335,7 @@
     "registrationHistoryTitle": "已取消的報名",
     "openAssessment": "能力評量",
     "noticesTitle": "通知文案",
-    "noticesBody": "為梯隊、隊伍，或本場已報名的家長產生 LINE 群短文與 App 連結。只複製、不發送 LINE、簡訊或推播。",
+    "noticesBody": "為梯隊、隊伍，或本場已報名的家長產生 LINE 群短文與 App 連結，並可對已開啟推播的家長發送 Web Push。LINE 仍是複製貼上。",
     "reportsTitle": "報表",
     "reportsBody": "下載出缺席、報名、堂數流水與比賽名單的 Excel 或 CSV，以及聯盟報名用 ZIP（名冊 + 照片）。僅限管理員。預設不含家長電話等聯絡個資。軟刪除場次預設排除。試算表每次最多 5000 列；證件照片包最多 200 人。",
     "dashboardTitle": "營運看板",
@@ -569,7 +575,12 @@
       "invalidPdfType": "請使用 PDF 檔。",
       "pdfTooLarge": "這個 PDF 超過 8 MB。",
       "invalidPhotoPath": "照片路徑無效。",
-      "photoPackTooMany": "此證件照片包超過 200 名球員。請減少勾選的梯隊或隊伍後再試。"
+      "photoPackTooMany": "此證件照片包超過 200 名球員。請減少勾選的梯隊或隊伍後再試。",
+      "pushNotConfigured": "尚未設定 VAPID 推播金鑰，無法訂閱或發送。",
+      "pushProductionBlocked": "正式環境尚未開放推播發送。",
+      "pushPermissionDenied": "瀏覽器拒絕了通知權限。",
+      "pushSubscribeFailed": "無法開啟推播。請確認已加入主畫面後再試。",
+      "pushUnsupported": "這支瀏覽器不支援 Web Push。"
     }
   },
   "children": {
@@ -1060,7 +1071,7 @@
   },
   "notices": {
     "title": "通知文案",
-    "lead": "產生短文與 App 深層連結，複製後手動貼到既有 LINE 家長群。應用程式不會發送 LINE、簡訊或推播。報名與出賽以 App 為準，LINE 只是提醒。",
+    "lead": "產生短文與 App 深層連結，複製後手動貼到既有 LINE 家長群。已開啟推播的家長可由管理員另外發送 Web Push。報名與出賽以 App 為準。",
     "generateCta": "產生通知文案",
     "templateLabel": "範本",
     "audienceLabel": "對象",
@@ -1085,9 +1096,19 @@
     "noSourceTitle": "尚未選擇場次",
     "noSourceBody": "請選擇一場訓練或比賽以產生文案。也可從場次或比賽詳情頁的「產生通知文案」進來。",
     "noPiiHint": "群組文案不會帶入家長姓名或電話。請不要把個人資料貼進備註欄。",
-    "noSendHint": "僅複製貼上。沒有推播、LINE Messaging API、簡訊或官方帳號發送。",
+    "noSendHint": "LINE 群仍是複製貼上。沒有 LINE Messaging API、簡訊或官方帳號發送。Web Push 只送給已在設定開啟推播的家長。",
     "coexistHint": "扣堂／匯款通知仍在場次詳情的「複製通知」，此頁不取代它。",
     "previewTitle": "預覽",
+    "pushTitle": "推播",
+    "pushLead": "對已核准家長發送短標題與深層連結。未開啟推播的帳號會略過。同一家長有多名子女也只送一次。教練預設不收。",
+    "pushStagingHint": "目前只在 staging／本機測試帳號發送。請勿對正式環境啟用。iOS 需先把網站加到主畫面。",
+    "pushIntended": "應送人數",
+    "pushSubscribed": "已開啟推播",
+    "pushSkipped": "略過",
+    "pushSend": "推播",
+    "pushSending": "發送中…",
+    "pushKeepLine": "LINE 群文案仍可在上方複製。",
+    "pushResult": "已處理：應送 {intended}、已開啟 {subscribed}、略過 {skipped}、送出 {sent}、失敗 {failed}。",
     "templates": {
       "regular_training_signup": "例行訓練報名",
       "special_training_signup": "特別訓練報名",
@@ -1233,5 +1254,20 @@
     "ungrouped": "目前無梯隊",
     "monthlyTitle": "每月趨勢",
     "twd": "NT$ {amount}"
+  },
+  "settings": {
+    "title": "設定",
+    "lead": "管理這支裝置的 App 推播。未開啟的家長不會收到管理員推播。請用 staging 測試帳號驗證。",
+    "pushTitle": "推播通知",
+    "pushLead": "開啟後，管理員從通知文案頁發送的短訊會出現在這支裝置。內容只有標題、短文與 App 連結，不含電話或名單。",
+    "iosHint": "iPhone / iPad：請先用 Safari 打開本站，點「分享 → 加入主畫面」，再從主畫面圖示開啟後才能開啟推播。",
+    "stagingHint": "目前只在 staging 測試。請用測試家長帳號開啟；正式環境發送尚未開放。",
+    "unsupported": "這支瀏覽器或這個視窗不支援 Web Push。",
+    "statusOn": "這支裝置已開啟推播。",
+    "statusOff": "這支裝置尚未開啟推播。",
+    "permissionDenied": "瀏覽器已封鎖通知。",
+    "enable": "開啟推播",
+    "disable": "關閉推播",
+    "working": "處理中…"
   }
 }

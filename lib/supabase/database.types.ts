@@ -28,6 +28,14 @@ export type CreditLedgerEntryType =
 export type LeaveRequestStatus = "pending" | "approved" | "rejected";
 export type MatchSide = "home" | "away";
 export type MatchPublicStatus = "scheduled" | "completed" | "cancelled";
+export type NoticeTemplateKeyDb =
+  | "regular_training_signup"
+  | "special_training_signup"
+  | "match_signup"
+  | "match_notes"
+  | "thanks"
+  | "match_report";
+export type NoticeAudienceKeyDb = "age_squad" | "competition_team" | "session_registrations";
 
 export type AssessmentScoreValue = 1 | 2 | 3 | 4 | 5;
 
@@ -381,6 +389,40 @@ export type LinkableTeam = {
   id: string;
   name: string;
   age_band: AgeBand;
+};
+
+export type WebPushSubscription = {
+  id: string;
+  user_id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  user_agent: string | null;
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+};
+
+export type NotificationSend = {
+  id: string;
+  sent_by: string;
+  template_key: NoticeTemplateKeyDb;
+  audience_key: NoticeAudienceKeyDb;
+  source_session_id: string | null;
+  audience_team_id: string | null;
+  locale: "zh-Hant" | "en" | "ja";
+  title: string;
+  body: string;
+  url: string;
+  intended_count: number;
+  subscribed_count: number;
+  skipped_count: number;
+  sent_count: number;
+  failed_count: number;
+  created_at: string;
+  created_by: string | null;
 };
 
 type TimestampInsert = {
@@ -1036,6 +1078,74 @@ export type Database = {
           {
             foreignKeyName: "player_assessments_assessor_user_id_fkey";
             columns: ["assessor_user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      push_subscriptions: {
+        Row: WebPushSubscription;
+        Insert: {
+          id?: string;
+          user_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          user_agent?: string | null;
+          enabled?: boolean;
+        } & TimestampInsert;
+        Update: {
+          endpoint?: string;
+          p256dh?: string;
+          auth?: string;
+          user_agent?: string | null;
+          enabled?: boolean;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      notification_sends: {
+        Row: NotificationSend;
+        Insert: {
+          id?: string;
+          sent_by: string;
+          template_key: NoticeTemplateKeyDb;
+          audience_key: NoticeAudienceKeyDb;
+          source_session_id?: string | null;
+          audience_team_id?: string | null;
+          locale: "zh-Hant" | "en" | "ja";
+          title: string;
+          body: string;
+          url: string;
+          intended_count?: number;
+          subscribed_count?: number;
+          skipped_count?: number;
+          sent_count?: number;
+          failed_count?: number;
+          created_at?: string;
+          created_by?: string | null;
+        };
+        Update: {
+          intended_count?: number;
+          subscribed_count?: number;
+          skipped_count?: number;
+          sent_count?: number;
+          failed_count?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "notification_sends_sent_by_fkey";
+            columns: ["sent_by"];
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];

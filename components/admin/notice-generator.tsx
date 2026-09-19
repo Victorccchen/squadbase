@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { NoticePushPanel } from "@/components/admin/notice-push-panel";
 import { AnnouncementCopyPanel } from "@/components/credits/announcement-copy-panel";
 import { EmptyState } from "@/components/empty-state";
 import {
@@ -278,6 +279,19 @@ export function NoticeGenerator({
           previewTitle={t("previewTitle")}
         />
       )}
+      {source ? (
+        <NoticePushPanel
+          sessionId={source.id}
+          template={template}
+          audience={audience}
+          teamId={selectedTeam?.id ?? ""}
+          copyLocale={copyLocale}
+          kit={kit}
+          gear={gear}
+          gather={gather}
+          recap={recap}
+        />
+      ) : null}
     </div>
   );
 }

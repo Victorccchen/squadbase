@@ -60,12 +60,16 @@ Match [`.env.example`](../.env.example):
 | `NEXT_PUBLIC_APP_ENV` | `staging` | Recommended |
 | `NEXT_PUBLIC_APP_URL` | `https://YOUR_VERCEL_STAGING_HOST` (no trailing slash). Set this **after** the first deploy once you know the URL. | Yes after first URL is known |
 | `BANK_TRANSFER_HINT` | empty, or a **non-account** placeholder such as `Ask the club admin for the staging transfer note`. Admins can also save copy in-app (`club_runtime_settings`). Never a real account number. | Optional |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | `npx web-push generate-vapid-keys` public key. Browser subscribe only. | Required for Stage Notif push |
+| `VAPID_PRIVATE_KEY` | Matching private key. **Server-only.** Never `NEXT_PUBLIC_*`. | Required for Stage Notif push |
+| `VAPID_SUBJECT` | `mailto:staging-push@localhost` or a staging contact mailto. Not a secret key. | Recommended |
 
 Never add:
 
 - `SUPABASE_SERVICE_ROLE_KEY` or any service role
 - SMS / OTP provider API keys (those stay in the Supabase dashboard)
 - LINE tokens
+- VAPID **private** keys in git or in `NEXT_PUBLIC_*` (the public VAPID key may be `NEXT_PUBLIC_*`)
 - Real bank codes or account numbers
 - Vercel tokens in GitHub Actions
 
