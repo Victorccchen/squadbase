@@ -122,6 +122,11 @@ export type OrgErrorKey =
   | "pdfTooLarge"
   | "invalidPhotoPath"
   | "photoPackTooMany"
+  | "pushNotConfigured"
+  | "pushProductionBlocked"
+  | "pushPermissionDenied"
+  | "pushSubscribeFailed"
+  | "pushUnsupported"
   | "generic";
 
 export type TeamCreateRowResult = {
@@ -140,6 +145,48 @@ export type OrgActionState = {
 export const INITIAL_ORG_ACTION_STATE: OrgActionState = {
   ok: false,
   errorKey: null,
+};
+
+export type PushAudienceCounts = {
+  intended: number;
+  subscribed: number;
+  skipped: number;
+};
+
+export type PushPreviewState = {
+  ok: boolean;
+  errorKey: OrgErrorKey | null;
+  intended: number;
+  subscribed: number;
+  skipped: number;
+};
+
+export const INITIAL_PUSH_PREVIEW_STATE: PushPreviewState = {
+  ok: false,
+  errorKey: null,
+  intended: 0,
+  subscribed: 0,
+  skipped: 0,
+};
+
+export type PushSendState = {
+  ok: boolean;
+  errorKey: OrgErrorKey | null;
+  intended: number;
+  subscribed: number;
+  skipped: number;
+  sent: number;
+  failed: number;
+};
+
+export const INITIAL_PUSH_SEND_STATE: PushSendState = {
+  ok: false,
+  errorKey: null,
+  intended: 0,
+  subscribed: 0,
+  skipped: 0,
+  sent: 0,
+  failed: 0,
 };
 
 export type BulkRsvpRowResult = {

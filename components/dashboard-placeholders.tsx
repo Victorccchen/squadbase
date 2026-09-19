@@ -56,6 +56,7 @@ function LinkCard({
     | "/app/admin/import"
     | "/app/admin/reports"
     | "/app/admin/dashboard"
+    | "/app/settings"
     | "/matches";
   title: string;
   body: string;
@@ -131,6 +132,12 @@ export async function DashboardPlaceholders({ roles }: DashboardPlaceholdersProp
               title={t("placeholders.assessments.title")}
               body={t("placeholders.assessments.body")}
               action={t("openAssessments")}
+            />
+            <LinkCard
+              href="/app/settings"
+              title={t("placeholders.settings.title")}
+              body={t("placeholders.settings.body")}
+              action={t("openSettings")}
             />
             {PARENT_COMING.map((key) => (
               <PlaceholderCard

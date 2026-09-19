@@ -22,7 +22,7 @@
     "stackNext": "Next.js App Router + TypeScript",
     "stackI18n": "next-intl（繁体字中国語 / English / 日本語）",
     "stackSupabase": "Supabase の電話OTP、プロフィール、複数ロール、組織マスター、保護者紐付け、練習セッション、前払い単位、選手評価、公開試合、RLS",
-    "stackPwa": "PWA：ウェブアプリマニフェストと基本メタ",
+    "stackPwa": "PWA：ウェブアプリマニフェスト、サービスワーカー、Web Push",
     "envTitle": "環境",
     "envConfigured": "公開用 Supabase 変数を検出しました。ログインはこのプロジェクトに接続します（anon key のみ）。",
     "envMissing": "NEXT_PUBLIC_SUPABASE_URL または NEXT_PUBLIC_SUPABASE_ANON_KEY が未設定です。ホームページは表示できますが、ログインはできません。",
@@ -176,9 +176,14 @@
       "adminNote": {
         "title": "ロール昇格",
         "body": "アプリ内にバックドアはありません。Dashboard の user_roles テーブルでユーザーに admin を追加してください。コーチを紐付けると coach ロールも付与されます。"
+      },
+      "settings": {
+        "title": "通知設定",
+        "body": "この端末の PWA プッシュをオン／オフします。未設定の保護者には送りません。"
       }
     },
-    "openAssessments": "能力評価を開く"
+    "openAssessments": "能力評価を開く",
+    "openSettings": "設定を開く"
   },
   "nav": {
     "label": "アプリの区画",
@@ -200,7 +205,8 @@
     "assessments": "能力評価",
     "notices": "お知らせ文案",
     "reports": "レポート",
-    "opsDashboard": "運営ダッシュボード"
+    "opsDashboard": "運営ダッシュボード",
+    "settings": "設定"
   },
   "access": {
     "deniedTitle": "このページを開けません",
@@ -329,7 +335,7 @@
     "registrationHistoryTitle": "取消済みの申込",
     "openAssessment": "能力評価",
     "noticesTitle": "お知らせ文案",
-    "noticesBody": "梯隊、隊伍、またはその回に申し込んだ保護者向けの LINE グループ短文とアプリリンクを作ります。コピーのみで、LINE・SMS・プッシュ送信はありません。",
+    "noticesBody": "梯隊、隊伍、またはその回に申し込んだ保護者向けの LINE グループ短文とアプリリンクを作ります。オプトインした保護者には Web Push も送れます。LINE はコピーのままです。",
     "reportsTitle": "レポート",
     "reportsBody": "出欠、申込、単位台帳、試合メンバーを Excel または CSV でダウンロードし、連盟提出用 ZIP（名簿 + 写真）も出せます。管理者のみ。既定では保護者の電話など連絡先 PII を含めません。論理削除した回は、含めない限り除外します。表は 1 回あたり最大 5000 行、写真パックは最大 200 人です。",
     "dashboardTitle": "運営ダッシュボード",
@@ -569,7 +575,12 @@
       "invalidPdfType": "PDF ファイルを使ってください。",
       "pdfTooLarge": "その PDF は 8 MB を超えています。",
       "invalidPhotoPath": "その写真パスは無効です。",
-      "photoPackTooMany": "この写真パックは 200 人を超えています。梯隊または隊伍の選択を減らしてやり直してください。"
+      "photoPackTooMany": "この写真パックは 200 人を超えています。梯隊または隊伍の選択を減らしてやり直してください。",
+      "pushNotConfigured": "VAPID キーが未設定のため、購読も送信もできません。",
+      "pushProductionBlocked": "本番環境でのプッシュ送信はまだ有効ではありません。",
+      "pushPermissionDenied": "ブラウザが通知を拒否しました。",
+      "pushSubscribeFailed": "プッシュを有効にできませんでした。ホーム画面に追加してから再試行してください。",
+      "pushUnsupported": "このブラウザは Web Push に対応していません。"
     }
   },
   "children": {
@@ -1060,7 +1071,7 @@
   },
   "notices": {
     "title": "お知らせ文案",
-    "lead": "短い LINE グループ文とアプリのディープリンクを作り、既存の保護者グループへ手動で貼ります。このアプリは LINE・SMS・プッシュを送信しません。申込と出試合はアプリが正で、LINE はお知らせだけです。",
+    "lead": "短い LINE グループ文とアプリのディープリンクを作り、既存の保護者グループへ手動で貼ります。オプトインした保護者には管理者が Web Push も送れます。申込と出試合はアプリが正です。",
     "generateCta": "お知らせ文案を作成",
     "templateLabel": "テンプレート",
     "audienceLabel": "対象",
@@ -1085,9 +1096,19 @@
     "noSourceTitle": "セッション未選択",
     "noSourceBody": "文案を作る練習または試合を選んでください。セッションや試合の詳細から「お知らせ文案を作成」でも開けます。",
     "noPiiHint": "グループ文に保護者の氏名や電話は入りません。メモ欄に個人情報を貼らないでください。",
-    "noSendHint": "コピーのみです。プッシュ、LINE Messaging API、SMS、公式アカウント送信はありません。",
+    "noSendHint": "LINE グループはコピーのままです。LINE Messaging API、SMS、公式アカウント送信はありません。Web Push は設定でオンにした保護者だけです。",
     "coexistHint": "振込・減算のお知らせはセッション詳細の「お知らせをコピー」のままです。このページは置き換えません。",
     "previewTitle": "プレビュー",
+    "pushTitle": "プッシュ",
+    "pushLead": "承認済み保護者へ短いタイトルとディープリンクを送ります。未オプトインはスキップ。子どもが複数でも保護者ごとに1通。コーチは既定では受け取りません。",
+    "pushStagingHint": "staging / ローカルのテストアカウントのみ。本番送信はしません。iOS は先にホーム画面へ追加してください。",
+    "pushIntended": "対象",
+    "pushSubscribed": "オプトイン済",
+    "pushSkipped": "スキップ",
+    "pushSend": "プッシュ",
+    "pushSending": "送信中…",
+    "pushKeepLine": "上の LINE グループ文はこれまで通りコピーできます。",
+    "pushResult": "完了：対象 {intended}、オプトイン {subscribed}、スキップ {skipped}、送信 {sent}、失敗 {failed}。",
     "templates": {
       "regular_training_signup": "通常練習の申込",
       "special_training_signup": "特別練習の申込",
@@ -1233,5 +1254,20 @@
     "ungrouped": "現在の梯隊なし",
     "monthlyTitle": "月次の推移",
     "twd": "NT$ {amount}"
+  },
+  "settings": {
+    "title": "設定",
+    "lead": "この端末のアプリプッシュを管理します。未設定の保護者には管理者プッシュは届きません。staging のテストアカウントで確認してください。",
+    "pushTitle": "プッシュ通知",
+    "pushLead": "オンにすると、お知らせ文案ページから送る短い通知がこの端末に出ます。内容はタイトル、短文、アプリリンクのみで、電話や名簿は含みません。",
+    "iosHint": "iPhone / iPad：Safari でこのサイトを開き、「共有 → ホーム画面に追加」してから、ホーム画面のアイコンで開いてプッシュをオンにしてください。",
+    "stagingHint": "当面は staging のみです。テスト用の保護者アカウントを使ってください。本番送信はまだありません。",
+    "unsupported": "このブラウザまたはウィンドウは Web Push に対応していません。",
+    "statusOn": "この端末のプッシュはオンです。",
+    "statusOff": "この端末のプッシュはオフです。",
+    "permissionDenied": "ブラウザが通知をブロックしています。",
+    "enable": "プッシュをオン",
+    "disable": "プッシュをオフ",
+    "working": "処理中…"
   }
 }
