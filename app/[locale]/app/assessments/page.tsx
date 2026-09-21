@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/page-header";
 import { AssessmentSummary } from "@/components/assessments/assessment-summary";
 import { loadSignedInAccount } from "@/lib/auth/session";
 import { canAccessAdmin, canAccessRoster, canWriteAssessments } from "@/lib/auth/roles";
-import { listLatestAssessmentsByPlayerId } from "@/lib/assessments/queries";
+import { listLatestAssessmentEventsByPlayerId } from "@/lib/assessments/queries";
 import { listOwnGuardianLinks, listPlayers, listRoster } from "@/lib/org/queries";
 import { uniqueApprovedLinksByPlayerId } from "@/lib/org/guardian-links";
 import { localizedPlayerName } from "@/lib/org/display-name";
@@ -46,7 +46,7 @@ export default async function AssessmentsIndexPage() {
       ...parentPlayers.map((player) => player.id),
     ]),
   ];
-  const latest = await listLatestAssessmentsByPlayerId(allIds);
+  const latest = await listLatestAssessmentEventsByPlayerId(allIds);
 
   return (
     <>
@@ -63,7 +63,7 @@ export default async function AssessmentsIndexPage() {
             ) : (
               <ul className="grid gap-3">
                 {staffPlayers.map((player) => {
-                  const assessment = latest.get(player.id);
+                  const event = latest.get(player.id);
                   return (
                     <li
                       key={player.id}
@@ -72,8 +72,8 @@ export default async function AssessmentsIndexPage() {
                       <span className="font-semibold">
                         {localizedPlayerName(player, locale)}
                       </span>
-                      {assessment ? (
-                        <AssessmentSummary assessment={assessment} />
+                      {event ? (
+                        <AssessmentSummary event={event} />
                       ) : (
                         <p className="text-sm text-zinc-500">{t("noLatest")}</p>
                       )}
@@ -108,7 +108,7 @@ export default async function AssessmentsIndexPage() {
           ) : (
             <ul className="grid gap-3">
               {parentPlayers.map((player) => {
-                const assessment = latest.get(player.id);
+                const event = latest.get(player.id);
                 return (
                   <li
                     key={player.id}
@@ -117,8 +117,8 @@ export default async function AssessmentsIndexPage() {
                     <span className="font-semibold">
                       {localizedPlayerName(player, locale)}
                     </span>
-                    {assessment ? (
-                      <AssessmentSummary assessment={assessment} />
+                    {event ? (
+                      <AssessmentSummary event={event} />
                     ) : (
                       <p className="text-sm text-zinc-500">{t("noLatest")}</p>
                     )}

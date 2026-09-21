@@ -7,7 +7,7 @@ import { CancelLinkForm } from "@/components/children/cancel-link-form";
 import { LinkStatusBadge } from "@/components/bindings/link-status-badge";
 import { AssessmentSummary } from "@/components/assessments/assessment-summary";
 import { PlayerPhotoPanel } from "@/components/players/player-photo-panel";
-import { listLatestAssessmentsByPlayerId } from "@/lib/assessments/queries";
+import { listLatestAssessmentEventsByPlayerId } from "@/lib/assessments/queries";
 import { listActiveTeamsForLink, listOwnGuardianLinks, formatActiveMembershipSummary } from "@/lib/org/queries";
 import { signPlayerStoragePaths } from "@/lib/org/player-photo-queries";
 import { photoAlertFromSearchParams } from "@/lib/org/player-photos";
@@ -37,7 +37,7 @@ export default async function ChildrenPage({ searchParams }: ChildrenPageProps) 
     links.filter((link) => link.status === "approved"),
   );
   const requests = links.filter((link) => link.status !== "approved");
-  const latestAssessments = await listLatestAssessmentsByPlayerId(
+  const latestAssessments = await listLatestAssessmentEventsByPlayerId(
     approved
       .map((link) => link.player?.id)
       .filter((id): id is string => Boolean(id)),
@@ -103,7 +103,7 @@ export default async function ChildrenPage({ searchParams }: ChildrenPageProps) 
                       {` · ${t(`relations.${link.relation}`)}`}
                     </span>
                     {latest ? (
-                      <AssessmentSummary assessment={latest} />
+                      <AssessmentSummary event={latest} />
                     ) : (
                       <p className="mt-2 text-sm text-zinc-500">{t("noAssessment")}</p>
                     )}

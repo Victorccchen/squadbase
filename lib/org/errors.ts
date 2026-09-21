@@ -88,6 +88,7 @@ export type OrgErrorKey =
   | "tooManyMatches"
   | "matchKickoffRequired"
   | "invalidScore"
+  | "missingScore"
   | "noteTooLong"
   | "invalidAssessedOn"
   | "futureAssessedOn"

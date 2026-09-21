@@ -2,14 +2,24 @@
 import { parseBirthDate, parseUuid, readString } from "../org/parse.ts";
 import {
   MAX_ASSESSMENT_NOTE,
-  SITUATION_KEYS,
-  TRAIT_KEYS,
+  PHASE_CODES,
+  TRAIT_CODES,
   isAssessmentScoreValue,
+  isDimensionKind,
+  isPhaseCode,
+  isTraitCode,
+  phaseFromStage5Situation,
+  scoreFieldName,
+  traitCodeFromStage5Trait,
+  type AssessmentDimensionScore,
   type AssessmentItem,
   type AssessmentScoreValue,
   type AssessmentSituations,
   type AssessmentTraits,
+  type DimensionKind,
+  type PhaseCode,
   type SituationKey,
+  type TraitCode,
   type TraitKey,
 } from "./model.ts";
 
@@ -18,17 +28,20 @@ export type AssessmentParseErrorKey =
   | "invalidAssessedOn"
   | "futureAssessedOn"
   | "invalidScore"
-  | "noteTooLong";
+  | "missingScore"
+  | "noteTooLong"
+  | "sessionNotFound";
 
-export type ParsedAssessmentPayload = {
+export type ParsedAssessmentEventPayload = {
   playerId: string;
   assessedOn: string;
-  situations: AssessmentSituations;
-  traits: AssessmentTraits;
+  note: string | null;
+  sessionId: string | null;
+  scores: AssessmentDimensionScore[];
 };
 
 export type AssessmentParseResult =
-  | { ok: true; payload: ParsedAssessmentPayload }
+  | { ok: true; payload: ParsedAssessmentEventPayload }
   | { ok: false; errorKey: AssessmentParseErrorKey };
 
 export function parseAssessmentScore(value: string): AssessmentScoreValue | null {
@@ -37,6 +50,17 @@ export function parseAssessmentScore(value: string): AssessmentScoreValue | null
   }
   const n = Number(value.trim());
   return isAssessmentScoreValue(n) ? n : null;
+}
+
+export function parseOptionalAssessmentScore(
+  value: string,
+): AssessmentScoreValue | null | "invalid" {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  const score = parseAssessmentScore(trimmed);
+  return score === null ? "invalid" : score;
 }
 
 export function parseAssessmentNote(
@@ -52,23 +76,23 @@ export function parseAssessmentNote(
   return trimmed;
 }
 
-function parseItem(
+function readOptionalScore(
   formData: FormData,
-  prefix: "sit" | "trait",
-  key: SituationKey | TraitKey,
-): { ok: true; item: AssessmentItem } | { ok: false; errorKey: AssessmentParseErrorKey } {
-  const score = parseAssessmentScore(readString(formData, `${prefix}_${key}_score`));
-  if (score === null) {
+  kind: DimensionKind,
+  code: TraitCode | PhaseCode,
+):
+  | { ok: true; score: AssessmentScoreValue | null }
+  | { ok: false; errorKey: AssessmentParseErrorKey } {
+  const raw = parseOptionalAssessmentScore(
+    readString(formData, scoreFieldName(kind, code)),
+  );
+  if (raw === "invalid") {
     return { ok: false, errorKey: "invalidScore" };
   }
-  const note = parseAssessmentNote(readString(formData, `${prefix}_${key}_note`));
-  if (note === "too_long") {
-    return { ok: false, errorKey: "noteTooLong" };
-  }
-  return { ok: true, item: { score, note } };
+  return { ok: true, score: raw };
 }
 
-export function parseAssessmentFormData(
+export function parseAssessmentEventFormData(
   formData: FormData,
   todayIso: string,
 ): AssessmentParseResult {
@@ -86,22 +110,52 @@ export function parseAssessmentFormData(
     return { ok: false, errorKey: "invalidAssessedOn" };
   }
 
-  const situations = {} as AssessmentSituations;
-  for (const key of SITUATION_KEYS) {
-    const parsed = parseItem(formData, "sit", key);
-    if (!parsed.ok) {
-      return parsed;
-    }
-    situations[key] = parsed.item;
+  const note = parseAssessmentNote(readString(formData, "note"));
+  if (note === "too_long") {
+    return { ok: false, errorKey: "noteTooLong" };
   }
 
-  const traits = {} as AssessmentTraits;
-  for (const key of TRAIT_KEYS) {
-    const parsed = parseItem(formData, "trait", key);
+  const sessionRaw = readString(formData, "session_id");
+  let sessionId: string | null = null;
+  if (sessionRaw) {
+    sessionId = parseUuid(sessionRaw);
+    if (!sessionId) {
+      return { ok: false, errorKey: "sessionNotFound" };
+    }
+  }
+
+  const scores: AssessmentDimensionScore[] = [];
+
+  for (const code of TRAIT_CODES) {
+    const parsed = readOptionalScore(formData, "trait", code);
     if (!parsed.ok) {
       return parsed;
     }
-    traits[key] = parsed.item;
+    if (parsed.score !== null) {
+      scores.push({
+        dimension_kind: "trait",
+        dimension_code: code,
+        score: parsed.score,
+      });
+    }
+  }
+
+  for (const code of PHASE_CODES) {
+    const parsed = readOptionalScore(formData, "phase", code);
+    if (!parsed.ok) {
+      return parsed;
+    }
+    if (parsed.score !== null) {
+      scores.push({
+        dimension_kind: "phase",
+        dimension_code: code,
+        score: parsed.score,
+      });
+    }
+  }
+
+  if (scores.length === 0) {
+    return { ok: false, errorKey: "missingScore" };
   }
 
   return {
@@ -109,8 +163,9 @@ export function parseAssessmentFormData(
     payload: {
       playerId,
       assessedOn,
-      situations,
-      traits,
+      note,
+      sessionId,
+      scores,
     },
   };
 }
@@ -150,7 +205,13 @@ export function parseStoredSituations(value: unknown): AssessmentSituations | nu
     return null;
   }
   const result = {} as AssessmentSituations;
-  for (const key of SITUATION_KEYS) {
+  const keys: SituationKey[] = [
+    "attack",
+    "defense",
+    "attack_to_defense",
+    "defense_to_attack",
+  ];
+  for (const key of keys) {
     const item = parseStoredAssessmentItem(value[key]);
     if (!item) {
       return null;
@@ -165,7 +226,13 @@ export function parseStoredTraits(value: unknown): AssessmentTraits | null {
     return null;
   }
   const result = {} as AssessmentTraits;
-  for (const key of TRAIT_KEYS) {
+  const keys: TraitKey[] = [
+    "adaptability",
+    "resilience",
+    "coachability",
+    "team_commitment",
+  ];
+  for (const key of keys) {
     const item = parseStoredAssessmentItem(value[key]);
     if (!item) {
       return null;
@@ -173,6 +240,89 @@ export function parseStoredTraits(value: unknown): AssessmentTraits | null {
     result[key] = item;
   }
   return result;
+}
+
+export function mapStage5SnapshotToScores(
+  situations: AssessmentSituations,
+  traits: AssessmentTraits,
+): AssessmentDimensionScore[] {
+  const scores: AssessmentDimensionScore[] = [];
+  const situationKeys: SituationKey[] = [
+    "attack",
+    "defense",
+    "attack_to_defense",
+    "defense_to_attack",
+  ];
+  for (const key of situationKeys) {
+    scores.push({
+      dimension_kind: "phase",
+      dimension_code: phaseFromStage5Situation(key),
+      score: situations[key].score,
+    });
+  }
+  const traitKeys: TraitKey[] = [
+    "adaptability",
+    "resilience",
+    "coachability",
+    "team_commitment",
+  ];
+  for (const key of traitKeys) {
+    scores.push({
+      dimension_kind: "trait",
+      dimension_code: traitCodeFromStage5Trait(key),
+      score: traits[key].score,
+    });
+  }
+  return scores;
+}
+
+export function parseStoredDimensionScore(
+  value: unknown,
+): AssessmentDimensionScore | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+  const kind = value.dimension_kind;
+  const code = value.dimension_code;
+  if (typeof kind !== "string" || !isDimensionKind(kind)) {
+    return null;
+  }
+  if (typeof code !== "string") {
+    return null;
+  }
+  let dimensionCode: TraitCode | PhaseCode;
+  switch (kind) {
+    case "trait":
+      if (!isTraitCode(code)) {
+        return null;
+      }
+      dimensionCode = code;
+      break;
+    case "phase":
+      if (!isPhaseCode(code)) {
+        return null;
+      }
+      dimensionCode = code;
+      break;
+    default: {
+      const _never: never = kind;
+      return _never;
+    }
+  }
+  const score =
+    typeof value.score === "number"
+      ? value.score
+      : typeof value.score === "string"
+        ? Number(value.score)
+        : NaN;
+  if (!isAssessmentScoreValue(score)) {
+    return null;
+  }
+  return {
+    dimension_kind: kind,
+    dimension_code: dimensionCode,
+    score,
+  };
 }
 
 type PgLikeError = {
@@ -194,6 +344,9 @@ export type AssessmentRpcErrorKey =
   | "assessmentNotFound"
   | "futureAssessedOn"
   | "invalidScore"
+  | "missingScore"
+  | "sessionNotFound"
+  | "noteTooLong"
   | "generic";
 
 export function assessmentRpcErrorKey(error: PgLikeError): AssessmentRpcErrorKey {
@@ -204,8 +357,17 @@ export function assessmentRpcErrorKey(error: PgLikeError): AssessmentRpcErrorKey
   if (text.includes("assessment not found")) {
     return "assessmentNotFound";
   }
+  if (text.includes("session not found")) {
+    return "sessionNotFound";
+  }
   if (text.includes("assessed_on cannot be in the future")) {
     return "futureAssessedOn";
+  }
+  if (text.includes("note too long")) {
+    return "noteTooLong";
+  }
+  if (text.includes("requires at least one score")) {
+    return "missingScore";
   }
   if (
     text.includes("invalid situations") ||

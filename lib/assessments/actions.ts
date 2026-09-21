@@ -8,7 +8,11 @@ import { loadSignedInAccount } from "@/lib/auth/session";
 import { canWriteAssessments } from "@/lib/auth/roles";
 import { createClient } from "@/lib/supabase/server";
 import { formatIsoDate, todayInClubTimeZone } from "@/lib/age-band";
-import { assessmentRpcErrorKey, parseAssessmentFormData } from "@/lib/assessments/parse";
+import { assessedAtFromClubDate } from "@/lib/assessments/model";
+import {
+  assessmentRpcErrorKey,
+  parseAssessmentEventFormData,
+} from "@/lib/assessments/parse";
 import { parseUuid, readString } from "@/lib/org/parse";
 import { type OrgActionState, type OrgErrorKey } from "@/lib/org/errors";
 
@@ -57,7 +61,7 @@ export async function createPlayerAssessment(
     return fail(actor.errorKey);
   }
 
-  const parsed = parseAssessmentFormData(
+  const parsed = parseAssessmentEventFormData(
     formData,
     formatIsoDate(todayInClubTimeZone()),
   );
@@ -65,11 +69,12 @@ export async function createPlayerAssessment(
     return fail(parsed.errorKey);
   }
 
-  const { error } = await actor.supabase.rpc("create_player_assessment", {
+  const { error } = await actor.supabase.rpc("create_assessment_event", {
     p_player_id: parsed.payload.playerId,
-    p_assessed_on: parsed.payload.assessedOn,
-    p_situations: parsed.payload.situations,
-    p_traits: parsed.payload.traits,
+    p_assessed_at: assessedAtFromClubDate(parsed.payload.assessedOn),
+    p_note: parsed.payload.note,
+    p_session_id: parsed.payload.sessionId,
+    p_scores: parsed.payload.scores,
   });
 
   if (error) {
@@ -97,7 +102,7 @@ export async function updatePlayerAssessment(
     return fail("assessmentNotFound");
   }
 
-  const parsed = parseAssessmentFormData(
+  const parsed = parseAssessmentEventFormData(
     formData,
     formatIsoDate(todayInClubTimeZone()),
   );
@@ -105,11 +110,12 @@ export async function updatePlayerAssessment(
     return fail(parsed.errorKey);
   }
 
-  const { error } = await actor.supabase.rpc("update_player_assessment", {
+  const { error } = await actor.supabase.rpc("update_assessment_event", {
     p_id: id,
-    p_assessed_on: parsed.payload.assessedOn,
-    p_situations: parsed.payload.situations,
-    p_traits: parsed.payload.traits,
+    p_assessed_at: assessedAtFromClubDate(parsed.payload.assessedOn),
+    p_note: parsed.payload.note,
+    p_session_id: parsed.payload.sessionId,
+    p_scores: parsed.payload.scores,
   });
 
   if (error) {
@@ -143,7 +149,7 @@ export async function deletePlayerAssessment(
     return fail("missingPlayer");
   }
 
-  const { error } = await actor.supabase.rpc("delete_player_assessment", {
+  const { error } = await actor.supabase.rpc("delete_assessment_event", {
     p_id: assessmentId,
   });
 

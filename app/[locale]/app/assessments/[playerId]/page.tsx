@@ -3,7 +3,13 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
-import { listPlayerAssessments, staffCanWritePlayerAssessment } from "@/lib/assessments/queries";
+import { AbilityLineChart } from "@/components/assessments/ability-line-chart";
+import {
+  listPlayerAssessmentEvents,
+  staffCanWritePlayerAssessment,
+} from "@/lib/assessments/queries";
+import { clubDateFromTimestamp, dimensionLabelKey } from "@/lib/assessments/model";
+import { buildDimensionSeries, colorForSeries } from "@/lib/assessments/series";
 import { getPlayer } from "@/lib/org/queries";
 import { localizedPlayerName } from "@/lib/org/display-name";
 import { primaryButtonClassName, secondaryButtonClassName } from "@/lib/ui";
@@ -25,9 +31,20 @@ export default async function PlayerAssessmentsPage({
   const common = await getTranslations("common");
   const locale = await getLocale();
   const [history, canWrite] = await Promise.all([
-    listPlayerAssessments(player.id),
+    listPlayerAssessmentEvents(player.id),
     staffCanWritePlayerAssessment(player.id),
   ]);
+
+  const traitSeries = buildDimensionSeries(history, "trait").map((item) => ({
+    ...item,
+    label: t(dimensionLabelKey(item.kind, item.code)),
+    color: colorForSeries(item),
+  }));
+  const phaseSeries = buildDimensionSeries(history, "phase").map((item) => ({
+    ...item,
+    label: t(dimensionLabelKey(item.kind, item.code)),
+    color: colorForSeries(item),
+  }));
 
   return (
     <>
@@ -51,20 +68,32 @@ export default async function PlayerAssessmentsPage({
             </span>
           }
         />
+        <AbilityLineChart
+          title={t("traitsChartTitle")}
+          emptyTitle={t("chartEmptyTitle")}
+          emptyBody={t("chartEmptyBody")}
+          series={traitSeries}
+        />
+        <AbilityLineChart
+          title={t("phasesChartTitle")}
+          emptyTitle={t("chartEmptyTitle")}
+          emptyBody={t("chartEmptyBody")}
+          series={phaseSeries}
+        />
         {history.length === 0 ? (
           <EmptyState title={t("historyEmptyTitle")} body={t("historyEmptyBody")} />
         ) : (
           <ul className="grid gap-3">
-            {history.map((assessment) => (
-              <li key={assessment.id}>
+            {history.map((event) => (
+              <li key={event.id}>
                 <Link
-                  href={`/app/assessments/${player.id}/${assessment.id}`}
+                  href={`/app/assessments/${player.id}/${event.id}`}
                   className="flex flex-col gap-1 rounded-2xl border border-zinc-200 bg-white p-5 hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900"
                 >
-                  <span className="font-semibold">{assessment.assessed_on}</span>
-                  <span className="text-sm text-zinc-500">
-                    {t("openDetail")}
+                  <span className="font-semibold">
+                    {clubDateFromTimestamp(event.assessed_at)}
                   </span>
+                  <span className="text-sm text-zinc-500">{t("openDetail")}</span>
                 </Link>
               </li>
             ))}
