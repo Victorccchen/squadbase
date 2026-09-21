@@ -533,7 +533,6 @@ export async function softDeleteMatch(
     configured: true,
     roles: ["admin"],
     sessionId: parseUuid(sessionId) ?? readString(formData, "session_id"),
-    next: readString(formData, "next"),
   });
   if (!planned.ok) {
     return fail(planned.errorKey);
@@ -599,7 +598,10 @@ export async function softDeleteMatch(
   }
 
   revalidateMatches();
-  redirectAdmin(planned.href, formData);
+  redirect({
+    href: { pathname: planned.href, query: { deleted: "1" } },
+    locale: localeFromForm(formData),
+  });
   return ok();
 }
 

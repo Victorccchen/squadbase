@@ -79,6 +79,7 @@ const REQUIRED_KEYS = [
   "matches.softDeleteMatchConfirm",
   "matches.matchDeleted",
   "matches.matchDeletedBanner",
+  "matches.softDeleteMatchDone",
   "sessions.createTeamsHint",
   "matches.parentRegistrationsTitle",
   "matches.parentRegistrationsHint",

@@ -155,6 +155,7 @@ export default async function AdminMatchDetailPage({ params }: AdminMatchDetailP
               sessionId={match.id}
               confirmMessage={matchesT("softDeleteMatchConfirm", { title: match.title })}
               submitLabel={matchesT("softDeleteMatch")}
+              redirectTo="list"
             />
           </div>
         )}

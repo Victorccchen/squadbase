@@ -11,6 +11,7 @@ import {
   filterDefaultAdminList,
   filterParentDefaultList,
   isFuturoCompetitionTeamName,
+  isSoftDeleteMatchListFlash,
   isSoftDeleted,
   isVictoryLeagueShellTitle,
   matchesVictoryLeagueBulkSoftDelete,
@@ -152,7 +153,6 @@ describe("planSoftDeleteMatch", () => {
         configured: false,
         roles: ["admin"],
         sessionId,
-        next: "detail",
       }),
       { ok: false, errorKey: "notConfigured" },
     );
@@ -161,7 +161,6 @@ describe("planSoftDeleteMatch", () => {
         configured: true,
         roles: ["parent"],
         sessionId,
-        next: "detail",
       }),
       { ok: false, errorKey: "forbidden" },
     );
@@ -170,7 +169,6 @@ describe("planSoftDeleteMatch", () => {
         configured: true,
         roles: ["coach"],
         sessionId,
-        next: "list",
       }),
       { ok: false, errorKey: "forbidden" },
     );
@@ -179,41 +177,38 @@ describe("planSoftDeleteMatch", () => {
         configured: true,
         roles: ["admin"],
         sessionId: "not-a-uuid",
-        next: "detail",
       }),
       { ok: false, errorKey: "sessionNotFound" },
     );
   });
 
-  it("plans a list redirect after a successful one-match delete", () => {
-    const planned = planSoftDeleteMatch({
-      configured: true,
-      roles: ["parent", "admin"],
-      sessionId,
-      next: "list",
-    });
-    assert.deepEqual(planned, {
-      ok: true,
-      sessionId,
-      redirectTo: "list",
-      href: "/app/admin/matches",
-    });
-  });
-
-  it("plans a detail redirect so the deleted banner can render", () => {
-    const planned = planSoftDeleteMatch({
+  it("always leaves match detail for the admin list after a successful delete", () => {
+    assert.deepEqual(
+      planSoftDeleteMatch({
+        configured: true,
+        roles: ["parent", "admin"],
+        sessionId,
+      }),
+      {
+        ok: true,
+        sessionId,
+        href: "/app/admin/matches",
+      },
+    );
+    const fromUpper = planSoftDeleteMatch({
       configured: true,
       roles: ["admin"],
       sessionId: sessionId.toUpperCase(),
-      next: "detail",
     });
-    assert.equal(planned.ok, true);
-    if (!planned.ok) {
-      return;
-    }
-    assert.equal(planned.sessionId, sessionId);
-    assert.equal(planned.redirectTo, "detail");
-    assert.equal(planned.href, `/app/admin/matches/${sessionId}`);
+    assert.deepEqual(fromUpper, {
+      ok: true,
+      sessionId,
+      href: "/app/admin/matches",
+    });
+    assert.equal(isSoftDeleteMatchListFlash("1"), true);
+    assert.equal(isSoftDeleteMatchListFlash(["1"]), true);
+    assert.equal(isSoftDeleteMatchListFlash(undefined), false);
+    assert.equal(isSoftDeleteMatchListFlash("0"), false);
   });
 });
 

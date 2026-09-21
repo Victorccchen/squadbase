@@ -30,43 +30,21 @@ export function canSoftDeleteOrgRecords(roles: readonly AppRole[]): boolean {
   return canAccessAdmin([...roles]);
 }
 
-export type SoftDeleteMatchRedirect = "list" | "detail";
-
-export function parseSoftDeleteRedirect(next: string): SoftDeleteMatchRedirect {
-  return next === "list" ? "list" : "detail";
-}
-
-export function softDeleteMatchRedirectHref(
-  redirectTo: SoftDeleteMatchRedirect,
-  sessionId: string,
-): "/app/admin/matches" | `/app/admin/matches/${string}` {
-  switch (redirectTo) {
-    case "list":
-      return "/app/admin/matches";
-    case "detail":
-      return `/app/admin/matches/${sessionId}`;
-    default: {
-      const _exhaustive: never = redirectTo;
-      return _exhaustive;
-    }
-  }
-}
-
 export type PlanSoftDeleteMatchResult =
   | { ok: false; errorKey: Extract<OrgErrorKey, "notConfigured" | "forbidden" | "sessionNotFound"> }
   | {
       ok: true;
       sessionId: string;
-      redirectTo: SoftDeleteMatchRedirect;
-      href: "/app/admin/matches" | `/app/admin/matches/${string}`;
+      href: "/app/admin/matches";
     };
 
-/** Authz + id + redirect for one-match soft-delete. RPC happens after this gate. */
+export const SOFT_DELETE_MATCH_LIST_PATH = "/app/admin/matches" as const;
+
+/** Authz + id for one-match soft-delete. Always leaves detail for the admin list. */
 export function planSoftDeleteMatch(input: {
   configured: boolean;
   roles: readonly AppRole[];
   sessionId: string;
-  next: string;
 }): PlanSoftDeleteMatchResult {
   if (!input.configured) {
     return { ok: false, errorKey: "notConfigured" };
@@ -78,13 +56,16 @@ export function planSoftDeleteMatch(input: {
   if (!sessionId) {
     return { ok: false, errorKey: "sessionNotFound" };
   }
-  const redirectTo = parseSoftDeleteRedirect(input.next);
   return {
     ok: true,
     sessionId,
-    redirectTo,
-    href: softDeleteMatchRedirectHref(redirectTo, sessionId),
+    href: SOFT_DELETE_MATCH_LIST_PATH,
   };
+}
+
+export function isSoftDeleteMatchListFlash(deleted: string | string[] | undefined): boolean {
+  const raw = Array.isArray(deleted) ? deleted[0] : deleted;
+  return raw === "1";
 }
 
 /** Staging bulk-cleanup title filter: Victory League / VL 2026/27（暫定） shells. */

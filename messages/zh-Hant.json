@@ -911,6 +911,7 @@
     "softDeleteMatchConfirm": "確定刪除「{title}」？會從後台與家長預設列表、公開賽程消失。這與「取消比賽」不同。名單與紀錄會保留。",
     "matchDeleted": "已刪除",
     "matchDeletedBanner": "此場比賽已軟刪除。即使先前已取消，也不會出現在後台／家長預設列表或公開賽程。名單與紀錄可在場次工具頁查看。",
+    "softDeleteMatchDone": "已刪除該場比賽。預設後台列表、家長列表與公開賽程不再顯示。這與「取消比賽」不同。名單與紀錄會保留。",
     "editTitle": "比賽資料",
     "resultTitle": "賽果",
     "rosterTitle": "公開先發名單",
