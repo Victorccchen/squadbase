@@ -32,6 +32,7 @@
   - [ ] Stage P: player headshots / ID photos bound to players (private Storage)
   - [ ] Stage P.1: admin league-registration ZIP (roster Excel + photos/; optional pdfs/)
   - [ ] Stage R1: Torneopal FUTURO roster seed (zh name + jersey; staging upsert; Pending EN + placeholder DOB)
+  - [ ] Stage Perf / 6Q.1: faster client navigation (auth dedupe, router cache, instant list↔calendar)
 
 ## Verification
 

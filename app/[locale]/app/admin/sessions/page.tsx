@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import { SessionListFiltersForm } from "@/components/admin/session-list-filters";
 import { SessionMonthCalendar } from "@/components/admin/session-month-calendar";
 import { SessionDayAgenda } from "@/components/admin/session-day-agenda";
-import { SessionViewToggle } from "@/components/admin/session-kind-legend";
+import { SessionSurface } from "@/components/sessions/session-surface";
 import { SessionStatusForm } from "@/components/admin/session-status-form";
 import { SessionSoftDeleteForm } from "@/components/admin/session-soft-delete-form";
 import {
@@ -34,8 +34,10 @@ import {
   parseAdminSessionsQuery,
   parseListDateWindow,
   resolveSurfaceKinds,
+  sessionsInDateWindow,
   sessionsInWeek,
   sessionsListOrCalendarBounds,
+  sessionSurfacePlan,
   weekRangeForDate,
 } from "@/lib/org/session-calendar";
 import { primaryButtonClassName } from "@/lib/ui";
@@ -65,11 +67,12 @@ export default async function AdminSessionsPage({ searchParams }: AdminSessionsP
   });
   const kinds = resolveSurfaceKinds(query.kinds, TRAINING_SESSION_KINDS);
   const listWindow = parseListDateWindow(params);
-  const bounds = sessionsListOrCalendarBounds(query, listWindow);
+  const plan = sessionSurfacePlan(query, listWindow);
+  const listBounds = sessionsListOrCalendarBounds({ ...query, view: "list" }, listWindow);
   const week = weekRangeForDate(query.day);
   const today = clubTodayDate();
-  const startsFrom = bounds.from;
-  const startsToExclusive = bounds.toExclusive;
+  const startsFrom = plan.fetchBounds.from;
+  const startsToExclusive = plan.fetchBounds.toExclusive;
 
   const [t, sessionsT, org, common, locale, rawSessions, teams, probe] = await Promise.all([
     getTranslations("admin"),
@@ -85,19 +88,27 @@ export default async function AdminSessionsPage({ searchParams }: AdminSessionsP
       startsToExclusive,
     }),
     listTeams({ kind: "age_squad" }),
-    query.view === "list"
+    query.view === "list" || plan.instantToggle
       ? probeSessionsForAdmin({
           kinds,
           teamIds: query.teamIds,
           includeDeleted: query.includeDeleted,
-          startsFrom,
-          startsToExclusive,
+          startsFrom: listBounds.from,
+          startsToExclusive: listBounds.toExclusive,
         })
       : Promise.resolve({ hasEarlier: false, hasLater: false }),
   ]);
   const sessions = rawSessions.filter((row) => isTrainingSessionKind(row.kind));
-  const groups = groupTrainingSessionsForParent(sessions);
-  const weekSessions = sessionsInWeek(sessions, query.day);
+  const listSessions =
+    plan.instantToggle || query.view === "list"
+      ? sessionsInDateWindow(sessions, plan.listRange)
+      : [];
+  const calendarSessions =
+    plan.instantToggle || query.view === "calendar"
+      ? sessionsInDateWindow(sessions, plan.calendarRange)
+      : [];
+  const groups = groupTrainingSessionsForParent(listSessions);
+  const weekSessions = sessionsInWeek(calendarSessions, query.day);
   const { calendarHref, listHref, prevWeekHref, nextWeekHref } = calendarWeekNavHrefs(
     "/app/admin/sessions",
     query,
@@ -112,185 +123,197 @@ export default async function AdminSessionsPage({ searchParams }: AdminSessionsP
           description={t("sessionsBody")}
           actions={
             <span className="flex flex-wrap gap-2">
-              <Link href="/app/admin/sessions/new" className={primaryButtonClassName}>
+              <Link href="/app/admin/sessions/new" prefetch className={primaryButtonClassName}>
                 {t("createSession")}
               </Link>
             </span>
           }
         />
-        <SessionViewToggle
+        <SessionSurface
+          view={query.view}
           calendarHref={calendarHref}
           listHref={listHref}
-          view={query.view}
           calendarLabel={t("calendarView")}
           listLabel={t("listView")}
           toggleLabel={t("viewToggleLabel")}
-        />
-        <SessionListFiltersForm
-          query={query}
-          teams={teams}
-          kinds={TRAINING_SESSION_KINDS}
-          listWindow={listWindow}
-        />
-        {query.view === "list" ? (
-          <div className="flex flex-col gap-4">
-            <ListWindowNav
-              pathname="/app/admin/sessions"
-              query={query}
-              window={listWindow}
-              hasEarlier={probe.hasEarlier}
-              hasLater={probe.hasLater}
-            />
-            {groups.length === 0 ? (
-            <EmptyState
-              title={
-                probe.hasEarlier || probe.hasLater
-                  ? t("listWindowEmptyTitle")
-                  : hasFilters
-                    ? t("sessionsFilterEmptyTitle")
-                    : t("sessionsEmptyTitle")
-              }
-              body={
-                probe.hasEarlier || probe.hasLater
-                  ? t("listWindowEmptyBody")
-                  : hasFilters
-                    ? t("sessionsFilterEmptyBody")
-                    : t("sessionsEmptyBody")
-              }
-            />
-          ) : (
-            <ul className="grid gap-3">
-              {groups.map((group) => {
-                const next = nextOccurrenceInGroup(group.sessions);
-                if (group.groupKind === "training-series") {
-                  return (
-                    <SeriesGroupCard
-                      key={group.key}
-                      href={adminGroupHref(group)}
-                      title={group.title}
-                      teamName={next?.team?.name ?? org("unknownTeam")}
-                      kind={group.sessionKind}
-                      isPlayoff={group.sessions.some((row) => row.is_playoff)}
-                      nextStartsAt={next?.starts_at ?? ""}
-                      occurrenceCount={group.sessions.length}
-                      locale={locale}
-                      detail={t("rosterCount", {
-                        count: group.sessions.reduce((sum, row) => sum + row.registeredCount, 0),
-                      })}
-                      viewLabel={t("edit")}
-                      actions={
-                        next && !next.deleted_at ? (
-                          <SessionSoftDeleteForm
-                            action={softDeleteSession.bind(null, next.id)}
-                            confirmMessage={t("softDeleteOccurrenceConfirm", {
-                              title: next.title,
-                            })}
-                            submitLabel={t("softDeleteSession")}
-                            redirectTo="list"
-                          />
-                        ) : null
-                      }
-                    />
-                  );
-                }
-                const session = next ?? group.sessions[0];
-                if (!session) {
-                  return null;
-                }
-                return (
-                  <li
-                    key={session.id}
-                    className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900"
-                  >
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                      <div className="flex flex-col gap-1">
-                        <Link
-                          href={`/app/admin/sessions/${session.id}`}
-                          className="font-semibold hover:underline"
-                        >
-                          {session.title}
-                        </Link>
-                        <p className="text-sm text-zinc-500">
-                          {session.team?.name ?? org("unknownTeam")}
-                          {" · "}
-                          {formatClubDateTimeRange(session.starts_at, session.ends_at, locale)}
-                        </p>
-                        {session.location ? (
-                          <p className="text-sm text-zinc-500">{session.location}</p>
-                        ) : null}
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <SessionKindBadge
-                          kind={session.kind}
-                          label={sessionsT(`kinds.${session.kind}`)}
-                        />
-                        {session.is_playoff ? (
-                          <SessionPlayoffBadge label={sessionsT("playoff")} />
-                        ) : null}
-                        {session.deleted_at ? (
-                          <SessionDeletedBadge label={t("sessionDeleted")} />
-                        ) : (
-                          <SessionStatusBadge
-                            status={session.status}
-                            label={org(session.status === "active" ? "statusActive" : "statusInactive")}
-                          />
-                        )}
-                        <span className="text-sm text-zinc-500">
-                          {t("rosterCount", { count: session.registeredCount })}
-                        </span>
-                      </div>
-                    </div>
-                    {session.deleted_at ? null : (
-                      <div className="flex flex-wrap gap-2">
-                        <Link
-                          href={`/app/admin/sessions/${session.id}/edit`}
-                          className="inline-flex items-center justify-center rounded-full border border-zinc-300 px-4 py-2.5 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
-                        >
-                          {t("edit")}
-                        </Link>
-                        <SessionStatusForm
-                          status={session.status}
-                          action={setSessionStatus.bind(null, session.id)}
-                          redirectTo="list"
-                        />
-                        <SessionSoftDeleteForm
-                          action={softDeleteSession.bind(null, session.id)}
-                          confirmMessage={t("softDeleteSessionConfirm", { title: session.title })}
-                          submitLabel={t("softDeleteSession")}
-                          redirectTo="list"
-                        />
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-          </div>
-        ) : (
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-            <div className="min-w-0 flex-1">
-              <SessionMonthCalendar
-                query={query}
-                sessions={sessions}
-                today={today}
+          instantToggle={plan.instantToggle}
+          list={
+            <div className="flex flex-col gap-4">
+              <SessionListFiltersForm
+                query={{ ...query, view: "list" }}
+                teams={teams}
+                kinds={TRAINING_SESSION_KINDS}
+                listWindow={listWindow}
+              />
+              <ListWindowNav
                 pathname="/app/admin/sessions"
-                legendKinds={TRAINING_SESSION_KINDS}
+                query={{ ...query, view: "list" }}
+                window={listWindow}
+                hasEarlier={probe.hasEarlier}
+                hasLater={probe.hasLater}
               />
+              {groups.length === 0 ? (
+                <EmptyState
+                  title={
+                    probe.hasEarlier || probe.hasLater
+                      ? t("listWindowEmptyTitle")
+                      : hasFilters
+                        ? t("sessionsFilterEmptyTitle")
+                        : t("sessionsEmptyTitle")
+                  }
+                  body={
+                    probe.hasEarlier || probe.hasLater
+                      ? t("listWindowEmptyBody")
+                      : hasFilters
+                        ? t("sessionsFilterEmptyBody")
+                        : t("sessionsEmptyBody")
+                  }
+                />
+              ) : (
+                <ul className="grid gap-3">
+                  {groups.map((group) => {
+                    const next = nextOccurrenceInGroup(group.sessions);
+                    if (group.groupKind === "training-series") {
+                      return (
+                        <SeriesGroupCard
+                          key={group.key}
+                          href={adminGroupHref(group)}
+                          title={group.title}
+                          teamName={next?.team?.name ?? org("unknownTeam")}
+                          kind={group.sessionKind}
+                          isPlayoff={group.sessions.some((row) => row.is_playoff)}
+                          nextStartsAt={next?.starts_at ?? ""}
+                          occurrenceCount={group.sessions.length}
+                          locale={locale}
+                          detail={t("rosterCount", {
+                            count: group.sessions.reduce((sum, row) => sum + row.registeredCount, 0),
+                          })}
+                          viewLabel={t("edit")}
+                          actions={
+                            next && !next.deleted_at ? (
+                              <SessionSoftDeleteForm
+                                action={softDeleteSession.bind(null, next.id)}
+                                confirmMessage={t("softDeleteOccurrenceConfirm", {
+                                  title: next.title,
+                                })}
+                                submitLabel={t("softDeleteSession")}
+                                redirectTo="list"
+                              />
+                            ) : null
+                          }
+                        />
+                      );
+                    }
+                    const session = next ?? group.sessions[0];
+                    if (!session) {
+                      return null;
+                    }
+                    return (
+                      <li
+                        key={session.id}
+                        className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900"
+                      >
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="flex flex-col gap-1">
+                            <Link
+                              href={`/app/admin/sessions/${session.id}`}
+                              className="font-semibold hover:underline"
+                            >
+                              {session.title}
+                            </Link>
+                            <p className="text-sm text-zinc-500">
+                              {session.team?.name ?? org("unknownTeam")}
+                              {" · "}
+                              {formatClubDateTimeRange(session.starts_at, session.ends_at, locale)}
+                            </p>
+                            {session.location ? (
+                              <p className="text-sm text-zinc-500">{session.location}</p>
+                            ) : null}
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <SessionKindBadge
+                              kind={session.kind}
+                              label={sessionsT(`kinds.${session.kind}`)}
+                            />
+                            {session.is_playoff ? (
+                              <SessionPlayoffBadge label={sessionsT("playoff")} />
+                            ) : null}
+                            {session.deleted_at ? (
+                              <SessionDeletedBadge label={t("sessionDeleted")} />
+                            ) : (
+                              <SessionStatusBadge
+                                status={session.status}
+                                label={org(
+                                  session.status === "active" ? "statusActive" : "statusInactive",
+                                )}
+                              />
+                            )}
+                            <span className="text-sm text-zinc-500">
+                              {t("rosterCount", { count: session.registeredCount })}
+                            </span>
+                          </div>
+                        </div>
+                        {session.deleted_at ? null : (
+                          <div className="flex flex-wrap gap-2">
+                            <Link
+                              href={`/app/admin/sessions/${session.id}/edit`}
+                              className="inline-flex items-center justify-center rounded-full border border-zinc-300 px-4 py-2.5 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                            >
+                              {t("edit")}
+                            </Link>
+                            <SessionStatusForm
+                              status={session.status}
+                              action={setSessionStatus.bind(null, session.id)}
+                              redirectTo="list"
+                            />
+                            <SessionSoftDeleteForm
+                              action={softDeleteSession.bind(null, session.id)}
+                              confirmMessage={t("softDeleteSessionConfirm", { title: session.title })}
+                              submitLabel={t("softDeleteSession")}
+                              redirectTo="list"
+                            />
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
             </div>
-            <div className="min-w-0 flex-1 lg:max-w-md">
-              <SessionDayAgenda
-                selectedDate={query.day}
-                weekFrom={week?.from ?? query.day}
-                weekTo={week?.to ?? query.day}
-                sessions={weekSessions}
-                occurrenceHref={(id) => `/app/admin/sessions/${id}`}
-                prevHref={prevWeekHref}
-                nextHref={nextWeekHref}
+          }
+          calendar={
+            <div className="flex flex-col gap-6">
+              <SessionListFiltersForm
+                query={{ ...query, view: "calendar" }}
+                teams={teams}
+                kinds={TRAINING_SESSION_KINDS}
+                listWindow={listWindow}
               />
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+                <div className="min-w-0 flex-1">
+                  <SessionMonthCalendar
+                    query={{ ...query, view: "calendar" }}
+                    sessions={calendarSessions}
+                    today={today}
+                    pathname="/app/admin/sessions"
+                    legendKinds={TRAINING_SESSION_KINDS}
+                  />
+                </div>
+                <div className="min-w-0 flex-1 lg:max-w-md">
+                  <SessionDayAgenda
+                    selectedDate={query.day}
+                    weekFrom={week?.from ?? query.day}
+                    weekTo={week?.to ?? query.day}
+                    sessions={weekSessions}
+                    occurrenceHref={(id) => `/app/admin/sessions/${id}`}
+                    prevHref={prevWeekHref}
+                    nextHref={nextWeekHref}
+                  />
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          }
+        />
       </main>
       <footer className="border-t border-zinc-200 px-6 py-4 pb-10 text-sm text-zinc-500 dark:border-zinc-800">
         {common("footer")}

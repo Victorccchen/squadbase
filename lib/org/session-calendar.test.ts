@@ -19,8 +19,11 @@ import {
   parseAdminSessionsQuery,
   parseListDateWindow,
   resolveSurfaceKinds,
+  sessionsInDateWindow,
   sessionsInWeek,
   sessionsListOrCalendarBounds,
+  sessionSurfacePlan,
+  combinedSurfaceDateRange,
   shiftClubDate,
   uniqueAgeBandAbbrevsOnDate,
   uniqueKindsOnDate,
@@ -410,5 +413,47 @@ describe("list date window (Stage Perf / 6Q)", () => {
     );
     assert.equal(expanded.query.from, "2026-09-08");
     assert.equal(expanded.query.to, "2026-12-29");
+  });
+
+  it("combines nearby list+calendar ranges so list↔calendar can share one fetch", () => {
+    const query = parseAdminSessionsQuery(
+      { month: "2026-09", day: "2026-09-08", view: "list" },
+      now,
+      { defaultView: "list" },
+    );
+    const window = defaultUpcomingListWindow(now);
+    const combined = combinedSurfaceDateRange(query, window);
+    assert.deepEqual(combined, { from: "2026-08-31", to: "2026-11-03" });
+    const plan = sessionSurfacePlan(query, window);
+    assert.equal(plan.instantToggle, true);
+    assert.equal(plan.fetchBounds.from, "2026-08-31T00:00:00+08:00");
+    assert.equal(plan.fetchBounds.toExclusive, "2026-11-04T00:00:00+08:00");
+    const listRows = sessionsInDateWindow(
+      [
+        { starts_at: "2026-08-31T18:00:00+08:00" },
+        { starts_at: "2026-09-08T18:00:00+08:00" },
+        { starts_at: "2026-11-03T18:00:00+08:00" },
+        { starts_at: "2026-11-04T18:00:00+08:00" },
+      ],
+      plan.listRange,
+    );
+    assert.deepEqual(
+      listRows.map((row) => row.starts_at),
+      ["2026-09-08T18:00:00+08:00", "2026-11-03T18:00:00+08:00"],
+    );
+  });
+
+  it("does not combine a far calendar month with the 8-week list window", () => {
+    const query = parseAdminSessionsQuery(
+      { month: "2027-03", day: "2027-03-01", view: "calendar" },
+      now,
+      { defaultView: "list" },
+    );
+    const window = defaultUpcomingListWindow(now);
+    assert.equal(combinedSurfaceDateRange(query, window), null);
+    const plan = sessionSurfacePlan(query, window);
+    assert.equal(plan.instantToggle, false);
+    assert.equal(plan.fetchBounds.from.startsWith("2027-"), true);
+    assert.notEqual(plan.fetchBounds.from, "2026-09-08T00:00:00+08:00");
   });
 });
