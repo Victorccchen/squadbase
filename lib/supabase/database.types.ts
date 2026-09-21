@@ -326,6 +326,40 @@ export type PlayerAssessment = {
   updated_by: string | null;
 };
 
+export type AssessmentDimensionKind = "trait" | "phase";
+export type AssessmentTraitCode = "A" | "B" | "C" | "D";
+export type AssessmentPhaseCode =
+  | "attack"
+  | "defence"
+  | "trans_attack"
+  | "trans_defence";
+
+export type AssessmentScore = {
+  id: string;
+  event_id: string;
+  dimension_kind: AssessmentDimensionKind;
+  dimension_code: AssessmentTraitCode | AssessmentPhaseCode;
+  score: AssessmentScoreValue;
+};
+
+export type AssessmentEvent = {
+  id: string;
+  player_id: string;
+  assessed_at: string;
+  assessor_user_id: string;
+  note: string | null;
+  session_id: string | null;
+  source_assessment_id: string | null;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+};
+
+export type AssessmentEventWithScores = AssessmentEvent & {
+  scores: AssessmentScore[];
+};
+
 export type MatchRosterRow = {
   id: string;
   session_id: string;
@@ -1084,6 +1118,80 @@ export type Database = {
           },
         ];
       };
+      assessment_events: {
+        Row: AssessmentEvent;
+        Insert: {
+          id?: string;
+          player_id: string;
+          assessed_at: string;
+          assessor_user_id: string;
+          note?: string | null;
+          session_id?: string | null;
+          source_assessment_id?: string | null;
+        } & TimestampInsert;
+        Update: {
+          assessed_at?: string;
+          note?: string | null;
+          session_id?: string | null;
+          source_assessment_id?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "assessment_events_player_id_fkey";
+            columns: ["player_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "assessment_events_assessor_user_id_fkey";
+            columns: ["assessor_user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "assessment_events_session_id_fkey";
+            columns: ["session_id"];
+            isOneToOne: false;
+            referencedRelation: "training_sessions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "assessment_events_source_assessment_id_fkey";
+            columns: ["source_assessment_id"];
+            isOneToOne: true;
+            referencedRelation: "player_assessments";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      assessment_scores: {
+        Row: AssessmentScore;
+        Insert: {
+          id?: string;
+          event_id: string;
+          dimension_kind: AssessmentDimensionKind;
+          dimension_code: AssessmentTraitCode | AssessmentPhaseCode;
+          score: AssessmentScoreValue;
+        };
+        Update: {
+          dimension_kind?: AssessmentDimensionKind;
+          dimension_code?: AssessmentTraitCode | AssessmentPhaseCode;
+          score?: AssessmentScoreValue;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "assessment_scores_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "assessment_events";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       push_subscriptions: {
         Row: WebPushSubscription;
         Insert: {
@@ -1568,6 +1676,38 @@ export type Database = {
         Returns: string;
       };
       delete_player_assessment: {
+        Args: { p_id: string };
+        Returns: string;
+      };
+      create_assessment_event: {
+        Args: {
+          p_player_id: string;
+          p_assessed_at: string;
+          p_note: string | null;
+          p_session_id: string | null;
+          p_scores: {
+            dimension_kind: AssessmentDimensionKind;
+            dimension_code: AssessmentTraitCode | AssessmentPhaseCode;
+            score: AssessmentScoreValue;
+          }[];
+        };
+        Returns: string;
+      };
+      update_assessment_event: {
+        Args: {
+          p_id: string;
+          p_assessed_at: string;
+          p_note: string | null;
+          p_session_id: string | null;
+          p_scores: {
+            dimension_kind: AssessmentDimensionKind;
+            dimension_code: AssessmentTraitCode | AssessmentPhaseCode;
+            score: AssessmentScoreValue;
+          }[];
+        };
+        Returns: string;
+      };
+      delete_assessment_event: {
         Args: { p_id: string };
         Returns: string;
       };

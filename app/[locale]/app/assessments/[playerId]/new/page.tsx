@@ -5,8 +5,13 @@ import { AccessDenied } from "@/components/access-denied";
 import { PageHeader } from "@/components/page-header";
 import { AssessmentForm } from "@/components/assessments/assessment-form";
 import { createPlayerAssessment } from "@/lib/assessments/actions";
-import { staffCanWritePlayerAssessment } from "@/lib/assessments/queries";
+import {
+  listLinkableSessionsForPlayer,
+  staffCanWritePlayerAssessment,
+  type AssessmentLinkSession,
+} from "@/lib/assessments/queries";
 import { formatIsoDate, todayInClubTimeZone } from "@/lib/age-band";
+import { formatClubDateWithWeekday, formatClubTime } from "@/lib/org/session-time";
 import { getPlayer } from "@/lib/org/queries";
 import { localizedPlayerName } from "@/lib/org/display-name";
 import { secondaryButtonClassName } from "@/lib/ui";
@@ -14,6 +19,12 @@ import { secondaryButtonClassName } from "@/lib/ui";
 type NewAssessmentPageProps = {
   params: Promise<{ playerId: string }>;
 };
+
+function sessionOptionLabel(session: AssessmentLinkSession, locale: string): string {
+  const when = `${formatClubDateWithWeekday(session.starts_at, locale)} ${formatClubTime(session.starts_at, locale)}`;
+  const team = session.team_name ? ` · ${session.team_name}` : "";
+  return `${when} · ${session.title}${team}`;
+}
 
 export default async function NewAssessmentPage({ params }: NewAssessmentPageProps) {
   const { playerId } = await params;
@@ -30,6 +41,10 @@ export default async function NewAssessmentPage({ params }: NewAssessmentPagePro
   const t = await getTranslations("assessments");
   const common = await getTranslations("common");
   const locale = await getLocale();
+  const sessions = await listLinkableSessionsForPlayer(player.id);
+  const sessionLabels = Object.fromEntries(
+    sessions.map((session) => [session.id, sessionOptionLabel(session, locale)]),
+  );
 
   return (
     <>
@@ -49,6 +64,8 @@ export default async function NewAssessmentPage({ params }: NewAssessmentPagePro
         <AssessmentForm
           playerId={player.id}
           defaultAssessedOn={formatIsoDate(todayInClubTimeZone())}
+          sessions={sessions}
+          sessionLabels={sessionLabels}
           action={createPlayerAssessment}
         />
       </main>

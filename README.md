@@ -235,6 +235,24 @@ JSONB shape per key: `{ "score": 1-5, "note": string|null }`. CHECK constraints 
 
 **SELECT:** admin (all); assigned coach via existing `coach_can_read_player`; approved guardian via `is_approved_guardian_for_player` (linked children only). `anon` has no GRANT. Public/visitor pages do not query this table.
 
+## Schema choice (Stage 5C)
+
+Ability time-series extends Stage 5. It does **not** replace `player_assessments`. New rows are `assessment_events` + `assessment_scores`. Existing Stage 5 snapshots are backfilled into events/scores so there is one history timeline.
+
+| Object | Purpose |
+| --- | --- |
+| `assessment_events` | One event: `player_id`, `assessed_at` (timestamptz, club date stored as Asia/Taipei midnight), `assessor_user_id`, optional `note`, optional `session_id` (training or match), optional `source_assessment_id` for Stage 5 backfill |
+| `assessment_scores` | Up to 8 scores per event. `dimension_kind` `trait` or `phase`. Trait codes **A/B/C/D**. Phase codes `attack`, `defence`, `trans_attack`, `trans_defence`. Integer **1–5**. Partial events allowed (at least one score) |
+
+**Locked dimensions (Victor):**
+
+- Traits: A Adaptability, B Resilience, C Coachability, D Commitment
+- Phases: attack, defence, trans_attack, trans_defence (Stage 5 `defense` → `defence`; `attack_to_defense` → `trans_defence`; `defense_to_attack` → `trans_attack`)
+
+Writes: `create_assessment_event` / `update_assessment_event` / `delete_assessment_event`. Table GRANT is **SELECT only**. Same permission helpers as Stage 5 (`staff_can_write_player_assessment`, `coach_can_assess_player`, `can_read_player_assessment`). Stage 5 create/update RPCs also sync a complete JSONB snapshot into events/scores.
+
+Charts MVP: trait line chart + phase line chart on the player history page. Empty until a dimension has **two or more** points.
+
 ## Schema choice (Stage 5B)
 
 Public cup/league matches reuse `training_sessions` so Stage 4B debit (`match_debit`, 1 per club calendar day) is unchanged. **Option A:** a thin 1:1 `match_publications` overlay (not a separate `matches` table). Regular/special sessions cannot be published.
@@ -371,6 +389,8 @@ Apply in order:
 34. [`supabase/migrations/20260918010000_stage_r1_futuro_competition_teams.sql`](supabase/migrations/20260918010000_stage_r1_futuro_competition_teams.sql) (**Stage R1; paste this file’s CONTENTS on staging** — Futuro U10 / U11 / U12 黃 / U12 藍 隊伍 and `u11` eligibility. Does not drop U10藍/白. Idempotent. Then seed players with `npm run seed:torneopal-roster`. See [`docs/stage-r1-torneopal-roster-seed.md`](docs/stage-r1-torneopal-roster-seed.md).)
 35. [`supabase/migrations/20260919020000_stage_notif_web_push.sql`](supabase/migrations/20260919020000_stage_notif_web_push.sql) (**Stage Notif; paste this file’s CONTENTS on staging** — `push_subscriptions`, `notification_sends`, RLS. Staging only.)
 36. [`supabase/migrations/20260919030000_regrant_stage_notif_privileges.sql`](supabase/migrations/20260919030000_regrant_stage_notif_privileges.sql) (**paste if parents/admins see `permission denied` on push tables** — re-grants to `authenticated`. Does not change RLS. Safe to re-run.)
+37. [`supabase/migrations/20260921010000_stage5c_ability_timeseries.sql`](supabase/migrations/20260921010000_stage5c_ability_timeseries.sql) (**Stage 5C; paste this file’s CONTENTS on staging** — `assessment_events`, `assessment_scores`, RLS, write RPCs, backfill from `player_assessments`. Does not drop Stage 5 tables. Staging only.)
+38. [`supabase/migrations/20260921020000_regrant_stage5c_privileges.sql`](supabase/migrations/20260921020000_regrant_stage5c_privileges.sql) (**paste if staff/parents see `permission denied` on `assessment_events` / `assessment_scores` or Stage 5C RPCs** — re-grants SELECT/execute to `authenticated`. Does not change RLS. Safe to re-run.)
 
 Steps:
 
@@ -378,7 +398,7 @@ Steps:
 2. Go to **SQL Editor** → **New query**.
 3. Paste the full contents of the migration file.
 4. Run the query.
-5. In **Table Editor**, confirm `teams`, `players`, `team_memberships`, `coaches`, `coach_team_assignments`, `guardian_player_links`, and (after Stage 4) `training_sessions`, `session_registrations`, `session_registration_messages` exist. After Stage 4A, also confirm `session_series` and that `training_sessions` has `title`, `kind`, `series_id`, `deleted_at`, and `is_playoff`. After Stage 4A.1, confirm `session_series.weekdays`. After Stage 4B, confirm `session_packages`, `player_session_balances`, `payment_claims`, `session_credit_ledger`, `session_attendance`, `session_leave_requests`, and `club_runtime_settings`. After Stage 5, confirm `player_assessments`. After Stage 5B, confirm `match_publications` and `match_roster`.
+5. In **Table Editor**, confirm `teams`, `players`, `team_memberships`, `coaches`, `coach_team_assignments`, `guardian_player_links`, and (after Stage 4) `training_sessions`, `session_registrations`, `session_registration_messages` exist. After Stage 4A, also confirm `session_series` and that `training_sessions` has `title`, `kind`, `series_id`, `deleted_at`, and `is_playoff`. After Stage 4A.1, confirm `session_series.weekdays`. After Stage 4B, confirm `session_packages`, `player_session_balances`, `payment_claims`, `session_credit_ledger`, `session_attendance`, `session_leave_requests`, and `club_runtime_settings`. After Stage 5, confirm `player_assessments`. After Stage 5C, confirm `assessment_events` and `assessment_scores`. After Stage 5B, confirm `match_publications` and `match_roster`.
 
 If you use the Supabase CLI and it is linked to **staging** (never production):
 
@@ -413,6 +433,8 @@ Duplicate approved children on `/app/children` (same player twice, duplicate Rea
 Parent list 取消 within 24 hours of session start: paste contents of [`supabase/migrations/20260907010000_session_cancel_lock_24h.sql`](supabase/migrations/20260907010000_session_cancel_lock_24h.sql) on **staging only**. Admins can still cancel. Also adds the parent-detail note RPC. Do not run on production.
 
 Stage 5 (`20260908010000_stage5_player_assessments.sql`): **Victor: paste the SQL file contents into the staging SQL Editor, not a path string.** Then paste the regrant file if you see permission denied. Do not run them on production. Do not put secrets, bank details, or service-role keys in git.
+
+Stage 5C (`20260921010000_stage5c_ability_timeseries.sql`): **Victor: paste the SQL file contents into the staging SQL Editor, not a path string.** Then paste [`supabase/migrations/20260921020000_regrant_stage5c_privileges.sql`](supabase/migrations/20260921020000_regrant_stage5c_privileges.sql) if you see permission denied. Optional check: paste [`supabase/stage5c_verification.sql`](supabase/stage5c_verification.sql) contents (T5C validators + Stage 5 phase mapping; `ROLLBACK`). Do not run on production.
 
 Regular unexcused must not debit: paste contents of [`supabase/migrations/20260908000000_regular_unexcused_debit_zero.sql`](supabase/migrations/20260908000000_regular_unexcused_debit_zero.sql) on **staging only** after Stage 4B. Replaces `compute_session_debit_plan` only. Do not run on production.
 
@@ -534,7 +556,7 @@ Do not grant extra roles from the browser except through this admin action. RLS 
 - `coach`: read assigned teams, memberships, and those players (including `birth_date`, needed to show age band on the roster). No insert/update/delete on org tables. Same parent-link rules if they also have the parent role (default).
 - `admin`: full CRUD on org tables and `training_sessions`; can `select` all `profiles` in order to link coaches (phone is PII; admins can see it); can select all guardian links and call `admin_review_guardian_link` / `admin_revoke_guardian_link` / `admin_delete_team`. Team hard-delete refuses while **active** `team_memberships` remain; inactive memberships, coach assignments, and training sessions are removed with the team. Admins can reply on `session_registration_messages`.
 - Training sessions: parents `SELECT` only sessions they can read via approved children (or existing registrations, including after soft-delete). `register_player_for_session` requires an approved guardian, an **active non-deleted** session, and an active membership of that player on the session’s team. Parents cannot dump another family’s roster. Coaches `SELECT` sessions/registrations/messages on assigned teams. `anon` has no GRANT on session tables. Create and soft-delete go through admin-only RPCs.
-- Ability assessments: `anon` has no GRANT on `player_assessments`. Parents `SELECT` only rows for approved-linked children and cannot call write RPCs successfully. Assigned coaches `SELECT` via `coach_can_read_player`; writes require an **active** membership on an assigned team (`coach_can_assess_player`) or admin. Public homepage and visitor routes never load assessment payloads.
+- Ability assessments: `anon` has no GRANT on `player_assessments`, `assessment_events`, or `assessment_scores`. Parents `SELECT` only rows for approved-linked children and cannot call write RPCs successfully. Assigned coaches `SELECT` via `coach_can_read_player`; writes require an **active** membership on an assigned team (`coach_can_assess_player`) or admin. Public homepage and visitor routes never load assessment payloads.
 - Public matches: `anon` and `authenticated` may `EXECUTE` `list_published_matches` / `get_published_match` / `list_published_match_roster` only. Those RPCs return published cup/league fields and lineup names/jersey. No GRANT on `players`, `match_publications`, or `training_sessions` to `anon`. Admins write via RPCs; coaches may `SELECT` publications on assigned teams.
 
 Public match pages that show names without dates of birth are Stage 5B. Ability assessments stay on authenticated `/app/assessments` only.
@@ -673,6 +695,22 @@ Paste Stage 5 SQL **file contents** (not path strings) on **staging only** befor
 | T5-6 | Logged-out `/zh-Hant` and `/zh-Hant/login` show no ability scores. Signed-out `/zh-Hant/app/assessments` redirects to login. |
 
 Locale check: situation/trait labels, CTFA hint blurbs, score words, empty states, and errors in zh-Hant / en / ja (`/zh-Hant/app/assessments`, `/en/app/assessments`, `/ja/app/assessments`).
+
+### Stage 5C
+
+Use the same accounts as Stage 5. Paste Stage 5C SQL **file contents** (not path strings) on **staging only** before UI checks. Score parse and chart empty-state math are covered by `npm test` (`lib/assessments/parse.test.ts`, `lib/assessments/series.test.ts`).
+
+| ID | Check |
+| --- | --- |
+| T5C-1 | Admin or assigned coach opens `/zh-Hant/app/assessments/{playerId}/new`, scores **at least one** ABCD trait or phase (others may be blank), optional note / session link, submits. History at `/zh-Hant/app/assessments/{playerId}` shows the new event. |
+| T5C-2 | Score outside 1–5 is rejected (`invalidScore`). Submitting with every score blank is rejected (`missingScore`). Optional: paste [`supabase/stage5c_verification.sql`](supabase/stage5c_verification.sql) — validators reject 0, 6, and empty payloads. |
+| T5C-3 | With fewer than two dates for a chart, the trait/phase chart shows the empty state. After two events that score the same trait or phase, a line chart appears. |
+| T5C-4 | Approved guardian of that child sees the latest summary on `/zh-Hant/app/children` and can open history + charts. There is no create/edit form (read-only). |
+| T5C-5 | Guardian of player B cannot open player A’s assessments (404 / empty). Unassigned coach cannot create (`not authorized`) and cannot read those events. Logged-out public pages never show ability scores. |
+| T5C-6 | `/zh-Hant`, `/en`, and `/ja` show ABCD trait labels and the four phase labels. Covered by `npm test` (`i18n/stage-5c-messages.test.ts`). |
+| T5C-7 | Existing Stage 5 `player_assessments` rows backfill into `assessment_events` / phase scores (`defense` → `defence`, `attack_to_defense` → `trans_defence`, `defense_to_attack` → `trans_attack`; traits A/B/C/D). Optional SQL check in `stage5c_verification.sql`. |
+
+Locale check: ABCD, phases, chart empty states, and errors in zh-Hant / en / ja.
 
 ### Stage 5B
 
@@ -955,7 +993,7 @@ app/[locale]/          Public home, /matches, /login, gated /app, /app/children,
 components/            Header, forms, dashboard cards, access denied, public match cards, assessment forms
 i18n/                  next-intl routing, navigation, request config
 lib/age-band.ts        Season-start age band helper
-lib/assessments/       Assessment parse/validation, queries, server actions
+lib/assessments/       Stage 5/5C assessment parse, time-series, queries, server actions
 lib/credits/           Debit rules, packages, LINE notice copy, Stage N announcement templates, credit queries/actions
 lib/push/              Stage Notif Web Push audience, payload, VAPID, send actions
 lib/org/               Server actions, queries, generic match-URL import, Torneopal roster seed, match helpers, admin reports, ops dashboard aggregations
