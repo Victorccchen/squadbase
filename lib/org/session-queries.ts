@@ -402,19 +402,33 @@ export async function listOpenSessionsForMatchGroup(
   );
 }
 
+export type ListOwnRegistrationsOptions = {
+  includeMessages?: boolean;
+  status?: SessionRegistration["status"];
+};
+
 export async function listOwnSessionRegistrations(
   playerIds: string[],
+  options: ListOwnRegistrationsOptions = {},
 ): Promise<SessionRegistrationWithDetails[]> {
   if (playerIds.length === 0) {
     return [];
   }
 
+  const includeMessages = options.includeMessages ?? true;
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const select = includeMessages
+    ? "*, players(*), training_sessions(*, teams(*)), session_registration_messages(*)"
+    : "*, players(*), training_sessions(*, teams(*))";
+  let query = supabase
     .from("session_registrations")
-    .select("*, players(*), training_sessions(*, teams(*)), session_registration_messages(*)")
+    .select(select)
     .in("player_id", playerIds)
     .order("created_at", { ascending: false });
+  if (options.status) {
+    query = query.eq("status", options.status);
+  }
+  const { data, error } = await query;
 
   if (error) {
     console.error("listOwnSessionRegistrations", error.message);

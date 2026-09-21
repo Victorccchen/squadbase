@@ -13,16 +13,16 @@ export default async function AdminHomePage() {
   const common = await getTranslations("common");
 
   const cards = [
-    { href: "/app/admin/dashboard" as const, title: t("dashboardTitle"), body: t("dashboardBody") },
-    { href: "/app/admin/teams" as const, title: t("teamsTitle"), body: t("teamsBody") },
-    { href: "/app/admin/players" as const, title: t("playersTitle"), body: t("playersBody") },
-    { href: "/app/admin/coaches" as const, title: t("coachesTitle"), body: t("coachesBody") },
-    { href: "/app/admin/bindings" as const, title: t("bindingsTitle"), body: t("bindingsBody") },
-    { href: "/app/admin/sessions" as const, title: t("sessionsTitle"), body: t("sessionsBody") },
-    { href: "/app/admin/matches" as const, title: t("matchesTitle"), body: t("matchesBody") },
-    { href: "/app/admin/import" as const, title: t("importTitle"), body: t("importBody") },
-    { href: "/app/admin/notices" as const, title: t("noticesTitle"), body: t("noticesBody") },
-    { href: "/app/admin/reports" as const, title: t("reportsTitle"), body: t("reportsBody") },
+    { href: "/app/admin/dashboard" as const, title: t("dashboardTitle"), body: t("dashboardBody"), prefetch: true },
+    { href: "/app/admin/teams" as const, title: t("teamsTitle"), body: t("teamsBody"), prefetch: false },
+    { href: "/app/admin/players" as const, title: t("playersTitle"), body: t("playersBody"), prefetch: false },
+    { href: "/app/admin/coaches" as const, title: t("coachesTitle"), body: t("coachesBody"), prefetch: false },
+    { href: "/app/admin/bindings" as const, title: t("bindingsTitle"), body: t("bindingsBody"), prefetch: false },
+    { href: "/app/admin/sessions" as const, title: t("sessionsTitle"), body: t("sessionsBody"), prefetch: true },
+    { href: "/app/admin/matches" as const, title: t("matchesTitle"), body: t("matchesBody"), prefetch: true },
+    { href: "/app/admin/import" as const, title: t("importTitle"), body: t("importBody"), prefetch: false },
+    { href: "/app/admin/notices" as const, title: t("noticesTitle"), body: t("noticesBody"), prefetch: false },
+    { href: "/app/admin/reports" as const, title: t("reportsTitle"), body: t("reportsBody"), prefetch: false },
   ];
 
   return (
@@ -34,6 +34,7 @@ export default async function AdminHomePage() {
             <Link
               key={card.href}
               href={card.href}
+              prefetch={card.prefetch ? true : undefined}
               className="flex flex-col gap-2 rounded-2xl border border-zinc-200 bg-white p-5 hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900"
             >
               <h2 className="text-base font-semibold">{card.title}</h2>
