@@ -1,6 +1,7 @@
 /**
- * Stage N: admin LINE-group announcement templates (generate + copy only).
- * Does not send LINE, SMS, OA, or push. Coexists with Stage 4B debit notices.
+ * Stage N: admin LINE-group announcement templates (generate + copy).
+ * Stage Notif reuses these fields for a short Web Push payload.
+ * Does not send LINE, SMS, or OA. Coexists with Stage 4B debit notices.
  */
 
 import {

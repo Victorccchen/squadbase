@@ -2,7 +2,7 @@
 
 Responsive web + PWA for a football **Club** (球團) operations app: training squads, courses, attendance, assessments, and matches/events.
 
-This repository is currently **Stage D** plus **Stage R** / **Stage R1**, **Stage P / P.1**, **Stage L / L2 / L3**: Stages 1–6P.1 plus Stage ST (梯隊 / 隊伍), **admin generic match-URL import** on `/app/admin/import` (Stage L3; not Torneopal-branded; Stage 6A CSV/Excel player/coach/match import UI is retired), **Torneopal FUTURO roster seed** (zh name + jersey on staging), admin LINE-group **generate + copy** (Stage N), **admin Excel/CSV reports** (attendance, registrations, credit ledger, match roster), an **admin ops dashboard** (attendance rates, approved remittance vs consumed credits, remaining obligation), **private player headshots / ID photos** bound to each player, and **admin league-registration ZIP** (roster + photos). 梯隊 (age squad) is the roster band for every registered player and for training. 隊伍 (competition team) is the external match side; only continuing trainees may join, with at most two active 隊伍 and no two sharing the same `layer_key`. Parent nav still lists **訓練** (`/app/sessions`) separately from **賽事** (`/app/competitions`). Training attaches to 梯隊; matches attach to 隊伍. Dual membership **replaces** the PR #22 one-ladder-step-up rule. Admins paste a public competition/cup/league URL at `/app/admin/import` (AI/structured extract, preview, then confirm; create-only unpublished league shells), generate notice copy from `/app/admin/notices`, download operational reports from `/app/admin/reports` (including a ZIP of roster + private headshots), and open the numeric overview from `/app/admin/dashboard`. Each player may have one current private headshot (and an optional PDF) for league ID cards; public match pages never show it.
+This repository is currently **Stage D** plus **Stage R** / **Stage R1**, **Stage P / P.1**, **Stage L / L2 / L3**: Stages 1–6P.1 plus Stage ST (梯隊 / 隊伍), **admin generic match-URL import** on `/app/admin/import` (Stage L3; not Torneopal-branded; Stage 6A CSV/Excel player/coach/match import UI is retired), **Torneopal FUTURO roster seed** (zh name + jersey on staging), admin LINE-group **generate + copy** (Stage N) plus staging **Web Push** (Stage Notif), **admin Excel/CSV reports** (attendance, registrations, credit ledger, match roster), an **admin ops dashboard** (attendance rates, approved remittance vs consumed credits, remaining obligation), **private player headshots / ID photos** bound to each player, and **admin league-registration ZIP** (roster + photos). 梯隊 (age squad) is the roster band for every registered player and for training. 隊伍 (competition team) is the external match side; only continuing trainees may join, with at most two active 隊伍 and no two sharing the same `layer_key`. Parent nav still lists **訓練** (`/app/sessions`) separately from **賽事** (`/app/competitions`). Training attaches to 梯隊; matches attach to 隊伍. Dual membership **replaces** the PR #22 one-ladder-step-up rule. Admins paste a public competition/cup/league URL at `/app/admin/import` (AI/structured extract, preview, then confirm; create-only unpublished league shells), generate notice copy from `/app/admin/notices`, download operational reports from `/app/admin/reports` (including a ZIP of roster + private headshots), and open the numeric overview from `/app/admin/dashboard`. Each player may have one current private headshot (and an optional PDF) for league ID cards; public match pages never show it.
 
 Parents can request a link to an **existing** player (the club creates the player record first). Until an admin approves, the parent cannot read that player’s private fields. After approval, the parent sees a basic “my children” list (names, birth date, team, jersey) and may **register that child for training sessions** on the child’s team. The parent may **withdraw a pending request**; only an **admin** may revoke an **approved** link. After revoke or withdraw, `is_approved_guardian_for_player` is false and the same pair may apply again. Session signup checks `guardian_player_links.status = approved`.
 
@@ -65,6 +65,7 @@ Routes:
 | `/[locale]/app/competitions/group/[groupKey]` | Parent: match-group series bulk RSVP + per-occurrence controls |
 | `/[locale]/app/competitions/[id]` | Parent: one cup/league/friendly occurrence (signup, calendar, notes) |
 | `/[locale]/app/credits` | Parent: remaining credits, 10/20/30 pack claim with last-5 digits |
+| `/[locale]/app/settings` | Parent: enable/disable PWA Web Push (staging test accounts) |
 | `/[locale]/app/assessments` | Ability assessments: staff create/edit; approved guardians read their children |
 | `/[locale]/app/admin/*` | Admin CRUD (teams, players, coaches, sessions, matches), **data import**, **reports export**, **ops dashboard**, notice copy, binding approvals, payment claims, packages. Parents/coaches without admin see an access-denied page. |
 | `/[locale]/app/admin/dashboard` | Admin ops overview: attendance rates, approved remittance vs consumed credits, remaining obligation (Asia/Taipei date range, optional 梯隊) |
@@ -368,6 +369,8 @@ Apply in order:
 32. [`supabase/migrations/20260910000000_stage_st_age_squads_competition_teams.sql`](supabase/migrations/20260910000000_stage_st_age_squads_competition_teams.sql) (**Stage ST; paste this file’s CONTENTS on staging after 30–31** — `team_kind`, 梯隊 / 隊伍 columns, Futuro 隊伍 seed, membership trigger that supersedes PR #22 ladder-up, session-unit-kind trigger, `admin_set_player_age_squad` / `admin_set_player_competition_teams`. Idempotent.)
 33. [`supabase/migrations/20260910010000_regrant_stage_st_privileges.sql`](supabase/migrations/20260910010000_regrant_stage_st_privileges.sql) (**paste after 32** — re-grants Stage ST types/functions/views to `authenticated`. Does not change RLS. Safe to re-run.)
 34. [`supabase/migrations/20260918010000_stage_r1_futuro_competition_teams.sql`](supabase/migrations/20260918010000_stage_r1_futuro_competition_teams.sql) (**Stage R1; paste this file’s CONTENTS on staging** — Futuro U10 / U11 / U12 黃 / U12 藍 隊伍 and `u11` eligibility. Does not drop U10藍/白. Idempotent. Then seed players with `npm run seed:torneopal-roster`. See [`docs/stage-r1-torneopal-roster-seed.md`](docs/stage-r1-torneopal-roster-seed.md).)
+35. [`supabase/migrations/20260919020000_stage_notif_web_push.sql`](supabase/migrations/20260919020000_stage_notif_web_push.sql) (**Stage Notif; paste this file’s CONTENTS on staging** — `push_subscriptions`, `notification_sends`, RLS. Staging only.)
+36. [`supabase/migrations/20260919030000_regrant_stage_notif_privileges.sql`](supabase/migrations/20260919030000_regrant_stage_notif_privileges.sql) (**paste if parents/admins see `permission denied` on push tables** — re-grants to `authenticated`. Does not change RLS. Safe to re-run.)
 
 Steps:
 
@@ -435,6 +438,7 @@ Multi-team membership (PR #22, Victor 2026-09-08): items **30–31** above. Stag
 - Optional: paste [`supabase/stage6p1_verification.sql`](supabase/stage6p1_verification.sql) after **both** Stage 6P.1 files (enum `friendly` in one Run, then match RPC/debit updates in a second Run). Asserts `session_kind.friendly` and friendly `match_debit`. Rolls back.
 - Optional: paste [`supabase/multi_team_membership_verification.sql`](supabase/multi_team_membership_verification.sql) after the PR #22 multi-team membership migration **and before Stage ST**. Asserts the old TMT-1 / TMT-2 / TMT-3 ladder-up rules. After Stage ST, use [`supabase/stage_st_verification.sql`](supabase/stage_st_verification.sql) instead (T-ST-1…8). Both roll back.
 - Optional: paste [`supabase/stage_st_verification.sql`](supabase/stage_st_verification.sql) after Stage ST (items 32–33). Asserts Futuro 隊伍 seed, birth eligibility, max 2, same `layer_key` forbidden, `continues_training`, and jersey uniqueness. Rolls back.
+- Optional: paste [`supabase/stage_notif_verification.sql`](supabase/stage_notif_verification.sql) after Stage Notif (items 35–36). Asserts `push_subscriptions` / `notification_sends` exist. Rolls back.
 
 Stage R (admin reports) and Stage D (ops dashboard) add **no new SQL**. Skip this list unless staging already missed a 4B/5B regrant.
 - Optional: paste [`supabase/guardian_link_dedupe_verification.sql`](supabase/guardian_link_dedupe_verification.sql) after **both** cleanup files (enum `revoked` in one Run, then the dedupe UPDATE in a second Run). Lists remaining open duplicates (expect none), asserts the unique index, and has a commented unique-insert check that rolls back.
@@ -834,7 +838,35 @@ Also: six templates produce copyable text; no parent names or phones in group co
 
 Unit tests: [`lib/credits/notice-templates.test.ts`](lib/credits/notice-templates.test.ts). Admin UI: `/app/admin/notices`, plus **產生通知文案** on session and match detail.
 
-Out of scope: push / LINE Messaging API / SMS / OA send, parent inbox, scheduled send, Stage 6A import, production deploy.
+Out of scope for Stage N copy: LINE Messaging API / SMS / OA send, parent inbox, scheduled send, Stage 6A import, production deploy. Web Push send is Stage Notif (below).
+
+### Stage Notif (Web Push from Stage N)
+
+Admins send **PWA Web Push (VAPID)** from the same Stage N template → audience → preview flow. LINE groups stay **copy-and-paste**. No LINE OA / Messaging API / SMS / email. Production send is **out of scope** until Victor confirms.
+
+| Object | Behaviour |
+| --- | --- |
+| `push_subscriptions` | Parent opt-in rows (`endpoint`, `p256dh`, `auth`, `enabled`). Own-row RLS; admin may read/disable gone endpoints. |
+| `notification_sends` | Admin send log with intended / subscribed / skipped / sent / failed counts. Short title+body+url only. |
+| Parent Settings | `/app/settings` enable/disable. Service worker `/sw.js` opens the deep link on click. |
+| Admin 推播 | On `/app/admin/notices` preview: intended / subscribed / skipped, then send. All six Stage N templates. |
+| Audience | Same as Stage N: 梯隊 / 隊伍 / session `registered`. Approved guardians only; one user_id if several children. Coaches are not added from assignments. Unsubscribed users are skipped. |
+| Env | `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (server-only), `VAPID_SUBJECT`. Never commit real keys. `NEXT_PUBLIC_APP_ENV=production` blocks send. |
+
+Apply items **35–36** on **staging only**. Setup and iOS notes: [`docs/stage-notif-web-push.md`](docs/stage-notif-web-push.md). Optional SQL check: [`supabase/stage_notif_verification.sql`](supabase/stage_notif_verification.sql) (rollback).
+
+| ID | Check |
+| --- | --- |
+| TN-P1 | Audience resolves to approved guardians for 梯隊 / 隊伍 / registered-on-session. Pending/revoked links and inactive memberships are out. |
+| TN-P2 | Two children, one parent → one intended user_id. |
+| TN-P3 / TN-P4 | Preview shows intended / subscribed / skipped. Disabled or missing subscriptions are skipped. |
+| TN-P5 | Payload is short title + body + deep link. No phones, street addresses, or roster names. All six templates. |
+| TN-P6 | 410/404 disables that subscription. No automatic retries. |
+| TN-P7 | Non-admin cannot send. Assigned coaches are not added unless they are also approved guardians. Production env is blocked. |
+
+Unit tests: [`lib/push/audience.test.ts`](lib/push/audience.test.ts), [`lib/push/payload.test.ts`](lib/push/payload.test.ts). Locale keys: [`i18n/stage-notif-messages.test.ts`](i18n/stage-notif-messages.test.ts).
+
+Out of scope: production Vercel env / production send, LINE OA, SMS, email, coach-default recipients, scheduled send.
 
 ## Schema choice (Stage R)
 
@@ -925,6 +957,7 @@ i18n/                  next-intl routing, navigation, request config
 lib/age-band.ts        Season-start age band helper
 lib/assessments/       Assessment parse/validation, queries, server actions
 lib/credits/           Debit rules, packages, LINE notice copy, Stage N announcement templates, credit queries/actions
+lib/push/              Stage Notif Web Push audience, payload, VAPID, send actions
 lib/org/               Server actions, queries, generic match-URL import, Torneopal roster seed, match helpers, admin reports, ops dashboard aggregations
 lib/auth/              Phone helpers, session/role guards
 lib/supabase/          Browser, server, and proxy (cookie) clients
@@ -946,7 +979,8 @@ Auth uses the official `@supabase/ssr` cookie pattern for Next.js, composed in `
 
 - Live scores / external federation feeds
 - Ticket sales / payments beyond Stage 4B bank-transfer claims
-- LINE Messaging API auto-send, official account binding, or push notifications
+- LINE Messaging API auto-send or official account binding
+- Production Web Push send (Stage Notif is staging / local only until Victor confirms)
 - Official CTFA PDF export, auto ID-card layout, face detect/crop, or parent/coach batch download
 - Changing Stage 4B debit math or Stage 5 assessment scoring
 - Auto-creating `session_series` for Victory League shells

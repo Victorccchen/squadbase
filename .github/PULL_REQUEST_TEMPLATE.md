@@ -25,6 +25,7 @@
   - [ ] Stage L2: `/app/admin/import` is match-URL only (CSV player/coach/match import and template downloads removed; no dedicated `/app/admin/torneopal` product page)
   - [ ] Stage L3: generic competition/cup/league URL import (not Torneopal-branded); AI/structured extract + SSRF; unpublished create-only
   - [ ] Stage N: admin notice templates + audiences (generate + copy LINE-group text; no send)
+  - [ ] Stage Notif: admin Web Push from Stage N preview + parent opt-in (VAPID; staging only)
   - [ ] Stage R: admin Excel/CSV reports (attendance, registrations, credit ledger, match roster); admin-only; browser download
   - [ ] Stage D: admin ops dashboard (attendance, remittance vs consumed credits, remaining obligation); admin-only
   - [ ] Stage P: player headshots / ID photos bound to players (private Storage)
