@@ -360,3 +360,20 @@ export function matchRpcErrorKey(error: PgLikeError): MatchRpcErrorKey {
   }
   return "generic";
 }
+
+/** PostgREST when the RPC is missing from the schema cache (SQL not pasted yet). */
+export function isMissingRpcFunction(error: PgLikeError): boolean {
+  if (!error) {
+    return false;
+  }
+  if (error.code === "PGRST202" || error.code === "42883") {
+    return true;
+  }
+  const text = errorBlob(error);
+  return (
+    text.includes("could not find the function") ||
+    text.includes("schema cache") ||
+    text.includes("function public.admin_soft_delete_match") ||
+    (text.includes("does not exist") && text.includes("admin_soft_delete_match"))
+  );
+}

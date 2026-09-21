@@ -20,7 +20,7 @@
   - [ ] Stage 6P.1 training vs matches split, calendar+list, friendly matches
   - [ ] Admin multi-team create (match new/bulk + training series; per-team RPC; partial success)
   - [ ] Stage ST: 梯隊 (age squad) vs 隊伍 (competition team); PR #22 ladder-up superseded
-  - [ ] Admin list/detail soft-delete for training and matches (reuse `admin_soft_delete_session`; cancel stays separate)
+  - [ ] Admin list/detail soft-delete for training and matches (`admin_soft_delete_match` for matches; cancel stays separate)
   - [ ] Stage 6A: admin Excel/CSV import (players, coaches, matches) + match URL assist; preview then confirm; create-only
   - [ ] Stage L: admin schedule/team URL → server fetch/parse → preview mapped 隊伍 → confirm unpublished league shells (create-only; skip duplicates)
   - [ ] Stage L2: `/app/admin/import` is match-URL only (CSV player/coach/match import and template downloads removed; no dedicated `/app/admin/torneopal` product page)

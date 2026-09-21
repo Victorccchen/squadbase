@@ -266,7 +266,7 @@ Public cup/league matches reuse `training_sessions` so Stage 4B debit (`match_de
 
 Public RPCs (`list_published_matches`, `get_published_match`, `list_published_match_roster`) return title, kickoff, venue, opponent, side, status, score, team name, and lineup **display-name fields + jersey** only. No phones, emails, guardian info, credits, claims, staff notes, or birth dates. Public pages live under `/[locale]/matches` and do **not** call `ensure_own_profile`.
 
-Writes (`admin_create_match`, `admin_create_matches`, `admin_update_match`, `admin_set_match_roster`, `admin_set_match_published`, `admin_set_match_result`, `admin_cancel_match`, `admin_restore_match`) are admin-only. Opponent may be **null** (shown as TBD). Coaches may **read** publications on assigned teams (roster session page). Cancelling a match unpublishes it; it does **not** soft-delete the training session (attendance/debit path stays). Admin **soft-delete** of a match reuses `admin_soft_delete_session` (`training_sessions.deleted_at`); it is separate from cancel and hides the row from default admin/parent lists even if `public_status` was cancelled.
+Writes (`admin_create_match`, `admin_create_matches`, `admin_update_match`, `admin_set_match_roster`, `admin_set_match_published`, `admin_set_match_result`, `admin_cancel_match`, `admin_restore_match`, `admin_soft_delete_match`) are admin-only. Opponent may be **null** (shown as TBD). Coaches may **read** publications on assigned teams (roster session page). Cancelling a match unpublishes it; it does **not** soft-delete the training session (attendance/debit path stays). Admin **soft-delete** of a match calls `admin_soft_delete_match` (`training_sessions.deleted_at` + unpublish; falls back to `admin_soft_delete_session` plus a readback/update if that RPC is not on staging yet). It is separate from cancel and hides the row from default admin/parent lists even if `public_status` was cancelled.
 
 Out of scope: live scores, federation feeds, tickets, push/LINE, changing Stage 4B debit math, auto-creating `session_series` for league shells, OAuth calendar sync, production deploy.
 
@@ -391,6 +391,9 @@ Apply in order:
 36. [`supabase/migrations/20260919030000_regrant_stage_notif_privileges.sql`](supabase/migrations/20260919030000_regrant_stage_notif_privileges.sql) (**paste if parents/admins see `permission denied` on push tables** — re-grants to `authenticated`. Does not change RLS. Safe to re-run.)
 37. [`supabase/migrations/20260921010000_stage5c_ability_timeseries.sql`](supabase/migrations/20260921010000_stage5c_ability_timeseries.sql) (**Stage 5C; paste this file’s CONTENTS on staging** — `assessment_events`, `assessment_scores`, RLS, write RPCs, backfill from `player_assessments`. Does not drop Stage 5 tables. Staging only.)
 38. [`supabase/migrations/20260921020000_regrant_stage5c_privileges.sql`](supabase/migrations/20260921020000_regrant_stage5c_privileges.sql) (**paste if staff/parents see `permission denied` on `assessment_events` / `assessment_scores` or Stage 5C RPCs** — re-grants SELECT/execute to `authenticated`. Does not change RLS. Safe to re-run.)
+39. [`supabase/migrations/20260921030000_admin_soft_delete_match.sql`](supabase/migrations/20260921030000_admin_soft_delete_match.sql) (**admin match soft-delete; paste this file’s CONTENTS on staging** — `admin_soft_delete_match` plus a FOUND check on `admin_soft_delete_session`. Unpublishes; does not cancel. Roster/registrations stay. Staging only.)
+
+**Staging-only data cleanup (not a migration, never production):** to soft-delete every Futuro Victory League / `Victory League 2026/27（暫定）` shell, preview then apply [`supabase/staging_soft_delete_victory_league.sql`](supabase/staging_soft_delete_victory_league.sql) (paste CONTENTS). Verify with [`supabase/stage_match_soft_delete_verification.sql`](supabase/stage_match_soft_delete_verification.sql).
 
 Steps:
 
@@ -727,7 +730,7 @@ Use an admin account for writes. Public checks must be **signed out** (or a priv
 | T5B-7 | Signed-in non-admin cannot open `/app/admin/matches` (access denied). Parent JWT cannot call `admin_create_match`. `npm run lint`, `npm run typecheck`, and `npm test` pass. |
 | T5B-8 | Admin can create/update a match with a **blank opponent**. Public list/detail shows TBD (zh-Hant 對手未定 / en TBD / ja 対戦相手未定), never a fake club name. Existing admin edit can fill the opponent later. |
 | T5B-9 | Admin bulk-creates N unpublished cup/league shells from `/app/admin/matches/bulk` with blank opponent → N `training_sessions` + `match_publications` rows. |
-| T5B-10 | Admin **matches list** has Delete per row (that fixture / next occurrence in a title group). Match **detail** keeps Cancel/Restore and adds Soft-delete. Soft-delete uses `admin_soft_delete_session` (`deleted_at`); no new SQL. Item leaves default admin/parent lists. |
+| T5B-10 | Admin **matches list** has Delete per row (that fixture / next occurrence in a title group). Match **detail** keeps Cancel/Restore and adds Soft-delete. Soft-delete uses `admin_soft_delete_match` (`deleted_at` + unpublish; cancel stays separate). After confirm the item leaves the default admin/parent lists and the public schedule. Apply [`supabase/migrations/20260921030000_admin_soft_delete_match.sql`](supabase/migrations/20260921030000_admin_soft_delete_match.sql) on **staging only** (paste file contents). |
 
 Locale check: schedule empty states, status/side badges, admin forms, calendar add, and errors in zh-Hant / en / ja.
 

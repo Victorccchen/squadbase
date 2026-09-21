@@ -198,6 +198,7 @@ export default async function AdminMatchesPage({ searchParams }: AdminMatchesPag
                       next && !next.deleted_at ? (
                         <SessionSoftDeleteForm
                           action={softDeleteMatch.bind(null, next.id)}
+                          sessionId={next.id}
                           confirmMessage={matchesT("softDeleteMatchConfirm", {
                             title: next.title,
                           })}
