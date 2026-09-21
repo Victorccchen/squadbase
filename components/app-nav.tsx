@@ -79,6 +79,7 @@ export function AppNav({ isAdmin, canRoster }: AppNavProps) {
         <Link
           key={item.href}
           href={item.href}
+          prefetch
           aria-current={item.match(pathname) ? "page" : undefined}
           className={navClass(item.match(pathname))}
         >

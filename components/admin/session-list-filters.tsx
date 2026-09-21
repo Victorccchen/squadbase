@@ -1,6 +1,4 @@
-"use client";
-
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import { SESSION_KINDS } from "@/lib/org/session-recurrence";
 import type { SessionKind } from "@/lib/supabase/database.types";
 import {
@@ -20,16 +18,16 @@ type SessionListFiltersFormProps = {
   listWindow?: ListDateWindow;
 };
 
-export function SessionListFiltersForm({
+export async function SessionListFiltersForm({
   query,
   teams,
   kinds = SESSION_KINDS,
   showIncludeDeleted = true,
   listWindow,
 }: SessionListFiltersFormProps) {
-  const t = useTranslations("admin");
-  const sessionsT = useTranslations("sessions");
-  const org = useTranslations("org");
+  const t = await getTranslations("admin");
+  const sessionsT = await getTranslations("sessions");
+  const org = await getTranslations("org");
 
   return (
     <form

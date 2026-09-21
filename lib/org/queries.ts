@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import type {
   Coach,
@@ -416,7 +417,7 @@ export async function listActiveTeamsForLink(): Promise<LinkableTeam[]> {
   return data ?? [];
 }
 
-export async function listOwnGuardianLinks(): Promise<GuardianLinkWithPlayer[]> {
+export const listOwnGuardianLinks = cache(async (): Promise<GuardianLinkWithPlayer[]> => {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("guardian_player_links")
@@ -429,7 +430,7 @@ export async function listOwnGuardianLinks(): Promise<GuardianLinkWithPlayer[]> 
   }
 
   return (data ?? []).map((row) => mapLinkRow(row as unknown as Record<string, unknown>));
-}
+});
 
 export async function listGuardianLinksForAdmin(): Promise<GuardianLinkWithPlayer[]> {
   const supabase = await createClient();

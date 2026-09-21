@@ -283,6 +283,81 @@ export function sessionsListOrCalendarBounds(
   );
 }
 
+/**
+ * 8-week list plus one month grid. Far-away calendar months stay on the
+ * single-view fetch so toggling list↔calendar does not dump a season.
+ */
+export const MAX_INSTANT_TOGGLE_SPAN_DAYS = LIST_WINDOW_DAYS + 42;
+
+function clubDateSerial(date: string): number | null {
+  const parts = parseCalendarDateParts(date);
+  if (!parts) {
+    return null;
+  }
+  return Date.UTC(parts.year, parts.month - 1, parts.day) / 86_400_000;
+}
+
+/** Union of list window and visible month when that span stays small. */
+export function combinedSurfaceDateRange(
+  query: Pick<AdminSessionsQuery, "year" | "month" | "day">,
+  listWindow: ListDateWindow,
+): ListDateWindow | null {
+  const cal = calendarFetchDateRange(query);
+  const from = listWindow.from < cal.from ? listWindow.from : cal.from;
+  const to = listWindow.to > cal.to ? listWindow.to : cal.to;
+  const fromSerial = clubDateSerial(from);
+  const toSerial = clubDateSerial(to);
+  if (fromSerial === null || toSerial === null) {
+    return null;
+  }
+  if (toSerial - fromSerial > MAX_INSTANT_TOGGLE_SPAN_DAYS) {
+    return null;
+  }
+  return { from, to };
+}
+
+export type SessionSurfacePlan = {
+  instantToggle: boolean;
+  fetchBounds: SessionStartsBound;
+  listRange: ListDateWindow;
+  calendarRange: ListDateWindow;
+};
+
+/** One fetch can back both panes when the ranges overlap closely. */
+export function sessionSurfacePlan(
+  query: AdminSessionsQuery,
+  listWindow: ListDateWindow,
+): SessionSurfacePlan {
+  const calendarRange = calendarFetchDateRange(query);
+  const combined = combinedSurfaceDateRange(query, listWindow);
+  if (combined) {
+    return {
+      instantToggle: true,
+      fetchBounds:
+        clubRangeToTimestamptz(combined.from, combined.to) ??
+        sessionsListOrCalendarBounds(query, listWindow),
+      listRange: listWindow,
+      calendarRange,
+    };
+  }
+  return {
+    instantToggle: false,
+    fetchBounds: sessionsListOrCalendarBounds(query, listWindow),
+    listRange: listWindow,
+    calendarRange,
+  };
+}
+
+export function sessionsInDateWindow<T extends { starts_at: string }>(
+  sessions: readonly T[],
+  window: ListDateWindow,
+): T[] {
+  return sessions.filter((session) => {
+    const day = clubCalendarDate(session.starts_at);
+    return day >= window.from && day <= window.to;
+  });
+}
+
 export function asParamList(value: string | string[] | undefined): string[] {
   if (value == null) {
     return [];
