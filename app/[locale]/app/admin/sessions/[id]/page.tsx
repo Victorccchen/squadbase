@@ -290,6 +290,7 @@ export default async function AdminSessionDetailPage({ params }: SessionDetailPa
           <div className="flex flex-col gap-3">
             <SessionSoftDeleteForm
               action={softDeleteSession.bind(null, session.id)}
+              sessionId={session.id}
               confirmMessage={t("softDeleteSessionConfirm", { title: session.title })}
               submitLabel={t("softDeleteSession")}
             />

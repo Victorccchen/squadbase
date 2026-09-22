@@ -1467,6 +1467,10 @@ export type Database = {
         Args: { p_session_id: string };
         Returns: string;
       };
+      admin_soft_delete_match: {
+        Args: { p_session_id: string };
+        Returns: string;
+      };
       admin_soft_delete_session_series: {
         Args: { p_series_id: string };
         Returns: string;

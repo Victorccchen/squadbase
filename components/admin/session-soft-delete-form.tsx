@@ -12,6 +12,7 @@ type SessionSoftDeleteFormProps = {
   confirmMessage: string;
   submitLabel: string;
   redirectTo?: "detail" | "list";
+  sessionId?: string;
 };
 
 export function SessionSoftDeleteForm({
@@ -19,28 +20,31 @@ export function SessionSoftDeleteForm({
   confirmMessage,
   submitLabel,
   redirectTo = "detail",
+  sessionId,
 }: SessionSoftDeleteFormProps) {
   const org = useTranslations("org");
   const [state, formAction, pending] = useActionState(action, INITIAL_ORG_ACTION_STATE);
 
   return (
-    <form
-      action={formAction}
-      className="flex flex-col gap-2"
-      onSubmit={(event) => {
-        if (!window.confirm(confirmMessage)) {
-          event.preventDefault();
-        }
-      }}
-    >
+    <form action={formAction} className="flex flex-col gap-2">
       <LocaleHiddenField />
       <input type="hidden" name="next" value={redirectTo === "list" ? "list" : "detail"} />
+      {sessionId ? <input type="hidden" name="session_id" value={sessionId} /> : null}
       {state.errorKey ? (
         <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800 dark:bg-red-950 dark:text-red-100">
           {org(`errors.${state.errorKey}`)}
         </p>
       ) : null}
-      <button type="submit" disabled={pending} className={dangerButtonClassName}>
+      <button
+        type="submit"
+        disabled={pending}
+        className={dangerButtonClassName}
+        onClick={(event) => {
+          if (!window.confirm(confirmMessage)) {
+            event.preventDefault();
+          }
+        }}
+      >
         {pending ? org("saving") : submitLabel}
       </button>
     </form>

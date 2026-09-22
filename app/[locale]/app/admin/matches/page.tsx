@@ -33,6 +33,7 @@ import {
   sessionSurfacePlan,
   weekRangeForDate,
 } from "@/lib/org/session-calendar";
+import { isSoftDeleteMatchListFlash } from "@/lib/org/soft-delete";
 import { primaryButtonClassName, secondaryButtonClassName } from "@/lib/ui";
 
 type AdminMatchesPageProps = {
@@ -44,6 +45,7 @@ type AdminMatchesPageProps = {
     team?: string | string[];
     from?: string | string[];
     to?: string | string[];
+    deleted?: string | string[];
   }>;
 };
 
@@ -103,6 +105,7 @@ export default async function AdminMatchesPage({ searchParams }: AdminMatchesPag
     query,
   );
   const hasFilters = query.kinds.length > 0 || query.teamIds.length > 0;
+  const deletedFlash = isSoftDeleteMatchListFlash(params.deleted);
 
   return (
     <>
@@ -121,6 +124,14 @@ export default async function AdminMatchesPage({ searchParams }: AdminMatchesPag
             </span>
           }
         />
+        {deletedFlash ? (
+          <p
+            role="status"
+            className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-950 dark:bg-emerald-950 dark:text-emerald-100"
+          >
+            {matchesT("softDeleteMatchDone")}
+          </p>
+        ) : null}
         <SessionSurface
           view={query.view}
           calendarHref={calendarHref}
@@ -209,6 +220,7 @@ export default async function AdminMatchesPage({ searchParams }: AdminMatchesPag
                           next && !next.deleted_at ? (
                             <SessionSoftDeleteForm
                               action={softDeleteMatch.bind(null, next.id)}
+                              sessionId={next.id}
                               confirmMessage={matchesT("softDeleteMatchConfirm", {
                                 title: next.title,
                               })}

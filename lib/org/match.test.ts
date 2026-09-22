@@ -16,6 +16,7 @@ import {
   planBulkMatchCreates,
   publicOpponentLabel,
   publicPayloadHasForbiddenKeys,
+  isMissingRpcFunction,
 } from "./match.ts";
 
 describe("parseMatchOpponent / publicOpponentLabel", () => {
@@ -273,5 +274,18 @@ describe("matchRpcErrorKey", () => {
       "matchRosterPlayerInvalid",
     );
     assert.equal(matchRpcErrorKey({ message: "not authorized" }), "forbidden");
+    assert.equal(matchRpcErrorKey({ message: "match not found" }), "matchNotFound");
+    assert.equal(matchRpcErrorKey({ message: "session not found" }), "sessionNotFound");
+  });
+
+  it("detects a missing admin_soft_delete_match RPC so the client can fall back", () => {
+    assert.equal(
+      isMissingRpcFunction({
+        code: "PGRST202",
+        message: "Could not find the function public.admin_soft_delete_match(p_session_id) in the schema cache",
+      }),
+      true,
+    );
+    assert.equal(isMissingRpcFunction({ message: "not authorized" }), false);
   });
 });

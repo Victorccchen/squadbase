@@ -26,6 +26,7 @@ import {
 import {
   DEFAULT_MATCH_DURATION_MINUTES,
   MAX_MATCH_RESULT_NOTE,
+  isMissingRpcFunction,
   matchRpcErrorKey,
   parseMatchKind,
   parseMatchOpponent,
@@ -35,6 +36,7 @@ import {
 } from "@/lib/org/match";
 import { type OrgActionState, type OrgErrorKey, type TeamCreateRowResult } from "@/lib/org/errors";
 import { decideMultiTeamCreate, parseSelectedTeamIds } from "@/lib/org/multi-team-create";
+import { planSoftDeleteMatch } from "@/lib/org/soft-delete";
 import { isTeamKindAllowedForSessionKind } from "@/lib/org/squad-team";
 
 function fail(errorKey: OrgErrorKey): OrgActionState {
@@ -527,20 +529,79 @@ export async function softDeleteMatch(
     return fail(actor.errorKey);
   }
 
-  const { error } = await actor.supabase.rpc("admin_soft_delete_session", {
-    p_session_id: sessionId,
+  const planned = planSoftDeleteMatch({
+    configured: true,
+    roles: ["admin"],
+    sessionId: parseUuid(sessionId) ?? readString(formData, "session_id"),
   });
+  if (!planned.ok) {
+    return fail(planned.errorKey);
+  }
 
-  if (error) {
-    console.error("softDeleteMatch", error.message);
-    return fail(matchRpcErrorKey(error));
+  const rpc = await actor.supabase.rpc("admin_soft_delete_match", {
+    p_session_id: planned.sessionId,
+  });
+  if (rpc.error && isMissingRpcFunction(rpc.error)) {
+    const fallback = await actor.supabase.rpc("admin_soft_delete_session", {
+      p_session_id: planned.sessionId,
+    });
+    if (fallback.error) {
+      console.error("softDeleteMatch fallback", fallback.error.message);
+      return fail(matchRpcErrorKey(fallback.error));
+    }
+  } else if (rpc.error) {
+    console.error("softDeleteMatch", rpc.error.message);
+    return fail(matchRpcErrorKey(rpc.error));
+  }
+
+  const { data: after, error: readError } = await actor.supabase
+    .from("training_sessions")
+    .select("id, deleted_at")
+    .eq("id", planned.sessionId)
+    .maybeSingle();
+  if (readError) {
+    console.error("softDeleteMatch readback", readError.message);
+    return fail("generic");
+  }
+  if (!after) {
+    return fail("matchNotFound");
+  }
+  if (!after.deleted_at) {
+    const { data: updated, error: updateError } = await actor.supabase
+      .from("training_sessions")
+      .update({
+        deleted_at: new Date().toISOString(),
+        updated_by: actor.user.id,
+      })
+      .eq("id", planned.sessionId)
+      .select("id, deleted_at")
+      .maybeSingle();
+    if (updateError) {
+      console.error("softDeleteMatch update", updateError.message);
+      return fail(matchRpcErrorKey(updateError));
+    }
+    if (!updated?.deleted_at) {
+      console.error("softDeleteMatch update wrote 0 rows", planned.sessionId);
+      return fail("generic");
+    }
+  }
+
+  const { error: unpublishError } = await actor.supabase
+    .from("match_publications")
+    .update({
+      is_published: false,
+      updated_by: actor.user.id,
+    })
+    .eq("session_id", planned.sessionId);
+  if (unpublishError) {
+    console.error("softDeleteMatch unpublish", unpublishError.message);
   }
 
   revalidateMatches();
-  if (readString(formData, "next") === "list") {
-    return ok();
-  }
-  redirectAdmin(`/app/admin/matches/${sessionId}`, formData);
+  redirect({
+    href: { pathname: planned.href, query: { deleted: "1" } },
+    locale: localeFromForm(formData),
+  });
   return ok();
 }
 

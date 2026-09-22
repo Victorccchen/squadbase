@@ -467,9 +467,10 @@ export async function softDeleteSession(
 
   revalidateSessions();
   if (readString(formData, "next") === "list") {
-    return ok();
+    redirectAdmin("/app/admin/sessions", formData);
+  } else {
+    redirectAdmin(`/app/admin/sessions/${sessionId}`, formData);
   }
-  redirectAdmin(`/app/admin/sessions/${sessionId}`, formData);
   return ok();
 }
 
@@ -495,9 +496,10 @@ export async function softDeleteSessionSeries(
 
   revalidateSessions();
   if (readString(formData, "next") === "list") {
-    return ok();
+    redirectAdmin("/app/admin/sessions", formData);
+  } else {
+    redirectAdmin(`/app/admin/sessions/${sessionId}`, formData);
   }
-  redirectAdmin(`/app/admin/sessions/${sessionId}`, formData);
   return ok();
 }
 

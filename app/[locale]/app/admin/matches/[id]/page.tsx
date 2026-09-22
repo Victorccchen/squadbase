@@ -152,8 +152,10 @@ export default async function AdminMatchDetailPage({ params }: AdminMatchDetailP
             )}
             <SessionSoftDeleteForm
               action={softDeleteMatch.bind(null, match.id)}
+              sessionId={match.id}
               confirmMessage={matchesT("softDeleteMatchConfirm", { title: match.title })}
               submitLabel={matchesT("softDeleteMatch")}
+              redirectTo="list"
             />
           </div>
         )}

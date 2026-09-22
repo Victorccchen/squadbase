@@ -911,6 +911,7 @@
     "softDeleteMatchConfirm": "Delete “{title}”? It leaves the default admin and parent lists and the public schedule. This is not the same as Cancel. Roster and history are kept.",
     "matchDeleted": "Deleted",
     "matchDeletedBanner": "This match is soft-deleted. It is hidden from default admin and parent lists and from the public schedule, even if it was cancelled. Roster and history stay on the session tools page.",
+    "softDeleteMatchDone": "That match was deleted. It is hidden from this list, parent default lists, and the public schedule. This is not the same as Cancel. Roster and history are kept.",
     "editTitle": "Match details",
     "resultTitle": "Result",
     "rosterTitle": "Published lineup",

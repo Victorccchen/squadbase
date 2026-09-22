@@ -193,6 +193,7 @@ export default async function AdminSessionsPage({ searchParams }: AdminSessionsP
                             next && !next.deleted_at ? (
                               <SessionSoftDeleteForm
                                 action={softDeleteSession.bind(null, next.id)}
+                                sessionId={next.id}
                                 confirmMessage={t("softDeleteOccurrenceConfirm", {
                                   title: next.title,
                                 })}
@@ -268,6 +269,7 @@ export default async function AdminSessionsPage({ searchParams }: AdminSessionsP
                             />
                             <SessionSoftDeleteForm
                               action={softDeleteSession.bind(null, session.id)}
+                              sessionId={session.id}
                               confirmMessage={t("softDeleteSessionConfirm", { title: session.title })}
                               submitLabel={t("softDeleteSession")}
                               redirectTo="list"
