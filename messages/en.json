@@ -1305,7 +1305,7 @@
     "crestAlt": "Club crest",
     "nav": {
       "about": "About",
-      "teams": "Teams",
+      "teams": "Pathway",
       "matches": "Fixtures",
       "programs": "Programs",
       "news": "News",
@@ -1349,36 +1349,99 @@
       "v3b": "Respect for teammates, opponents, referees and parents, learning to communicate and take responsibility."
     },
     "teams": {
-      "eyebrow": "Age groups",
-      "title": "Grouped by age, growing step by step",
-      "lead": "Each squad has dedicated coaches and sessions matched to children's development. Final grouping follows birth year and club rules.",
-      "sampleTime": "Sample times",
-      "age": "Age",
-      "train": "Training",
-      "focus": "Focus",
-      "photo": "Squad photo",
-      "photoHint": "1200×675 · to be supplied",
-      "cta": "Book a trial",
-      "u8": {
-        "code": "U8",
-        "name": "Foundation",
-        "age": "Approx. 6–7",
-        "train": "Sat 09:00–10:30",
-        "focus": "Ball feel, coordination, play-based drills"
+      "eyebrow": "Development",
+      "title": "Development pathway",
+      "lead": "A player's growth has to be built one step at a time in each age group: at that age, they need to gain what that age asks for.",
+      "foundation": "Build the foundation of football by U-14.",
+      "mottoLabel": "At every stage",
+      "motto": "Do not be afraid of failing. Try as much as you can. Failing is a good thing.",
+      "openNow": "The club's teams today are U8, U10 and U12. From U13 on, this is the pathway, not an open team. Training times and fees are not listed.",
+      "learning": "What they learn",
+      "practice": "Practice examples",
+      "show": "Show this stage",
+      "chartTitle": "What accumulates with age",
+      "chartLead": "The club's chart is a smooth blue gradient: darker means that age leans on that quality more. This table simplifies it into four levels. A step near a fade is a reading aid, not a sharp cutoff in the original.",
+      "chartSwipe": "Swipe sideways to see U-6 through U-18",
+      "chartAges": "Age",
+      "u14mark": "Base",
+      "levels": {
+        "none": "—",
+        "light": "Low",
+        "mid": "Mid",
+        "strong": "High"
       },
-      "u10": {
-        "code": "U10",
-        "name": "Development",
-        "age": "Approx. 8–9",
-        "train": "Wed 18:30–20:00 · Sat 10:30–12:00",
-        "focus": "Core technique, passing, small-sided games"
+      "levelName": {
+        "none": "Barely covered",
+        "light": "First contact",
+        "mid": "Building",
+        "strong": "Main focus"
       },
-      "u12": {
-        "code": "U12",
-        "name": "Advanced",
-        "age": "Approx. 10–11",
-        "train": "Tue · Thu 18:30–20:00",
-        "focus": "Team tactics, positions, competitive matches"
+      "rows": {
+        "touch": "Feel for the ball",
+        "moving": "Technique on the move",
+        "individual": "Individual tactics",
+        "group": "Group tactics",
+        "coordination": "Coordination",
+        "endurance": "Endurance",
+        "strength": "Power (speed and strength)",
+        "mindset": "Mindset and independence"
+      },
+      "stages": {
+        "u8": {
+          "age": "U-8",
+          "name": "Children, early golden age",
+          "theme": "Introduce football, and the joy of playing it",
+          "badge": "Open now · U8",
+          "body": "Teach the happiness of touching the ball and the joy of moving. Children this age will not do training that does not interest them. What matters is not taking away their autonomy.",
+          "l1": "Dribbling",
+          "l2": "Ball control",
+          "l3": "Kicking: dribble, control, and kick toward a place the child chooses",
+          "practiceBody": "Hide-and-seek with a ball, repetition, and small-sided games such as 3v3. What matters is touching the ball as much as possible."
+        },
+        "golden": {
+          "age": "U-10 to U-12",
+          "name": "The golden age",
+          "theme": "Plant solid basic actions",
+          "badge": "Open now · U10 and U12",
+          "body": "The nervous system is largely developed, and the body is settling. A sense of self appears, and the wish to win grows strong.",
+          "l1": "Dribbling",
+          "l2": "Ball control",
+          "l3": "Kicking: dribble, control, and kick toward a place the player chooses",
+          "l4": "Choose for the moment: watch teammates, opponents, and space",
+          "l5": "A long pass with an intention: yes. A long pass with no intention: no",
+          "l6": "Juggling, so the ball can be handled more freely. At least 50 with the right foot, 50 with the left, 100 in total",
+          "l7": "Compete: if the ball is lost, counter-press at once, and do not give in to the opponent in front of you",
+          "practiceBody": "Competitive repetition, 2v1 for reading the situation, and small-sided games such as 5v5. What matters is touching the ball as much as possible."
+        },
+        "later": {
+          "age": "U-13 to U-15",
+          "name": "Later golden age",
+          "theme": "Raise individual ability, and coach both the player and the team",
+          "badge": "Pathway · no team yet",
+          "body": "Muscle and bone grow quickly, and balance changes. Growth pain can stop a player from training, alongside puberty and a rebellious phase.",
+          "l1": "Basic technique: dribbling, control, and passing",
+          "l2": "Duels: compete as a player and as a team, and use the body against an opponent",
+          "l3": "Individual tactics: long passes, shooting, and how to defend",
+          "l4": "Group tactics: two to five players linking in attack and in defence",
+          "l5": "Communication: connect attack and defence by talking",
+          "l6": "Resilience: keep a steady mind in any situation",
+          "practiceBody": "Combination play, 1v1 work, and opposed games."
+        },
+        "senior": {
+          "age": "U-16 to U-18",
+          "name": "Preparing for adult football",
+          "theme": "The years of competing inside a team, and a preparation for standing on their own",
+          "badge": "Pathway · no team yet",
+          "body": "Mind and body are coming into balance. Character is refined with football as the base, so the team can pull together.",
+          "l1": "Basic technique: dribbling, control, and passing",
+          "l2": "Duels: compete as a player and as a team, and use the body against an opponent",
+          "l3": "Individual tactics: long passes, shooting, and how to defend",
+          "l4": "Group tactics: two to five players linking in attack and in defence",
+          "l5": "Communication: connect attack and defence by talking",
+          "l6": "Resilience: keep a steady mind in any situation",
+          "l7": "Understand football for the team's win (team tactics)",
+          "practiceBody": "This stage's sheet does not list a separate set of practice examples."
+        }
       }
     },
     "matches": {
