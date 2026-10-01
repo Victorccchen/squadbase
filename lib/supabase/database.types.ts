@@ -237,6 +237,10 @@ export type PaymentClaim = {
   package_id: string;
   last5: string;
   status: PaymentClaimStatus;
+  /** Package price (TWD) when the claim was submitted. Use this, not the live package price. */
+  price_twd_snapshot: number;
+  /** Package credits when the claim was submitted. */
+  credits_snapshot: number;
   admin_note: string | null;
   reviewed_by: string | null;
   reviewed_at: string | null;
@@ -887,6 +891,8 @@ export type Database = {
           package_id: string;
           last5: string;
           status?: PaymentClaimStatus;
+          price_twd_snapshot: number;
+          credits_snapshot: number;
           admin_note?: string | null;
           reviewed_by?: string | null;
           reviewed_at?: string | null;

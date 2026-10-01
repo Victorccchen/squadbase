@@ -32,6 +32,29 @@ jobs:
       - name: Unit tests
         run: npm test
 
-# Quality gate only. This workflow must not deploy.
+  database:
+    name: Database migrations and policy checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.119.0
+
+      # Applies every file in supabase/migrations to a fresh local database.
+      # Only the services the migrations touch (Postgres, Auth, Storage) run.
+      - name: Start local Supabase and apply migrations
+        run: >
+          supabase start
+          -x realtime,imgproxy,mailpit,studio,edge-runtime,logflare,vector,supavisor,postgres-meta,kong,postgrest
+
+      - name: Verification scripts and RLS matrix
+        run: scripts/db-verify.sh "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+
+# Quality gate only. This workflow must not deploy. The database job uses a
+# throwaway local Supabase; it never connects to staging or production.
 # After Victor connects GitHub → Vercel, merges to main auto-deploy the
 # squadbase-staging project (see docs/deploy-staging.md). Production stays manual.

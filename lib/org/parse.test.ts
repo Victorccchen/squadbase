@@ -8,6 +8,7 @@ import {
   isOpenSessionRegistrationViolation,
   isPlayersCjkNameCheckViolation,
   sessionRpcErrorKey,
+  creditRpcErrorKey,
   canAdminRevokeLink,
   canParentCancelLink,
   parseBirthDate,
@@ -616,6 +617,26 @@ describe("isPlayersCjkNameCheckViolation", () => {
           'new row for relation "players" violates check constraint "players_name_en_given_not_blank"',
       }),
       false,
+    );
+  });
+});
+
+describe("creditRpcErrorKey package terms", () => {
+  it("maps a frozen package to packageHasClaims", () => {
+    assert.equal(creditRpcErrorKey({ message: "package has claims" }), "packageHasClaims");
+  });
+
+  it("maps a second active package to activePackageExists", () => {
+    assert.equal(
+      creditRpcErrorKey({ message: "active package already exists" }),
+      "activePackageExists",
+    );
+  });
+
+  it("still maps a missing package to packageNotFound", () => {
+    assert.equal(
+      creditRpcErrorKey({ message: "package not found or inactive" }),
+      "packageNotFound",
     );
   });
 });

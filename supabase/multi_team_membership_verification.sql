@@ -1,100 +1,76 @@
--- Multi-team membership verification (staging SQL Editor only).
--- Do not run against production. Synthetic names, not real PII.
--- Run AFTER applying 20260909100000_multi_team_membership_rules.sql.
--- The block rolls back so staging stays empty unless you change ROLLBACK to COMMIT.
+-- 梯隊 (age squad) membership rules, as enforced by enforce_team_membership_rules
+-- (latest in 20260911000000_player_membership_jersey_self_update.sql).
+-- Self-contained; rolls back. Staging SQL Editor or CI (scripts/db-verify.sh).
+-- Do not run against production. Synthetic names only.
+--
+-- This file used to test the PR #22 "two active teams, one step up" ladder from
+-- 20260909100000. Stage ST (20260910000000) replaced those rules; the 隊伍
+-- (competition team) rules are covered in stage_st_verification.sql. Phase 1
+-- PR-05 adds one cross 梯隊 per player; TMT-1 then applies to the primary 梯隊
+-- only, so update this file in that PR.
 
 begin;
-
-delete from public.team_memberships
-where player_id in (
-  select id from public.players
-  where name_en_given = 'TMT' and name_en_family = 'Verify'
-);
-delete from public.players
-where name_en_given = 'TMT' and name_en_family = 'Verify';
-delete from public.teams
-where name in (
-  'TMT Verify U6',
-  'TMT Verify U8',
-  'TMT Verify U10',
-  'TMT Verify U12'
-);
 
 do $$
 declare
   v_today date := public.club_today();
-  v_season date := public.season_start_on(v_today);
-  v_birth_u8 date := (v_season - interval '7 years')::date;
+  v_birth date;
+  v_band public.age_band;
+  v_squad uuid;
+  v_other_squad uuid;
   v_player uuid;
-  v_u6 uuid;
-  v_u8 uuid;
-  v_u10 uuid;
-  v_u12 uuid;
+  v_membership uuid;
 begin
-  insert into public.teams (name, age_band, status)
-  values
-    ('TMT Verify U6', 'U6', 'active'),
-    ('TMT Verify U8', 'U8', 'active'),
-    ('TMT Verify U10', 'U10', 'active'),
-    ('TMT Verify U12', 'U12', 'active');
+  select d::date into v_birth
+  from generate_series(v_today - interval '9 years', v_today - interval '5 years', interval '1 month') as g(d)
+  where public.age_squad_band_from_birth_date(d::date, v_today) = 'U8'
+  limit 1;
+  v_band := public.age_squad_band_from_birth_date(v_birth, v_today);
 
-  select id into v_u6 from public.teams where name = 'TMT Verify U6';
-  select id into v_u8 from public.teams where name = 'TMT Verify U8';
-  select id into v_u10 from public.teams where name = 'TMT Verify U10';
-  select id into v_u12 from public.teams where name = 'TMT Verify U12';
-
-  if public.computed_age_band_from_birth_date(v_birth_u8, v_today) is distinct from 'U8' then
-    raise exception 'TMT helper failed: expected natural U8 for % on %', v_birth_u8, v_today;
+  select id into v_squad from public.teams where kind = 'age_squad' and age_band = v_band;
+  select id into v_other_squad from public.teams where kind = 'age_squad' and age_band = 'U10';
+  if v_squad is null or v_other_squad is null then
+    raise exception 'fixture: seeded 梯隊 U8 and U10 are required';
   end if;
-  if public.next_higher_computed_age_band('U8') is distinct from 'U10' then
-    raise exception 'TMT-4 failed: next higher from U8 must be U10 (no U9 in ladder)';
-  end if;
+  update public.teams set status = 'active' where id in (v_squad, v_other_squad);
 
-  insert into public.players (
-    name_zh, name_en_given, name_en_family, name_ja, birth_date, status
-  )
-  values ('驗證多隊', 'TMT', 'Verify', null, v_birth_u8, 'active')
-  returning id into v_player;
+  insert into public.players (name_zh, name_en_given, name_en_family, birth_date)
+  values ('多隊驗證', 'TMT', 'Verify', v_birth) returning id into v_player;
 
-  -- TMT-2: same band allowed.
-  insert into public.team_memberships (player_id, team_id, jersey_number, status)
-  values (v_player, v_u8, 8, 'active');
-
-  -- TMT-2 / TMT-3: one step up (U10) allowed as the second active row.
-  insert into public.team_memberships (player_id, team_id, jersey_number, status)
-  values (v_player, v_u10, 10, 'active');
-
-  -- TMT-1 / TMT-3: a third active membership is rejected.
+  -- TMT-1: a 梯隊 whose band does not match the birth date is rejected.
   begin
-    insert into public.team_memberships (player_id, team_id, jersey_number, status)
-    values (v_player, v_u12, 12, 'active');
-    raise exception 'TMT-1 failed: third active membership was accepted';
+    insert into public.team_memberships (player_id, team_id, jersey_number) values (v_player, v_other_squad, 31);
+    raise exception 'TMT-1 failed: birth-U8 player accepted on 梯隊 U10';
   exception
     when others then
-      if sqlerrm not like '%player already has 2 active memberships%' then
+      if sqlerrm not like '%age squad band not allowed for this player%' then
         raise;
       end if;
-      raise notice 'TMT-1 / TMT-3 passed: third active membership rejected';
+      raise notice 'TMT-1 passed: wrong-band 梯隊 rejected';
   end;
 
-  -- TMT-2: down-band (U6) rejected even after ending one slot.
-  update public.team_memberships
-  set status = 'inactive'
-  where player_id = v_player
-    and team_id = v_u10;
+  -- The matching 梯隊 is accepted.
+  insert into public.team_memberships (player_id, team_id, jersey_number)
+  values (v_player, v_squad, 31) returning id into v_membership;
 
+  -- TMT-2: at most one active 梯隊. The band must match the birth date (TMT-1)
+  -- and there is only one 梯隊 per band (teams_one_age_squad_per_band), so a
+  -- second matching 梯隊 cannot exist. Check that guarantee directly.
   begin
-    insert into public.team_memberships (player_id, team_id, jersey_number, status)
-    values (v_player, v_u6, 6, 'active');
-    raise exception 'TMT-2 failed: U8 natural on U6 team was accepted';
+    insert into public.teams (name, age_band, kind) values ('TMT second U8 梯隊', v_band, 'age_squad');
+    raise exception 'TMT-2 failed: a second 梯隊 for the same band was accepted';
   exception
-    when others then
-      if sqlerrm not like '%team age band not allowed for this player%' then
-        raise;
-      end if;
-      raise notice 'TMT-2 passed: down-band U6 rejected; U8+U10 play-up allowed';
+    when unique_violation then
+      raise notice 'TMT-2 passed: one 梯隊 per band';
   end;
-end
+
+  -- TMT-3: editing the jersey on the existing 梯隊 row is allowed (self-update fix).
+  update public.team_memberships set jersey_number = 33 where id = v_membership;
+  if (select jersey_number from public.team_memberships where id = v_membership) is distinct from 33 then
+    raise exception 'TMT-3 failed: jersey edit on the current 梯隊 did not apply';
+  end if;
+  raise notice 'TMT-3 passed: jersey edit on the current 梯隊';
+end;
 $$;
 
 rollback;

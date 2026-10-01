@@ -73,13 +73,22 @@ Routes:
 
 ## Checks (CI)
 
-Pull request CI runs **lint + typecheck + unit tests** (age-band, form parse, assessment scores, and match publish helpers). It does **not** deploy.
+Pull request CI runs two jobs. Neither deploys.
+
+| Job | What it does |
+| --- | --- |
+| Lint and typecheck | `npm run lint`, `npm run typecheck`, `npm test` (every `lib/**/*.test.ts` and `i18n/**/*.test.ts`; no list to maintain) |
+| Database migrations and policy checks | Starts a throwaway local Supabase, applies every file in `supabase/migrations/`, then runs [`scripts/db-verify.sh`](scripts/db-verify.sh): each `supabase/*_verification.sql` (self-contained, rolls back) including the RLS matrix [`supabase/rls_matrix_verification.sql`](supabase/rls_matrix_verification.sql) |
 
 ```bash
 npm run lint
 npm run typecheck
 npm test
+# With a local Supabase running (supabase start):
+scripts/db-verify.sh "postgresql://postgres:postgres@127.0.0.1:54322/postgres"
 ```
+
+When a migration changes who can read what on purpose, update the expected row in `supabase/rls_matrix_verification.sql` in the same PR.
 
 Staging Continuous Deployment (after Victor connects GitHub in the Vercel dashboard) is documented in [`docs/deploy-staging.md`](docs/deploy-staging.md): merge to `main` → auto-deploy the **`squadbase-staging`** project only. Production stays **manual**. Do not put Vercel tokens, service role keys, or real bank details in git or Actions.
 
@@ -351,7 +360,25 @@ A successful search may show names / DOB / team / jersey so the parent can confi
 
 Do **not** run this SQL on production.
 
-Apply in order:
+### From Phase 1: GitHub Actions + Supabase CLI (preferred)
+
+Migrations are applied by the **Database (staging)** workflow ([`.github/workflows/db-staging.yml`](.github/workflows/db-staging.yml)). It is hard-coded to the staging project and is manual (Actions → Database (staging) → Run workflow).
+
+One-time setup:
+
+1. Add repository secrets `SUPABASE_ACCESS_TOKEN` (supabase.com → Account → Access Tokens) and `SUPABASE_DB_PASSWORD` (staging database password).
+2. Run with **mode = dry-run**. Because migrations 1–39 below were pasted by hand, the CLI has no history yet and lists every migration as pending. That is expected; do not push yet.
+3. In the staging **SQL Editor**, paste and run [`supabase/baseline_objects_verification.sql`](supabase/baseline_objects_verification.sql) (read-only). It must end with “all baseline objects present”; if it lists anything missing, apply that migration by hand first. Then run the workflow with **mode = repair-baseline** once. It marks every migration up to `20260921030000` (items 1–39) as already applied, without running them.
+4. Run **dry-run** again. It should list only migrations added since Phase 1 (starting with `20261001100000_payment_claim_price_snapshot.sql`). If a Phase 1 migration was already pasted by hand, stop and ask before pushing.
+5. Run with **mode = push**.
+
+After that, each new migration is: merge the PR → run dry-run → run push. Once this has worked a few times, the workflow can be switched to run on merge (instructions in the workflow file).
+
+`supabase/config.toml` uses Postgres **17** for local and CI runs. If the staging project runs a different major version (Dashboard → Project Settings → Infrastructure), set `[db] major_version` to match.
+
+### Legacy: SQL Editor (items 1–39, history)
+
+Before Phase 1, each file was pasted into the SQL Editor in this order:
 
 1. [`supabase/migrations/20260902100000_stage1_profiles_and_roles.sql`](supabase/migrations/20260902100000_stage1_profiles_and_roles.sql) (skip if Stage 1 is already on staging)
 2. [`supabase/migrations/20260902120000_stage2_org_master.sql`](supabase/migrations/20260902120000_stage2_org_master.sql) (skip if Stage 2 is already on staging)
@@ -392,6 +419,7 @@ Apply in order:
 37. [`supabase/migrations/20260921010000_stage5c_ability_timeseries.sql`](supabase/migrations/20260921010000_stage5c_ability_timeseries.sql) (**Stage 5C; paste this file’s CONTENTS on staging** — `assessment_events`, `assessment_scores`, RLS, write RPCs, backfill from `player_assessments`. Does not drop Stage 5 tables. Staging only.)
 38. [`supabase/migrations/20260921020000_regrant_stage5c_privileges.sql`](supabase/migrations/20260921020000_regrant_stage5c_privileges.sql) (**paste if staff/parents see `permission denied` on `assessment_events` / `assessment_scores` or Stage 5C RPCs** — re-grants SELECT/execute to `authenticated`. Does not change RLS. Safe to re-run.)
 39. [`supabase/migrations/20260921030000_admin_soft_delete_match.sql`](supabase/migrations/20260921030000_admin_soft_delete_match.sql) (**admin match soft-delete; paste this file’s CONTENTS on staging** — `admin_soft_delete_match` plus a FOUND check on `admin_soft_delete_session`. Unpublishes; does not cancel. Roster/registrations stay. Staging only.)
+40. [`supabase/migrations/20261001100000_payment_claim_price_snapshot.sql`](supabase/migrations/20261001100000_payment_claim_price_snapshot.sql) (**Phase 1 PR-01; apply with the Database (staging) workflow above, not by pasting** — `payment_claims.price_twd_snapshot` / `credits_snapshot` (backfilled from the ledger for approved claims), package terms frozen once claimed, one active package per band + credits. Then run [`supabase/payment_claim_price_snapshot_verification.sql`](supabase/payment_claim_price_snapshot_verification.sql); it rolls back. Staging only.)
 
 **Staging-only data cleanup (not a migration, never production):** to soft-delete every Futuro Victory League / `Victory League 2026/27（暫定）` shell, preview then apply [`supabase/staging_soft_delete_victory_league.sql`](supabase/staging_soft_delete_victory_league.sql) (paste CONTENTS). Verify with [`supabase/stage_match_soft_delete_verification.sql`](supabase/stage_match_soft_delete_verification.sql).
 

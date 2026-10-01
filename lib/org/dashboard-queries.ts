@@ -134,16 +134,16 @@ function mapClaimRow(raw: unknown): (DashboardClaimRow & { id: string }) | null 
     reviewed_at: string | null;
     created_at: string;
     player_id: string;
-    session_packages: { price_twd: number } | { price_twd: number }[] | null;
+    price_twd_snapshot: number | null;
   };
-  const pkg = one(row.session_packages);
-  if (!pkg) {
+  if (row.price_twd_snapshot === null || row.price_twd_snapshot === undefined) {
     return null;
   }
   return {
     id: row.id,
     status: row.status,
-    amountTwd: Number(pkg.price_twd),
+    // Snapshot taken when the parent submitted; editing a package never rewrites history.
+    amountTwd: Number(row.price_twd_snapshot),
     reviewedAt: row.reviewed_at,
     createdAt: row.created_at,
     playerId: row.player_id,
@@ -155,7 +155,7 @@ async function loadApprovedClaims(
   bounds: { from: string; toExclusive: string },
 ): Promise<QueryResult<DashboardClaimRow>> {
   const select =
-    "id, status, reviewed_at, created_at, player_id, session_packages(price_twd)";
+    "id, status, reviewed_at, created_at, player_id, price_twd_snapshot";
   const [reviewed, legacy] = await Promise.all([
     fetchPages((from, to) =>
       pageRange(

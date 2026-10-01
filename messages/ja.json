@@ -581,7 +581,9 @@
       "pushProductionBlocked": "本番環境でのプッシュ送信はまだ有効ではありません。",
       "pushPermissionDenied": "ブラウザが通知を拒否しました。",
       "pushSubscribeFailed": "プッシュを有効にできませんでした。ホーム画面に追加してから再試行してください。",
-      "pushUnsupported": "このブラウザは Web Push に対応していません。"
+      "pushUnsupported": "このブラウザは Web Push に対応していません。",
+      "packageHasClaims": "このパックには申請があるため、価格や回数は変更できません。無効にしてから新しいパックを追加してください。",
+      "activePackageExists": "同じ年齢区分・同じ回数の有効なパックがすでにあります。先に古いパックを無効にしてください。"
     }
   },
   "children": {
@@ -867,7 +869,8 @@
     "leaveQueueTitle": "欠席届の審査",
     "approveLeave": "欠席を承認",
     "rejectLeave": "欠席を却下",
-    "backToRoster": "名簿に戻る"
+    "backToRoster": "名簿に戻る",
+    "priceLockedHint": "このパックには申請があるため、価格と回数は変更できません。価格を変更する場合は、このパックを無効にしてから新しい価格のパックを追加してください。"
   },
   "matches": {
     "title": "試合日程",

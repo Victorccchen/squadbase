@@ -73,6 +73,8 @@ export type OrgErrorKey =
   | "reasonRequired"
   | "invalidCreditAmount"
   | "invalidPrice"
+  | "packageHasClaims"
+  | "activePackageExists"
   | "adjustWouldBeNegative"
   | "pendingLeaveExists"
   | "leaveNotFound"

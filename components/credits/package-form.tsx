@@ -10,9 +10,11 @@ import { inputClassName, primaryButtonClassName, secondaryButtonClassName } from
 
 type PackageRowFormProps = {
   pkg: SessionPackage;
+  /** Package already has claims: price is frozen; deactivate and add a new package instead. */
+  priceLocked?: boolean;
 };
 
-export function PackageRowForm({ pkg }: PackageRowFormProps) {
+export function PackageRowForm({ pkg, priceLocked = false }: PackageRowFormProps) {
   const t = useTranslations("credits");
   const org = useTranslations("org");
   const [state, formAction, pending] = useActionState(
@@ -33,9 +35,16 @@ export function PackageRowForm({ pkg }: PackageRowFormProps) {
           required
           inputMode="numeric"
           defaultValue={pkg.price_twd}
+          readOnly={priceLocked}
+          aria-describedby={priceLocked ? `price-locked-${pkg.id}` : undefined}
           className={inputClassName}
         />
       </label>
+      {priceLocked ? (
+        <p id={`price-locked-${pkg.id}`} className="w-full text-sm text-zinc-500">
+          {t("priceLockedHint")}
+        </p>
+      ) : null}
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         {org("status")}
         <select name="active" defaultValue={pkg.active ? "true" : "false"} className={inputClassName}>
