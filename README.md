@@ -368,7 +368,7 @@ One-time setup:
 
 1. Add repository secrets `SUPABASE_ACCESS_TOKEN` (supabase.com → Account → Access Tokens) and `SUPABASE_DB_PASSWORD` (staging database password).
 2. Run with **mode = dry-run**. Because migrations 1–39 below were pasted by hand, the CLI has no history yet and lists every migration as pending. That is expected; do not push yet.
-3. In the staging **SQL Editor**, paste and run [`supabase/baseline_objects_verification.sql`](supabase/baseline_objects_verification.sql) (read-only). It must end with “all baseline objects present”; if it lists anything missing, apply that migration by hand first. Then run the workflow with **mode = repair-baseline** once. It marks every migration up to `20260921030000` (items 1–39) as already applied, without running them.
+3. In the staging **SQL Editor**, paste and run [`supabase/baseline_objects_verification.sql`](supabase/baseline_objects_verification.sql) (read-only). It must end with “all baseline objects present”; if it lists anything missing, apply that migration by hand first. (Staging on 2026-10-01 was missing three; paste [`supabase/staging_baseline_repair.sql`](supabase/staging_baseline_repair.sql) once, which applies only the missing pieces without rolling back later functions.) Then run the workflow with **mode = repair-baseline** once. It marks every migration up to `20260921030000` (items 1–39) as already applied, without running them.
 4. Run **dry-run** again. It should list only migrations added since Phase 1 (starting with `20261001100000_payment_claim_price_snapshot.sql`). If a Phase 1 migration was already pasted by hand, stop and ask before pushing.
 5. Run with **mode = push**.
 
