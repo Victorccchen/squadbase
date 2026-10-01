@@ -1295,5 +1295,217 @@
     "enable": "Enable push",
     "disable": "Disable push",
     "working": "Working…"
+  },
+  "portal": {
+    "meta": {
+      "title": "{club}",
+      "description": "We are a football club in Taichung. Through football, children learn the basic attitudes a person needs, and grow into people who can thrive in the life ahead. Visits and trials are always welcome."
+    },
+    "skip": "Skip to content",
+    "crestAlt": "Club crest",
+    "nav": {
+      "about": "About",
+      "teams": "Teams",
+      "matches": "Fixtures",
+      "programs": "Programs",
+      "news": "News",
+      "coaches": "Coaches",
+      "contact": "Contact",
+      "login": "Log in / Parents",
+      "app": "Parent portal",
+      "menu": "Menu",
+      "main": "Main",
+      "mobile": "Menu"
+    },
+    "hero": {
+      "eyebrow": "Taichung · U8–U12 youth football",
+      "title": "Play with passion.\nKick toward the ",
+      "titleAccent": "future",
+      "titleTail": ".",
+      "lead": "Futuro starts with the joy of the game. Through structured, age-appropriate training and real match experience, we help children learn effort, respect and teamwork.",
+      "ctaTrial": "Book a trial session",
+      "ctaFixtures": "View fixtures",
+      "chip1": "U8 · U10 · U12 age groups",
+      "chip2": "Weekly training",
+      "chip3": "繁中 · 日本語 · English",
+      "photo": "Hero photo: team training or match",
+      "photoHint": "Recommended 1600×1200, landscape · photo to be supplied",
+      "next": "Next match",
+      "nextEmpty": "No published upcoming match"
+    },
+    "about": {
+      "eyebrow": "About the club",
+      "title": "Helping every child fall in love with football",
+      "missionLabel": "Our mission",
+      "mission": "Through football, we learn the basic attitudes it takes to be a person, and raise people who can thrive in the life ahead.",
+      "photo1": "Photo: everyday training (to be supplied)",
+      "photo1Hint": "1200×1600",
+      "photo2": "Photo: match moment (to be supplied)",
+      "v1t": "Joy",
+      "v1b": "Game-based sessions build a love for football, so kids look forward to every training day.",
+      "v2t": "Growth",
+      "v2b": "An age-appropriate technical, physical and tactical curriculum that values every child's progress.",
+      "v3t": "Respect & teamwork",
+      "v3b": "Respect for teammates, opponents, referees and parents, learning to communicate and take responsibility."
+    },
+    "teams": {
+      "eyebrow": "Age groups",
+      "title": "Grouped by age, growing step by step",
+      "lead": "Each squad has dedicated coaches and sessions matched to children's development. Final grouping follows birth year and club rules.",
+      "sampleTime": "Sample times",
+      "age": "Age",
+      "train": "Training",
+      "focus": "Focus",
+      "photo": "Squad photo",
+      "photoHint": "1200×675 · to be supplied",
+      "cta": "Book a trial",
+      "u8": {
+        "code": "U8",
+        "name": "Foundation",
+        "age": "Approx. 6–7",
+        "train": "Sat 09:00–10:30",
+        "focus": "Ball feel, coordination, play-based drills"
+      },
+      "u10": {
+        "code": "U10",
+        "name": "Development",
+        "age": "Approx. 8–9",
+        "train": "Wed 18:30–20:00 · Sat 10:30–12:00",
+        "focus": "Core technique, passing, small-sided games"
+      },
+      "u12": {
+        "code": "U12",
+        "name": "Advanced",
+        "age": "Approx. 10–11",
+        "train": "Tue · Thu 18:30–20:00",
+        "focus": "Team tactics, positions, competitive matches"
+      }
+    },
+    "matches": {
+      "eyebrow": "Recent fixtures & results",
+      "title": "Fixtures & results",
+      "note": "Only published matches are shown (up to 3 upcoming and 3 recent). Unpublished, cancelled, or deleted matches do not appear.",
+      "upcoming": "Upcoming",
+      "recent": "Recent results",
+      "viewAll": "View all fixtures",
+      "home": "Home",
+      "away": "Away",
+      "W": "W",
+      "D": "D",
+      "L": "L",
+      "versus": "vs",
+      "opponentTbd": "Opponent TBD",
+      "playoff": "Playoff",
+      "upcomingEmptyTitle": "No upcoming matches",
+      "upcomingEmptyBody": "Cup, league, and friendly matches appear here after the club publishes them. Unpublished and cancelled matches stay hidden.",
+      "recentEmptyTitle": "No recent results",
+      "recentEmptyBody": "Published matches that have already kicked off appear here for 90 days.",
+      "kind": {
+        "league": "League",
+        "cup": "Cup",
+        "friendly": "Friendly",
+        "other": "Match"
+      }
+    },
+    "programs": {
+      "eyebrow": "Programs & enrollment",
+      "title": "Find the right program for your child",
+      "tagRegular": "Enrolling year-round",
+      "regularT": "Regular training",
+      "regularB": "Weekly sessions at fixed times, grouped by squad.",
+      "r1": "Prepaid session credits for flexible attendance",
+      "r2": "Absence and make-up rules per club policy",
+      "r3": "Parents can check credits and attendance in the parent portal",
+      "tagCamp": "Announced per season",
+      "campT": "Special camps",
+      "campB": "Short camps and focused training during school holidays and long weekends.",
+      "c1": "Winter / summer football camps",
+      "c2": "Goalkeeper and technical clinics",
+      "c3": "Friendly matches and away trips",
+      "fee": "Fees: to be provided by the club",
+      "cta": "Contact us to enroll"
+    },
+    "steps": {
+      "title": "How to join",
+      "s1t": "Contact",
+      "s1b": "Tell us your child's age and experience via LINE or email.",
+      "s2t": "Trial",
+      "s2b": "Join a trial session and meet the coaches and team.",
+      "s3t": "Register",
+      "s3b": "Complete the registration form and payment.",
+      "s4t": "Join the LINE group",
+      "s4b": "Join your squad's parent LINE group for training and match updates."
+    },
+    "news": {
+      "eyebrow": "Latest news",
+      "title": "Club news",
+      "sample": "Sample data",
+      "readMore": "Read more",
+      "photo": "News cover image (to be supplied)",
+      "cat": {
+        "enroll": "Enrollment",
+        "match": "Matches",
+        "notice": "Notice"
+      },
+      "items": {
+        "n1": {
+          "date": "2026-09-28",
+          "title": "Enrollment note (content to be supplied)",
+          "body": "Layout placeholder only. Real dates, fees, and details will come from the club."
+        },
+        "n2": {
+          "date": "2026-09-21",
+          "title": "Match note (content to be supplied)",
+          "body": "Layout placeholder only. This is not a real match report."
+        },
+        "n3": {
+          "date": "2026-09-10",
+          "title": "Notice (content to be supplied)",
+          "body": "Layout placeholder only. Cancellation rules and other notices will come from the club."
+        }
+      }
+    },
+    "coaches": {
+      "eyebrow": "Coaches",
+      "title": "A caring, qualified coaching team",
+      "lead": "Coach profiles will be provided by the club; the cards below are placeholders.",
+      "name": "Coach name (to be supplied)",
+      "license": "License: to be supplied",
+      "photo": "Coach photo (to be supplied)",
+      "role": {
+        "head": "Head Coach",
+        "u12": "U12 Coach",
+        "u10": "U10 Coach",
+        "u8": "U8 Coach"
+      }
+    },
+    "contact": {
+      "eyebrow": "Contact",
+      "title": "Come and visit us at the pitch",
+      "welcome": "We are a football club in Taichung. Visits and trial sessions are always welcome — please get in touch if you are interested.",
+      "ground": "Training ground",
+      "address": "Address to be supplied, Taichung City",
+      "email": "Email",
+      "emailValue": "Email address (to be supplied)",
+      "hours": "Reply hours: to be supplied (placeholder)",
+      "social": "Social & messaging",
+      "socialNote": "Account links to be supplied (placeholders for now, not clickable)",
+      "map": "Map placeholder: embed Google Maps",
+      "mapHint": "The live site will show the real training ground",
+      "openMap": "Open in Google Maps"
+    },
+    "footer": {
+      "tagline": "U8–U12 youth football club in Taichung",
+      "links": "Quick links",
+      "parents": "Parent portal",
+      "privacy": "This site only shows fixtures, results, match rosters and player names. Player contact details, assessments and parent data are never public.",
+      "rights": "© 2026 {club}",
+      "brandNote": "Colours sampled from the TFAF crest (pending club approval)",
+      "powered": "Powered by Squadbase"
+    },
+    "mobile": {
+      "cta": "Book a trial",
+      "parents": "Parents"
+    }
   }
 }
