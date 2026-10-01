@@ -289,7 +289,7 @@ export async function listCreditTotalsForAdmin(): Promise<CreditTotals> {
   const [claimsResult, ledgerResult] = await Promise.all([
     supabase
       .from("payment_claims")
-      .select("status, session_packages(price_twd)")
+      .select("status, price_twd_snapshot")
       .eq("status", "approved"),
     supabase
       .from("session_credit_ledger")
@@ -307,10 +307,7 @@ export async function listCreditTotalsForAdmin(): Promise<CreditTotals> {
 
   const claimAmounts: number[] = [];
   for (const row of claimsResult.data ?? []) {
-    const pkg = one(row.session_packages as { price_twd: number } | { price_twd: number }[] | null);
-    if (pkg) {
-      claimAmounts.push(pkg.price_twd);
-    }
+    claimAmounts.push(Number(row.price_twd_snapshot));
   }
 
   const debitRows: { credits: number; unitCostTwd: number }[] = [];
@@ -330,6 +327,18 @@ export async function listCreditTotalsForAdmin(): Promise<CreditTotals> {
     approvedClaimCount: claimAmounts.length,
     debitCount: debitRows.length,
   };
+}
+
+/** Packages that already have claims: their price and credits are frozen. */
+export async function listClaimedPackageIds(): Promise<Set<string>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("payment_claims").select("package_id");
+
+  if (error) {
+    console.error("listClaimedPackageIds", error.message);
+    return new Set();
+  }
+  return new Set((data ?? []).map((row) => row.package_id));
 }
 
 export async function listPlayersForAdminCredits(): Promise<Player[]> {

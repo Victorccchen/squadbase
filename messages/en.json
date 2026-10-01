@@ -581,7 +581,9 @@
       "pushProductionBlocked": "Production push send is not enabled.",
       "pushPermissionDenied": "The browser denied notification permission.",
       "pushSubscribeFailed": "Could not enable push. Add the site to the Home Screen and try again.",
-      "pushUnsupported": "This browser does not support Web Push."
+      "pushUnsupported": "This browser does not support Web Push.",
+      "packageHasClaims": "This package already has claims, so its price and credits cannot change. Deactivate it and add a new package.",
+      "activePackageExists": "An active package with the same band and credits already exists. Deactivate the old one first."
     }
   },
   "children": {
@@ -867,7 +869,8 @@
     "leaveQueueTitle": "Pending leave",
     "approveLeave": "Approve leave",
     "rejectLeave": "Reject leave",
-    "backToRoster": "Back to roster"
+    "backToRoster": "Back to roster",
+    "priceLockedHint": "Parents have already claimed this package, so its price and credits are fixed. To change the price, deactivate this package and add a new one."
   },
   "matches": {
     "title": "Match schedule",

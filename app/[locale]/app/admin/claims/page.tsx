@@ -43,7 +43,7 @@ export default async function AdminClaimsPage() {
                     </span>
                     <span className="text-zinc-500">
                       {claim.package
-                        ? `${t(`bands.${claim.package.age_band}`)} · ${t("creditsCount", { count: claim.package.credits })} · ${t("priceTwd", { amount: claim.package.price_twd })}`
+                        ? `${t(`bands.${claim.package.age_band}`)} · ${t("creditsCount", { count: claim.credits_snapshot })} · ${t("priceTwd", { amount: claim.price_twd_snapshot })}`
                         : ""}
                     </span>
                     <span className="text-zinc-500">{t("last5Value", { last5: claim.last5 })}</span>
@@ -73,7 +73,7 @@ export default async function AdminClaimsPage() {
                   </span>
                   <span className="text-zinc-500">
                     {claim.package
-                      ? `${t("creditsCount", { count: claim.package.credits })} · ${t("priceTwd", { amount: claim.package.price_twd })}`
+                      ? `${t("creditsCount", { count: claim.credits_snapshot })} · ${t("priceTwd", { amount: claim.price_twd_snapshot })}`
                       : ""}
                     {` · ${t("last5Value", { last5: claim.last5 })}`}
                   </span>

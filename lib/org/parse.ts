@@ -593,6 +593,8 @@ type CreditRpcErrorKey =
   | "reasonRequired"
   | "invalidCreditAmount"
   | "invalidPrice"
+  | "packageHasClaims"
+  | "activePackageExists"
   | "adjustWouldBeNegative"
   | "pendingLeaveExists"
   | "leaveNotFound"
@@ -614,6 +616,12 @@ export function creditRpcErrorKey(error: PgLikeError): CreditRpcErrorKey {
   }
   if (text.includes("credits do not apply to this age band")) {
     return "creditsNotApplicable";
+  }
+  if (text.includes("package has claims")) {
+    return "packageHasClaims";
+  }
+  if (text.includes("active package already exists")) {
+    return "activePackageExists";
   }
   if (text.includes("package not found")) {
     return "packageNotFound";

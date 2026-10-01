@@ -7,6 +7,7 @@ import { TransferHintForm } from "@/components/credits/transfer-hint-form";
 import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import {
   getBankTransferHint,
+  listClaimedPackageIds,
   listCreditTotalsForAdmin,
   listPackagesForAdmin,
   listPlayersForAdminCredits,
@@ -20,11 +21,12 @@ export default async function AdminCreditsPage() {
   const t = await getTranslations("credits");
   const common = await getTranslations("common");
   const locale = await getLocale();
-  const [packages, players, totals, transferHint] = await Promise.all([
+  const [packages, players, totals, transferHint, claimedPackageIds] = await Promise.all([
     listPackagesForAdmin(),
     listPlayersForAdminCredits(),
     listCreditTotalsForAdmin(),
     getBankTransferHint(),
+    listClaimedPackageIds(),
   ]);
 
   return (
@@ -74,7 +76,7 @@ export default async function AdminCreditsPage() {
                 <p className="text-sm font-medium">
                   {t(`bands.${pkg.age_band}`)} · {t("creditsCount", { count: pkg.credits })}
                 </p>
-                <PackageRowForm pkg={pkg} />
+                <PackageRowForm pkg={pkg} priceLocked={claimedPackageIds.has(pkg.id)} />
               </li>
             ))}
           </ul>

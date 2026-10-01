@@ -581,7 +581,9 @@
       "pushProductionBlocked": "正式環境尚未開放推播發送。",
       "pushPermissionDenied": "瀏覽器拒絕了通知權限。",
       "pushSubscribeFailed": "無法開啟推播。請確認已加入主畫面後再試。",
-      "pushUnsupported": "這支瀏覽器不支援 Web Push。"
+      "pushUnsupported": "這支瀏覽器不支援 Web Push。",
+      "packageHasClaims": "這個方案已有家長申報，不能修改價格或堂數。請停用後新增新方案。",
+      "activePackageExists": "同一個年齡組已有相同堂數的啟用中方案。請先停用舊方案。"
     }
   },
   "children": {
@@ -867,7 +869,8 @@
     "leaveQueueTitle": "請假待審",
     "approveLeave": "核准請假",
     "rejectLeave": "拒絕請假",
-    "backToRoster": "返回名單"
+    "backToRoster": "返回名單",
+    "priceLockedHint": "這個方案已有家長申報，價格與堂數不能再修改。若要調價，請先停用這個方案，再新增一個新價格的方案。"
   },
   "matches": {
     "title": "比賽賽程",
