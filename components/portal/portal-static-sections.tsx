@@ -15,12 +15,6 @@ import { portalAccountHref } from "@/lib/site/portal-auth";
 import { formatPortalDate } from "@/lib/site/portal-matches";
 import { siteConfig } from "@/lib/site/site-config";
 
-const SQUADS = ["u8", "u10", "u12"] as const;
-const SQUAD_BADGE = {
-  u8: "bg-club-gold text-club-brand",
-  u10: "bg-club-scarlet text-club-on-scarlet",
-  u12: "bg-white text-club-brand ring-2 ring-club-gold",
-} as const;
 const NEWS = [
   { id: "n1", category: "enroll" },
   { id: "n2", category: "match" },
@@ -133,65 +127,251 @@ function ValueIcon({ icon }: { icon: "joy" | "growth" | "team" }) {
   }
 }
 
+const PATHWAY_STAGES = [
+  { id: "u8", learn: ["l1", "l2", "l3"], open: true },
+  { id: "golden", learn: ["l1", "l2", "l3", "l4", "l5", "l6", "l7"], open: true },
+  { id: "later", learn: ["l1", "l2", "l3", "l4", "l5", "l6"], open: false },
+  { id: "senior", learn: ["l1", "l2", "l3", "l4", "l5", "l6", "l7"], open: false },
+] as const;
+
+type PathwayStage = (typeof PATHWAY_STAGES)[number];
+
+const CHART_AGES = ["u6", "u8", "u10", "u12", "u13", "u14", "u15", "u16", "u17", "u18"] as const;
+const CHART_AGE_LABEL: Record<(typeof CHART_AGES)[number], string> = {
+  u6: "U-6",
+  u8: "U-8",
+  u10: "U-10",
+  u12: "U-12",
+  u13: "U-13",
+  u14: "U-14",
+  u15: "U-15",
+  u16: "U-16",
+  u17: "U-17",
+  u18: "U-18",
+};
+
+const CHART_LEVELS = ["none", "light", "mid", "strong"] as const;
+type ChartLevel = (typeof CHART_LEVELS)[number];
+
+/**
+ * Simplified reading of the club chart. The PDF uses a smooth blue gradient,
+ * darker where that quality is emphasised. These four steps are approximate
+ * where the colour fades.
+ */
+const CHART_ROWS: { id: "touch" | "moving" | "individual" | "group" | "coordination" | "endurance" | "strength" | "mindset"; cells: readonly ChartLevel[] }[] = [
+  { id: "touch", cells: ["mid", "mid", "mid", "mid", "mid", "light", "light", "light", "light", "none"] },
+  { id: "moving", cells: ["strong", "strong", "strong", "strong", "strong", "strong", "strong", "strong", "mid", "mid"] },
+  { id: "individual", cells: ["mid", "strong", "strong", "strong", "strong", "strong", "strong", "mid", "mid", "light"] },
+  { id: "group", cells: ["light", "light", "light", "light", "mid", "mid", "mid", "mid", "strong", "strong"] },
+  { id: "coordination", cells: ["mid", "mid", "mid", "mid", "mid", "mid", "light", "light", "light", "none"] },
+  { id: "endurance", cells: ["none", "light", "light", "mid", "mid", "strong", "strong", "strong", "mid", "light"] },
+  { id: "strength", cells: ["none", "none", "none", "none", "light", "mid", "mid", "mid", "strong", "strong"] },
+  { id: "mindset", cells: ["light", "light", "light", "light", "mid", "mid", "mid", "mid", "mid", "strong"] },
+];
+
+function chartLevelClass(level: ChartLevel): string {
+  switch (level) {
+    case "none":
+      return "bg-club-brand/5 text-club-brand/45";
+    case "light":
+      return "bg-club-brand/15 text-club-brand";
+    case "mid":
+      return "bg-club-brand/35 text-club-brand";
+    case "strong":
+      return "bg-club-brand text-white";
+    default: {
+      const neverLevel: never = level;
+      return neverLevel;
+    }
+  }
+}
+
 export async function PortalTeams() {
   const t = await getTranslations("portal");
   return (
     <section id="teams" className="bg-white py-16 sm:py-20">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <PortalEyebrow>{t("teams.eyebrow")}</PortalEyebrow>
-            <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">{t("teams.title")}</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-club-brand/70 sm:text-base">{t("teams.lead")}</p>
-          </div>
-          <span className="club-sample inline-flex w-fit shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-semibold">
-            {t("teams.sampleTime")}
-          </span>
-        </div>
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
-          {SQUADS.map((code) => (
-            <article key={code} className="club-card flex flex-col overflow-hidden rounded-3xl border border-club-brand/10 bg-club-cream">
-              <div className="relative">
-                <PhotoSlot
-                  label={`${t("teams.photo")} · ${t(`teams.${code}.code`)}`}
-                  hint={t("teams.photoHint")}
-                  className="aspect-[2/1] rounded-none border-x-0 border-t-0 md:aspect-[16/9]"
-                />
-                <span className={`absolute top-4 left-4 -skew-x-6 rounded-lg px-3.5 py-1.5 text-2xl font-black tracking-tight italic shadow-sm ${SQUAD_BADGE[code]}`}>
-                  {t(`teams.${code}.code`)}
-                </span>
-              </div>
-              <div className="flex flex-1 flex-col p-5">
-                <h3 className="text-xl font-black">
-                  {t(`teams.${code}.code`)}{" "}
-                  <span className="font-bold text-club-brand/55">· {t(`teams.${code}.name`)}</span>
-                </h3>
-                <dl className="mt-4 grid gap-3 text-sm">
-                  <div className="flex gap-3">
-                    <dt className="w-16 shrink-0 text-club-brand/50">{t("teams.age")}</dt>
-                    <dd className="font-semibold">{t(`teams.${code}.age`)}</dd>
-                  </div>
-                  <div className="flex gap-3">
-                    <dt className="w-16 shrink-0 text-club-brand/50">{t("teams.train")}</dt>
-                    <dd className="font-semibold">{t(`teams.${code}.train`)}</dd>
-                  </div>
-                  <div className="flex gap-3">
-                    <dt className="w-16 shrink-0 text-club-brand/50">{t("teams.focus")}</dt>
-                    <dd className="text-club-brand/80">{t(`teams.${code}.focus`)}</dd>
-                  </div>
-                </dl>
-                <a
-                  href="#enroll"
-                  className="mt-auto inline-flex items-center gap-1 self-start pt-5 text-sm font-bold underline decoration-club-scarlet decoration-[3px] underline-offset-4 hover:decoration-club-brand"
-                >
-                  {t("teams.cta")} →
-                </a>
-              </div>
-            </article>
+        <PortalEyebrow>{t("teams.eyebrow")}</PortalEyebrow>
+        <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">{t("teams.title")}</h2>
+        <p className="mt-3 max-w-3xl text-sm leading-7 text-club-brand/75 sm:text-base">{t("teams.lead")}</p>
+        <p className="mt-2 max-w-3xl text-sm font-semibold leading-7 text-club-brand sm:text-base">{t("teams.foundation")}</p>
+        <p className="mt-4 max-w-3xl rounded-2xl border border-club-gold/50 bg-club-gold/10 px-4 py-3 text-sm leading-7 font-semibold text-club-brand">
+          <span className="mr-1 text-club-gold" aria-hidden="true">☆</span>
+          <span className="sr-only">{t("teams.mottoLabel")} </span>
+          {t("teams.motto")}
+        </p>
+        <p className="mt-4 max-w-3xl text-sm leading-7 text-club-brand/70">{t("teams.openNow")}</p>
+
+        <div className="mt-8 space-y-3 md:hidden">
+          {PATHWAY_STAGES.map((stage) => (
+            <PathwayDetails key={stage.id} stage={stage} />
           ))}
         </div>
+        <div className="mt-10 hidden gap-5 md:grid md:grid-cols-2">
+          {PATHWAY_STAGES.map((stage) => (
+            <PathwayArticle key={stage.id} stage={stage} />
+          ))}
+        </div>
+
+        <PathwayChart />
       </div>
     </section>
+  );
+}
+
+async function PathwayDetails({ stage }: { stage: PathwayStage }) {
+  const t = await getTranslations("portal");
+  return (
+    <details className="group rounded-3xl border border-club-brand/10 bg-club-cream">
+      <summary className="flex cursor-pointer list-none items-start gap-3 px-4 py-4 [&::-webkit-details-marker]:hidden">
+        <span className={`mt-0.5 inline-flex shrink-0 -skew-x-6 rounded-lg px-2.5 py-1 text-sm font-black tracking-tight italic ${stage.open ? "bg-club-gold text-club-brand" : "bg-club-brand text-club-gold"}`}>
+          {t(`teams.stages.${stage.id}.age`)}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-base font-black leading-snug">{t(`teams.stages.${stage.id}.name`)}</span>
+          <span className="mt-1 block text-sm leading-6 text-club-brand/70">{t(`teams.stages.${stage.id}.theme`)}</span>
+        </span>
+        <span className="mt-1 text-club-brand/50 transition group-open:rotate-90" aria-hidden="true">▸</span>
+      </summary>
+      <div className="px-4 pb-4">
+        <PathwayBody stage={stage} />
+      </div>
+    </details>
+  );
+}
+
+async function PathwayArticle({ stage }: { stage: PathwayStage }) {
+  const t = await getTranslations("portal");
+  return (
+    <article className="club-card flex flex-col rounded-3xl border border-club-brand/10 bg-club-cream p-6">
+      <div className="flex items-start justify-between gap-3">
+        <span className={`inline-flex -skew-x-6 rounded-lg px-3 py-1.5 text-lg font-black tracking-tight italic ${stage.open ? "bg-club-gold text-club-brand" : "bg-club-brand text-club-gold"}`}>
+          {t(`teams.stages.${stage.id}.age`)}
+        </span>
+        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${stage.open ? "bg-club-gold/25 text-club-brand" : "bg-club-brand/10 text-club-brand/70"}`}>
+          {t(`teams.stages.${stage.id}.badge`)}
+        </span>
+      </div>
+      <h3 className="mt-4 text-xl font-black">{t(`teams.stages.${stage.id}.name`)}</h3>
+      <p className="mt-2 text-sm leading-7 font-semibold text-club-brand/80">{t(`teams.stages.${stage.id}.theme`)}</p>
+      <PathwayBody stage={stage} />
+    </article>
+  );
+}
+
+async function PathwayBody({ stage }: { stage: PathwayStage }) {
+  const t = await getTranslations("portal");
+  return (
+    <div>
+      <p className="mt-3 text-sm leading-7 text-club-brand/75 md:mt-4">{t(`teams.stages.${stage.id}.body`)}</p>
+      <p className="mt-4 text-xs font-bold tracking-[0.14em] text-club-brand/50 uppercase">{t("teams.learning")}</p>
+      <ul className="mt-2 space-y-1.5 text-sm leading-6 text-club-brand/85">
+        {stage.learn.map((item) => (
+          <li key={item} className="flex gap-2">
+            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-club-scarlet" aria-hidden="true" />
+            <span>{t(`teams.stages.${stage.id}.${item}`)}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-4 text-xs font-bold tracking-[0.14em] text-club-brand/50 uppercase">{t("teams.practice")}</p>
+      <p className="mt-2 text-sm leading-7 text-club-brand/80">{t(`teams.stages.${stage.id}.practiceBody`)}</p>
+      <p className="mt-4 text-sm leading-6 font-semibold text-club-brand">
+        <span className="text-club-gold" aria-hidden="true">☆ </span>
+        {t("teams.motto")}
+      </p>
+      <p className="mt-3 text-xs font-semibold text-club-brand/60 md:hidden">{t(`teams.stages.${stage.id}.badge`)}</p>
+    </div>
+  );
+}
+
+async function PathwayChart() {
+  const t = await getTranslations("portal");
+  return (
+    <div className="mt-14">
+      <h3 className="text-2xl font-black tracking-tight">{t("teams.chartTitle")}</h3>
+      <p className="mt-3 max-w-3xl text-sm leading-7 text-club-brand/70">{t("teams.chartLead")}</p>
+      <div className="mt-5 space-y-3 md:hidden">
+        {CHART_ROWS.map((row) => (
+          <div key={row.id} className="rounded-2xl border border-club-brand/10 bg-club-cream p-3">
+            <p className="text-sm font-black">{t(`teams.rows.${row.id}`)}</p>
+            <ul className="mt-2 flex flex-wrap gap-1.5">
+              {row.cells.map((level, index) => {
+                const age = CHART_AGES[index];
+                if (!age) {
+                  return null;
+                }
+                return (
+                  <li
+                    key={age}
+                    className={`min-w-14 rounded-lg px-1.5 py-1 text-center text-[11px] leading-tight font-bold ${chartLevelClass(level)} ${age === "u14" ? "ring-2 ring-club-gold" : ""}`}
+                    title={t(`teams.levelName.${level}`)}
+                  >
+                    <span className="block font-semibold opacity-80">{CHART_AGE_LABEL[age]}</span>
+                    {t(`teams.levels.${level}`)}
+                    <span className="sr-only"> {t(`teams.levelName.${level}`)}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+      </div>
+      <div className="mt-5 hidden max-w-full overflow-x-auto md:block">
+        <table className="w-full min-w-[44rem] border-separate border-spacing-1 text-center text-xs">
+          <caption className="sr-only">{t("teams.chartLead")}</caption>
+          <thead>
+            <tr>
+              <th scope="col" className="px-2 py-2 text-left font-semibold text-club-brand/60">
+                {t("teams.chartAges")}
+              </th>
+              {CHART_AGES.map((age) => (
+                <th
+                  key={age}
+                  scope="col"
+                  className={`px-1 py-2 font-black tracking-tight ${age === "u14" ? "rounded-t-lg bg-club-gold/25 text-club-brand" : "text-club-brand/70"}`}
+                >
+                  <span className="block">{CHART_AGE_LABEL[age]}</span>
+                  {age === "u14" ? <span className="mt-0.5 block text-[10px] font-bold text-club-brand">{t("teams.u14mark")}</span> : null}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {CHART_ROWS.map((row) => (
+              <tr key={row.id}>
+                <th scope="row" className="whitespace-nowrap px-2 py-2 text-left font-semibold text-club-brand">
+                  {t(`teams.rows.${row.id}`)}
+                </th>
+                {row.cells.map((level, index) => {
+                  const age = CHART_AGES[index];
+                  if (!age) {
+                    return null;
+                  }
+                  return (
+                    <td
+                      key={age}
+                      className={`rounded-md px-1 py-2 font-bold ${chartLevelClass(level)} ${age === "u14" ? "ring-2 ring-club-gold" : ""}`}
+                      title={t(`teams.levelName.${level}`)}
+                    >
+                      <span className="sr-only">{CHART_AGE_LABEL[age]} </span>
+                      {t(`teams.levels.${level}`)}
+                      <span className="sr-only"> {t(`teams.levelName.${level}`)}</span>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <ul className="mt-4 flex flex-wrap gap-2 text-xs text-club-brand/70">
+        {CHART_LEVELS.map((level) => (
+          <li key={level} className={`rounded-full px-2.5 py-1 font-semibold ${chartLevelClass(level)}`}>
+            {t(`teams.levels.${level}`)} {t(`teams.levelName.${level}`)}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
