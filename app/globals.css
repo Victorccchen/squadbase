@@ -39,3 +39,230 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
 }
+
+/* Portal brand tokens are set inline from lib/site/site-config.ts. */
+@theme inline {
+  --color-club-brand: var(--club-brand);
+  --color-club-brand-deep: var(--club-brand-deep);
+  --color-club-scarlet: var(--club-scarlet);
+  --color-club-gold: var(--club-gold);
+  --color-club-gold-2: var(--club-gold-2);
+  --color-club-cream: var(--club-cream);
+  --color-club-on-brand: var(--club-on-brand);
+  --color-club-on-scarlet: var(--club-on-scarlet);
+  --font-club: var(--club-font-sans);
+  --font-club-display: var(--club-font-display);
+}
+
+html:has(.portal) {
+  scroll-behavior: smooth;
+}
+
+.portal {
+  background: var(--club-cream);
+  color: var(--club-brand);
+  font-family: var(--club-font-sans);
+}
+
+.portal :focus-visible {
+  outline: 2px solid var(--club-focus);
+  outline-offset: 2px;
+}
+
+.portal h1,
+.portal h2,
+.portal h3,
+.portal .club-display {
+  font-family: var(--club-font-display);
+  letter-spacing: -0.01em;
+}
+
+.portal .club-wordmark {
+  font-family: var(--club-font-display);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.portal .club-eyebrow {
+  font-family: var(--club-font-display);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.portal :is(section[id], #enroll) {
+  scroll-margin-top: 76px;
+}
+
+.portal .club-stripe {
+  position: relative;
+  height: 5px;
+  background: linear-gradient(90deg, var(--club-brand) 0 50%, var(--club-scarlet) 50% 100%);
+}
+
+.portal .club-stripe::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--club-gold), var(--club-gold-2), var(--club-gold));
+}
+
+.portal .club-hero-shape {
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--club-hero-cut)), 0 100%);
+  background: var(--club-brand);
+}
+
+@media (max-width: 640px) {
+  .portal .club-hero-shape {
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--club-hero-cut-sm)), 0 100%);
+  }
+}
+
+.portal .club-stars {
+  background-color: var(--club-gold);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 44 44'%3E%3Cpath d='M22 13l2.6 5.9 6.4.6-4.8 4.3 1.4 6.3L22 26.8l-5.6 3.3 1.4-6.3-4.8-4.3 6.4-.6z' fill='black'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 44 44'%3E%3Cpath d='M22 13l2.6 5.9 6.4.6-4.8 4.3 1.4 6.3L22 26.8l-5.6 3.3 1.4-6.3-4.8-4.3 6.4-.6z' fill='black'/%3E%3C/svg%3E");
+  -webkit-mask-size: 44px 44px;
+  mask-size: 44px 44px;
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
+}
+
+.portal .club-sun {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background-color: var(--club-gold-2);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0-7 1.6 5h-3.2zm0 24-1.6-5h3.2zM0 12l5-1.6v3.2zm24 0-5 1.6v-3.2zM3.5 3.5l4.7 2.4-2.3 2.3zm17 17-4.7-2.4 2.3-2.3zM3.5 20.5l2.4-4.7 2.3 2.3zm17-17-2.4 4.7-2.3-2.3z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0-7 1.6 5h-3.2zm0 24-1.6-5h3.2zM0 12l5-1.6v3.2zm24 0-5 1.6v-3.2zM3.5 3.5l4.7 2.4-2.3 2.3zm17 17-4.7-2.4 2.3-2.3zM3.5 20.5l2.4-4.7 2.3 2.3zm17-17-2.4 4.7-2.3-2.3z'/%3E%3C/svg%3E");
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+.portal .club-quarter {
+  background: conic-gradient(
+    from 90deg at 50% 50%,
+    var(--club-scarlet) 0 25%,
+    var(--club-brand) 25% 50%,
+    var(--club-scarlet) 50% 75%,
+    var(--club-brand) 75% 100%
+  );
+}
+
+.portal .club-gold-rim {
+  box-shadow: inset 0 0 0 2px var(--club-gold);
+}
+
+.portal .club-eyebrow-bar {
+  width: 30px;
+  height: 5px;
+  background: linear-gradient(90deg, var(--club-brand) 0 50%, var(--club-scarlet) 50% 100%);
+  box-shadow: 0 2px 0 var(--club-gold);
+  transform: skewX(-20deg);
+}
+
+.portal .club-btn {
+  background: var(--club-scarlet);
+  color: var(--club-on-scarlet);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--club-gold) 70%, transparent),
+    0 10px 30px -10px var(--club-scarlet);
+}
+
+.portal .club-btn:hover {
+  filter: brightness(1.1);
+}
+
+.portal .club-hero-panel {
+  clip-path: polygon(22% 0, 100% 0, 100% 100%, 0 100%);
+  background: var(--club-scarlet);
+}
+
+.portal .club-hero-panel-edge {
+  clip-path: polygon(22% 0, 23.2% 0, 1.2% 100%, 0 100%);
+  background: var(--club-gold);
+}
+
+.portal .club-hero-panel-mobile {
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+  background: var(--club-scarlet);
+}
+
+.portal .club-ph {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 2px dashed color-mix(in srgb, var(--club-brand) 25%, transparent);
+  background:
+    repeating-linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--club-brand) 6%, transparent) 0 12px,
+      color-mix(in srgb, var(--club-brand) 2%, transparent) 12px 24px
+    ),
+    linear-gradient(160deg, var(--club-ph-from), var(--club-ph-to));
+  color: color-mix(in srgb, var(--club-brand) 62%, transparent);
+  text-align: center;
+}
+
+.portal .club-ph-dark {
+  border-color: color-mix(in srgb, var(--club-on-brand) 28%, transparent);
+  background:
+    repeating-linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--club-on-brand) 7%, transparent) 0 12px,
+      color-mix(in srgb, var(--club-on-brand) 2%, transparent) 12px 24px
+    ),
+    linear-gradient(160deg, var(--club-ph-dark-from), var(--club-ph-dark-to));
+  color: color-mix(in srgb, var(--club-on-brand) 75%, transparent);
+}
+
+.portal .club-ph-label {
+  padding: 0 0.9rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.portal .club-ph-hint {
+  margin-top: 0.15rem;
+  font-size: 0.7rem;
+  opacity: 0.75;
+}
+
+.portal .club-sample {
+  border: 1px dashed #d97706;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.portal .club-card {
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.portal .club-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--club-gold) 55%, transparent);
+  box-shadow: 0 12px 28px -14px color-mix(in srgb, var(--club-brand) 35%, transparent);
+}
+
+.portal .club-pitch {
+  opacity: var(--club-hero-pitch-opacity);
+}
+
+.portal .no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.portal .no-scrollbar {
+  scrollbar-width: none;
+}
