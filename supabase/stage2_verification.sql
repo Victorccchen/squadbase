@@ -1,106 +1,76 @@
--- Stage 2 verification helpers (staging SQL Editor only).
--- Do not run against production. These statements use synthetic names, not real PII.
--- Run AFTER applying 20260902120000_stage2_org_master.sql,
--- 20260902140000_players_split_english_names.sql, and
--- 20260909100000_multi_team_membership_rules.sql (band + two-active cap).
-
--- =============================================================================
--- T2-2 / T2-3: jersey uniqueness (constraint; service role / SQL editor bypasses RLS)
--- Expected:
---   * second insert on the same team with jersey 7 fails (23505)
---   * same jersey 7 on a different team succeeds
--- The block rolls back so staging stays empty unless you change ROLLBACK to COMMIT.
--- =============================================================================
+-- Stage 2 verification: player name rules and jersey uniqueness.
+-- Self-contained; rolls back. Staging SQL Editor or CI (scripts/db-verify.sh).
+-- Do not run against production. Synthetic names only.
+--
+-- Updated for Stage ST (20260910000000): players train on exactly one 梯隊
+-- (age squad, one per band) and may join 隊伍 (competition teams), so the
+-- fixtures use the seeded age squad and a throwaway 隊伍 instead of plain teams.
+-- Read access to players / birth_date is covered by rls_matrix_verification.sql.
 
 begin;
 
-delete from public.team_memberships
-where player_id in (
-  select id from public.players
-  where name_en_given = 'Stage2' and name_en_family in ('Verify A', 'Verify B', 'Verify C')
-);
-delete from public.players
-where name_en_given = 'Stage2' and name_en_family in ('Verify A', 'Verify B', 'Verify C');
-delete from public.teams
-where name in ('Stage2 Verify Team A', 'Stage2 Verify Team B');
-
-insert into public.teams (name, age_band, status)
-select 'Stage2 Verify Team A', public.computed_age_band_from_birth_date('2014-08-15', public.club_today()), 'active'
-union all
-select 'Stage2 Verify Team B', public.computed_age_band_from_birth_date('2014-08-15', public.club_today()), 'active';
-
-insert into public.players (name_zh, name_en_given, name_en_family, name_ja, birth_date, status)
-values
-  ('驗證甲', 'Stage2', 'Verify A', '検証A', '2014-08-15', 'active'),
-  ('驗證乙', 'Stage2', 'Verify B', null, '2014-08-15', 'active'),
-  (null, 'Stage2', 'Verify C', '検証C', '2014-08-15', 'active');
-
--- T2-8: both CJK names empty must fail.
 do $$
+declare
+  v_today date := public.club_today();
+  v_birth date;
+  v_band public.age_band;
+  v_birth_label text;
+  v_squad uuid;
+  v_team_b uuid;
+  v_a uuid;
+  v_b uuid;
+  v_c uuid;
 begin
-  insert into public.players (name_zh, name_en_given, name_en_family, name_ja, birth_date, status)
-  values (null, 'Stage2', 'Verify Empty CJK', null, '2014-08-18', 'active');
-  raise exception 'T2-8 failed: player without zh/ja was accepted';
-exception
-  when check_violation then
-    raise notice 'T2-8 passed: missing zh and ja rejected';
-end
+  -- A birth date whose band has a seeded 梯隊 (U10 here).
+  select d::date into v_birth
+  from generate_series(v_today - interval '12 years', v_today - interval '7 years', interval '1 month') as g(d)
+  where public.age_squad_band_from_birth_date(d::date, v_today) = 'U10'
+  limit 1;
+  v_band := public.age_squad_band_from_birth_date(v_birth, v_today);
+  v_birth_label := public.birth_age_label_from_birth_date(v_birth, v_today);
+
+  select id into v_squad from public.teams where kind = 'age_squad' and age_band = v_band;
+  if v_squad is null then
+    insert into public.teams (name, age_band, kind) values ('Stage2 Verify 梯隊', v_band, 'age_squad')
+    returning id into v_squad;
+  end if;
+  update public.teams set status = 'active' where id = v_squad;
+
+  insert into public.teams (name, age_band, kind, layer_key, eligible_birth_ages)
+  values ('Stage2 Verify 隊伍 B', v_band, 'competition_team', 'stage2_verify', array[v_birth_label])
+  returning id into v_team_b;
+
+  insert into public.players (name_zh, name_en_given, name_en_family, name_ja, birth_date)
+  values ('驗證甲', 'Stage2', 'Verify A', '検証A', v_birth) returning id into v_a;
+  insert into public.players (name_zh, name_en_given, name_en_family, name_ja, birth_date)
+  values ('驗證乙', 'Stage2', 'Verify B', null, v_birth) returning id into v_b;
+  insert into public.players (name_zh, name_en_given, name_en_family, name_ja, birth_date)
+  values (null, 'Stage2', 'Verify C', '検証C', v_birth) returning id into v_c;
+
+  -- T2-8: a player needs a Chinese or Japanese name.
+  begin
+    insert into public.players (name_zh, name_en_given, name_en_family, name_ja, birth_date)
+    values (null, 'Stage2', 'Verify Empty CJK', null, v_birth);
+    raise exception 'T2-8 failed: player without zh/ja was accepted';
+  exception
+    when check_violation then
+      raise notice 'T2-8 passed: missing zh and ja rejected';
+  end;
+
+  -- T2-3: the same jersey number on different teams is allowed.
+  insert into public.team_memberships (player_id, team_id, jersey_number) values (v_a, v_squad, 7);
+  insert into public.team_memberships (player_id, team_id, jersey_number) values (v_b, v_team_b, 7);
+  raise notice 'T2-3 passed: jersey 7 on two different teams';
+
+  -- T2-2: a duplicate jersey on the same team is rejected.
+  begin
+    insert into public.team_memberships (player_id, team_id, jersey_number) values (v_c, v_squad, 7);
+    raise exception 'T2-2 failed: duplicate jersey on the same team was accepted';
+  exception
+    when unique_violation then
+      raise notice 'T2-2 passed: duplicate jersey rejected (23505)';
+  end;
+end;
 $$;
 
--- T2-2 / T2-3 jersey checks use the three players above.
-insert into public.team_memberships (player_id, team_id, jersey_number, status)
-select p.id, t.id, 7, 'active'
-from public.players p
-join public.teams t on t.name = 'Stage2 Verify Team A'
-where p.name_en_given = 'Stage2' and p.name_en_family = 'Verify A';
-
-insert into public.team_memberships (player_id, team_id, jersey_number, status)
-select p.id, t.id, 7, 'active'
-from public.players p
-join public.teams t on t.name = 'Stage2 Verify Team B'
-where p.name_en_given = 'Stage2' and p.name_en_family = 'Verify B';
-
--- T2-2: duplicate jersey on the same team must fail.
-do $$
-begin
-  insert into public.team_memberships (player_id, team_id, jersey_number, status)
-  select p.id, t.id, 7, 'active'
-  from public.players p
-  join public.teams t on t.name = 'Stage2 Verify Team A'
-  where p.name_en_given = 'Stage2' and p.name_en_family = 'Verify C';
-
-  raise exception 'T2-2 failed: duplicate jersey on the same team was accepted';
-exception
-  when unique_violation then
-    raise notice 'T2-2 passed: duplicate jersey rejected (23505)';
-end
-$$;
-
--- Leave committed only if you want the synthetic rows for UI checks.
--- Prefer rolling back so staging stays empty:
 rollback;
-
--- To keep the rows for a UI smoke test, replace rollback with commit, then
--- delete them from Table Editor when finished.
-
--- =============================================================================
--- RLS (T2-5 / birth_date protection): fill in real user UUIDs from Auth.
--- Parent (no coach/admin): 0 player rows, 0 birth_date values.
--- Coach assigned only to team A: can read team A players, not team B.
--- Anon: 0 rows.
--- =============================================================================
-
--- begin;
--- set local role authenticated;
--- select set_config('request.jwt.claim.sub', 'PARENT_OR_COACH_UUID', true);
--- select set_config('request.jwt.claim.role', 'authenticated', true);
---
--- select count(*) as player_rows_visible from public.players;
--- select count(*) as birth_dates_visible
--- from public.players
--- where birth_date is not null;
---
--- set local role anon;
--- select count(*) as anon_players from public.players;
--- select count(*) as anon_teams from public.teams;
--- rollback;
