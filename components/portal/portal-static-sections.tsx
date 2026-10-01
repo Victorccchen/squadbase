@@ -290,8 +290,33 @@ async function PathwayChart() {
     <div className="mt-14">
       <h3 className="text-2xl font-black tracking-tight">{t("teams.chartTitle")}</h3>
       <p className="mt-3 max-w-3xl text-sm leading-7 text-club-brand/70">{t("teams.chartLead")}</p>
-      <p className="mt-2 text-xs font-semibold text-club-brand/50 md:hidden">{t("teams.chartSwipe")}</p>
-      <div className="mt-5 max-w-full overflow-x-auto">
+      <div className="mt-5 space-y-3 md:hidden">
+        {CHART_ROWS.map((row) => (
+          <div key={row.id} className="rounded-2xl border border-club-brand/10 bg-club-cream p-3">
+            <p className="text-sm font-black">{t(`teams.rows.${row.id}`)}</p>
+            <ul className="mt-2 flex flex-wrap gap-1.5">
+              {row.cells.map((level, index) => {
+                const age = CHART_AGES[index];
+                if (!age) {
+                  return null;
+                }
+                return (
+                  <li
+                    key={age}
+                    className={`min-w-14 rounded-lg px-1.5 py-1 text-center text-[11px] leading-tight font-bold ${chartLevelClass(level)} ${age === "u14" ? "ring-2 ring-club-gold" : ""}`}
+                    title={t(`teams.levelName.${level}`)}
+                  >
+                    <span className="block font-semibold opacity-80">{CHART_AGE_LABEL[age]}</span>
+                    {t(`teams.levels.${level}`)}
+                    <span className="sr-only"> {t(`teams.levelName.${level}`)}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+      </div>
+      <div className="mt-5 hidden max-w-full overflow-x-auto md:block">
         <table className="w-full min-w-[44rem] border-separate border-spacing-1 text-center text-xs">
           <caption className="sr-only">{t("teams.chartLead")}</caption>
           <thead>
