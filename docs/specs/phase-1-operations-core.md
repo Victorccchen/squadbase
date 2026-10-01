@@ -94,7 +94,7 @@ PR-01 與 PR-02 可以同時進行；其餘依表內依賴。
 2. **staging 歷史對齊：** 文件化並由 Victor 執行一次 `supabase migration repair --status applied <每個版本>`，讓 staging 的 migration 表與 repo 一致。PR 內附完整指令清單，不由 CI 自動執行。
 3. **CI（`.github/workflows/ci.yml` 新增 job `db`）：** `supabase start` → `supabase db reset` → 依序執行 `supabase/*_verification.sql`（任何錯誤即失敗）→ 執行 pgTAP 權限矩陣（最小版本：anon／未綁定家長／已核准家長／指派教練／非指派教練／admin，對 `players`、`player_session_balances`、`session_credit_ledger`、`payment_claims`、`session_attendance` 的 select 與主要 RPC 的 execute）。
 4. **staging 自動套用（新 workflow `db-staging.yml`）：** `push` 到 `main` 且 `supabase/migrations/**` 有變更時執行 `supabase db push`。所需 secrets（`SUPABASE_ACCESS_TOKEN`、`SUPABASE_DB_PASSWORD`、`SUPABASE_PROJECT_REF`）由 Victor 在 GitHub 設定；先以 `workflow_dispatch` 手動觸發驗證一次，確認後再開自動。**不建立任何 production workflow。**
-5. `lib/supabase/database.types.ts` 改由 `supabase gen types typescript --local` 產生；CI 檢查產生結果與 repo 一致。
+5. `lib/supabase/database.types.ts` 改由 `supabase gen types typescript --local` 產生；CI 檢查產生結果與 repo 一致。**（實作時移到後續 PR：產生型別需要 Docker，且手寫型別檔有自訂別名，需要逐步改寫引用處。）**
 6. `package.json` 的 `test` script 改為自動收集 `**/*.test.ts`（避免漏登記）。
 7. README：把「Apply migrations (staging only)」改寫為 CLI 流程，舊的手貼步驟移到附錄。
 
@@ -102,7 +102,8 @@ PR-01 與 PR-02 可以同時進行；其餘依表內依賴。
 - P02-1 CI 的 `db` job 在乾淨環境跑完所有 migration 與驗證 SQL。
 - P02-2 故意讓家長能讀 `session_credit_ledger` 的測試分支，pgTAP 失敗。
 - P02-3 `workflow_dispatch` 對 staging 執行 `db push` 成功，且 staging 無 drift（`supabase db diff` 為空）。
-- P02-4 型別檔由工具產生，CI 比對通過。
+- P02-4 （移到後續 PR）型別檔由工具產生，CI 比對通過。
+- P02-5 staging 執行 repair 前，`supabase/baseline_objects_verification.sql` 確認 43 個既有 migration 的物件都在。
 
 ---
 

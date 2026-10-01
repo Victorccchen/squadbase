@@ -1,0 +1,77 @@
+name: Database (staging)
+
+# Applies supabase/migrations to the STAGING Supabase project only.
+# Manual for now (Actions → Database (staging) → Run workflow). After the first
+# successful push, add `push: { branches: [main], paths: ["supabase/migrations/**"] }`
+# to `on:` to apply on merge.
+#
+# Repository secrets (Settings → Secrets and variables → Actions):
+#   SUPABASE_ACCESS_TOKEN  personal access token from supabase.com/dashboard/account/tokens
+#   SUPABASE_DB_PASSWORD   staging database password (Project Settings → Database)
+# There is no production workflow, and none should be added without approval.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "dry-run lists pending migrations; repair-baseline marks the 43 pre-Phase-1 migrations as already applied (run once); push applies pending migrations"
+        type: choice
+        options:
+          - dry-run
+          - repair-baseline
+          - push
+        default: dry-run
+
+concurrency:
+  group: db-staging
+  cancel-in-progress: false
+
+env:
+  # Staging only. Hard-coded so this workflow cannot be pointed at production.
+  STAGING_PROJECT_REF: ffksqfgscuezjwdbktcd
+  # Last migration that was pasted into staging by hand before the CLI.
+  BASELINE_LAST_VERSION: "20260921030000"
+
+jobs:
+  staging:
+    name: ${{ inputs.mode }}
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.119.0
+
+      - name: Check secrets
+        run: |
+          test -n "$SUPABASE_ACCESS_TOKEN" || { echo "SUPABASE_ACCESS_TOKEN secret is missing"; exit 1; }
+          test -n "$SUPABASE_DB_PASSWORD" || { echo "SUPABASE_DB_PASSWORD secret is missing"; exit 1; }
+
+      - name: Link staging project
+        run: supabase link --project-ref "$STAGING_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Migration history on staging
+        run: supabase migration list --linked
+
+      - name: Mark pre-Phase-1 migrations as applied
+        if: inputs.mode == 'repair-baseline'
+        run: |
+          versions=$(ls supabase/migrations/*.sql | xargs -n1 basename | cut -d_ -f1 \
+            | awk -v last="$BASELINE_LAST_VERSION" '$1 <= last')
+          echo "Marking as applied:"; echo "$versions"
+          supabase migration repair --linked --status applied $versions
+          supabase migration list --linked
+
+      - name: Dry run
+        if: inputs.mode == 'dry-run'
+        run: supabase db push --linked --dry-run
+
+      - name: Push
+        if: inputs.mode == 'push'
+        run: supabase db push --linked
