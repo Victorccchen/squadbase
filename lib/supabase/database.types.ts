@@ -95,6 +95,8 @@ export type Profile = {
   id: string;
   phone: string | null;
   display_name: string | null;
+  /** Phase 1 PR-04: language for messages to this person; null until first sign-in. */
+  preferred_language: "zh-Hant" | "ja" | "en" | null;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -1531,6 +1533,13 @@ export type Database = {
           p_player_id: string;
           p_package_id: string;
           p_last5: string;
+        };
+        Returns: string;
+      };
+      set_preferred_language: {
+        Args: {
+          p_language: "zh-Hant" | "ja" | "en";
+          p_only_if_unset?: boolean;
         };
         Returns: string;
       };

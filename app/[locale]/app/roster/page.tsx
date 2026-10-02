@@ -158,7 +158,7 @@ export default async function RosterPage() {
                             href={`/app/roster/sessions/${session.id}`}
                             className="text-sm font-medium underline underline-offset-2"
                           >
-                            {sessionsT("takeAttendance")}
+                            {t("viewSession")}
                           </Link>
                         )}
                       </div>
