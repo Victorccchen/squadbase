@@ -46,6 +46,7 @@ export default async function EditPlayerPage({ params, searchParams }: EditPlaye
           memberships={player.memberships}
           teams={teams}
           submitLabel={t("save")}
+          showCrossSquad
         />
         <PlayerPhotoPanel
           playerId={player.id}

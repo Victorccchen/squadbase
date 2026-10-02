@@ -18,6 +18,7 @@ import {
   parseLinkDecision,
   parseMembershipSlots,
   parseAgeSquadSlot,
+  parseCrossSquadSlot,
   parsePlayerNames,
   playerNamesError,
   membershipWriteErrorKey,
@@ -232,6 +233,71 @@ describe("parseAgeSquadSlot", () => {
         squad: { teamId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", jersey: 7 },
       },
     );
+  });
+});
+
+describe("parseCrossSquadSlot (PR-05)", () => {
+  const U8 = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+  const U10 = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+  function form(entries: Record<string, string>): FormData {
+    const data = new FormData();
+    for (const [key, value] of Object.entries(entries)) {
+      data.set(key, value);
+    }
+    return data;
+  }
+
+  it("leaves the cross 梯隊 alone when the form has no field", () => {
+    assert.deepEqual(parseCrossSquadSlot(form({}), U8), { ok: true, present: false });
+  });
+
+  it("clears on an empty choice", () => {
+    assert.deepEqual(parseCrossSquadSlot(form({ cross_squad_id: "" }), U8), {
+      ok: true,
+      present: true,
+      teamId: null,
+      jersey: null,
+    });
+  });
+
+  it("accepts a cross 梯隊 with or without a jersey", () => {
+    assert.deepEqual(parseCrossSquadSlot(form({ cross_squad_id: U10 }), U8), {
+      ok: true,
+      present: true,
+      teamId: U10,
+      jersey: null,
+    });
+    assert.deepEqual(
+      parseCrossSquadSlot(form({ cross_squad_id: U10, cross_squad_jersey: "12" }), U8),
+      { ok: true, present: true, teamId: U10, jersey: 12 },
+    );
+  });
+
+  it("rejects the primary team and bad jerseys", () => {
+    assert.deepEqual(parseCrossSquadSlot(form({ cross_squad_id: U8 }), U8), {
+      ok: false,
+      errorKey: "crossSquadSameAsPrimary",
+    });
+    assert.deepEqual(
+      parseCrossSquadSlot(form({ cross_squad_id: U10, cross_squad_jersey: "100" }), U8),
+      { ok: false, errorKey: "invalidJersey" },
+    );
+  });
+
+  it("maps cross 梯隊 database errors", () => {
+    assert.equal(
+      membershipWriteErrorKey({ message: "cross squad must differ from primary squad" }),
+      "crossSquadSameAsPrimary",
+    );
+    assert.equal(
+      membershipWriteErrorKey({ message: "cross squad requires an active primary squad" }),
+      "crossSquadNeedsPrimary",
+    );
+    assert.equal(
+      membershipWriteErrorKey({ message: "player already has an active cross squad" }),
+      "crossSquadLimit",
+    );
+    assert.equal(membershipWriteErrorKey({ message: "team is not active" }), "crossSquadTeamInactive");
   });
 });
 

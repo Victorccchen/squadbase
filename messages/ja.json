@@ -587,8 +587,16 @@
       "pushSubscribeFailed": "プッシュを有効にできませんでした。ホーム画面に追加してから再試行してください。",
       "pushUnsupported": "このブラウザは Web Push に対応していません。",
       "packageHasClaims": "このパックには申請があるため、価格や回数は変更できません。無効にしてから新しいパックを追加してください。",
-      "activePackageExists": "同じ年齢区分・同じ回数の有効なパックがすでにあります。先に古いパックを無効にしてください。"
-    }
+      "activePackageExists": "同じ年齢区分・同じ回数の有効なパックがすでにあります。先に古いパックを無効にしてください。",
+      "crossSquadSameAsPrimary": "飛び級梯隊は主梯隊と同じにできません。",
+      "crossSquadNeedsPrimary": "先に主梯隊を設定してから飛び級梯隊を追加してください。",
+      "crossSquadLimit": "飛び級梯隊は一人一つまでです。",
+      "crossSquadTeamInactive": "この梯隊は停止中のため、飛び級梯隊に設定できません。"
+    },
+    "crossSquad": "飛び級梯隊",
+    "crossSquadNone": "なし",
+    "crossSquadTag": "飛び級",
+    "crossSquadHint": "もう一つの梯隊の練習にも参加できます（例：U8 から U10 へ）。回数券の価格は主梯隊、消化は練習の梯隊に従います。背番号が空欄の場合は主梯隊の背番号を使います。"
   },
   "children": {
     "title": "子ども",
@@ -734,7 +742,8 @@
     "statuses": {
       "registered": "申込済み",
       "cancelled": "取消済み"
-    }
+    },
+    "crossSquadTag": "飛び級"
   },
   "competitions": {
     "title": "試合申込",

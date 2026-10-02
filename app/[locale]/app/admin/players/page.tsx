@@ -91,7 +91,9 @@ export default async function AdminPlayersPage({ searchParams }: AdminPlayersPag
                         {localizedPlayerName(player, locale)}
                       </span>
                       <span className="text-sm text-zinc-500">
-                        {formatActiveMembershipSummary(player.memberships) ?? org("noTeam")}
+                        {formatActiveMembershipSummary(player.memberships, {
+                          crossLabel: org("crossSquadTag"),
+                        }) ?? org("noTeam")}
                         {" · "}
                         {band ? org(`ageBands.${band}`) : org("ageBandUnknown")}
                       </span>

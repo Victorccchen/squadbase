@@ -145,12 +145,16 @@ export type Player = {
   updated_by: string | null;
 };
 
+/** PR-05: age_squad rows are primary (one active, sets price) or cross (跨上, one active). Null on 隊伍. */
+export type SquadRole = "primary" | "cross";
+
 export type TeamMembership = {
   id: string;
   player_id: string;
   team_id: string;
   jersey_number: number;
   status: OrgStatus;
+  squad_role: SquadRole | null;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -599,12 +603,14 @@ export type Database = {
           team_id: string;
           jersey_number: number;
           status?: OrgStatus;
+          squad_role?: SquadRole | null;
         } & TimestampInsert;
         Update: {
           player_id?: string;
           team_id?: string;
           jersey_number?: number;
           status?: OrgStatus;
+          squad_role?: SquadRole | null;
           updated_at?: string;
           updated_by?: string | null;
         };
@@ -1415,6 +1421,14 @@ export type Database = {
           p_player_id: string;
           p_squad_id: string;
           p_jersey_number: number;
+        };
+        Returns: undefined;
+      };
+      admin_set_cross_squad: {
+        Args: {
+          p_player_id: string;
+          p_team_id: string | null;
+          p_jersey_number?: number | null;
         };
         Returns: undefined;
       };

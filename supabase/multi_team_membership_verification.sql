@@ -1,13 +1,13 @@
 -- 梯隊 (age squad) membership rules, as enforced by enforce_team_membership_rules
--- (latest in 20260911000000_player_membership_jersey_self_update.sql).
+-- (latest in 20261002120000_primary_and_cross_squad.sql).
 -- Self-contained; rolls back. Staging SQL Editor or CI (scripts/db-verify.sh).
 -- Do not run against production. Synthetic names only.
 --
 -- This file used to test the PR #22 "two active teams, one step up" ladder from
 -- 20260909100000. Stage ST (20260910000000) replaced those rules; the 隊伍
--- (competition team) rules are covered in stage_st_verification.sql. Phase 1
--- PR-05 adds one cross 梯隊 per player; TMT-1 then applies to the primary 梯隊
--- only, so update this file in that PR.
+-- (competition team) rules are covered in stage_st_verification.sql. Since
+-- Phase 1 PR-05 these rules apply to the primary 梯隊 (rows without squad_role
+-- default to primary); the cross 梯隊 is covered in cross_squad_verification.sql.
 
 begin;
 
@@ -70,6 +70,12 @@ begin
     raise exception 'TMT-3 failed: jersey edit on the current 梯隊 did not apply';
   end if;
   raise notice 'TMT-3 passed: jersey edit on the current 梯隊';
+
+  -- TMT-4: a 梯隊 row inserted without squad_role is the primary 梯隊 (PR-05).
+  if (select squad_role from public.team_memberships where id = v_membership) is distinct from 'primary' then
+    raise exception 'TMT-4 failed: 梯隊 row without squad_role is not primary';
+  end if;
+  raise notice 'TMT-4 passed: default squad_role is primary';
 end;
 $$;
 

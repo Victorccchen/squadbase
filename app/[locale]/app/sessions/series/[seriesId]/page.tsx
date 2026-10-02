@@ -7,6 +7,7 @@ import { SeriesRsvpForm } from "@/components/sessions/series-rsvp-form";
 import { listOwnGuardianLinks } from "@/lib/org/queries";
 import {
   approvedChildrenFromLinks,
+  crossOnlyTeamIds,
   childrenOnSessionTeam,
   listOpenSessionsForParentSeries,
   listOwnSessionRegistrations,
@@ -33,6 +34,7 @@ export default async function TrainingSeriesPage({ params }: TrainingSeriesPageP
   const locale = await getLocale();
   const links = await listOwnGuardianLinks();
   const children = approvedChildrenFromLinks(links, "age_squad");
+  const crossTeams = crossOnlyTeamIds(children);
   const teamIds = [...new Set(children.map((child) => child.teamId))];
   const playerIds = [...new Set(children.map((child) => child.player.id))];
   const [sessions, registrations] = await Promise.all([
@@ -76,7 +78,11 @@ export default async function TrainingSeriesPage({ params }: TrainingSeriesPageP
                 key={session.id}
                 sessionId={session.id}
                 title={session.title}
-                teamName={session.team?.name ?? org("unknownTeam")}
+                teamName={
+                  crossTeams.has(session.team_id)
+                    ? `${session.team?.name ?? org("unknownTeam")} · ${sessionsT("crossSquadTag")}`
+                    : (session.team?.name ?? org("unknownTeam"))
+                }
                 location={session.location}
                 startsAt={session.starts_at}
                 endsAt={session.ends_at}

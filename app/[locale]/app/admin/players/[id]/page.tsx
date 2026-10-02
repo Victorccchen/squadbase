@@ -108,7 +108,9 @@ export default async function PlayerDetailPage({ params, searchParams }: PlayerD
           <div className="flex justify-between gap-4">
             <dt className="text-zinc-500">{org("teams")}</dt>
             <dd className="text-right font-medium">
-              {formatActiveMembershipSummary(player.memberships) ?? org("noTeam")}
+              {formatActiveMembershipSummary(player.memberships, {
+                crossLabel: org("crossSquadTag"),
+              }) ?? org("noTeam")}
             </dd>
           </div>
           <div className="flex justify-between gap-4">

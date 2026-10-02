@@ -587,8 +587,16 @@
       "pushSubscribeFailed": "Could not enable push. Add the site to the Home Screen and try again.",
       "pushUnsupported": "This browser does not support Web Push.",
       "packageHasClaims": "This package already has claims, so its price and credits cannot change. Deactivate it and add a new package.",
-      "activePackageExists": "An active package with the same band and credits already exists. Deactivate the old one first."
-    }
+      "activePackageExists": "An active package with the same band and credits already exists. Deactivate the old one first.",
+      "crossSquadSameAsPrimary": "The cross 梯隊 must differ from the primary 梯隊.",
+      "crossSquadNeedsPrimary": "Set the primary 梯隊 before adding a cross 梯隊.",
+      "crossSquadLimit": "A player can have only one cross 梯隊.",
+      "crossSquadTeamInactive": "This 梯隊 is inactive and cannot be a cross 梯隊."
+    },
+    "crossSquad": "Cross 梯隊 (playing up)",
+    "crossSquadNone": "None",
+    "crossSquadTag": "playing up",
+    "crossSquadHint": "The player may also train with one other 梯隊 (for example U8 playing up to U10). Package prices follow the primary 梯隊; debits follow the session’s 梯隊. Leave the jersey empty to reuse the primary jersey."
   },
   "children": {
     "title": "My children",
@@ -734,7 +742,8 @@
     "statuses": {
       "registered": "Registered",
       "cancelled": "Cancelled"
-    }
+    },
+    "crossSquadTag": "playing up"
   },
   "competitions": {
     "title": "Competitions",
