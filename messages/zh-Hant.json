@@ -216,7 +216,8 @@
     "settings": "設定",
     "venues": "場地",
     "cash": "收現金",
-    "deposits": "存款核對"
+    "deposits": "存款核對",
+    "paperCards": "舊卡移轉"
   },
   "access": {
     "deniedTitle": "你沒有權限開啟此頁",
@@ -349,7 +350,9 @@
     "reportsTitle": "報表",
     "reportsBody": "下載出缺席、報名、堂數流水與比賽名單的 Excel 或 CSV，以及聯盟報名用 ZIP（名冊 + 照片）。僅限管理員。預設不含家長電話等聯絡個資。軟刪除場次預設排除。試算表每次最多 5000 列；證件照片包最多 200 人。",
     "dashboardTitle": "營運看板",
-    "dashboardBody": "出缺席總覽、各梯隊到勤率，以及匯款對堂數消耗。僅限管理員。與 Excel 報表互補。"
+    "dashboardBody": "出缺席總覽、各梯隊到勤率，以及匯款對堂數消耗。僅限管理員。與 Excel 報表互補。",
+    "paperCardsTitle": "舊卡移轉與並行比對",
+    "paperCardsBody": "把實體課程卡拍照移入系統（剩餘堂數以每堂 300 元入帳），並在並行季每週抽查卡片與系統是否一致。"
   },
   "roster": {
     "title": "名單",
@@ -623,7 +626,13 @@
       "closingAlreadyDeposited": "所選日結已登記過存款。",
       "noClosingsSelected": "請至少選一個日結。",
       "cannotReconcileOwnDeposit": "不能核對自己登記的存款。",
-      "depositAmountMismatch": "存款金額與所選日結合計不符。"
+      "depositAmountMismatch": "存款金額與所選日結合計不符。",
+      "paperCardAlreadyConfirmed": "這張卡已經移入系統（同一卡號不能重複移入）。",
+      "paperCardPackageRequired": "請選擇卡片方案（10／20／30 次）。",
+      "paperCardRemainingInvalid": "剩餘堂數需介於 0 到方案堂數之間。",
+      "paperCardFutureDate": "已使用日期不能是未來的日期。",
+      "paperCardTooManyDates": "已使用日期最多 30 格。",
+      "paperCardPhotosRequired": "請至少拍一張卡片照片（背面），或勾選「沒有照片，直接手動輸入」。"
     },
     "crossSquad": "跨上梯隊",
     "crossSquadNone": "不跨上",
@@ -1320,7 +1329,8 @@
       "no_show_debit": "缺席扣堂",
       "match_debit": "比賽扣堂",
       "admin_adjust": "管理員調整",
-      "reversal": "沖銷"
+      "reversal": "沖銷",
+      "opening_balance": "舊卡移入"
     },
     "paymentMethods": {
       "transfer": "轉帳",
@@ -1693,7 +1703,8 @@
       "invoice_pending": "待開發票",
       "cash_close_day": "現金尚未日結",
       "cash_deposit_due": "日結超過 7 天未存款",
-      "deposit_reconcile": "存款待核對"
+      "deposit_reconcile": "存款待核對",
+      "paper_card_mismatch": "實體卡與系統堂數不一致"
     }
   },
   "venues": {
@@ -1839,5 +1850,86 @@
     "directorsTitle": "梯隊總監",
     "directorsLead": "總監可以在「收現金」頁收費、作廢未日結的收據、日結與登記存款，並看得到球員名單與堂數（唯讀）。",
     "addDirector": "新增總監"
+  },
+  "paperCards": {
+    "title": "舊卡移轉",
+    "lead": "逐張拍下實體課程卡正反面，系統讀出卡號、方案與每格日期，看不清楚的格子會標黃，請人確認後才移入。剩餘堂數以舊價每堂 300 元入帳；已使用日期轉成出席紀錄，不會再扣堂。",
+    "progress": "已移轉 {moved}／在籍 {roster} 人",
+    "checksLink": "並行比對",
+    "doneTitle": "已移入系統",
+    "doneBody": "對到場次 {matched} 格、找不到場次 {unmatched} 格、退回系統已扣的 {reversed} 堂。目前剩餘 {balance} 堂。",
+    "photosRemoved": "卡片照片已刪除。",
+    "photosKept": "卡片照片尚未刪除成功，請在下方清單按「再刪一次」。",
+    "newCard": "新增一張卡",
+    "photoFront": "正面照片",
+    "photoBack": "背面照片（日期格）",
+    "aiHint": "送出後由 AI 讀取卡片（約 10–30 秒），讀出的結果只是草稿，確認前都可以修改。",
+    "aiNotConfigured": "尚未設定 AI 讀取（ANTHROPIC_API_KEY），請在下一步手動輸入每格日期。照片仍會留著方便對照。",
+    "noPhotoManual": "不用 AI，直接手動輸入",
+    "photoPrivacy": "照片含孩子姓名，只存在私有空間，確認移入後立即刪除。請勿拍到其他孩子。",
+    "start": "下一步：核對",
+    "reading": "讀取中…",
+    "readingHint": "正在讀取卡片，請不要關閉頁面。",
+    "drafts": "待核對",
+    "draftsEmpty": "沒有待核對的卡片。",
+    "needsManual": "需人工輸入",
+    "readyToReview": "待確認",
+    "moved": "已移入",
+    "movedEmptyTitle": "還沒有移入的卡片",
+    "movedEmptyBody": "從上方新增第一張卡。",
+    "cardNoValue": "卡號 {no}",
+    "movedSummary": "{pkg} 次卡 · 已用 {used} 格 · 剩 {remaining} 堂 · {date} 移入",
+    "unmatchedDates": "找不到場次的日期：{dates}",
+    "photosPending": "照片尚未刪除",
+    "retryPurge": "再刪一次",
+    "back": "← 舊卡移轉",
+    "reviewTitle": "核對卡片：{name}",
+    "reviewLead": "對照照片逐格確認日期。黃色格子是 AI 不確定、或當天該梯隊沒有場次、或重複、或在未來的日期。空白格請留空。",
+    "alreadyMoved": "這張卡已於 {date} 移入，剩餘 {remaining} 堂。",
+    "aiFailed": "AI 沒有讀出結果，請手動輸入每格日期。",
+    "manualEntry": "手動輸入模式：請依照卡片填入每格日期。",
+    "squadMarks": "梯隊記號：{marks}（不是日期）",
+    "photoAlt": "卡片照片 {n}",
+    "cardNo": "卡號",
+    "package": "方案",
+    "selectPackage": "選擇方案",
+    "packageOption": "{count} 次（{price} 元）",
+    "cellsLegend": "背面 30 格",
+    "lowCount": "{count} 格需要確認",
+    "asWritten": "卡上寫「{text}」",
+    "flags": {
+      "aiUnsure": "AI 不確定，請對照照片",
+      "noSession": "當天這個孩子的梯隊沒有場次",
+      "future": "日期在未來",
+      "duplicate": "和前面的日期重複",
+      "unreadable": "讀不出日期"
+    },
+    "remaining": "卡上剩餘堂數",
+    "remainingHint": "已使用 {used} 格，依方案應剩 {suggestion} 堂；如果卡上另有註記，以實際剩餘為準。",
+    "confirmEffect": "確認後：帳本記一筆「舊卡移入」{remaining} 堂（每堂 300 元，共 {amount} 元）。系統目前餘額 {balance} 堂；已扣過的同一天場次會退回，避免重複扣堂。",
+    "problems": {
+      "packageRequired": "請先選擇方案。",
+      "remainingOutOfRange": "剩餘堂數需介於 0 到方案堂數之間。",
+      "futureDate": "有日期在未來，請修正。",
+      "tooManyDates": "已使用日期超過 30 格。"
+    },
+    "confirm": "確認移入",
+    "confirmPrompt": "確定移入？剩餘 {remaining} 堂、已使用 {used} 格。移入後照片會刪除。",
+    "rerun": "重新讀取",
+    "discard": "放棄這張",
+    "discardConfirm": "放棄這張卡的草稿並刪除照片？",
+    "dashboardTitle": "舊卡移轉（並行季）",
+    "seasonChecks": "本季抽查 {checks} 次、不一致 {mismatches} 次",
+    "checksTitle": "並行比對",
+    "checksLead": "並行季期間每週抽查幾張卡：數一下卡上還剩幾格（剩餘堂數），和系統比對。不一致會出現在工作清單。",
+    "cardRemaining": "卡上剩餘堂數",
+    "cardRemainingHint": "以卡上方案減去已寫日期的格數。",
+    "note": "備註（選填）",
+    "recordCheck": "比對",
+    "checkMatches": "一致：剩 {count} 堂",
+    "checkMismatch": "不一致：卡上 {card} 堂、系統 {system} 堂",
+    "recentChecks": "最近的比對",
+    "checksEmptyTitle": "還沒有比對紀錄",
+    "checksEmptyBody": "每週挑幾位孩子的卡片比對一次即可。"
   }
 }

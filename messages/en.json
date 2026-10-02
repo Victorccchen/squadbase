@@ -216,7 +216,8 @@
     "settings": "Settings",
     "venues": "Venues",
     "cash": "Cash",
-    "deposits": "Deposits"
+    "deposits": "Deposits",
+    "paperCards": "Paper cards"
   },
   "access": {
     "deniedTitle": "You cannot open this page",
@@ -349,7 +350,9 @@
     "reportsTitle": "Reports",
     "reportsBody": "Download attendance, registrations, credit ledger, and match roster as Excel or CSV, plus a league-registration ZIP (roster + photos). Admin only. Default files omit parent phones and other contact PII. Soft-deleted sessions are excluded unless you include them. Spreadsheets cap at 5000 rows; photo packs cap at 200 players.",
     "dashboardTitle": "Ops dashboard",
-    "dashboardBody": "Attendance overview, per-梯隊 rates, and remittance vs credit-consumption. Admin only. Complements Excel reports."
+    "dashboardBody": "Attendance overview, per-梯隊 rates, and remittance vs credit-consumption. Admin only. Complements Excel reports.",
+    "paperCardsTitle": "Paper card move-in and parallel checks",
+    "paperCardsBody": "Photograph paper session cards to move them into the system (remaining sessions booked at 300 TWD each), and spot-check cards against the system every week of the parallel season."
   },
   "roster": {
     "title": "Roster",
@@ -623,7 +626,13 @@
       "closingAlreadyDeposited": "A selected closing is already in a deposit.",
       "noClosingsSelected": "Choose at least one closing.",
       "cannotReconcileOwnDeposit": "You cannot reconcile a deposit you recorded.",
-      "depositAmountMismatch": "The deposit does not match the selected closings."
+      "depositAmountMismatch": "The deposit does not match the selected closings.",
+      "paperCardAlreadyConfirmed": "This card is already in the system (the same card number cannot be moved in twice).",
+      "paperCardPackageRequired": "Choose the card plan (10, 20 or 30 sessions).",
+      "paperCardRemainingInvalid": "Remaining sessions must be between 0 and the plan size.",
+      "paperCardFutureDate": "Used dates cannot be in the future.",
+      "paperCardTooManyDates": "A card has at most 30 used dates.",
+      "paperCardPhotosRequired": "Take at least one photo of the card (the back), or choose “Enter by hand, no AI”."
     },
     "crossSquad": "Cross 梯隊 (playing up)",
     "crossSquadNone": "None",
@@ -1320,7 +1329,8 @@
       "no_show_debit": "No-show debit",
       "match_debit": "Match debit",
       "admin_adjust": "Admin adjust",
-      "reversal": "Reversal"
+      "reversal": "Reversal",
+      "opening_balance": "Paper card carried over"
     },
     "paymentMethods": {
       "transfer": "Transfer",
@@ -1693,7 +1703,8 @@
       "invoice_pending": "Invoice to issue",
       "cash_close_day": "Cash not closed",
       "cash_deposit_due": "Closed 7+ days without a deposit",
-      "deposit_reconcile": "Deposit to reconcile"
+      "deposit_reconcile": "Deposit to reconcile",
+      "paper_card_mismatch": "Paper card and system credits differ"
     }
   },
   "venues": {
@@ -1839,5 +1850,86 @@
     "directorsTitle": "Youth directors",
     "directorsLead": "Directors can take cash, void receipts before the day is closed, close days and record deposits on the Cash page, and can see the player list and credits (read-only).",
     "addDirector": "Add a director"
+  },
+  "paperCards": {
+    "title": "Paper card move-in",
+    "lead": "Photograph the front and back of each paper session card. The system reads the card number, plan and the date in each cell, and marks unclear cells in yellow for a person to check before the move-in. Remaining sessions are booked at the old price of 300 TWD each; used dates become attendance history and are never debited again.",
+    "progress": "{moved} of {roster} active players moved in",
+    "checksLink": "Parallel checks",
+    "doneTitle": "Moved into the system",
+    "doneBody": "{matched} cells matched a session, {unmatched} had no session, {reversed} system debits were given back. Remaining now: {balance}.",
+    "photosRemoved": "Card photos deleted.",
+    "photosKept": "The card photos could not be deleted yet. Use “Delete again” in the list below.",
+    "newCard": "Add a card",
+    "photoFront": "Front photo",
+    "photoBack": "Back photo (date cells)",
+    "aiHint": "After you submit, AI reads the card (about 10–30 seconds). The result is only a draft you can edit before confirming.",
+    "aiNotConfigured": "AI reading is not set up (ANTHROPIC_API_KEY). Enter each date by hand on the next screen; the photos stay for reference.",
+    "noPhotoManual": "Enter by hand, no AI",
+    "photoPrivacy": "The photos show the child’s name. They are kept in private storage and deleted as soon as the card is moved in. Keep other children out of the picture.",
+    "start": "Next: check",
+    "reading": "Reading…",
+    "readingHint": "Reading the card. Please keep this page open.",
+    "drafts": "To check",
+    "draftsEmpty": "No cards waiting to be checked.",
+    "needsManual": "Needs manual entry",
+    "readyToReview": "Ready to check",
+    "moved": "Moved in",
+    "movedEmptyTitle": "No cards moved in yet",
+    "movedEmptyBody": "Add the first card above.",
+    "cardNoValue": "Card {no}",
+    "movedSummary": "{pkg}-session card · {used} used · {remaining} left · moved in {date}",
+    "unmatchedDates": "Dates with no session: {dates}",
+    "photosPending": "Photos not deleted yet",
+    "retryPurge": "Delete again",
+    "back": "← Paper card move-in",
+    "reviewTitle": "Check card: {name}",
+    "reviewLead": "Compare each cell with the photo. Yellow cells are ones the AI was unsure about, days the child’s teams had no session, repeats, or future dates. Leave blank cells empty.",
+    "alreadyMoved": "This card was moved in on {date} with {remaining} sessions left.",
+    "aiFailed": "The AI could not read this card. Enter each date by hand.",
+    "manualEntry": "Manual entry: copy each date from the card.",
+    "squadMarks": "Squad marks: {marks} (not dates)",
+    "photoAlt": "Card photo {n}",
+    "cardNo": "Card number",
+    "package": "Plan",
+    "selectPackage": "Choose a plan",
+    "packageOption": "{count} sessions ({price} TWD)",
+    "cellsLegend": "The 30 cells on the back",
+    "lowCount": "{count} cells need checking",
+    "asWritten": "Written: “{text}”",
+    "flags": {
+      "aiUnsure": "The AI was unsure; compare with the photo",
+      "noSession": "The child’s teams had no session that day",
+      "future": "Date is in the future",
+      "duplicate": "Repeats an earlier date",
+      "unreadable": "No date could be read"
+    },
+    "remaining": "Sessions left on the card",
+    "remainingHint": "{used} cells used, so the plan leaves {suggestion}. If the card says otherwise, enter what is really left.",
+    "confirmEffect": "On confirm, the ledger gets “Paper card carried over” for {remaining} sessions (300 TWD each, {amount} TWD). The system balance is {balance} now; a session on the same day that the system already debited is given back so nothing is charged twice.",
+    "problems": {
+      "packageRequired": "Choose a plan first.",
+      "remainingOutOfRange": "Remaining sessions must be between 0 and the plan size.",
+      "futureDate": "A date is in the future. Please fix it.",
+      "tooManyDates": "More than 30 used dates."
+    },
+    "confirm": "Confirm move-in",
+    "confirmPrompt": "Move this card in? {remaining} sessions left, {used} cells used. The photos are deleted afterwards.",
+    "rerun": "Read again",
+    "discard": "Discard this card",
+    "discardConfirm": "Discard this draft and delete its photos?",
+    "dashboardTitle": "Paper card move-in (parallel season)",
+    "seasonChecks": "{checks} checks this season, {mismatches} mismatches",
+    "checksTitle": "Parallel checks",
+    "checksLead": "Each week of the parallel season, pick a few cards: count the sessions left on the card and compare with the system. A mismatch shows up in the task list.",
+    "cardRemaining": "Sessions left on the card",
+    "cardRemainingHint": "The plan size minus the cells with a date.",
+    "note": "Note (optional)",
+    "recordCheck": "Compare",
+    "checkMatches": "Match: {count} left",
+    "checkMismatch": "Mismatch: card {card}, system {system}",
+    "recentChecks": "Recent checks",
+    "checksEmptyTitle": "No checks yet",
+    "checksEmptyBody": "A few children’s cards each week is enough."
   }
 }

@@ -83,6 +83,7 @@ function copy(): ReportCopy {
       no_show_debit: "No-show debit",
       match_debit: "Match debit",
       admin_adjust: "Admin adjust",
+      opening_balance: "Paper card carried over",
       reversal: "Reversal",
     },
     actorRoles: { parent: "Parent", coach: "Coach", admin: "Admin", player: "Player" },

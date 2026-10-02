@@ -26,6 +26,7 @@ export default async function AdminHomePage() {
     { href: "/app/admin/import" as const, title: t("importTitle"), body: t("importBody"), prefetch: false },
     { href: "/app/admin/notices" as const, title: t("noticesTitle"), body: t("noticesBody"), prefetch: false },
     { href: "/app/admin/reports" as const, title: t("reportsTitle"), body: t("reportsBody"), prefetch: false },
+    { href: "/app/admin/paper-cards" as const, title: t("paperCardsTitle"), body: t("paperCardsBody"), prefetch: false },
   ];
 
   return (

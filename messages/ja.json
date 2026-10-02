@@ -216,7 +216,8 @@
     "settings": "設定",
     "venues": "会場",
     "cash": "現金受領",
-    "deposits": "入金照合"
+    "deposits": "入金照合",
+    "paperCards": "紙カード移行"
   },
   "access": {
     "deniedTitle": "このページを開けません",
@@ -349,7 +350,9 @@
     "reportsTitle": "レポート",
     "reportsBody": "出欠、申込、単位台帳、試合メンバーを Excel または CSV でダウンロードし、連盟提出用 ZIP（名簿 + 写真）も出せます。管理者のみ。既定では保護者の電話など連絡先 PII を含めません。論理削除した回は、含めない限り除外します。表は 1 回あたり最大 5000 行、写真パックは最大 200 人です。",
     "dashboardTitle": "運営ダッシュボード",
-    "dashboardBody": "出欠の概要、梯隊ごとの出席率、振込と単位消費の比較。管理者のみ。Excel レポートと対になります。"
+    "dashboardBody": "出欠の概要、梯隊ごとの出席率、振込と単位消費の比較。管理者のみ。Excel レポートと対になります。",
+    "paperCardsTitle": "紙カード移行と並行チェック",
+    "paperCardsBody": "紙の受講カードを撮影してシステムに移行し（残り回数は1回300元で記帳）、並行シーズン中は毎週カードとシステムを照合します。"
   },
   "roster": {
     "title": "名簿",
@@ -623,7 +626,13 @@
       "closingAlreadyDeposited": "選択した締めは入金登録済みです。",
       "noClosingsSelected": "締めを1つ以上選んでください。",
       "cannotReconcileOwnDeposit": "自分で登録した入金は照合できません。",
-      "depositAmountMismatch": "入金額が選択した締めの合計と一致しません。"
+      "depositAmountMismatch": "入金額が選択した締めの合計と一致しません。",
+      "paperCardAlreadyConfirmed": "このカードは既に移行済みです（同じカード番号は再移行できません）。",
+      "paperCardPackageRequired": "カードのプラン（10／20／30回）を選んでください。",
+      "paperCardRemainingInvalid": "残り回数は0からプランの回数までです。",
+      "paperCardFutureDate": "使用日に未来の日付は使えません。",
+      "paperCardTooManyDates": "使用日は最大30マスです。",
+      "paperCardPhotosRequired": "カードの写真（裏面）を1枚以上撮るか、「写真なしで手入力」を選んでください。"
     },
     "crossSquad": "飛び級梯隊",
     "crossSquadNone": "なし",
@@ -1320,7 +1329,8 @@
       "no_show_debit": "欠席減算",
       "match_debit": "試合減算",
       "admin_adjust": "管理者調整",
-      "reversal": "取消"
+      "reversal": "取消",
+      "opening_balance": "紙カード移行"
     },
     "paymentMethods": {
       "transfer": "振込",
@@ -1693,7 +1703,8 @@
       "invoice_pending": "発票の発行待ち",
       "cash_close_day": "現金が未締め",
       "cash_deposit_due": "締めから7日以上未入金",
-      "deposit_reconcile": "入金の照合待ち"
+      "deposit_reconcile": "入金の照合待ち",
+      "paper_card_mismatch": "紙カードとシステムの残り回数が不一致"
     }
   },
   "venues": {
@@ -1839,5 +1850,86 @@
     "directorsTitle": "梯隊ディレクター",
     "directorsLead": "ディレクターは「現金受領」ページで集金、未締め領収書の取消、締め、入金登録ができ、選手名簿と回数（閲覧のみ）を見られます。",
     "addDirector": "ディレクターを追加"
+  },
+  "paperCards": {
+    "title": "紙カード移行",
+    "lead": "紙の受講カードの表裏を1枚ずつ撮影すると、カード番号・プラン・各マスの日付を読み取ります。読みにくいマスは黄色で示すので、人が確認してから移行します。残り回数は旧価格1回300元で記帳し、使用済みの日付は出席記録になります（再度引かれません）。",
+    "progress": "移行済み {moved}／在籍 {roster} 人",
+    "checksLink": "並行チェック",
+    "doneTitle": "システムに移行しました",
+    "doneBody": "練習と一致 {matched} マス、練習が見つからない {unmatched} マス、システムで既に引いた {reversed} 回を戻しました。現在の残りは {balance} 回です。",
+    "photosRemoved": "カード写真を削除しました。",
+    "photosKept": "カード写真の削除に失敗しました。下の一覧で「もう一度削除」を押してください。",
+    "newCard": "カードを追加",
+    "photoFront": "表面の写真",
+    "photoBack": "裏面の写真（日付のマス）",
+    "aiHint": "送信後、AIがカードを読み取ります（10〜30秒ほど）。結果は下書きで、確定前に修正できます。",
+    "aiNotConfigured": "AI読み取り（ANTHROPIC_API_KEY）が未設定です。次の画面で各マスの日付を手入力してください。写真は照合用に残ります。",
+    "noPhotoManual": "AIを使わず手入力する",
+    "photoPrivacy": "写真には子どもの名前が写るため、非公開の領域にのみ保存し、移行後すぐに削除します。他の子どもが写らないようにしてください。",
+    "start": "次へ：確認",
+    "reading": "読み取り中…",
+    "readingHint": "カードを読み取っています。ページを閉じないでください。",
+    "drafts": "確認待ち",
+    "draftsEmpty": "確認待ちのカードはありません。",
+    "needsManual": "手入力が必要",
+    "readyToReview": "確認待ち",
+    "moved": "移行済み",
+    "movedEmptyTitle": "まだ移行したカードはありません",
+    "movedEmptyBody": "上から最初のカードを追加してください。",
+    "cardNoValue": "カード番号 {no}",
+    "movedSummary": "{pkg}回カード · 使用 {used} マス · 残り {remaining} 回 · {date} 移行",
+    "unmatchedDates": "練習が見つからない日付：{dates}",
+    "photosPending": "写真が未削除です",
+    "retryPurge": "もう一度削除",
+    "back": "← 紙カード移行",
+    "reviewTitle": "カードの確認：{name}",
+    "reviewLead": "写真と見比べて各マスの日付を確認してください。黄色のマスは、AIが不確か・その日にチームの練習がない・重複・未来の日付のいずれかです。空白のマスは空のままにしてください。",
+    "alreadyMoved": "このカードは {date} に移行済みです。残り {remaining} 回。",
+    "aiFailed": "AIが読み取れませんでした。各マスの日付を手入力してください。",
+    "manualEntry": "手入力モード：カードのとおりに各マスの日付を入力してください。",
+    "squadMarks": "チーム記号：{marks}（日付ではありません）",
+    "photoAlt": "カード写真 {n}",
+    "cardNo": "カード番号",
+    "package": "プラン",
+    "selectPackage": "プランを選択",
+    "packageOption": "{count}回（{price}元）",
+    "cellsLegend": "裏面の30マス",
+    "lowCount": "{count} マスの確認が必要です",
+    "asWritten": "カードの記載「{text}」",
+    "flags": {
+      "aiUnsure": "AIが不確かです。写真と照合してください",
+      "noSession": "この日、この子のチームに練習がありません",
+      "future": "未来の日付です",
+      "duplicate": "前の日付と重複しています",
+      "unreadable": "日付が読み取れません"
+    },
+    "remaining": "カードの残り回数",
+    "remainingHint": "使用 {used} マス、プランから残りは {suggestion} 回のはずです。カードに別の記載があれば実際の残りを優先してください。",
+    "confirmEffect": "確定すると、台帳に「紙カード移行」{remaining} 回（1回300元、計 {amount} 元）を記帳します。現在のシステム残高は {balance} 回で、同じ日に既に引いた練習は戻して二重に引かないようにします。",
+    "problems": {
+      "packageRequired": "プランを選んでください。",
+      "remainingOutOfRange": "残り回数は0からプランの回数までです。",
+      "futureDate": "未来の日付があります。修正してください。",
+      "tooManyDates": "使用日が30マスを超えています。"
+    },
+    "confirm": "移行を確定",
+    "confirmPrompt": "移行しますか？残り {remaining} 回、使用 {used} マス。移行後、写真は削除されます。",
+    "rerun": "もう一度読み取る",
+    "discard": "このカードを破棄",
+    "discardConfirm": "このカードの下書きを破棄し、写真を削除しますか？",
+    "dashboardTitle": "紙カード移行（並行シーズン）",
+    "seasonChecks": "今シーズンのチェック {checks} 回、不一致 {mismatches} 回",
+    "checksTitle": "並行チェック",
+    "checksLead": "並行シーズン中は毎週数枚のカードを抜き取り、カードの残りマス（残り回数）をシステムと照合します。不一致はタスク一覧に表示されます。",
+    "cardRemaining": "カードの残り回数",
+    "cardRemainingHint": "プランの回数から日付が書かれたマス数を引いた数です。",
+    "note": "メモ（任意）",
+    "recordCheck": "照合する",
+    "checkMatches": "一致：残り {count} 回",
+    "checkMismatch": "不一致：カード {card} 回、システム {system} 回",
+    "recentChecks": "最近の照合",
+    "checksEmptyTitle": "まだ照合記録がありません",
+    "checksEmptyBody": "毎週、数人の子どものカードを照合すれば十分です。"
   }
 }
