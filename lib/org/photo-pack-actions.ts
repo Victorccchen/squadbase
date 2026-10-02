@@ -119,6 +119,21 @@ export async function exportAdminPhotoPack(formData: FormData): Promise<PhotoPac
   const bytes = encodePhotoPackZip(entries);
   const filename = photoPackFilename({ teamName, exportedAt });
 
+  // Children's photos leave the system here: keep a record of who downloaded what.
+  const { error: auditError } = await supabase.rpc("admin_log_event", {
+    p_action: "photo_pack.export",
+    p_entity_type: scope.teamId ? "team" : "teams",
+    p_entity_id: scope.teamId ?? null,
+    p_details: {
+      players: rows.length,
+      team_ids: scope.teamId ? [scope.teamId] : [...scope.ageSquadIds, ...scope.competitionTeamIds],
+    },
+  });
+  if (auditError) {
+    console.error("exportAdminPhotoPack audit", auditError.message);
+    return failed("generic");
+  }
+
   return {
     ok: true,
     errorKey: null,

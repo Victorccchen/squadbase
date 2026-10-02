@@ -2,7 +2,9 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { AccessDenied } from "@/components/access-denied";
 import { PageHeader } from "@/components/page-header";
+import { TaskInbox } from "@/components/admin/task-inbox";
 import { canRenderAdminPage } from "@/lib/auth/admin-page";
+import { listInboxTasks } from "@/lib/tasks/queries";
 
 export default async function AdminHomePage() {
   if (!(await canRenderAdminPage())) {
@@ -11,6 +13,7 @@ export default async function AdminHomePage() {
 
   const t = await getTranslations("admin");
   const common = await getTranslations("common");
+  const tasks = await listInboxTasks();
 
   const cards = [
     { href: "/app/admin/dashboard" as const, title: t("dashboardTitle"), body: t("dashboardBody"), prefetch: true },
@@ -29,6 +32,7 @@ export default async function AdminHomePage() {
     <>
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-6 py-12">
         <PageHeader title={t("title")} description={t("lead")} />
+        <TaskInbox items={tasks} />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {cards.map((card) => (
             <Link

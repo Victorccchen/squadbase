@@ -113,7 +113,10 @@ begin
       ('player_session_balances', 'player_id', 0, 0, 0, 1, 1, 0, 1),
       ('session_credit_ledger',   'player_id', 0, 0, 0, 0, 0, 0, 2),
       ('payment_claims',          'player_id', 0, 0, 0, 1, 0, 0, 1),
-      ('session_attendance',      'player_id', 0, 0, 0, 1, 1, 0, 1)
+      ('session_attendance',      'player_id', 0, 0, 0, 1, 1, 0, 1),
+      -- Keyed by the claim id: submit + approval audit rows, and the (closed) task.
+      ('audit_log',               'entity_id', 0, 0, 0, 0, 0, 0, 2),
+      ('tasks',                   'entity_id', 0, 0, 0, 0, 0, 0, 1)
     ) as t(tbl, col, e_anon, e_none, e_pending, e_ok, e_coach_on, e_coach_off, e_admin)
   loop
     for v_identity in
@@ -127,7 +130,8 @@ begin
         ('admin',         'authenticated', v_admin,            v_check.e_admin)
       ) as i(label, role_name, uid, expected)
     loop
-      v_got := pg_temp.visible_rows(v_identity.role_name, v_identity.uid, v_check.tbl, v_check.col, v_player);
+      v_got := pg_temp.visible_rows(v_identity.role_name, v_identity.uid, v_check.tbl, v_check.col,
+        case when v_check.tbl in ('audit_log', 'tasks') then v_claim else v_player end);
       if v_got is distinct from v_identity.expected then
         v_failures := v_failures || format(E'\n  %s as %s: saw %s, expected %s',
           v_check.tbl, v_identity.label, v_got, v_identity.expected);
@@ -142,7 +146,9 @@ begin
       'public.admin_review_payment_claim(uuid, public.payment_claim_status, text)',
       'public.admin_adjust_session_credits(uuid, integer, text)',
       'public.mark_session_attendance(uuid, uuid, public.attendance_status)',
-      'public.admin_upsert_session_package(uuid, public.package_age_band, integer, integer, boolean)'
+      'public.admin_upsert_session_package(uuid, public.package_age_band, integer, integer, boolean)',
+      'public.admin_set_task_status(uuid, text, timestamptz)',
+      'public.admin_log_event(text, text, uuid, jsonb)'
     ]) as fn
   loop
     if has_function_privilege('anon', v_check.fn, 'execute') then

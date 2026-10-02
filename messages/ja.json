@@ -1572,5 +1572,21 @@
       "cta": "体験に申し込む",
       "parents": "保護者ページ"
     }
+  },
+  "tasks": {
+    "title": "タスク一覧",
+    "count": "{count, plural, =0 {未処理なし} other {未処理 # 件}}",
+    "empty": "現在、対応が必要なことはありません。",
+    "done": "完了",
+    "snooze": "明日また通知",
+    "dismiss": "スキップ",
+    "open": "対応する",
+    "dueAt": "期限 {time}",
+    "createdAt": "作成 {time}",
+    "kinds": {
+      "payment_claim_pending": "振込の確認待ち",
+      "guardian_link_pending": "紐付け申請の審査待ち",
+      "other": "対応待ちの項目"
+    }
   }
 }
