@@ -306,17 +306,59 @@ export type PlayerSessionBalance = {
   updated_by: string | null;
 };
 
+export type PaymentItemKind = "credit_package" | "kit" | "match_fee" | "camp" | "other";
+
+/** PR-08a: what a family can pay for. credit_package items mirror session_packages. */
+export type PaymentItem = {
+  id: string;
+  kind: PaymentItemKind;
+  name_i18n: Record<string, string>;
+  price_twd: number | null;
+  package_id: string | null;
+  active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+};
+
+/** PR-08a: invoice owed for an approved payment; invoice_no once issued (D14). */
+export type Invoice = {
+  id: string;
+  payment_type: "transfer_claim" | "cash_receipt";
+  payment_id: string;
+  player_id: string | null;
+  tax_id: string | null;
+  title: string | null;
+  amount_twd: number;
+  invoice_no: string | null;
+  issued_at: string | null;
+  issued_by: string | null;
+  created_at: string;
+};
+
 export type PaymentClaim = {
   id: string;
   player_id: string;
   guardian_user_id: string;
-  package_id: string;
+  /** Null for items that are not credit packages (PR-08a). */
+  package_id: string | null;
+  item_id: string;
   last5: string;
   status: PaymentClaimStatus;
-  /** Package price (TWD) when the claim was submitted. Use this, not the live package price. */
+  method: "transfer" | "cash";
+  transfer_date: string | null;
+  amount_twd: number;
+  invoice_needed: boolean;
+  invoice_tax_id: string | null;
+  invoice_title: string | null;
+  /** Private object path in bucket payment-proofs. */
+  screenshot_path: string | null;
+  /** Package price (TWD) when the claim was submitted; the amount for other items. */
   price_twd_snapshot: number;
-  /** Package credits when the claim was submitted. */
-  credits_snapshot: number;
+  /** Package credits when the claim was submitted; null for other items. */
+  credits_snapshot: number | null;
   admin_note: string | null;
   reviewed_by: string | null;
   reviewed_at: string | null;
@@ -972,11 +1014,13 @@ export type Database = {
           id?: string;
           player_id: string;
           guardian_user_id: string;
-          package_id: string;
+          package_id: string | null;
+          item_id: string;
           last5: string;
           status?: PaymentClaimStatus;
+          amount_twd: number;
           price_twd_snapshot: number;
-          credits_snapshot: number;
+          credits_snapshot: number | null;
           admin_note?: string | null;
           reviewed_by?: string | null;
           reviewed_at?: string | null;
@@ -1091,6 +1135,18 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      payment_items: {
+        Row: PaymentItem;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      invoices: {
+        Row: Invoice;
+        Insert: never;
+        Update: never;
+        Relationships: [];
       };
       venues: {
         Row: Venue;
@@ -1596,6 +1652,37 @@ export type Database = {
       admin_soft_delete_session_series: {
         Args: { p_series_id: string };
         Returns: string;
+      };
+      submit_payment_report: {
+        Args: {
+          p_player_id: string;
+          p_item_id: string;
+          p_amount_twd: number | null;
+          p_transfer_date: string;
+          p_last5: string;
+          p_invoice_needed?: boolean;
+          p_invoice_tax_id?: string | null;
+          p_invoice_title?: string | null;
+          p_screenshot_path?: string | null;
+        };
+        Returns: string;
+      };
+      admin_upsert_payment_item: {
+        Args: {
+          p_id: string | null;
+          p_kind: string;
+          p_name_zh: string;
+          p_name_ja: string | null;
+          p_name_en: string | null;
+          p_price_twd: number | null;
+          p_active: boolean;
+          p_sort_order?: number;
+        };
+        Returns: string;
+      };
+      admin_record_invoice: {
+        Args: { p_invoice_id: string; p_invoice_no: string };
+        Returns: undefined;
       };
       submit_payment_claim: {
         Args: {

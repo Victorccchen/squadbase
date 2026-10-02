@@ -3,6 +3,7 @@ import { getAppOrigin, getEnvBankTransferHint } from "@/lib/env";
 import type {
   ClubRuntimeSetting,
   PaymentClaim,
+  PaymentItem,
   Player,
   PlayerSessionBalance,
   SessionAttendance,
@@ -18,6 +19,8 @@ import { contributionFromDebits, parentContributionFromClaims } from "@/lib/cred
 export type PaymentClaimWithDetails = PaymentClaim & {
   player: Player | null;
   package: SessionPackage | null;
+  /** PR-08a: what was paid for. */
+  item: PaymentItem | null;
 };
 
 export type SessionAttendanceWithPlayer = SessionAttendance & {
@@ -116,7 +119,7 @@ export async function listOwnPaymentClaims(): Promise<PaymentClaimWithDetails[]>
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("payment_claims")
-    .select("*, players(*), session_packages(*)")
+    .select("*, players(*), session_packages(*), payment_items(*)")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -125,11 +128,13 @@ export async function listOwnPaymentClaims(): Promise<PaymentClaimWithDetails[]>
   }
 
   return (data ?? []).map((row) => {
-    const { players, session_packages, ...claim } = row as Record<string, unknown> & PaymentClaim;
+    const { players, session_packages, payment_items, ...claim } = row as Record<string, unknown> &
+      PaymentClaim;
     return {
       ...(claim as PaymentClaim),
       player: one(players as Player | Player[] | null),
       package: one(session_packages as SessionPackage | SessionPackage[] | null),
+      item: one(payment_items as PaymentItem | PaymentItem[] | null),
     };
   });
 }
@@ -290,7 +295,9 @@ export async function listCreditTotalsForAdmin(): Promise<CreditTotals> {
     supabase
       .from("payment_claims")
       .select("status, price_twd_snapshot")
-      .eq("status", "approved"),
+      .eq("status", "approved")
+      // Credit revenue only; kit and other items are not prepaid sessions (PR-08a).
+      .not("package_id", "is", null),
     supabase
       .from("session_credit_ledger")
       .select("entry_type, amount, unit_cost_twd")
@@ -332,13 +339,18 @@ export async function listCreditTotalsForAdmin(): Promise<CreditTotals> {
 /** Packages that already have claims: their price and credits are frozen. */
 export async function listClaimedPackageIds(): Promise<Set<string>> {
   const supabase = await createClient();
-  const { data, error } = await supabase.from("payment_claims").select("package_id");
+  const { data, error } = await supabase
+    .from("payment_claims")
+    .select("package_id")
+    .not("package_id", "is", null);
 
   if (error) {
     console.error("listClaimedPackageIds", error.message);
     return new Set();
   }
-  return new Set((data ?? []).map((row) => row.package_id));
+  return new Set(
+    (data ?? []).map((row) => row.package_id).filter((id): id is string => Boolean(id)),
+  );
 }
 
 export async function listPlayersForAdminCredits(): Promise<Player[]> {

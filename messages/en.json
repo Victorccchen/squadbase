@@ -601,7 +601,13 @@
       "checkinNoChild": "Choose at least one child.",
       "headcountInvalid": "Enter a head count from 0 to 500.",
       "venueNameRequired": "Enter a venue name.",
-      "attendanceNotFound": "Attendance record not found."
+      "attendanceNotFound": "Attendance record not found.",
+      "invalidTransferDate": "Choose a transfer date within the last 90 days, not after today.",
+      "invalidAmount": "Enter an amount from 1 to 200,000.",
+      "invalidTaxId": "A company tax ID has 8 digits.",
+      "missingItem": "Choose what the payment is for.",
+      "invoiceNumberInvalid": "Invoice number: letters, digits and -, 2 to 20 characters.",
+      "itemNameRequired": "Enter an item name."
     },
     "crossSquad": "Cross 梯隊 (playing up)",
     "crossSquadNone": "None",
@@ -919,7 +925,8 @@
     "noticesUnread": "{count} unread",
     "noticeNew": "New",
     "noticesMarkRead": "Mark all as read",
-    "backfillNotice": "{child} attended the session on {date} but did not scan in, so the staff recorded the attendance ({debited} credit(s) used, {remaining} left). If anything looks wrong, please contact the club right away. Thank you."
+    "backfillNotice": "{child} attended the session on {date} but did not scan in, so the staff recorded the attendance ({debited} credit(s) used, {remaining} left). If anything looks wrong, please contact the club right away. Thank you.",
+    "reportSubmitted": "Transfer report received. The club will confirm it."
   },
   "matches": {
     "title": "Match schedule",
@@ -1650,7 +1657,8 @@
       "credits_renew": "Out of credits: remind to top up",
       "credits_limit_reached": "Owed-credit limit reached",
       "attendance_headcount_mismatch": "Head count does not match: backfill",
-      "attendance_headcount_missing": "Session ended without a head count"
+      "attendance_headcount_missing": "Session ended without a head count",
+      "invoice_pending": "Invoice to issue"
     }
   },
   "venues": {
@@ -1707,6 +1715,47 @@
       "parent_qr": "QR check-in",
       "paper_card": "Paper card import",
       "system": "System (no-show)"
+    }
+  },
+  "payments": {
+    "item": "What is this payment for?",
+    "selectItem": "Choose an item",
+    "noPackagesForChild": "This 梯隊 does not use session credits; you can still report kit, match fees and other payments.",
+    "amount": "Amount (TWD)",
+    "transferDate": "Transfer date",
+    "screenshot": "Transfer screenshot (optional)",
+    "screenshotHint": "JPG, PNG or WebP, up to 5 MB. Only club staff can see it.",
+    "invoiceNeeded": "I need an invoice",
+    "taxId": "Company tax ID (optional)",
+    "taxIdHint": "Only for company expense claims; 8 digits.",
+    "invoiceTitle": "Invoice title (optional)",
+    "submit": "Report transfer",
+    "invoice": "Invoice",
+    "invoiceNotNeeded": "Not needed",
+    "taxIdValue": "Tax ID {taxId}",
+    "noTaxId": "No tax ID",
+    "viewScreenshot": "View transfer screenshot",
+    "invoicesTitle": "Invoices to issue",
+    "invoicesEmpty": "No invoices waiting.",
+    "invoiceNo": "Invoice number",
+    "recordInvoice": "Record invoice number",
+    "itemsTitle": "Other payment items",
+    "itemsLead": "Kit, match fees, camps and so on. Reports for these record the money only and never add session credits. Credit packages are managed above.",
+    "itemKind": "Type",
+    "itemPrice": "Default amount (optional)",
+    "nameZh": "Name (Chinese)",
+    "nameJa": "Name (Japanese, optional)",
+    "nameEn": "Name (English, optional)",
+    "itemActive": "Open for reports",
+    "itemInactive": "Inactive",
+    "addItem": "Add item",
+    "saveItem": "Save item",
+    "kinds": {
+      "credit_package": "Session package",
+      "kit": "Kit / gear",
+      "match_fee": "Match fee",
+      "camp": "Camp",
+      "other": "Other"
     }
   }
 }

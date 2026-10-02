@@ -601,7 +601,13 @@
       "checkinNoChild": "請至少選一位孩子。",
       "headcountInvalid": "請輸入 0–500 的人數。",
       "venueNameRequired": "請輸入場地名稱。",
-      "attendanceNotFound": "找不到這筆出席紀錄。"
+      "attendanceNotFound": "找不到這筆出席紀錄。",
+      "invalidTransferDate": "請選擇 90 天內、不晚於今天的轉帳日期。",
+      "invalidAmount": "請輸入 1–200,000 的金額。",
+      "invalidTaxId": "統一編號是 8 位數字。",
+      "missingItem": "請選擇繳費項目。",
+      "invoiceNumberInvalid": "發票號碼格式不正確（英數字與 -，2–20 字）。",
+      "itemNameRequired": "請輸入項目名稱。"
     },
     "crossSquad": "跨上梯隊",
     "crossSquadNone": "不跨上",
@@ -919,7 +925,8 @@
     "noticesUnread": "{count} 則未讀",
     "noticeNew": "新",
     "noticesMarkRead": "全部標為已讀",
-    "backfillNotice": "{child} 於 {date} 的課程已出席，但未進行掃碼簽到，由工作人員代為補登記上課（扣 {debited} 堂，剩餘 {remaining} 堂）。若有疑問請立即聯繫球團，謝謝。"
+    "backfillNotice": "{child} 於 {date} 的課程已出席，但未進行掃碼簽到，由工作人員代為補登記上課（扣 {debited} 堂，剩餘 {remaining} 堂）。若有疑問請立即聯繫球團，謝謝。",
+    "reportSubmitted": "已收到匯款回報，球團確認後會更新。"
   },
   "matches": {
     "title": "比賽賽程",
@@ -1650,7 +1657,8 @@
       "credits_renew": "堂數用完，提醒續購",
       "credits_limit_reached": "已達欠堂上限",
       "attendance_headcount_mismatch": "清點人數與出席不符，請補登",
-      "attendance_headcount_missing": "課程結束仍未清點"
+      "attendance_headcount_missing": "課程結束仍未清點",
+      "invoice_pending": "待開發票"
     }
   },
   "venues": {
@@ -1707,6 +1715,47 @@
       "parent_qr": "掃碼簽到",
       "paper_card": "紙本卡匯入",
       "system": "系統結算"
+    }
+  },
+  "payments": {
+    "item": "繳費項目",
+    "selectItem": "請選擇項目",
+    "noPackagesForChild": "這個梯隊不使用堂數，仍可回報球衣、比賽費等其他款項。",
+    "amount": "金額（新台幣）",
+    "transferDate": "轉帳日期",
+    "screenshot": "轉帳截圖（選填）",
+    "screenshotHint": "JPG／PNG／WebP，5 MB 以內。只有球團工作人員看得到。",
+    "invoiceNeeded": "需要開立發票",
+    "taxId": "統一編號（選填）",
+    "taxIdHint": "公司報帳才需要，8 位數字。",
+    "invoiceTitle": "發票抬頭（選填）",
+    "submit": "送出匯款回報",
+    "invoice": "發票",
+    "invoiceNotNeeded": "不需要",
+    "taxIdValue": "統編 {taxId}",
+    "noTaxId": "無統編",
+    "viewScreenshot": "查看轉帳截圖",
+    "invoicesTitle": "待開發票",
+    "invoicesEmpty": "目前沒有待開的發票。",
+    "invoiceNo": "發票號碼",
+    "recordInvoice": "登記發票號碼",
+    "itemsTitle": "其他收款項目",
+    "itemsLead": "球衣、比賽費、營隊等。家長回報這些項目時只記錄收款，不會增加堂數。堂數方案請在上方管理。",
+    "itemKind": "類型",
+    "itemPrice": "預設金額（選填）",
+    "nameZh": "名稱（中文）",
+    "nameJa": "名稱（日文，選填）",
+    "nameEn": "名稱（英文，選填）",
+    "itemActive": "開放回報",
+    "itemInactive": "已停用",
+    "addItem": "新增項目",
+    "saveItem": "儲存項目",
+    "kinds": {
+      "credit_package": "堂數方案",
+      "kit": "球衣／裝備",
+      "match_fee": "比賽費",
+      "camp": "營隊",
+      "other": "其他"
     }
   }
 }

@@ -163,6 +163,7 @@ async function loadApprovedClaims(
           .from("payment_claims")
           .select(select)
           .eq("status", "approved")
+          .not("package_id", "is", null)
           .gte("reviewed_at", bounds.from)
           .lt("reviewed_at", bounds.toExclusive)
           .range(from, to),
@@ -174,6 +175,7 @@ async function loadApprovedClaims(
           .from("payment_claims")
           .select(select)
           .eq("status", "approved")
+          .not("package_id", "is", null)
           .is("reviewed_at", null)
           .gte("created_at", bounds.from)
           .lt("created_at", bounds.toExclusive)

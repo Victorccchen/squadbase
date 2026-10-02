@@ -164,7 +164,10 @@ begin
       'public.admin_upsert_venue(uuid, text, text, boolean)',
       'public.admin_regenerate_venue_token(uuid)',
       'public.admin_set_session_venue(uuid, uuid, boolean)',
-      'public.mark_parent_notices_read(uuid[])'
+      'public.mark_parent_notices_read(uuid[])',
+      'public.submit_payment_report(uuid, uuid, integer, date, text, boolean, text, text, text)',
+      'public.admin_upsert_payment_item(uuid, text, text, text, text, integer, boolean, integer)',
+      'public.admin_record_invoice(uuid, text)'
     ]) as fn
   loop
     if has_function_privilege('anon', v_check.fn, 'execute') then
