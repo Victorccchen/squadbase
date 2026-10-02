@@ -20,7 +20,7 @@ import {
   parsePackageCatalogBand,
   parsePositiveInt,
 } from "@/lib/credits/packages";
-import { parseAttendanceStatus } from "@/lib/credits/debit-rules";
+import { parseAttendanceStatus, parseLeaveReasonCategory } from "@/lib/credits/debit-rules";
 import type { LeaveRequestStatus, PaymentClaimStatus } from "@/lib/supabase/database.types";
 import { parentReturnPath } from "@/lib/org/parent-series";
 
@@ -351,9 +351,15 @@ export async function requestExcusedLeave(
     return fail("generic");
   }
 
+  const reasonCategory = parseLeaveReasonCategory(readString(formData, "reason_category"));
+  if (!reasonCategory) {
+    return fail("leaveReasonRequired");
+  }
+
   const { error } = await actor.supabase.rpc("request_excused_leave", {
     p_registration_id: registrationId,
     p_parent_note: parseOptionalBoundedText(readString(formData, "parent_note"), 1000),
+    p_reason_category: reasonCategory,
   });
 
   if (error) {
@@ -410,6 +416,45 @@ export async function reviewLeaveRequest(
   revalidateCredits();
   redirect({
     href: sessionId ? `/app/admin/sessions/${sessionId}` : "/app/admin/sessions",
+    locale: localeFromForm(formData),
+  });
+  return ok();
+}
+
+/**
+ * PR-06: mark registered or late-cancelled players with no attendance as
+ * no-shows after a special session or match (regular sessions are skipped).
+ * Sessions nobody finalizes are handled by the database job 24 hours after the end.
+ */
+export async function finalizeSessionAttendance(
+  _prev: OrgActionState,
+  formData: FormData,
+): Promise<OrgActionState> {
+  const actor = await requireConfiguredUser();
+  if (!actor.ok) {
+    return fail(actor.errorKey);
+  }
+  if (!canAccessAdmin(actor.roles)) {
+    return fail("forbidden");
+  }
+
+  const sessionId = parseUuid(readString(formData, "session_id"));
+  if (!sessionId) {
+    return fail("sessionNotFound");
+  }
+
+  const { error } = await actor.supabase.rpc("finalize_session_attendance", {
+    p_session_id: sessionId,
+  });
+
+  if (error) {
+    console.error("finalizeSessionAttendance", error.message);
+    return fail(creditRpcErrorKey(error));
+  }
+
+  revalidateCredits();
+  redirect({
+    href: `/app/admin/sessions/${sessionId}`,
     locale: localeFromForm(formData),
   });
   return ok();

@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Player, Task } from "@/lib/supabase/database.types";
-import { inboxTasks, taskHref } from "@/lib/tasks/model";
+import { inboxTasks, taskHref, taskPlayerId } from "@/lib/tasks/model";
 
 export type TaskInboxItem = {
   task: Task;
@@ -51,9 +51,23 @@ export async function listInboxTasks(now = new Date()): Promise<TaskInboxItem[]>
     playerBySubject.set(row.id, one(row.players as Player | Player[] | null));
   }
 
-  return tasks.map((task) => ({
-    task,
-    href: taskHref(task.kind),
-    player: task.entity_id ? playerBySubject.get(task.entity_id) ?? null : null,
-  }));
+  // PR-06 tasks name the player directly (entity or params).
+  const directIds = [...new Set(tasks.map(taskPlayerId).filter((id): id is string => Boolean(id)))];
+  const { data: directPlayers } = directIds.length
+    ? await supabase.from("players").select("*").in("id", directIds)
+    : { data: [] as Player[] };
+  const playerById = new Map((directPlayers ?? []).map((row) => [row.id, row as Player]));
+
+  return tasks.map((task) => {
+    const directId = taskPlayerId(task);
+    return {
+      task,
+      href: taskHref(task),
+      player: directId
+        ? playerById.get(directId) ?? null
+        : task.entity_id
+          ? playerBySubject.get(task.entity_id) ?? null
+          : null,
+    };
+  });
 }

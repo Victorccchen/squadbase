@@ -150,7 +150,13 @@ begin
       'public.admin_upsert_session_package(uuid, public.package_age_band, integer, integer, boolean)',
       'public.admin_set_task_status(uuid, text, timestamptz)',
       'public.admin_log_event(text, text, uuid, jsonb)',
-      'public.set_preferred_language(text, boolean)'
+      'public.set_preferred_language(text, boolean)',
+      'public.register_player_for_session(uuid, uuid, text)',
+      'public.cancel_session_registration(uuid)',
+      'public.request_excused_leave(uuid, text, text)',
+      'public.staff_review_leave_request(uuid, public.leave_request_status, text)',
+      'public.finalize_session_attendance(uuid)',
+      'public.finalize_due_sessions()'
     ]) as fn
   loop
     if has_function_privilege('anon', v_check.fn, 'execute') then

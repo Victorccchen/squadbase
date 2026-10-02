@@ -591,7 +591,11 @@
       "crossSquadSameAsPrimary": "The cross 梯隊 must differ from the primary 梯隊.",
       "crossSquadNeedsPrimary": "Set the primary 梯隊 before adding a cross 梯隊.",
       "crossSquadLimit": "A player can have only one cross 梯隊.",
-      "crossSquadTeamInactive": "This 梯隊 is inactive and cannot be a cross 梯隊."
+      "crossSquadTeamInactive": "This 梯隊 is inactive and cannot be a cross 梯隊.",
+      "creditLimitReached": "3 or more credits owed. Top up before signing up.",
+      "leaveReasonRequired": "Choose a reason for the leave.",
+      "invalidLeaveReason": "Invalid leave reason.",
+      "sessionNotEnded": "The session has not ended yet."
     },
     "crossSquad": "Cross 梯隊 (playing up)",
     "crossSquadNone": "None",
@@ -662,7 +666,7 @@
     "registering": "Registering…",
     "cancelInline": "Cancel",
     "cancel": "Cancel",
-    "cannotCancel": "Cannot cancel",
+    "cannotCancel": "Started; cannot cancel",
     "submitNote": "Submit",
     "registerFromListHint": "Register from the session list first. After you are registered, you can add a note to the club here.",
     "noteSaved": "Note saved.",
@@ -741,9 +745,12 @@
     "takeAttendance": "Attendance",
     "statuses": {
       "registered": "Registered",
-      "cancelled": "Cancelled"
+      "cancelled": "Cancelled",
+      "late_cancelled": "Late cancel"
     },
-    "crossSquadTag": "playing up"
+    "crossSquadTag": "playing up",
+    "lateCancelConfirm": "This starts in less than 24 hours. A late cancel counts as a no-show and uses {count} credit(s). If there is a good reason (such as illness), request leave instead. Cancel anyway?",
+    "lateCancelledNotice": "Cancelled late. After the session it counts as a no-show. If there is a good reason (illness, injury), request leave below; once the club approves, no credit is used."
   },
   "competitions": {
     "title": "Competitions",
@@ -883,7 +890,23 @@
     "approveLeave": "Approve leave",
     "rejectLeave": "Reject leave",
     "backToRoster": "Back to roster",
-    "priceLockedHint": "Parents have already claimed this package, so its price and credits are fixed. To change the price, deactivate this package and add a new one."
+    "priceLockedHint": "Parents have already claimed this package, so its price and credits are fixed. To change the price, deactivate this package and add a new one.",
+    "leaveReason": "Reason",
+    "leaveReasonPlaceholder": "Choose a reason",
+    "leaveReasons": {
+      "illness": "Illness",
+      "injury": "Injury",
+      "family": "Family",
+      "school": "School event",
+      "other": "Other"
+    },
+    "owedCredits": "{count} credits owed",
+    "owedBalance": "Credits are owed. Please top up soon; at {limit} owed, new sign-ups stop.",
+    "creditLimitReached": "{limit} or more credits owed. Top up before signing up again. Attendance is still recorded.",
+    "finalizeAttendance": "Settle no-shows",
+    "finalizeHint": "Players who signed up or cancelled late and have no attendance record are marked as no-shows and debited (regular training is skipped). Sessions not settled here are settled 24 hours after the end.",
+    "finalizeConfirm": "Settle now? Sign-ups without attendance become no-shows and are debited.",
+    "finalizedAt": "Settled at {time}. Attendance marked later still updates the debit."
   },
   "matches": {
     "title": "Match schedule",
@@ -1609,7 +1632,10 @@
     "kinds": {
       "payment_claim_pending": "Payment to confirm",
       "guardian_link_pending": "Binding request to review",
-      "other": "Item to handle"
+      "other": "Item to handle",
+      "leave_request_pending": "Leave request to review",
+      "credits_renew": "Out of credits: remind to top up",
+      "credits_limit_reached": "Owed-credit limit reached"
     }
   }
 }

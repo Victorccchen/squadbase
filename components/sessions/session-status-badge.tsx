@@ -9,6 +9,7 @@ const SESSION_STATUS_CLASS: Record<OrgStatus, string> = {
 const REGISTRATION_STATUS_CLASS: Record<SessionRegistrationStatus, string> = {
   registered: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100",
   cancelled: "bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100",
+  late_cancelled: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-100",
 };
 
 const KIND_CLASS = SESSION_KIND_BADGE_CLASS;

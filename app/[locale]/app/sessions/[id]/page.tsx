@@ -63,9 +63,20 @@ export default async function ParentSessionDetailPage({
   const playerIds = [...new Set(children.map((child) => child.player.id))];
   const registrations = await listOwnSessionRegistrations(playerIds);
 
-  const openOnThisSession = registrations.filter(
+  // Late cancels stay visible so the parent can still ask for leave (PR-06),
+  // unless the child signed up again.
+  const registeredHere = registrations.filter(
     (row) => row.session_id === session.id && row.status === "registered",
   );
+  const openOnThisSession = [
+    ...registeredHere,
+    ...registrations.filter(
+      (row) =>
+        row.session_id === session.id &&
+        row.status === "late_cancelled" &&
+        !registeredHere.some((open) => open.player_id === row.player_id),
+    ),
+  ];
   const leaveRequests = await listLeaveRequestsForRegistrations(
     openOnThisSession.map((row) => row.id),
   );
@@ -77,7 +88,7 @@ export default async function ParentSessionDetailPage({
   }
   const canSignup = isSessionOpenForSignup(session);
   const belongsToFamily = children.some((child) => child.teamId === session.team_id);
-  const hasOwnRegistration = openOnThisSession.length > 0;
+  const hasOwnRegistration = registeredHere.length > 0;
   const teamBand = session.team?.age_band ?? "U8";
   const noticeDebit = defaultNoticeDebit(
     session.kind,
@@ -184,15 +195,23 @@ export default async function ParentSessionDetailPage({
                 {row.player ? localizedPlayerName(row.player, locale) : t("unknownPlayer")}
               </span>
             </div>
-            <p className="text-sm leading-6 text-emerald-800 dark:text-emerald-200">
-              {t("confirmation")}
-            </p>
-            <ParentNoteForm
-              registrationId={row.id}
-              sessionId={session.id}
-              initialNote={row.parent_note}
-              returnTo="session"
-            />
+            {row.status === "late_cancelled" ? (
+              <p className="text-sm leading-6 text-amber-800 dark:text-amber-200">
+                {t("lateCancelledNotice")}
+              </p>
+            ) : (
+              <>
+                <p className="text-sm leading-6 text-emerald-800 dark:text-emerald-200">
+                  {t("confirmation")}
+                </p>
+                <ParentNoteForm
+                  registrationId={row.id}
+                  sessionId={session.id}
+                  initialNote={row.parent_note}
+                  returnTo="session"
+                />
+              </>
+            )}
             {(() => {
               const leave = leaveByRegistration.get(row.id);
               if (leave?.status === "pending") {

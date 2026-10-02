@@ -12,9 +12,14 @@
  * - cup/league/friendly: 1 per competing player per club calendar day (skip if
  *   already match-debited that day)
  *
- * Signup does not pre-debit. Cancel before attendance: no debit.
+ * Signup does not pre-debit. Cancel before attendance: no debit, except a
+ * special/match cancelled by the parent within 24 hours of the start
+ * (late_cancelled), which counts as a no-show unless leave is approved (D2-1).
  * Per-session admin override: no_debit or debit_override_n (override still wins).
- * Insufficient balance blocks outcomes that would debit.
+ * Attendance never fails for lack of credits; balances may go negative and new
+ * sign-ups stop at CREDIT_OVERDRAFT_LIMIT owed (D3, PR-06).
+ *
+ * The debit table is shared with SQL through debit-rules.fixtures.json.
  */
 
 import type { AgeBand } from "../age-band.ts";
@@ -168,6 +173,79 @@ export function computeSessionDebit(input: ComputeDebitInput): ComputeDebitResul
   }
 
   return { credits: 0, entryType: null, noDebitLabel: false };
+}
+
+/** D3: owing this many credits (balance <= -limit) blocks new sign-ups. Same as credit_overdraft_limit() in SQL. */
+export const CREDIT_OVERDRAFT_LIMIT = 3;
+
+export const LATE_CANCEL_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+export function isAtCreditLimit(creditsAvailable: number): boolean {
+  return creditsAvailable <= -CREDIT_OVERDRAFT_LIMIT;
+}
+
+/** Owed credits for display (欠 N 堂); 0 when the balance is not negative. */
+export function owedCredits(creditsAvailable: number): number {
+  return creditsAvailable < 0 ? -creditsAvailable : 0;
+}
+
+/**
+ * True when a parent's cancel now would be recorded as late_cancelled: special
+ * or match sessions within 24 hours of the start (or after it). Mirrors
+ * cancel_session_registration.
+ */
+export function isLateCancel(input: { kind: SessionKind; startsAt: string | Date; now?: Date }): boolean {
+  if (input.kind === "regular") {
+    return false;
+  }
+  const starts = new Date(input.startsAt).getTime();
+  const now = (input.now ?? new Date()).getTime();
+  return starts - now <= LATE_CANCEL_WINDOW_MS;
+}
+
+/** Credits a late cancel will cost (treated as a no-show), for the confirm dialog. */
+export function lateCancelDebit(input: {
+  kind: SessionKind;
+  teamAgeBand: AgeBand;
+  noDebit: boolean;
+  debitOverrideN: number | null;
+}): number {
+  return computeSessionDebit({
+    kind: input.kind,
+    teamAgeBand: input.teamAgeBand,
+    attendanceStatus: "unexcused_absent",
+    noDebit: input.noDebit,
+    debitOverrideN: input.debitOverrideN,
+    excusedLeaveApproved: false,
+    alreadyDebitedSameMatchDay: false,
+  }).credits;
+}
+
+/** lateCancelDebit for a loaded session row (team joined). Unknown team → 0. */
+export function lateCancelCreditsForSession(session: {
+  kind: SessionKind;
+  no_debit: boolean;
+  debit_override_n: number | null;
+  team?: { age_band: AgeBand } | null;
+}): number {
+  if (!session.team) {
+    return 0;
+  }
+  return lateCancelDebit({
+    kind: session.kind,
+    teamAgeBand: session.team.age_band,
+    noDebit: session.no_debit,
+    debitOverrideN: session.debit_override_n,
+  });
+}
+
+export const LEAVE_REASON_CATEGORIES = ["illness", "injury", "family", "school", "other"] as const;
+export type LeaveReasonCategory = (typeof LEAVE_REASON_CATEGORIES)[number];
+
+export function parseLeaveReasonCategory(value: string): LeaveReasonCategory | null {
+  return (LEAVE_REASON_CATEGORIES as readonly string[]).includes(value)
+    ? (value as LeaveReasonCategory)
+    : null;
 }
 
 export const LOW_BALANCE_THRESHOLD = 1;

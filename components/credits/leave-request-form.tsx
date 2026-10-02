@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { LocaleHiddenField } from "@/components/admin/locale-hidden-field";
 import { requestExcusedLeave } from "@/lib/credits/actions";
+import { LEAVE_REASON_CATEGORIES } from "@/lib/credits/debit-rules";
 import { INITIAL_ORG_ACTION_STATE } from "@/lib/org/errors";
 import { inputClassName, secondaryButtonClassName } from "@/lib/ui";
 
@@ -31,6 +32,19 @@ export function LeaveRequestForm({
       <input type="hidden" name="registration_id" value={registrationId} />
       <input type="hidden" name="session_id" value={sessionId} />
       <input type="hidden" name="return_to" value={returnTo} />
+      <label className="flex flex-col gap-1.5 text-sm font-medium">
+        {t("leaveReason")}
+        <select name="reason_category" required defaultValue="" className={inputClassName}>
+          <option value="" disabled>
+            {t("leaveReasonPlaceholder")}
+          </option>
+          {LEAVE_REASON_CATEGORIES.map((reason) => (
+            <option key={reason} value={reason}>
+              {t(`leaveReasons.${reason}`)}
+            </option>
+          ))}
+        </select>
+      </label>
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         {t("leaveNote")}
         <textarea name="parent_note" rows={2} maxLength={1000} className={inputClassName} />

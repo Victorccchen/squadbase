@@ -12,7 +12,8 @@ export type TeamKind = "age_squad" | "competition_team";
 export type OrgStatus = "active" | "inactive";
 export type GuardianRelation = "parent" | "guardian" | "other";
 export type LinkStatus = "pending" | "approved" | "rejected" | "revoked";
-export type SessionRegistrationStatus = "registered" | "cancelled";
+/** PR-06: late_cancelled = special/match cancelled by the parent within 24 hours (counts as a no-show). */
+export type SessionRegistrationStatus = "registered" | "cancelled" | "late_cancelled";
 export type SessionMessageAuthorRole = "parent" | "admin";
 export type SessionKind = "regular" | "special" | "cup" | "league" | "friendly";
 export type PackageAgeBand = "U8" | "U10_U18";
@@ -228,6 +229,8 @@ export type TrainingSession = {
   is_playoff: boolean;
   no_debit: boolean;
   debit_override_n: number | null;
+  /** PR-06: when no-shows were finalized (staff button or the 24-hour job). */
+  attendance_finalized_at: string | null;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -241,6 +244,7 @@ export type SessionRegistration = {
   guardian_user_id: string;
   status: SessionRegistrationStatus;
   parent_note: string | null;
+  cancelled_at: string | null;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -319,11 +323,14 @@ export type SessionAttendance = {
   updated_by: string | null;
 };
 
+export type LeaveReasonCategory = "illness" | "injury" | "family" | "school" | "other";
+
 export type SessionLeaveRequest = {
   id: string;
   registration_id: string;
   status: LeaveRequestStatus;
   parent_note: string | null;
+  reason_category: LeaveReasonCategory | null;
   admin_note: string | null;
   reviewed_by: string | null;
   reviewed_at: string | null;
@@ -1619,6 +1626,7 @@ export type Database = {
         Args: {
           p_registration_id: string;
           p_parent_note?: string | null;
+          p_reason_category?: LeaveReasonCategory | null;
         };
         Returns: string;
       };
@@ -1629,6 +1637,12 @@ export type Database = {
           p_admin_note?: string | null;
         };
         Returns: string;
+      };
+      finalize_session_attendance: {
+        Args: {
+          p_session_id: string;
+        };
+        Returns: number;
       };
       mark_session_attendance: {
         Args: {

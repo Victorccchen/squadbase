@@ -1,0 +1,345 @@
+{
+  "_comment": "Phase 1 PR-06: one debit table for TypeScript (lib/credits/debit-rules-fixtures.test.ts) and SQL (supabase/debit_rules_fixture_verification.sql, compute_session_debit_plan). Edit both rules together.",
+  "cases": [
+    {
+      "name": "regular present",
+      "input": {
+        "kind": "regular",
+        "teamAgeBand": "U8",
+        "attendanceStatus": "present",
+        "noDebit": false,
+        "debitOverrideN": null,
+        "excusedLeaveApproved": false,
+        "alreadyDebitedSameMatchDay": false
+      },
+      "expected": {
+        "credits": 1,
+        "entryType": "attend_debit",
+        "noDebitLabel": false
+      }
+    },
+    {
+      "name": "regular unexcused (registered, did not come)",
+      "input": {
+        "kind": "regular",
+        "teamAgeBand": "U8",
+        "attendanceStatus": "unexcused_absent",
+        "noDebit": false,
+        "debitOverrideN": null,
+        "excusedLeaveApproved": false,
+        "alreadyDebitedSameMatchDay": false
+      },
+      "expected": {
+        "credits": 0,
+        "entryType": null,
+        "noDebitLabel": false
+      }
+    },
+    {
+      "name": "regular excused",
+      "input": {
+        "kind": "regular",
+        "teamAgeBand": "U10",
+        "attendanceStatus": "excused_absent",
+        "noDebit": false,
+        "debitOverrideN": null,
+        "excusedLeaveApproved": false,
+        "alreadyDebitedSameMatchDay": false
+      },
+      "expected": {
+        "credits": 0,
+        "entryType": null,
+        "noDebitLabel": false
+      }
+    },
+    {
+      "name": "special present",
+      "input": {
+        "kind": "special",
+        "teamAgeBand": "U8",
+        "attendanceStatus": "present",
+        "noDebit": false,
+        "debitOverrideN": null,
+        "excusedLeaveApproved": false,
+        "alreadyDebitedSameMatchDay": false
+      },
+      "expected": {
+        "credits": 2,
+        "entryType": "attend_debit",
+        "noDebitLabel": false
+      }
+    },
+    {
+      "name": "special no-show / late cancel",
+      "input": {
+        "kind": "special",
+        "teamAgeBand": "U8",
+        "attendanceStatus": "unexcused_absent",
+        "noDebit": false,
+        "debitOverrideN": null,
+        "excusedLeaveApproved": false,
+        "alreadyDebitedSameMatchDay": false
+      },
+      "expected": {
+        "credits": 2,
+        "entryType": "no_show_debit",
+        "noDebitLabel": false
+      }
+    },
+    {
+      "name": "special leave approved",
+      "input": {
+        "kind": "special",
+        "teamAgeBand": "U8",
+        "attendanceStatus": "unexcused_absent",
+        "noDebit": false,
+        "debitOverrideN": null,
+        "excusedLeaveApproved": true,
+        "alreadyDebitedSameMatchDay": false
+      },
+      "expected": {
+        "credits": 0,
+        "entryType": null,
+        "noDebitLabel": false
+      }
+    },
+    {
+      "name": "special excused",
+      "input": {
+        "kind": "special",
+        "teamAgeBand": "U12",
+        "attendanceStatus": "excused_absent",
+        "noDebit": false,
+        "debitOverrideN": null,
+        "excusedLeaveApproved": false,
+        "alreadyDebitedSameMatchDay": false
+      },
+      "expected": {
+        "credits": 0,
+        "entryType": null,
+        "noDebitLabel": false
+      }
+    },
+    {
+      "name": "cup present",
+      "input": {
+        "kind": "cup",
+        "teamAgeBand": "U10",
+        "attendanceStatus": "present",
+        "noDebit": false,
+        "debitOverrideN": null,
+        "excusedLeaveApproved": false,
+        "alreadyDebitedSameMatchDay": false
+      },
+      "expected": {
+        "credits": 1,
+        "entryType": "match_debit",
+        "noDebitLabel": false
+      }
+    },
+    {
+      "name": "league no-show / late cancel",
+      "input": {
+        "kind": "league",
+        "teamAgeBand": "U10",
+        "attendanceStatus": "unexcused_absent",
+        "noDebit": false,
+        "debitOverrideN": null,
+        "excusedLeaveApproved": false,
+        "alreadyDebitedSameMatchDay": false
+      },
+      "expected": {
+        "credits": 1,
+        "entryType": "match_debit",
+        "noDebitLabel": false
+      }
+    },
+    {
+      "name": "friendly second match same day",
+      "input": {
+        "kind": "friendly",
+        "teamAgeBand": "U8",
+        "attendanceStatus": "present",
+        "noDebit": false,
+        "debitOverrideN": null,
+        "excusedLeaveApproved": false,
+        "alreadyDebitedSameMatchDay": true
+      },
+      "expected": {
+        "credits": 0,
+        "entryType": null,
+        "noDebitLabel": false
+      }
+    },
+    {
+      "name": "cup second match same day no-show",
+      "input": {
+        "kind": "cup",
+        "teamAgeBand": "U10",
+        "attendanceStatus": "unexcused_absent",
+        "noDebit": false,
+        "debitOverrideN": null,
+        "excusedLeaveApproved": false,
+        "alreadyDebitedSameMatchDay": true
+      },
+      "expected": {
+        "credits": 0,
+        "entryType": null,
+        "noDebitLabel": false
+      }
+    },
+    {
+      "name": "match leave approved",
+      "input": {
+        "kind": "league",
+        "teamAgeBand": "U12",
+        "attendanceStatus": "unexcused_absent",
+        "noDebit": false,
+        "debitOverrideN": null,
+        "excusedLeaveApproved": true,
+        "alreadyDebitedSameMatchDay": false
+      },
+      "expected": {
+        "credits": 0,
+        "entryType": null,
+        "noDebitLabel": false
+      }
+    },
+    {
+      "name": "U6 never debits",
+      "input": {
+        "kind": "special",
+        "teamAgeBand": "U6",
+        "attendanceStatus": "present",
+        "noDebit": false,
+        "debitOverrideN": null,
+        "excusedLeaveApproved": false,
+        "alreadyDebitedSameMatchDay": false
+      },
+      "expected": {
+        "credits": 0,
+        "entryType": null,
+        "noDebitLabel": true
+      }
+    },
+    {
+      "name": "reserve never debits",
+      "input": {
+        "kind": "regular",
+        "teamAgeBand": "reserve",
+        "attendanceStatus": "present",
+        "noDebit": false,
+        "debitOverrideN": null,
+        "excusedLeaveApproved": false,
+        "alreadyDebitedSameMatchDay": false
+      },
+      "expected": {
+        "credits": 0,
+        "entryType": null,
+        "noDebitLabel": true
+      }
+    },
+    {
+      "name": "senior never debits",
+      "input": {
+        "kind": "cup",
+        "teamAgeBand": "senior",
+        "attendanceStatus": "present",
+        "noDebit": false,
+        "debitOverrideN": null,
+        "excusedLeaveApproved": false,
+        "alreadyDebitedSameMatchDay": false
+      },
+      "expected": {
+        "credits": 0,
+        "entryType": null,
+        "noDebitLabel": true
+      }
+    },
+    {
+      "name": "no_debit session",
+      "input": {
+        "kind": "regular",
+        "teamAgeBand": "U8",
+        "attendanceStatus": "present",
+        "noDebit": true,
+        "debitOverrideN": null,
+        "excusedLeaveApproved": false,
+        "alreadyDebitedSameMatchDay": false
+      },
+      "expected": {
+        "credits": 0,
+        "entryType": null,
+        "noDebitLabel": true
+      }
+    },
+    {
+      "name": "override 3 on regular",
+      "input": {
+        "kind": "regular",
+        "teamAgeBand": "U8",
+        "attendanceStatus": "present",
+        "noDebit": false,
+        "debitOverrideN": 3,
+        "excusedLeaveApproved": false,
+        "alreadyDebitedSameMatchDay": false
+      },
+      "expected": {
+        "credits": 3,
+        "entryType": "attend_debit",
+        "noDebitLabel": false
+      }
+    },
+    {
+      "name": "override 0 labels no-debit",
+      "input": {
+        "kind": "special",
+        "teamAgeBand": "U8",
+        "attendanceStatus": "present",
+        "noDebit": false,
+        "debitOverrideN": 0,
+        "excusedLeaveApproved": false,
+        "alreadyDebitedSameMatchDay": false
+      },
+      "expected": {
+        "credits": 0,
+        "entryType": null,
+        "noDebitLabel": true
+      }
+    },
+    {
+      "name": "override on second match same day",
+      "input": {
+        "kind": "cup",
+        "teamAgeBand": "U10",
+        "attendanceStatus": "present",
+        "noDebit": false,
+        "debitOverrideN": 2,
+        "excusedLeaveApproved": false,
+        "alreadyDebitedSameMatchDay": true
+      },
+      "expected": {
+        "credits": 0,
+        "entryType": null,
+        "noDebitLabel": false
+      }
+    },
+    {
+      "name": "override with no-show on special",
+      "input": {
+        "kind": "special",
+        "teamAgeBand": "U10",
+        "attendanceStatus": "unexcused_absent",
+        "noDebit": false,
+        "debitOverrideN": 1,
+        "excusedLeaveApproved": false,
+        "alreadyDebitedSameMatchDay": false
+      },
+      "expected": {
+        "credits": 1,
+        "entryType": "no_show_debit",
+        "noDebitLabel": false
+      }
+    }
+  ]
+}
