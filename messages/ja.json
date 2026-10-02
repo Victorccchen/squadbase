@@ -206,7 +206,8 @@
     "notices": "お知らせ文案",
     "reports": "レポート",
     "opsDashboard": "運営ダッシュボード",
-    "settings": "設定"
+    "settings": "設定",
+    "venues": "会場"
   },
   "access": {
     "deniedTitle": "このページを開けません",
@@ -595,7 +596,12 @@
       "creditLimitReached": "3回分以上不足しています。追加購入後に申し込めます。",
       "leaveReasonRequired": "欠席の理由を選んでください。",
       "invalidLeaveReason": "欠席の理由が無効です。",
-      "sessionNotEnded": "まだ終了していないため確定できません。"
+      "sessionNotEnded": "まだ終了していないため確定できません。",
+      "checkinTokenInvalid": "このQRコードは無効です。",
+      "checkinNoChild": "お子さまを1人以上選んでください。",
+      "headcountInvalid": "0〜500 の人数を入力してください。",
+      "venueNameRequired": "会場名を入力してください。",
+      "attendanceNotFound": "この出席記録が見つかりません。"
     },
     "crossSquad": "飛び級梯隊",
     "crossSquadNone": "なし",
@@ -750,7 +756,9 @@
     },
     "crossSquadTag": "飛び級",
     "lateCancelConfirm": "開始まで24時間を切っています。直前キャンセルは欠席扱いとなり {count} 回分を消化します。正当な理由（病気など）がある場合は欠席届を出してください。キャンセルしますか？",
-    "lateCancelledNotice": "直前キャンセル済みです。終了後に欠席扱いで消化されます。病気・けがなど正当な理由がある場合は下の欠席届を出してください。クラブが承認すれば消化されません。"
+    "lateCancelledNotice": "直前キャンセル済みです。終了後に欠席扱いで消化されます。病気・けがなど正当な理由がある場合は下の欠席届を出してください。クラブが承認すれば消化されません。",
+    "venue": "チェックイン会場（QR）",
+    "venueNone": "QRチェックインを使わない"
   },
   "competitions": {
     "title": "試合申込",
@@ -906,7 +914,12 @@
     "finalizeAttendance": "未出席を確定",
     "finalizeHint": "確定すると、申込済みまたは直前キャンセルで出席記録のない選手を欠席として消化します（通常練習は対象外）。確定しない場合は終了24時間後に自動で確定します。",
     "finalizeConfirm": "確定しますか？出席記録のない申込者は欠席として消化されます。",
-    "finalizedAt": "{time} に確定済み。後から出席を記録すると消化も更新されます。"
+    "finalizedAt": "{time} に確定済み。後から出席を記録すると消化も更新されます。",
+    "noticesTitle": "お知らせ",
+    "noticesUnread": "未読 {count} 件",
+    "noticeNew": "新着",
+    "noticesMarkRead": "すべて既読にする",
+    "backfillNotice": "{child} さんは {date} の練習に出席しましたが、QRチェックインがなかったため、スタッフが代わりに出席を登録しました（{debited} 回消化、残り {remaining} 回）。ご不明な点はすぐにクラブへご連絡ください。"
   },
   "matches": {
     "title": "試合日程",
@@ -1635,7 +1648,65 @@
       "other": "対応待ちの項目",
       "leave_request_pending": "欠席届の審査待ち",
       "credits_renew": "回数切れ・追加購入の案内",
-      "credits_limit_reached": "不足上限に到達"
+      "credits_limit_reached": "不足上限に到達",
+      "attendance_headcount_mismatch": "人数と出席記録が不一致・補登録",
+      "attendance_headcount_missing": "終了後も人数未確認"
+    }
+  },
+  "venues": {
+    "title": "会場とチェックインQR",
+    "lead": "会場ごとに受付用QRを1枚。保護者がスキャンすると、その会場で開催中の練習（開始30分前から終了まで）にチェックインできます。",
+    "newTitle": "会場を追加",
+    "name": "会場名",
+    "address": "住所（任意）",
+    "active": "使用中",
+    "activeLabel": "使用中",
+    "inactiveLabel": "停止中",
+    "create": "会場を追加",
+    "save": "保存",
+    "emptyTitle": "会場がまだありません",
+    "emptyBody": "会場を追加すると受付用QRをダウンロードできます。",
+    "qrAlt": "{name} のチェックインQRコード",
+    "downloadPng": "PNGをダウンロード",
+    "printable": "印刷用（PDF保存可）",
+    "print": "印刷／PDFに保存",
+    "regenerate": "QRを再発行",
+    "regenerateConfirm": "再発行すると、いま受付に貼ってあるQRはすぐ使えなくなります。よろしいですか？",
+    "unstableOrigin": "NEXT_PUBLIC_APP_URL が未設定のため、このQRは一時的なURLを指しています。印刷しないでください。",
+    "signInstruction": "LINEまたはスマホのカメラでスキャンしてチェックイン"
+  },
+  "checkin": {
+    "title": "練習のチェックイン",
+    "invalidToken": "このQRコードは無効です。受付の最新のQRを読み取るか、スタッフにお知らせください。",
+    "noSession": "チェックインできる練習はまだありません（開始30分前から）。",
+    "noChild": "お子さまはこの会場の現在の練習の対象ではありません。スタッフにお問い合わせください。",
+    "alreadyIn": "チェックイン済み：{names}",
+    "whoTitle": "どなたをチェックインしますか？",
+    "chooseSession": "練習を選んでください",
+    "submit": "チェックイン",
+    "submitting": "チェックイン中…",
+    "successTitle": "チェックイン完了",
+    "resultCheckedIn": "{name}：{session} にチェックインしました。本日の日付を記録し、残り {credits} 回です。",
+    "resultAlready": "{name}：{session} はチェックイン済みです（残り {credits} 回）。重複して消化されません。",
+    "resultNoSession": "{name}：チェックインできる練習がありません。",
+    "headcountTitle": "チェックインと人数確認",
+    "venueLabel": "チェックイン会場",
+    "venueNone": "QRチェックインを使わない",
+    "venueWholeSeries": "同じシリーズの以降の回にも適用",
+    "venueSave": "会場を保存",
+    "presentList": "出席（{count}）",
+    "registeredNotIn": "申込済み・未チェックイン",
+    "remove": "取り消す",
+    "removeReason": "取り消しの理由（例：チェックインしたが来なかった）",
+    "headcountLabel": "実人数",
+    "headcountConfirm": "人数確認完了",
+    "headcountHint": "練習中に実際の人数を数えて「人数確認完了」を押してください。出席記録と合わない場合は梯隊ディレクターに補登録を依頼します。",
+    "headcountDone": "{n} 人で確認済み（{time}）。",
+    "sources": {
+      "staff": "スタッフ登録",
+      "parent_qr": "QRチェックイン",
+      "paper_card": "紙カード取込",
+      "system": "システム確定"
     }
   }
 }

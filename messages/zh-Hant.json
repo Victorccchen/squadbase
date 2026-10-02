@@ -206,7 +206,8 @@
     "notices": "通知文案",
     "reports": "報表",
     "opsDashboard": "營運看板",
-    "settings": "設定"
+    "settings": "設定",
+    "venues": "場地"
   },
   "access": {
     "deniedTitle": "你沒有權限開啟此頁",
@@ -595,7 +596,12 @@
       "creditLimitReached": "已欠 3 堂以上，請先續購才能報名。",
       "leaveReasonRequired": "請選擇請假原因。",
       "invalidLeaveReason": "請假原因無效。",
-      "sessionNotEnded": "場次尚未結束，無法結算。"
+      "sessionNotEnded": "場次尚未結束，無法結算。",
+      "checkinTokenInvalid": "這個 QR Code 已失效。",
+      "checkinNoChild": "請至少選一位孩子。",
+      "headcountInvalid": "請輸入 0–500 的人數。",
+      "venueNameRequired": "請輸入場地名稱。",
+      "attendanceNotFound": "找不到這筆出席紀錄。"
     },
     "crossSquad": "跨上梯隊",
     "crossSquadNone": "不跨上",
@@ -750,7 +756,9 @@
     },
     "crossSquadTag": "跨上",
     "lateCancelConfirm": "距離開始不到 24 小時，臨時取消將視同未到，扣 {count} 堂。若有正當理由（如生病），請改為申請請假。確定要取消嗎？",
-    "lateCancelledNotice": "已臨時取消，場次結束後將視同未到扣堂。若有正當理由（如生病、受傷），請在下方申請請假，經球團核准後不扣堂。"
+    "lateCancelledNotice": "已臨時取消，場次結束後將視同未到扣堂。若有正當理由（如生病、受傷），請在下方申請請假，經球團核准後不扣堂。",
+    "venue": "簽到場地（QR）",
+    "venueNone": "不使用 QR 簽到"
   },
   "competitions": {
     "title": "賽事",
@@ -906,7 +914,12 @@
     "finalizeAttendance": "結算未到",
     "finalizeHint": "結算後，已報名或臨時取消但沒有出席紀錄的球員會記為未到並扣堂（例行訓練不扣）。未結算的場次會在結束 24 小時後自動結算。",
     "finalizeConfirm": "確定結算？沒有出席紀錄的報名者會記為未到並扣堂。",
-    "finalizedAt": "已於 {time} 結算。之後補登的出席仍會更新扣堂。"
+    "finalizedAt": "已於 {time} 結算。之後補登的出席仍會更新扣堂。",
+    "noticesTitle": "通知",
+    "noticesUnread": "{count} 則未讀",
+    "noticeNew": "新",
+    "noticesMarkRead": "全部標為已讀",
+    "backfillNotice": "{child} 於 {date} 的課程已出席，但未進行掃碼簽到，由工作人員代為補登記上課（扣 {debited} 堂，剩餘 {remaining} 堂）。若有疑問請立即聯繫球團，謝謝。"
   },
   "matches": {
     "title": "比賽賽程",
@@ -1635,7 +1648,65 @@
       "other": "待處理事項",
       "leave_request_pending": "請假申請待審核",
       "credits_renew": "堂數用完，提醒續購",
-      "credits_limit_reached": "已達欠堂上限"
+      "credits_limit_reached": "已達欠堂上限",
+      "attendance_headcount_mismatch": "清點人數與出席不符，請補登",
+      "attendance_headcount_missing": "課程結束仍未清點"
+    }
+  },
+  "venues": {
+    "title": "場地與簽到 QR",
+    "lead": "每個場地一張櫃檯 QR。家長掃描後，系統會找出這個場地正在進行的課程（開始前 30 分鐘到結束）讓家長簽到。",
+    "newTitle": "新增場地",
+    "name": "場地名稱",
+    "address": "地址（選填）",
+    "active": "使用中",
+    "activeLabel": "使用中",
+    "inactiveLabel": "已停用",
+    "create": "新增場地",
+    "save": "儲存",
+    "emptyTitle": "還沒有場地",
+    "emptyBody": "新增場地後即可下載櫃檯 QR。",
+    "qrAlt": "{name} 的簽到 QR Code",
+    "downloadPng": "下載 PNG",
+    "printable": "列印版（可存成 PDF）",
+    "print": "列印／存成 PDF",
+    "regenerate": "重新產生 QR",
+    "regenerateConfirm": "重新產生後，現在貼在櫃檯的 QR 會立即失效，需要換上新的。確定嗎？",
+    "unstableOrigin": "尚未設定 NEXT_PUBLIC_APP_URL，這個 QR 指向暫時網址，請勿列印張貼。",
+    "signInstruction": "請用 LINE 或手機相機掃描簽到"
+  },
+  "checkin": {
+    "title": "上課簽到",
+    "invalidToken": "這個 QR Code 已失效。請改掃櫃檯最新的 QR，或告訴現場工作人員。",
+    "noSession": "目前沒有可簽到的課程（開始前 30 分鐘才開放）。",
+    "noChild": "您的孩子不在這個場地目前的課程名單上。若有疑問請告訴現場工作人員。",
+    "alreadyIn": "已簽到：{names}",
+    "whoTitle": "幫誰簽到？",
+    "chooseSession": "請選擇課程",
+    "submit": "簽到",
+    "submitting": "簽到中…",
+    "successTitle": "簽到完成",
+    "resultCheckedIn": "{name}：{session} 已簽到，今天的日期已加到課程卡，剩餘 {credits} 堂。",
+    "resultAlready": "{name}：{session} 先前已簽到（剩餘 {credits} 堂），不會重複扣堂。",
+    "resultNoSession": "{name}：目前沒有可簽到的課程。",
+    "headcountTitle": "簽到與清點",
+    "venueLabel": "簽到場地",
+    "venueNone": "不使用 QR 簽到",
+    "venueWholeSeries": "同系列此場次之後也套用",
+    "venueSave": "儲存場地",
+    "presentList": "已出席（{count}）",
+    "registeredNotIn": "已報名未簽到",
+    "remove": "移除",
+    "removeReason": "移除原因（例如：簽了沒來）",
+    "headcountLabel": "清點人數",
+    "headcountConfirm": "清點完成",
+    "headcountHint": "課程中清點實際人數後按「清點完成」。人數與出席紀錄不符時，會通知梯隊總監補登。",
+    "headcountDone": "已清點 {n} 人（{time}）。",
+    "sources": {
+      "staff": "工作人員登記",
+      "parent_qr": "掃碼簽到",
+      "paper_card": "紙本卡匯入",
+      "system": "系統結算"
     }
   }
 }

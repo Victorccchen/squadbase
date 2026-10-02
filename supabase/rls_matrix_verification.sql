@@ -156,7 +156,15 @@ begin
       'public.request_excused_leave(uuid, text, text)',
       'public.staff_review_leave_request(uuid, public.leave_request_status, text)',
       'public.finalize_session_attendance(uuid)',
-      'public.finalize_due_sessions()'
+      'public.finalize_due_sessions()',
+      'public.checkin_preview(text)',
+      'public.parent_checkin(text, uuid[], uuid)',
+      'public.staff_confirm_headcount(uuid, integer)',
+      'public.staff_remove_checkin(uuid, uuid, text)',
+      'public.admin_upsert_venue(uuid, text, text, boolean)',
+      'public.admin_regenerate_venue_token(uuid)',
+      'public.admin_set_session_venue(uuid, uuid, boolean)',
+      'public.mark_parent_notices_read(uuid[])'
     ]) as fn
   loop
     if has_function_privilege('anon', v_check.fn, 'execute') then

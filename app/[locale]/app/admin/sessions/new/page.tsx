@@ -6,6 +6,7 @@ import { SessionForm } from "@/components/admin/session-form";
 import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { listTeams } from "@/lib/org/queries";
 import { createSession } from "@/lib/org/session-actions";
+import { listVenues } from "@/lib/venues/queries";
 
 export default async function NewSessionPage() {
   if (!(await canRenderAdminPage())) {
@@ -14,7 +15,7 @@ export default async function NewSessionPage() {
 
   const t = await getTranslations("admin");
   const common = await getTranslations("common");
-  const teams = await listTeams({ kind: "age_squad" });
+  const [teams, venues] = await Promise.all([listTeams({ kind: "age_squad" }), listVenues()]);
 
   return (
     <>
@@ -23,7 +24,12 @@ export default async function NewSessionPage() {
         {teams.length === 0 ? (
           <EmptyState title={t("playersNeedTeamTitle")} body={t("playersNeedTeamBody")} />
         ) : (
-          <SessionForm action={createSession} teams={teams} submitLabel={t("createSession")} />
+          <SessionForm
+            action={createSession}
+            teams={teams}
+            venues={venues.filter((venue) => venue.active).map((venue) => ({ id: venue.id, name: venue.name }))}
+            submitLabel={t("createSession")}
+          />
         )}
       </main>
       <footer className="border-t border-zinc-200 px-6 py-4 pb-10 text-sm text-zinc-500 dark:border-zinc-800">

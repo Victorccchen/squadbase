@@ -206,7 +206,8 @@
     "notices": "Notices",
     "reports": "Reports",
     "opsDashboard": "Ops dashboard",
-    "settings": "Settings"
+    "settings": "Settings",
+    "venues": "Venues"
   },
   "access": {
     "deniedTitle": "You cannot open this page",
@@ -595,7 +596,12 @@
       "creditLimitReached": "3 or more credits owed. Top up before signing up.",
       "leaveReasonRequired": "Choose a reason for the leave.",
       "invalidLeaveReason": "Invalid leave reason.",
-      "sessionNotEnded": "The session has not ended yet."
+      "sessionNotEnded": "The session has not ended yet.",
+      "checkinTokenInvalid": "This QR code is no longer valid.",
+      "checkinNoChild": "Choose at least one child.",
+      "headcountInvalid": "Enter a head count from 0 to 500.",
+      "venueNameRequired": "Enter a venue name.",
+      "attendanceNotFound": "Attendance record not found."
     },
     "crossSquad": "Cross 梯隊 (playing up)",
     "crossSquadNone": "None",
@@ -750,7 +756,9 @@
     },
     "crossSquadTag": "playing up",
     "lateCancelConfirm": "This starts in less than 24 hours. A late cancel counts as a no-show and uses {count} credit(s). If there is a good reason (such as illness), request leave instead. Cancel anyway?",
-    "lateCancelledNotice": "Cancelled late. After the session it counts as a no-show. If there is a good reason (illness, injury), request leave below; once the club approves, no credit is used."
+    "lateCancelledNotice": "Cancelled late. After the session it counts as a no-show. If there is a good reason (illness, injury), request leave below; once the club approves, no credit is used.",
+    "venue": "Check-in venue (QR)",
+    "venueNone": "No QR check-in"
   },
   "competitions": {
     "title": "Competitions",
@@ -906,7 +914,12 @@
     "finalizeAttendance": "Settle no-shows",
     "finalizeHint": "Players who signed up or cancelled late and have no attendance record are marked as no-shows and debited (regular training is skipped). Sessions not settled here are settled 24 hours after the end.",
     "finalizeConfirm": "Settle now? Sign-ups without attendance become no-shows and are debited.",
-    "finalizedAt": "Settled at {time}. Attendance marked later still updates the debit."
+    "finalizedAt": "Settled at {time}. Attendance marked later still updates the debit.",
+    "noticesTitle": "Notices",
+    "noticesUnread": "{count} unread",
+    "noticeNew": "New",
+    "noticesMarkRead": "Mark all as read",
+    "backfillNotice": "{child} attended the session on {date} but did not scan in, so the staff recorded the attendance ({debited} credit(s) used, {remaining} left). If anything looks wrong, please contact the club right away. Thank you."
   },
   "matches": {
     "title": "Match schedule",
@@ -1635,7 +1648,65 @@
       "other": "Item to handle",
       "leave_request_pending": "Leave request to review",
       "credits_renew": "Out of credits: remind to top up",
-      "credits_limit_reached": "Owed-credit limit reached"
+      "credits_limit_reached": "Owed-credit limit reached",
+      "attendance_headcount_mismatch": "Head count does not match: backfill",
+      "attendance_headcount_missing": "Session ended without a head count"
+    }
+  },
+  "venues": {
+    "title": "Venues and check-in QR",
+    "lead": "One counter QR per venue. When a parent scans it, the app finds the session running there (from 30 minutes before the start until the end) and checks their children in.",
+    "newTitle": "Add a venue",
+    "name": "Venue name",
+    "address": "Address (optional)",
+    "active": "In use",
+    "activeLabel": "In use",
+    "inactiveLabel": "Inactive",
+    "create": "Add venue",
+    "save": "Save",
+    "emptyTitle": "No venues yet",
+    "emptyBody": "Add a venue to download its counter QR.",
+    "qrAlt": "Check-in QR code for {name}",
+    "downloadPng": "Download PNG",
+    "printable": "Printable sign (save as PDF)",
+    "print": "Print / save as PDF",
+    "regenerate": "Regenerate QR",
+    "regenerateConfirm": "The QR on the counter stops working immediately and must be replaced. Continue?",
+    "unstableOrigin": "NEXT_PUBLIC_APP_URL is not set, so this QR points to a temporary address. Do not print it.",
+    "signInstruction": "Scan with LINE or your phone camera to check in"
+  },
+  "checkin": {
+    "title": "Check in",
+    "invalidToken": "This QR code is no longer valid. Scan the current QR at the counter or tell the staff.",
+    "noSession": "No session open for check-in yet (opens 30 minutes before the start).",
+    "noChild": "Your children are not on a session running here now. Please ask the staff.",
+    "alreadyIn": "Already checked in: {names}",
+    "whoTitle": "Who is checking in?",
+    "chooseSession": "Choose the session",
+    "submit": "Check in",
+    "submitting": "Checking in…",
+    "successTitle": "Checked in",
+    "resultCheckedIn": "{name}: checked in to {session}. Today is on the session card; {credits} credits left.",
+    "resultAlready": "{name}: already checked in to {session} ({credits} credits left). No second debit.",
+    "resultNoSession": "{name}: no session open for check-in.",
+    "headcountTitle": "Check-in and head count",
+    "venueLabel": "Check-in venue",
+    "venueNone": "No QR check-in",
+    "venueWholeSeries": "Also for later sessions in this series",
+    "venueSave": "Save venue",
+    "presentList": "Present ({count})",
+    "registeredNotIn": "Signed up, not checked in",
+    "remove": "Remove",
+    "removeReason": "Reason (e.g. checked in, did not come)",
+    "headcountLabel": "Head count",
+    "headcountConfirm": "Head count done",
+    "headcountHint": "Count the players during the session and press \"Head count done\". If it does not match the records, the youth director is asked to backfill.",
+    "headcountDone": "Counted {n} ({time}).",
+    "sources": {
+      "staff": "Staff",
+      "parent_qr": "QR check-in",
+      "paper_card": "Paper card import",
+      "system": "System (no-show)"
     }
   }
 }

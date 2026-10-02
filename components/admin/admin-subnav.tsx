@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/app/admin/coaches", key: "coaches" as const, match: "/app/admin/coaches", prefetch: false },
   { href: "/app/admin/bindings", key: "bindings" as const, match: "/app/admin/bindings", prefetch: false },
   { href: "/app/admin/sessions", key: "sessions" as const, match: "/app/admin/sessions", prefetch: true },
+  { href: "/app/admin/venues", key: "venues" as const, match: "/app/admin/venues", prefetch: false },
   { href: "/app/admin/matches", key: "matches" as const, match: "/app/admin/matches", prefetch: true },
   { href: "/app/admin/claims", key: "claims" as const, match: "/app/admin/claims", prefetch: false },
   { href: "/app/admin/credits", key: "creditsAdmin" as const, match: "/app/admin/credits", prefetch: false },

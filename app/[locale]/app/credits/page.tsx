@@ -22,6 +22,8 @@ import {
   owedCredits,
 } from "@/lib/credits/debit-rules";
 import { localizedPlayerName } from "@/lib/org/display-name";
+import { backfillNoticeValues, listOwnParentNotices } from "@/lib/checkin/notices";
+import { markNoticesRead } from "@/lib/checkin/notice-actions";
 import { secondaryButtonClassName } from "@/lib/ui";
 
 export default async function ParentCreditsPage() {
@@ -32,13 +34,19 @@ export default async function ParentCreditsPage() {
   const links = await listOwnGuardianLinks();
   const children = uniqueEligibleChildrenByPlayer(approvedChildrenFromLinks(links, "age_squad"));
   const playerIds = [...new Set(children.map((child) => child.player.id))];
-  const [balances, attended, packages, claims, transferHint] = await Promise.all([
+  const [balances, attended, packages, claims, transferHint, notices] = await Promise.all([
     listBalancesForPlayers(playerIds),
     listAttendedCounts(playerIds),
     listPrimaryPackages(),
     listOwnPaymentClaims(),
     getBankTransferHint(),
+    listOwnParentNotices(playerIds),
   ]);
+  const unread = notices.filter((notice) => !notice.read_at);
+  const childName = (playerId: string) => {
+    const child = children.find((row) => row.player.id === playerId);
+    return child ? localizedPlayerName(child.player, locale) : "";
+  };
 
   const balanceByPlayer = new Map(balances.map((row) => [row.player_id, row.credits_available]));
   const eligibleBuyers = children.filter((child) => creditsApplyToAgeBand(child.teamAgeBand));
@@ -58,6 +66,52 @@ export default async function ParentCreditsPage() {
             </Link>
           }
         />
+
+        {notices.length > 0 ? (
+          <section className="flex flex-col gap-3">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+              {t("noticesTitle")}
+              {unread.length > 0 ? ` · ${t("noticesUnread", { count: unread.length })}` : ""}
+            </h2>
+            <ul className="grid gap-2">
+              {notices.map((notice) => {
+                const values = backfillNoticeValues(notice);
+                return (
+                  <li
+                    key={notice.id}
+                    className={`rounded-2xl border p-4 text-sm leading-6 ${
+                      notice.read_at
+                        ? "border-zinc-200 bg-white text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
+                        : "border-amber-300 bg-amber-50 text-amber-950 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-50"
+                    }`}
+                  >
+                    {notice.read_at ? null : (
+                      <span className="mr-2 rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white">
+                        {t("noticeNew")}
+                      </span>
+                    )}
+                    {t("backfillNotice", {
+                      child: childName(notice.player_id),
+                      date: values.date,
+                      debited: values.debited,
+                      remaining: values.remaining,
+                    })}
+                  </li>
+                );
+              })}
+            </ul>
+            {unread.length > 0 ? (
+              <form action={markNoticesRead}>
+                {unread.map((notice) => (
+                  <input key={notice.id} type="hidden" name="notice_id" value={notice.id} />
+                ))}
+                <button type="submit" className={secondaryButtonClassName}>
+                  {t("noticesMarkRead")}
+                </button>
+              </form>
+            ) : null}
+          </section>
+        ) : null}
 
         <section className="flex flex-col gap-4">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">

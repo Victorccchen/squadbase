@@ -61,6 +61,8 @@ describe("task links and labels", () => {
       `/app/admin/sessions/${id}`,
     );
     assert.equal(taskHref(task("leave_request.pending", id, { session_id: "x" })), null);
+    assert.equal(taskHref(task("attendance.headcount_mismatch", id)), `/app/admin/sessions/${id}`);
+    assert.equal(taskHref(task("attendance.headcount_missing", id)), `/app/admin/sessions/${id}`);
     assert.equal(taskHref(task("something.new")), null);
   });
 

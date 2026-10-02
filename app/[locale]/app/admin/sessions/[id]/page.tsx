@@ -25,6 +25,8 @@ import { AttendancePanel } from "@/components/credits/attendance-panel";
 import { DebitOverrideForm } from "@/components/credits/debit-override-form";
 import { LeaveReviewForm } from "@/components/credits/leave-review-form";
 import { FinalizeAttendanceForm } from "@/components/credits/finalize-attendance-form";
+import { HeadcountForm, RemoveCheckinForm, SessionVenueForm } from "@/components/checkin/headcount-forms";
+import { listVenues } from "@/lib/venues/queries";
 import { localizedPlayerName } from "@/lib/org/display-name";
 import { NoticeCopyPanel } from "@/components/credits/notice-copy-panel";
 import { ReportExportButtons } from "@/components/admin/report-export-buttons";
@@ -63,7 +65,8 @@ export default async function AdminSessionDetailPage({ params }: SessionDetailPa
   const org = await getTranslations("org");
   const common = await getTranslations("common");
   const locale = await getLocale();
-  const [registrations, attendance, roster, leaveRequests, match] = await Promise.all([
+  const checkinT = await getTranslations("checkin");
+  const [registrations, attendance, roster, leaveRequests, match, venues] = await Promise.all([
     listSessionRegistrations(session.id),
     listAttendanceForSession(session.id),
     session.team_id ? listActiveRosterForTeam(session.team_id) : Promise.resolve([]),
@@ -71,6 +74,7 @@ export default async function AdminSessionDetailPage({ params }: SessionDetailPa
     isMatchKind(session.kind)
       ? getMatchForStaff(session.id)
       : Promise.resolve(null),
+    listVenues(),
   ]);
   const open = registrations.filter((row) => row.status === "registered");
   const isDeleted = Boolean(session.deleted_at);
@@ -248,6 +252,56 @@ export default async function AdminSessionDetailPage({ params }: SessionDetailPa
               noDebit={session.no_debit}
               debitOverrideN={session.debit_override_n}
             />
+          </section>
+        )}
+        {isDeleted ? null : (
+          <section className="flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+              {checkinT("headcountTitle")}
+            </h2>
+            <SessionVenueForm
+              sessionId={session.id}
+              venueId={session.venue_id}
+              venues={venues.map((venue) => ({ id: venue.id, name: venue.name, active: venue.active }))}
+              inSeries={Boolean(session.series_id)}
+            />
+            <div className="flex flex-col gap-2 text-sm">
+              <h3 className="font-medium">
+                {checkinT("presentList", { count: attendance.filter((row) => row.status === "present").length })}
+              </h3>
+              <ul className="flex flex-col gap-2">
+                {attendance
+                  .filter((row) => row.status === "present")
+                  .map((row) => (
+                    <li key={row.id} className="flex flex-wrap items-center justify-between gap-2">
+                      <span>
+                        {row.player ? localizedPlayerName(row.player, locale) : "—"}
+                        {" · "}
+                        <span className="text-zinc-500">{checkinT(`sources.${row.source}`)}</span>
+                      </span>
+                      <RemoveCheckinForm sessionId={session.id} playerId={row.player_id} />
+                    </li>
+                  ))}
+              </ul>
+              {open.some((row) => !attendanceByPlayer.has(row.player_id)) ? (
+                <p className="text-zinc-500">
+                  {checkinT("registeredNotIn")}:{" "}
+                  {open
+                    .filter((row) => !attendanceByPlayer.has(row.player_id) && row.player)
+                    .map((row) => localizedPlayerName(row.player!, locale))
+                    .join("、")}
+                </p>
+              ) : null}
+            </div>
+            <p className="text-sm text-zinc-600 dark:text-zinc-300">
+              {session.headcount_confirmed_at
+                ? checkinT("headcountDone", {
+                    n: session.headcount_n ?? 0,
+                    time: formatClubDateTime(session.headcount_confirmed_at, locale),
+                  })
+                : checkinT("headcountHint")}
+            </p>
+            <HeadcountForm sessionId={session.id} initial={session.headcount_n} />
           </section>
         )}
         {isDeleted ? null : (
