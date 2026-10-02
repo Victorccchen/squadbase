@@ -23,12 +23,9 @@ export function canAccessRoster(roles: AppRole[]): boolean {
   return hasRole(roles, "coach") || hasRole(roles, "admin");
 }
 
-export function canReviewPayments(roles: AppRole[]): boolean {
-  return hasRole(roles, "admin");
-}
-
+/** Attendance debits credits, so only staff (admin) mark it; coaches do not (Phase 1 PR-04). */
 export function canTakeAttendance(roles: AppRole[]): boolean {
-  return hasRole(roles, "coach") || hasRole(roles, "admin");
+  return hasRole(roles, "admin");
 }
 
 export function canWriteAssessments(roles: AppRole[]): boolean {

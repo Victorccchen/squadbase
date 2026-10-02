@@ -3,7 +3,6 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { AccessDenied } from "@/components/access-denied";
 import { PageHeader } from "@/components/page-header";
-import { AttendancePanel } from "@/components/credits/attendance-panel";
 import {
   SessionDeletedBadge,
   SessionKindBadge,
@@ -15,23 +14,21 @@ import { canAccessRoster } from "@/lib/auth/roles";
 import { getSession, listSessionRegistrations } from "@/lib/org/session-queries";
 import { getMatchForStaff } from "@/lib/org/match-queries";
 import { MatchSideBadge, MatchStatusBadge } from "@/components/matches/match-status-badge";
-import {
-  listActiveRosterForTeam,
-  listAttendanceForSession,
-  listBalancesForPlayers,
-} from "@/lib/credits/queries";
-import { creditsApplyToAgeBand } from "@/lib/credits/debit-rules";
+import { listActiveRosterForTeam } from "@/lib/credits/queries";
+import { localizedPlayerName } from "@/lib/org/display-name";
 import { publicOpponentLabel, isMatchKind } from "@/lib/org/match";
 import { formatClubDateTimeRange } from "@/lib/org/session-time";
 import { secondaryButtonClassName } from "@/lib/ui";
 
-type CoachSessionAttendancePageProps = {
+type CoachSessionPageProps = {
   params: Promise<{ id: string }>;
 };
 
-export default async function CoachSessionAttendancePage({
-  params,
-}: CoachSessionAttendancePageProps) {
+/**
+ * Coach view of one session: who is coming, with links to their assessments.
+ * Read-only. Attendance and credits are staff work (Phase 1 PR-04).
+ */
+export default async function CoachSessionPage({ params }: CoachSessionPageProps) {
   const { roles } = await loadSignedInAccount();
   if (!canAccessRoster(roles)) {
     return <AccessDenied area="roster" />;
@@ -47,11 +44,11 @@ export default async function CoachSessionAttendancePage({
   const sessionsT = await getTranslations("sessions");
   const matchesT = await getTranslations("matches");
   const org = await getTranslations("org");
+  const rosterT = await getTranslations("roster");
   const common = await getTranslations("common");
   const locale = await getLocale();
-  const [registrations, attendance, roster, match] = await Promise.all([
+  const [registrations, roster, match] = await Promise.all([
     listSessionRegistrations(session.id),
-    listAttendanceForSession(session.id),
     session.team_id ? listActiveRosterForTeam(session.team_id) : Promise.resolve([]),
     isMatchKind(session.kind)
       ? getMatchForStaff(session.id)
@@ -70,12 +67,6 @@ export default async function CoachSessionAttendancePage({
             roster.find((item) => item.player.id === row.player_id)?.membership.jersey_number ?? null,
         }));
 
-  const playerIds = players.map((row) => row.player.id);
-  const balances = await listBalancesForPlayers(playerIds);
-  const balanceByPlayer = new Map(balances.map((row) => [row.player_id, row.credits_available]));
-  const attendanceByPlayer = new Map(attendance.map((row) => [row.player_id, row]));
-  const teamBand = session.team?.age_band ?? "U8";
-  const noDebitLabel = !creditsApplyToAgeBand(teamBand) || session.no_debit;
 
   return (
     <>
@@ -100,11 +91,6 @@ export default async function CoachSessionAttendancePage({
               label={org(session.status === "active" ? "statusActive" : "statusInactive")}
             />
           )}
-          {noDebitLabel ? (
-            <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
-              {t("noDebit")}
-            </span>
-          ) : null}
         </div>
         {match ? (
           <section className="flex flex-col gap-2 rounded-2xl border border-zinc-200 bg-white p-5 text-sm dark:border-zinc-800 dark:bg-zinc-900">
@@ -132,25 +118,34 @@ export default async function CoachSessionAttendancePage({
         ) : null}
         <section className="flex flex-col gap-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
-            {t("attendanceTitle")}
+            {rosterT("sessionPlayersTitle")}
           </h2>
-          <AttendancePanel
-            sessionId={session.id}
-            next="roster"
-            locale={locale}
-            showCredits
-            candidates={players.map((row) => {
-              const marked = attendanceByPlayer.get(row.player.id);
-              return {
-                player: row.player,
-                jerseyNumber: row.jerseyNumber,
-                creditsAvailable: balanceByPlayer.get(row.player.id) ?? 0,
-                attendanceStatus: marked?.status ?? null,
-                creditsDebited: marked?.credits_debited ?? 0,
-                noDebitLabel,
-              };
-            })}
-          />
+          <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">
+            {useRoster ? rosterT("sessionPlayersLeadMatch") : rosterT("sessionPlayersLeadTraining")}
+          </p>
+          {players.length === 0 ? (
+            <p className="text-sm text-zinc-500">{sessionsT("emptyRoster")}</p>
+          ) : (
+            <ul className="grid gap-2">
+              {players.map((row) => (
+                <li
+                  key={row.player.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm dark:border-zinc-800 dark:bg-zinc-900"
+                >
+                  <span className="font-medium">
+                    {row.jerseyNumber !== null ? `#${row.jerseyNumber} ` : ""}
+                    {localizedPlayerName(row.player, locale)}
+                  </span>
+                  <Link
+                    href={`/app/assessments/${row.player.id}`}
+                    className="font-medium underline underline-offset-2"
+                  >
+                    {rosterT("openAssessment")}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       </main>
       <footer className="border-t border-zinc-200 px-6 py-4 pb-10 text-sm text-zinc-500 dark:border-zinc-800">

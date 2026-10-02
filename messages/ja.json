@@ -350,7 +350,11 @@
     "sessionsLead": "割り当てられたチームのセッションと申込選手を読み取り専用で表示します。",
     "sessionsEmptyTitle": "担当セッションはありません",
     "sessionsEmptyBody": "管理者が担当チームにセッションを作成すると、ここに表示されます。",
-    "openAssessment": "能力評価"
+    "openAssessment": "能力評価",
+    "viewSession": "名簿を見る",
+    "sessionPlayersTitle": "この回の名簿",
+    "sessionPlayersLeadTraining": "この練習に申し込んだ選手です。出欠はスタッフが記録します。",
+    "sessionPlayersLeadMatch": "このチームの選手です。出欠はスタッフが記録します。"
   },
   "photos": {
     "title": "証明写真",
@@ -1297,7 +1301,17 @@
     "permissionDenied": "ブラウザが通知をブロックしています。",
     "enable": "プッシュをオン",
     "disable": "プッシュをオフ",
-    "working": "処理中…"
+    "working": "処理中…",
+    "languageTitle": "連絡に使う言語",
+    "languageLead": "クラブからのお知らせ、評価、練習ガイドはこの言語でお送りします。",
+    "languageLabel": "言語",
+    "languageSave": "保存",
+    "languageSaved": "保存しました。",
+    "languages": {
+      "zh-Hant": "繁體中文",
+      "ja": "日本語",
+      "en": "English"
+    }
   },
   "portal": {
     "meta": {

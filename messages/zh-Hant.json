@@ -350,7 +350,11 @@
     "sessionsLead": "唯讀檢視你被指派隊伍的場次與已報名球員。",
     "sessionsEmptyTitle": "沒有被指派的場次",
     "sessionsEmptyBody": "管理員建立場次並把你指派到該隊伍後，會出現在這裡。",
-    "openAssessment": "能力評量"
+    "openAssessment": "能力評量",
+    "viewSession": "查看名單",
+    "sessionPlayersTitle": "本場名單",
+    "sessionPlayersLeadTraining": "已報名本場訓練的球員。出缺席由工作人員記錄。",
+    "sessionPlayersLeadMatch": "本隊伍的球員。出缺席由工作人員記錄。"
   },
   "photos": {
     "title": "證件照片",
@@ -1297,7 +1301,17 @@
     "permissionDenied": "瀏覽器已封鎖通知。",
     "enable": "開啟推播",
     "disable": "關閉推播",
-    "working": "處理中…"
+    "working": "處理中…",
+    "languageTitle": "聯絡語言",
+    "languageLead": "球團傳給你的通知、評估與訓練指引會使用這個語言。",
+    "languageLabel": "語言",
+    "languageSave": "儲存",
+    "languageSaved": "已儲存。",
+    "languages": {
+      "zh-Hant": "繁體中文",
+      "ja": "日本語",
+      "en": "English"
+    }
   },
   "portal": {
     "meta": {

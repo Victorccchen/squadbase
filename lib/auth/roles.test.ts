@@ -3,7 +3,6 @@ import { describe, it } from "node:test";
 import {
   canAccessAdmin,
   canAccessRoster,
-  canReviewPayments,
   canTakeAttendance,
   canWriteAssessments,
 } from "./roles.ts";
@@ -32,16 +31,9 @@ describe("canAccessRoster", () => {
   });
 });
 
-describe("payment vs attendance roles (C7)", () => {
-  it("only admin can review payment claims", () => {
-    assert.equal(canReviewPayments(["admin"]), true);
-    assert.equal(canReviewPayments(["coach"]), false);
-    assert.equal(canReviewPayments(["parent"]), false);
-    assert.equal(canReviewPayments(["parent", "coach"]), false);
-  });
-
-  it("coach and admin may take attendance; parent may not", () => {
-    assert.equal(canTakeAttendance(["coach"]), true);
+describe("attendance roles (Phase 1 PR-04)", () => {
+  it("only admin (staff) may take attendance; coaches and parents may not", () => {
+    assert.equal(canTakeAttendance(["coach"]), false);
     assert.equal(canTakeAttendance(["admin"]), true);
     assert.equal(canTakeAttendance(["parent"]), false);
   });

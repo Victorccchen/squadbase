@@ -350,7 +350,11 @@
     "sessionsLead": "Read-only list of sessions on teams assigned to you, including who registered.",
     "sessionsEmptyTitle": "No assigned sessions",
     "sessionsEmptyBody": "When an admin creates a session on a team assigned to you, it will show up here.",
-    "openAssessment": "Assessment"
+    "openAssessment": "Assessment",
+    "viewSession": "View players",
+    "sessionPlayersTitle": "Players for this session",
+    "sessionPlayersLeadTraining": "Players registered for this training. Staff record attendance.",
+    "sessionPlayersLeadMatch": "Players on this team. Staff record attendance."
   },
   "photos": {
     "title": "ID photo",
@@ -1297,7 +1301,17 @@
     "permissionDenied": "The browser blocked notifications.",
     "enable": "Enable push",
     "disable": "Disable push",
-    "working": "Working…"
+    "working": "Working…",
+    "languageTitle": "Contact language",
+    "languageLead": "Club notices, assessments and training guidance will be sent to you in this language.",
+    "languageLabel": "Language",
+    "languageSave": "Save",
+    "languageSaved": "Saved.",
+    "languages": {
+      "zh-Hant": "繁體中文",
+      "ja": "日本語",
+      "en": "English"
+    }
   },
   "portal": {
     "meta": {

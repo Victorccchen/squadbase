@@ -110,7 +110,8 @@ begin
     select * from (values
       ('players',                 'id',        0, 0, 0, 1, 1, 0, 1),
       ('team_memberships',        'player_id', 0, 0, 0, 1, 1, 0, 1),
-      ('player_session_balances', 'player_id', 0, 0, 0, 1, 1, 0, 1),
+      -- PR-04: coaches no longer read families' credit balances.
+      ('player_session_balances', 'player_id', 0, 0, 0, 1, 0, 0, 1),
       ('session_credit_ledger',   'player_id', 0, 0, 0, 0, 0, 0, 2),
       ('payment_claims',          'player_id', 0, 0, 0, 1, 0, 0, 1),
       ('session_attendance',      'player_id', 0, 0, 0, 1, 1, 0, 1),
@@ -148,7 +149,8 @@ begin
       'public.mark_session_attendance(uuid, uuid, public.attendance_status)',
       'public.admin_upsert_session_package(uuid, public.package_age_band, integer, integer, boolean)',
       'public.admin_set_task_status(uuid, text, timestamptz)',
-      'public.admin_log_event(text, text, uuid, jsonb)'
+      'public.admin_log_event(text, text, uuid, jsonb)',
+      'public.set_preferred_language(text, boolean)'
     ]) as fn
   loop
     if has_function_privilege('anon', v_check.fn, 'execute') then
