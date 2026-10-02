@@ -491,6 +491,15 @@ describe("Torneopal roster apply (in-memory)", () => {
 
     const createdId = [...players.keys()][0]!;
     const createdPlayer = players.get(createdId)!;
+    // PR-05: an admin-set cross 梯隊 is neither an extra nor removed by the seed.
+    memberships.push({
+      id: "m-cross",
+      player_id: createdId,
+      team_id: "cross-team",
+      jersey_number: 8,
+      status: "active",
+      squad_role: "cross",
+    });
     const secondPlan = parseTorneopalRosterCsv(
       csv,
       catalog({
@@ -513,5 +522,30 @@ describe("Torneopal roster apply (in-memory)", () => {
     const second = await applyTorneopalRosterPlan(secondPlan, store);
     assert.equal(second.skipped, 1);
     assert.equal(second.created, 0);
+
+    const jerseyChange = rosterCsv([
+      row({ team: "Futuro U11", squad: "梯隊 U12", jersey: "9", family: "測", given: "丙" }),
+    ]);
+    const thirdPlan = parseTorneopalRosterCsv(
+      jerseyChange,
+      catalog({
+        players: [
+          {
+            id: createdId,
+            name_zh: createdPlayer.zhName,
+            name_en_given: createdPlayer.nameEnGiven,
+            name_en_family: createdPlayer.nameEnFamily,
+            birth_date: createdPlayer.birthDate,
+            status: "active",
+            continues_training: true,
+          },
+        ],
+        memberships: memberships.map((row) => ({ ...row })),
+      }),
+      AS_OF,
+    );
+    const third = await applyTorneopalRosterPlan(thirdPlan, store);
+    assert.equal(third.updated, 1);
+    assert.equal(memberships.find((row) => row.id === "m-cross")?.status, "active");
   });
 });

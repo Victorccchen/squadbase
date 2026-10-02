@@ -339,7 +339,7 @@ async function loadAgeSquadMemberships(
     pageRange(
       supabase
         .from("team_memberships")
-        .select("player_id, teams!inner (id, name, kind)")
+        .select("player_id, squad_role, teams!inner (id, name, kind)")
         .eq("status", "active")
         .eq("teams.kind", "age_squad")
         .range(from, to),
@@ -353,10 +353,12 @@ async function loadAgeSquadMemberships(
   for (const raw of fetched.rows) {
     const row = raw as {
       player_id: string;
+      squad_role: string | null;
       teams: { id: string; name: string; kind: TeamKind } | { id: string; name: string; kind: TeamKind }[] | null;
     };
     const team = one(row.teams);
-    if (!team) {
+    // Match attendance is attributed to the primary 梯隊, not the cross one (PR-05).
+    if (!team || row.squad_role === "cross") {
       continue;
     }
     rows.push({

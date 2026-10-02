@@ -17,6 +17,7 @@ import { ListWindowNav } from "@/components/sessions/list-window-nav";
 import { listOwnGuardianLinks } from "@/lib/org/queries";
 import {
   approvedChildrenFromLinks,
+  crossOnlyTeamIds,
   childrenOnSessionTeam,
   listOpenTrainingSessionsForParent,
   listOwnSessionRegistrations,
@@ -77,6 +78,11 @@ export default async function ParentSessionsPage({ searchParams }: ParentSession
     : (params.registered ?? "");
   const showRegistered = registeredRaw === "1";
   const children = approvedChildrenFromLinks(links, "age_squad");
+  const crossTeams = crossOnlyTeamIds(children);
+  const teamLabel = (teamId: string, name: string | undefined) =>
+    crossTeams.has(teamId)
+      ? `${name ?? org("unknownTeam")} · ${t("crossSquadTag")}`
+      : (name ?? org("unknownTeam"));
   const teamIds = [...new Set(children.map((child) => child.teamId))];
   const playerIds = [...new Set(children.map((child) => child.player.id))];
   const startsWindow = {
@@ -177,7 +183,7 @@ export default async function ParentSessionsPage({ searchParams }: ParentSession
                               key={group.key}
                               href={parentGroupPath(group)}
                               title={group.title}
-                              teamName={next?.team?.name ?? org("unknownTeam")}
+                              teamName={teamLabel(next?.team_id ?? "", next?.team?.name)}
                               kind={group.sessionKind}
                               isPlayoff={group.sessions.some((row) => row.is_playoff)}
                               nextStartsAt={next?.starts_at ?? ""}
@@ -195,7 +201,7 @@ export default async function ParentSessionsPage({ searchParams }: ParentSession
                             key={session.id}
                             sessionId={session.id}
                             title={session.title}
-                            teamName={session.team?.name ?? org("unknownTeam")}
+                            teamName={teamLabel(session.team_id, session.team?.name)}
                             location={session.location}
                             startsAt={session.starts_at}
                             endsAt={session.ends_at}

@@ -131,6 +131,7 @@ function mapMembershipRow(
     team_id: row.team_id,
     jersey_number: row.jersey_number,
     status: row.status,
+    squad_role: row.squad_role ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at,
     created_by: row.created_by,

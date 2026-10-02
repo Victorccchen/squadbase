@@ -12,6 +12,7 @@ import {
   isPlayersCjkNameCheckViolation,
   parseAgeBand,
   parseAgeSquadSlot,
+  parseCrossSquadSlot,
   parseBirthDate,
   parseContinuesTraining,
   parseEligibleBirthAges,
@@ -27,7 +28,11 @@ import {
   teamDeleteErrorKey,
 } from "@/lib/org/parse";
 import { ageBandFromLayerKey } from "@/lib/org/squad-team";
-import { insertPlayerWithAssignments, setPlayerAssignments } from "@/lib/org/player-write";
+import {
+  insertPlayerWithAssignments,
+  setCrossSquad,
+  setPlayerAssignments,
+} from "@/lib/org/player-write";
 import type { AgeBand } from "@/lib/supabase/database.types";
 import { type OrgActionState, type OrgErrorKey } from "@/lib/org/errors";
 
@@ -391,6 +396,11 @@ export async function updatePlayer(
     return fail(parsedMemberships.errorKey);
   }
 
+  const parsedCross = parseCrossSquadSlot(formData, parsedSquad.squad.teamId);
+  if (!parsedCross.ok) {
+    return fail(parsedCross.errorKey);
+  }
+
   const { error } = await actor.supabase
     .from("players")
     .update({
@@ -420,6 +430,18 @@ export async function updatePlayer(
 
   if (membershipError) {
     return fail(membershipError);
+  }
+
+  if (parsedCross.present) {
+    const crossError = await setCrossSquad(
+      actor.supabase,
+      playerId,
+      parsedCross.teamId,
+      parsedCross.jersey,
+    );
+    if (crossError) {
+      return fail(crossError);
+    }
   }
 
   revalidateOrg();

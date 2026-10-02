@@ -189,3 +189,22 @@ export async function insertPlayerWithAssignments(
 
   return { ok: true, id: player.id };
 }
+
+/** PR-05: set or clear (teamId null) the one cross 梯隊 (跨上). Audited in the database. */
+export async function setCrossSquad(
+  supabase: PlayerWriteClient,
+  playerId: string,
+  teamId: string | null,
+  jersey: number | null,
+): Promise<OrgErrorKey | null> {
+  const { error } = await supabase.rpc("admin_set_cross_squad", {
+    p_player_id: playerId,
+    p_team_id: teamId,
+    p_jersey_number: jersey,
+  });
+  if (error) {
+    console.error("setCrossSquad", error.message);
+    return membershipWriteErrorKey(error);
+  }
+  return null;
+}

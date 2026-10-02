@@ -102,7 +102,7 @@ async function loadCatalog(supabase: SeedClient): Promise<TorneopalSeedCatalog> 
     supabase
       .from("players")
       .select("id, name_zh, name_en_given, name_en_family, birth_date, status, continues_training"),
-    supabase.from("team_memberships").select("id, player_id, team_id, jersey_number, status"),
+    supabase.from("team_memberships").select("id, player_id, team_id, jersey_number, status, squad_role"),
   ]);
   if (teams.error) {
     fail(`Failed to load teams: ${teams.error.message}`);
@@ -176,14 +176,19 @@ function createStore(supabase: SeedClient) {
     async listMemberships(playerId: string) {
       const { data, error } = await supabase
         .from("team_memberships")
-        .select("id, player_id, team_id, jersey_number, status")
+        .select("id, player_id, team_id, jersey_number, status, squad_role")
         .eq("player_id", playerId);
       if (error) {
         throw new Error(error.message);
       }
       return data ?? [];
     },
-    async upsertMembership(row: { playerId: string; teamId: string; jersey: number }) {
+    async upsertMembership(row: {
+      playerId: string;
+      teamId: string;
+      jersey: number;
+      squadRole?: "primary";
+    }) {
       const { data: existing, error: readError } = await supabase
         .from("team_memberships")
         .select("id")
@@ -199,6 +204,7 @@ function createStore(supabase: SeedClient) {
           .update({
             jersey_number: row.jersey,
             status: "active",
+            ...(row.squadRole ? { squad_role: row.squadRole } : {}),
           })
           .eq("id", existing.id);
         if (error) {
@@ -211,6 +217,7 @@ function createStore(supabase: SeedClient) {
         team_id: row.teamId,
         jersey_number: row.jersey,
         status: "active",
+        ...(row.squadRole ? { squad_role: row.squadRole } : {}),
       });
       if (error) {
         return { ok: false as const, detail: error.message };

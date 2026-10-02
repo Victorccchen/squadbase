@@ -33,8 +33,11 @@ type PlayerFormProps = {
   >;
   membership?: Pick<TeamMembership, "team_id" | "jersey_number" | "status"> | null;
   memberships?: (Pick<TeamMembership, "team_id" | "jersey_number" | "status"> & {
+    squad_role?: TeamMembership["squad_role"];
     team?: Pick<Team, "kind"> | null;
   })[];
+  /** PR-05: show the cross 梯隊 (跨上) selector. Edit page only; needs a saved primary. */
+  showCrossSquad?: boolean;
   teams: Pick<Team, "id" | "name" | "age_band" | "status" | "kind" | "layer_key" | "eligible_birth_ages">[];
   submitLabel: string;
 };
@@ -44,10 +47,12 @@ function initialSlots(
   teams: PlayerFormProps["teams"],
 ) {
   const active = (memberships ?? []).filter((row) => row.status === "active");
-  const squad = active.find((row) => {
+  const isSquadRow = (row: (typeof active)[number]) => {
     const team = teams.find((unit) => unit.id === row.team_id);
     return team ? isAgeSquad(team) : row.team?.kind === "age_squad";
-  });
+  };
+  const squad = active.find((row) => isSquadRow(row) && row.squad_role !== "cross");
+  const cross = active.find((row) => isSquadRow(row) && row.squad_role === "cross");
   const competition = active
     .filter((row) => {
       const team = teams.find((unit) => unit.id === row.team_id);
@@ -62,6 +67,8 @@ function initialSlots(
   return {
     squadId: squad?.team_id ?? "",
     squadJersey: squad?.jersey_number != null ? String(squad.jersey_number) : "",
+    crossId: cross?.team_id ?? "",
+    crossJersey: cross?.jersey_number != null ? String(cross.jersey_number) : "",
     teamId: competition[0]?.team_id ?? "",
     jersey: competition[0]?.jersey_number != null ? String(competition[0].jersey_number) : "",
     teamId2: competition[1]?.team_id ?? "",
@@ -76,6 +83,7 @@ export function PlayerForm({
   memberships,
   teams,
   submitLabel,
+  showCrossSquad = false,
 }: PlayerFormProps) {
   const t = useTranslations("org");
   const [state, formAction, pending] = useActionState(action, INITIAL_ORG_ACTION_STATE);
@@ -83,6 +91,7 @@ export function PlayerForm({
   const [continuesTraining, setContinuesTraining] = useState(player?.continues_training ?? true);
   const initial = initialSlots(memberships, teams);
   const [squadId, setSquadId] = useState(initial.squadId);
+  const [crossId, setCrossId] = useState(initial.crossId);
   const [teamId, setTeamId] = useState(initial.teamId);
   const [teamId2, setTeamId2] = useState(initial.teamId2);
   const [showSecond, setShowSecond] = useState(initial.showSecond);
@@ -232,6 +241,49 @@ export function PlayerForm({
           <span className="font-normal text-zinc-500">{t("jerseyHintSquad")}</span>
         </label>
       </fieldset>
+
+      {showCrossSquad ? (
+        <fieldset className="flex flex-col gap-3">
+          <legend className="text-sm font-medium">{t("crossSquad")}</legend>
+          <label className="flex flex-col gap-1.5 text-sm font-medium">
+            {t("crossSquad")}
+            <select
+              name="cross_squad_id"
+              value={crossId}
+              onChange={(event) => setCrossId(event.target.value)}
+              className={inputClassName}
+            >
+              <option value="">{t("crossSquadNone")}</option>
+              {ageSquads
+                .filter(
+                  (team) =>
+                    team.id !== squadId && (team.status === "active" || team.id === crossId),
+                )
+                .map((team) => (
+                  <option key={team.id} value={team.id}>
+                    {team.name} ({t(`ageBands.${team.age_band}`)})
+                  </option>
+                ))}
+            </select>
+          </label>
+          {crossId ? (
+            <label className="flex flex-col gap-1.5 text-sm font-medium">
+              {t("jerseyNumber")}
+              <input
+                name="cross_squad_jersey"
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={99}
+                key={`cross-jersey-${initial.crossId}`}
+                defaultValue={initial.crossJersey}
+                className={inputClassName}
+              />
+            </label>
+          ) : null}
+          <span className="text-sm font-normal text-zinc-500">{t("crossSquadHint")}</span>
+        </fieldset>
+      ) : null}
 
       <fieldset className="flex flex-col gap-3">
         <legend className="text-sm font-medium">{t("firstCompetitionTeam")}</legend>

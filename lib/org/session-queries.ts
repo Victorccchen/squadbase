@@ -10,6 +10,7 @@ import type {
 } from "@/lib/supabase/database.types";
 import type { GuardianLinkWithPlayer, PlayerWithMembership } from "@/lib/org/queries";
 import { uniqueApprovedLinksByPlayerId } from "@/lib/org/guardian-links";
+import { crossOnlyTeamIds, uniqueByPlayerPreferPrimary } from "@/lib/org/membership-display";
 import { isSessionOpenForSignup } from "@/lib/org/session-time";
 import { parseSessionKind } from "@/lib/org/session-recurrence";
 import { parseUuid } from "@/lib/org/parse";
@@ -490,6 +491,8 @@ export type EligibleChild = {
   teamName: string;
   jerseyNumber: number;
   teamAgeBand: AgeBand;
+  /** PR-05: true when this row is the child's cross 梯隊 (跨上), not the primary. */
+  isCrossSquad: boolean;
 };
 
 export function eligibleChildrenForSession(
@@ -571,24 +574,21 @@ export function approvedChildrenFromLinks(
         teamName: membership.team.name,
         jerseyNumber: membership.jersey_number,
         teamAgeBand: membership.team.age_band,
+        isCrossSquad: membership.team.kind === "age_squad" && membership.squad_role === "cross",
       });
     }
   }
   return result;
 }
 
-/** One row per player, keeping the first (most recently updated active) membership. */
+/**
+ * One row per player. Prefers the primary 梯隊 over a cross 梯隊 (prices follow
+ * the primary, PR-05); otherwise keeps the first row.
+ */
 export function uniqueEligibleChildrenByPlayer(
   children: EligibleChild[],
 ): EligibleChild[] {
-  const seen = new Set<string>();
-  const result: EligibleChild[] = [];
-  for (const child of children) {
-    if (seen.has(child.player.id)) {
-      continue;
-    }
-    seen.add(child.player.id);
-    result.push(child);
-  }
-  return result;
+  return uniqueByPlayerPreferPrimary(children);
 }
+
+export { crossOnlyTeamIds };

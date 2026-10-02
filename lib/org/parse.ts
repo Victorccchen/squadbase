@@ -131,6 +131,40 @@ export function parseAgeSquadSlot(formData: FormData): ParseAgeSquadSlotResult {
   return { ok: true, squad: { teamId, jersey } };
 }
 
+export type ParseCrossSquadResult =
+  | { ok: true; present: false }
+  | { ok: true; present: true; teamId: string | null; jersey: number | null }
+  | { ok: false; errorKey: "invalidJersey" | "crossSquadSameAsPrimary" };
+
+/**
+ * PR-05 cross 梯隊 (跨上). Absent field → leave unchanged; empty → clear.
+ * Jersey is optional; the database defaults it to the primary jersey.
+ */
+export function parseCrossSquadSlot(
+  formData: FormData,
+  primaryTeamId: string | null,
+): ParseCrossSquadResult {
+  if (!formData.has("cross_squad_id")) {
+    return { ok: true, present: false };
+  }
+  const teamId = readString(formData, "cross_squad_id") || null;
+  if (!teamId) {
+    return { ok: true, present: true, teamId: null, jersey: null };
+  }
+  if (primaryTeamId && teamId === primaryTeamId) {
+    return { ok: false, errorKey: "crossSquadSameAsPrimary" };
+  }
+  const jerseyRaw = readString(formData, "cross_squad_jersey");
+  if (!jerseyRaw) {
+    return { ok: true, present: true, teamId, jersey: null };
+  }
+  const jersey = parseJersey(jerseyRaw);
+  if (jersey === null) {
+    return { ok: false, errorKey: "invalidJersey" };
+  }
+  return { ok: true, present: true, teamId, jersey };
+}
+
 export function parseContinuesTraining(formData: FormData): boolean {
   const raw = readString(formData, "continues_training").toLowerCase();
   return raw === "true" || raw === "on" || raw === "1" || raw === "yes";
@@ -246,6 +280,10 @@ type MembershipWriteErrorKey =
   | "jerseyTaken"
   | "tooManyActiveMemberships"
   | "membershipBandNotAllowed"
+  | "crossSquadSameAsPrimary"
+  | "crossSquadNeedsPrimary"
+  | "crossSquadLimit"
+  | "crossSquadTeamInactive"
   | "membershipBirthNotEligible"
   | "membershipLayerConflict"
   | "continuesTrainingRequired"
@@ -259,6 +297,18 @@ export function membershipWriteErrorKey(error: PgLikeError): MembershipWriteErro
     return "jerseyTaken";
   }
   const text = errorBlob(error);
+  if (text.includes("cross squad must differ from primary")) {
+    return "crossSquadSameAsPrimary";
+  }
+  if (text.includes("cross squad requires an active primary")) {
+    return "crossSquadNeedsPrimary";
+  }
+  if (text.includes("already has an active cross squad")) {
+    return "crossSquadLimit";
+  }
+  if (text.includes("team is not active")) {
+    return "crossSquadTeamInactive";
+  }
   if (text.includes("player already has 2 active memberships")) {
     return "tooManyActiveMemberships";
   }

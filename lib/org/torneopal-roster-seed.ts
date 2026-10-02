@@ -111,6 +111,8 @@ export type TorneopalSeedMembership = {
   team_id: string;
   jersey_number: number;
   status: string;
+  /** PR-05: cross 梯隊 rows are managed by admins, not by the roster seed. */
+  squad_role?: string | null;
 };
 
 export type TorneopalSeedCatalog = {
@@ -489,7 +491,9 @@ function membershipsFor(
   catalog: TorneopalSeedCatalog,
   playerId: string,
 ): TorneopalSeedMembership[] {
-  return catalog.memberships.filter((row) => row.player_id === playerId && row.status === "active");
+  return catalog.memberships.filter(
+    (row) => row.player_id === playerId && row.status === "active" && row.squad_role !== "cross",
+  );
 }
 
 function desiredStateMatches(

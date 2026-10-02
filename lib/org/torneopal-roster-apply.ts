@@ -29,6 +29,8 @@ export type RosterSeedStore = {
     playerId: string;
     teamId: string;
     jersey: number;
+    /** Set on the 梯隊 slot so a former cross row becomes the primary. */
+    squadRole?: "primary";
   }): Promise<{ ok: true } | { ok: false; detail: string }>;
   deactivateMembership(id: string): Promise<{ ok: true } | { ok: false; detail: string }>;
   deletePlayer?(id: string): Promise<{ ok: true } | { ok: false; detail: string }>;
@@ -63,6 +65,10 @@ async function syncMemberships(
     if (row.status !== "active" || !row.id) {
       continue;
     }
+    // Keep the admin-managed cross 梯隊 (PR-05) unless it becomes the primary.
+    if (row.squad_role === "cross" && row.team_id !== player.ageSquadId) {
+      continue;
+    }
     if (!keepTeamIds.has(row.team_id)) {
       const deactivated = await store.deactivateMembership(row.id);
       if (!deactivated.ok) {
@@ -75,6 +81,7 @@ async function syncMemberships(
     playerId,
     teamId: player.ageSquadId,
     jersey: player.ageSquadJersey,
+    squadRole: "primary",
   });
   if (!squad.ok) {
     return squad;

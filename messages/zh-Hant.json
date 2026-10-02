@@ -587,8 +587,16 @@
       "pushSubscribeFailed": "無法開啟推播。請確認已加入主畫面後再試。",
       "pushUnsupported": "這支瀏覽器不支援 Web Push。",
       "packageHasClaims": "這個方案已有家長申報，不能修改價格或堂數。請停用後新增新方案。",
-      "activePackageExists": "同一個年齡組已有相同堂數的啟用中方案。請先停用舊方案。"
-    }
+      "activePackageExists": "同一個年齡組已有相同堂數的啟用中方案。請先停用舊方案。",
+      "crossSquadSameAsPrimary": "跨上梯隊不能與主梯隊相同。",
+      "crossSquadNeedsPrimary": "請先設定主梯隊，再加跨上梯隊。",
+      "crossSquadLimit": "每位球員只能有一個跨上梯隊。",
+      "crossSquadTeamInactive": "此梯隊已停用，不能設為跨上梯隊。"
+    },
+    "crossSquad": "跨上梯隊",
+    "crossSquadNone": "不跨上",
+    "crossSquadTag": "跨上",
+    "crossSquadHint": "可另外參加一個梯隊的訓練（例如 U8 跨上 U10）。購買堂數的價格依主梯隊，扣堂依場次所屬梯隊。背號留空時沿用主梯隊背號。"
   },
   "children": {
     "title": "我的子女",
@@ -734,7 +742,8 @@
     "statuses": {
       "registered": "已報名",
       "cancelled": "已取消"
-    }
+    },
+    "crossSquadTag": "跨上"
   },
   "competitions": {
     "title": "賽事",

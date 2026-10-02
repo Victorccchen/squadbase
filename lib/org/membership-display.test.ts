@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  crossOnlyTeamIds,
   formatActiveMembershipSummary,
   sortMemberships,
   splitMemberships,
+  uniqueByPlayerPreferPrimary,
 } from "./membership-display.ts";
 
 function row(input: {
@@ -12,9 +14,11 @@ function row(input: {
   jersey: number;
   status?: string;
   updated_at?: string;
+  squad_role?: "primary" | "cross" | null;
 }) {
   return {
     status: input.status ?? "active",
+    squad_role: input.squad_role ?? null,
     jersey_number: input.jersey,
     updated_at: input.updated_at ?? "2026-09-08T12:00:00.000Z",
     team: { name: input.name, kind: input.kind ?? null },
@@ -88,5 +92,53 @@ describe("splitMemberships", () => {
       split.competition.map((item) => item.team?.name),
       ["Futuro U8"],
     );
+  });
+});
+
+describe("primary and cross 梯隊 (PR-05)", () => {
+  const memberships = [
+    row({ name: "Futuro U8", kind: "competition_team", jersey: 99 }),
+    // "梯隊 U10" sorts before "梯隊 U8" by name; role must win.
+    row({ name: "梯隊 U10", kind: "age_squad", jersey: 91, squad_role: "cross" }),
+    row({ name: "梯隊 U8", kind: "age_squad", jersey: 91, squad_role: "primary" }),
+  ];
+
+  it("splits primary and cross even when the cross row sorts first by name", () => {
+    const split = splitMemberships(memberships);
+    assert.equal(split.ageSquad?.team?.name, "梯隊 U8");
+    assert.equal(split.crossSquad?.team?.name, "梯隊 U10");
+    assert.deepEqual(split.competition.map((item) => item.team?.name), ["Futuro U8"]);
+  });
+
+  it("treats a 梯隊 row without squad_role as primary", () => {
+    const split = splitMemberships([row({ name: "梯隊 U8", kind: "age_squad", jersey: 9 })]);
+    assert.equal(split.ageSquad?.team?.name, "梯隊 U8");
+    assert.equal(split.crossSquad, null);
+  });
+
+  it("orders primary, cross, then 隊伍 and tags the cross row", () => {
+    assert.deepEqual(
+      sortMemberships(memberships).map((item) => item.team?.name),
+      ["梯隊 U8", "梯隊 U10", "Futuro U8"],
+    );
+    assert.equal(
+      formatActiveMembershipSummary(memberships, { crossLabel: "跨上" }),
+      "梯隊 U8 · #91 · 梯隊 U10 (跨上) · #91 · Futuro U8 · #99",
+    );
+  });
+
+  it("keeps the primary row per player and lists cross-only teams", () => {
+    const rows = [
+      { player: { id: "p1" }, teamId: "u10", isCrossSquad: true },
+      { player: { id: "p1" }, teamId: "u8", isCrossSquad: false },
+      { player: { id: "p2" }, teamId: "u10", isCrossSquad: false },
+    ];
+    assert.deepEqual(
+      uniqueByPlayerPreferPrimary(rows).map((item) => item.teamId),
+      ["u8", "u10"],
+    );
+    // u10 is p2's primary, so a sibling's cross does not tag it.
+    assert.deepEqual([...crossOnlyTeamIds(rows)], []);
+    assert.deepEqual([...crossOnlyTeamIds(rows.slice(0, 2))], ["u10"]);
   });
 });
