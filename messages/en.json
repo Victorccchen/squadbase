@@ -1572,5 +1572,21 @@
       "cta": "Book a trial",
       "parents": "Parents"
     }
+  },
+  "tasks": {
+    "title": "Task inbox",
+    "count": "{count, plural, =0 {Nothing to do} one {# task} other {# tasks}}",
+    "empty": "Nothing needs attention right now.",
+    "done": "Done",
+    "snooze": "Remind me tomorrow",
+    "dismiss": "Dismiss",
+    "open": "Open",
+    "dueAt": "Due {time}",
+    "createdAt": "Created {time}",
+    "kinds": {
+      "payment_claim_pending": "Payment to confirm",
+      "guardian_link_pending": "Binding request to review",
+      "other": "Item to handle"
+    }
   }
 }

@@ -17,6 +17,39 @@ export type SessionMessageAuthorRole = "parent" | "admin";
 export type SessionKind = "regular" | "special" | "cup" | "league" | "friendly";
 export type PackageAgeBand = "U8" | "U10_U18";
 export type PaymentClaimStatus = "pending" | "approved" | "rejected";
+
+export type TaskStatus = "open" | "snoozed" | "done" | "dismissed";
+
+/** Phase 1 PR-03: staff work item (admin-only read). */
+export type Task = {
+  id: string;
+  kind: string;
+  entity_type: string | null;
+  entity_id: string | null;
+  params: Record<string, unknown>;
+  assignee_role: "admin" | "staff" | "director";
+  assignee_id: string | null;
+  status: TaskStatus;
+  due_at: string | null;
+  snoozed_until: string | null;
+  dedupe_key: string | null;
+  created_at: string;
+  done_at: string | null;
+  done_by: string | null;
+};
+
+/** Phase 1 PR-03: append-only change log (admin-only read). */
+export type AuditLogEntry = {
+  id: number;
+  at: string;
+  actor_id: string | null;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+  processed_at: string | null;
+};
 export type AttendanceStatus = "present" | "excused_absent" | "unexcused_absent";
 export type CreditLedgerEntryType =
   | "purchase"
@@ -1008,6 +1041,18 @@ export type Database = {
           },
         ];
       };
+      tasks: {
+        Row: Task;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      audit_log: {
+        Row: AuditLogEntry;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       club_runtime_settings: {
         Row: ClubRuntimeSetting;
         Insert: {
@@ -1488,6 +1533,23 @@ export type Database = {
           p_last5: string;
         };
         Returns: string;
+      };
+      admin_set_task_status: {
+        Args: {
+          p_task_id: string;
+          p_status: TaskStatus;
+          p_snoozed_until?: string | null;
+        };
+        Returns: string;
+      };
+      admin_log_event: {
+        Args: {
+          p_action: string;
+          p_entity_type: string;
+          p_entity_id?: string | null;
+          p_details?: Record<string, unknown>;
+        };
+        Returns: number;
       };
       admin_review_payment_claim: {
         Args: {
