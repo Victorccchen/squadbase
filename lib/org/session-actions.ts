@@ -288,9 +288,10 @@ export async function createSession(
     }
   }
 
+  const venueId = parseUuid(readString(formData, "venue_id"));
   const results: TeamCreateRowResult[] = [];
   for (const teamId of teams.teamIds) {
-    const { error } = await actor.supabase.rpc("admin_create_session_series", {
+    const { data: seriesId, error } = await actor.supabase.rpc("admin_create_session_series", {
       p_team_id: teamId,
       p_title: title,
       p_kind: kind,
@@ -312,6 +313,26 @@ export async function createSession(
         createdId: null,
       });
     } else {
+      // PR-07: the venue QR applies to every generated occurrence.
+      if (venueId && typeof seriesId === "string") {
+        const { data: first } = await actor.supabase
+          .from("training_sessions")
+          .select("id")
+          .eq("series_id", seriesId)
+          .order("starts_at")
+          .limit(1)
+          .maybeSingle();
+        if (first?.id) {
+          const { error: venueError } = await actor.supabase.rpc("admin_set_session_venue", {
+            p_session_id: first.id,
+            p_venue_id: venueId,
+            p_whole_series: true,
+          });
+          if (venueError) {
+            console.error("createSession venue", teamId, venueError.message);
+          }
+        }
+      }
       results.push({ teamId, ok: true, errorKey: null });
     }
   }

@@ -33,6 +33,8 @@ type SessionFormProps = {
   >;
   lockTeam?: boolean;
   submitLabel: string;
+  /** PR-07: venue QR for new sessions (whole series). Edit sets the venue on the session page. */
+  venues?: { id: string; name: string }[];
 };
 
 export function SessionForm({
@@ -41,6 +43,7 @@ export function SessionForm({
   session,
   lockTeam = false,
   submitLabel,
+  venues = [],
 }: SessionFormProps) {
   const t = useTranslations("sessions");
   const org = useTranslations("org");
@@ -254,6 +257,19 @@ export function SessionForm({
             />
           </label>
         </fieldset>
+      ) : null}
+      {!isEdit && venues.length > 0 ? (
+        <label className="flex flex-col gap-1.5 text-sm font-medium">
+          {t("venue")}
+          <select name="venue_id" defaultValue="" className={inputClassName}>
+            <option value="">{t("venueNone")}</option>
+            {venues.map((venue) => (
+              <option key={venue.id} value={venue.id}>
+                {venue.name}
+              </option>
+            ))}
+          </select>
+        </label>
       ) : null}
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         {t("location")}

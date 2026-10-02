@@ -14,6 +14,9 @@ export const KNOWN_TASK_KINDS = [
   "leave_request.pending",
   "credits.renew",
   "credits.limit_reached",
+  // PR-07
+  "attendance.headcount_mismatch",
+  "attendance.headcount_missing",
 ] as const;
 export type KnownTaskKind = (typeof KNOWN_TASK_KINDS)[number];
 
@@ -42,6 +45,9 @@ export function taskHref(task: LinkableTask): string | null {
     case "credits.renew":
     case "credits.limit_reached":
       return task.entity_id ? `/app/admin/players/${task.entity_id}` : null;
+    case "attendance.headcount_mismatch":
+    case "attendance.headcount_missing":
+      return task.entity_id ? `/app/admin/sessions/${task.entity_id}` : null;
     default:
       return null;
   }

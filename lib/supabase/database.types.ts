@@ -231,10 +231,43 @@ export type TrainingSession = {
   debit_override_n: number | null;
   /** PR-06: when no-shows were finalized (staff button or the 24-hour job). */
   attendance_finalized_at: string | null;
+  /** PR-07: where the venue QR check-in applies. */
+  venue_id: string | null;
+  headcount_n: number | null;
+  headcount_confirmed_at: string | null;
+  headcount_confirmed_by: string | null;
   created_at: string;
   updated_at: string;
   created_by: string | null;
   updated_by: string | null;
+};
+
+/** PR-07: a ground with a counter QR. checkin_token is admin-only. */
+export type Venue = {
+  id: string;
+  name: string;
+  address: string | null;
+  checkin_token: string;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+};
+
+export type AttendanceSource = "staff" | "parent_qr" | "paper_card" | "system";
+
+/** PR-07: parent-facing notice; phase 2 sends it over LINE (sent_at). */
+export type ParentNotice = {
+  id: string;
+  player_id: string;
+  kind: "attendance.staff_backfill";
+  session_id: string | null;
+  params: Record<string, unknown>;
+  created_at: string;
+  read_at: string | null;
+  read_by: string | null;
+  sent_at: string | null;
 };
 
 export type SessionRegistration = {
@@ -317,6 +350,9 @@ export type SessionAttendance = {
   credits_debited: number;
   marked_by: string | null;
   marked_at: string;
+  /** PR-07 */
+  source: AttendanceSource;
+  checked_in_at: string | null;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -1056,6 +1092,18 @@ export type Database = {
           },
         ];
       };
+      venues: {
+        Row: Venue;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      parent_notices: {
+        Row: ParentNotice;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       tasks: {
         Row: Task;
         Insert: never;
@@ -1637,6 +1685,38 @@ export type Database = {
           p_admin_note?: string | null;
         };
         Returns: string;
+      };
+      checkin_preview: {
+        Args: { p_token: string };
+        Returns: Record<string, unknown> | null;
+      };
+      parent_checkin: {
+        Args: { p_token: string; p_player_ids: string[]; p_session_id?: string | null };
+        Returns: unknown;
+      };
+      staff_confirm_headcount: {
+        Args: { p_session_id: string; p_headcount: number };
+        Returns: unknown;
+      };
+      staff_remove_checkin: {
+        Args: { p_session_id: string; p_player_id: string; p_reason: string };
+        Returns: undefined;
+      };
+      admin_upsert_venue: {
+        Args: { p_id: string | null; p_name: string; p_address: string | null; p_active: boolean };
+        Returns: string;
+      };
+      admin_regenerate_venue_token: {
+        Args: { p_id: string };
+        Returns: undefined;
+      };
+      admin_set_session_venue: {
+        Args: { p_session_id: string; p_venue_id: string | null; p_whole_series?: boolean };
+        Returns: number;
+      };
+      mark_parent_notices_read: {
+        Args: { p_notice_ids: string[] };
+        Returns: number;
       };
       finalize_session_attendance: {
         Args: {

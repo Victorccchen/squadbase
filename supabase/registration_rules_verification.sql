@@ -320,7 +320,7 @@ begin
     raise exception 'C06-d failed: overdue special session not finalized';
   end if;
   if has_function_privilege('authenticated', 'public.finalize_due_sessions()', 'execute')
-     or has_function_privilege('authenticated', 'public.apply_session_attendance(uuid, uuid, public.attendance_status, uuid)', 'execute') then
+     or has_function_privilege('authenticated', 'public.apply_session_attendance(uuid, uuid, public.attendance_status, uuid, text)', 'execute') then
     raise exception 'C06-d failed: internal attendance functions callable by signed-in users';
   end if;
   perform pg_temp.as_user(v_parent);
