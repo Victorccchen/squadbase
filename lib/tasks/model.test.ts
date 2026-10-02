@@ -67,6 +67,7 @@ describe("task links and labels", () => {
     assert.equal(taskHref(task("cash.close_day", id)), "/app/cash");
     assert.equal(taskHref(task("cash.deposit_due", id)), "/app/cash");
     assert.equal(taskHref(task("deposit.reconcile", id)), "/app/admin/deposits");
+    assert.equal(taskHref(task("paper_card.mismatch", id)), "/app/admin/paper-cards/checks");
     assert.equal(taskHref(task("something.new")), null);
   });
 

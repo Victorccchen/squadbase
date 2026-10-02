@@ -59,7 +59,9 @@ export type CreditLedgerEntryType =
   | "no_show_debit"
   | "match_debit"
   | "admin_adjust"
-  | "reversal";
+  | "reversal"
+  /** PR-09: credits left on a paper card, at the card's unit price. */
+  | "opening_balance";
 export type LeaveRequestStatus = "pending" | "approved" | "rejected";
 export type MatchSide = "home" | "away";
 export type MatchPublicStatus = "scheduled" | "completed" | "cancelled";
@@ -383,6 +385,55 @@ export type BankDeposit = {
   reconciled_at: string | null;
 };
 
+/** PR-09: a physical session card moved into the system (admin-only read). */
+export type PaperCard = {
+  id: string;
+  player_id: string;
+  card_no: string | null;
+  package_credits: number | null;
+  unit_cost_twd: number;
+  squad_marks: string[];
+  used_dates: string[];
+  remaining: number | null;
+  status: "draft" | "confirmed" | "retired";
+  /** Private paths in bucket paper-cards; cleared once the photos are removed. */
+  photo_paths: string[];
+  photos_purged_at: string | null;
+  extracted: Record<string, unknown> | null;
+  needs_manual: boolean;
+  ledger_id: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  confirmed_by: string | null;
+  confirmed_at: string | null;
+};
+
+/** PR-09: weekly parallel-season check (D7). */
+export type PaperCardCheck = {
+  id: string;
+  player_id: string;
+  check_date: string;
+  card_remaining: number;
+  system_remaining: number;
+  matches: boolean;
+  note: string | null;
+  checked_by: string;
+  created_at: string;
+};
+
+export type AiJob = {
+  id: string;
+  kind: "paper_card_extract";
+  model: string;
+  input_ref: string | null;
+  output: unknown;
+  status: "succeeded" | "failed" | "refused" | "invalid";
+  cost_usd: number | null;
+  created_by: string | null;
+  created_at: string;
+};
+
 export type PaymentClaim = {
   id: string;
   player_id: string;
@@ -440,6 +491,8 @@ export type SessionAttendance = {
   /** PR-07 */
   source: AttendanceSource;
   checked_in_at: string | null;
+  /** PR-09: set when a paper card covers this attendance (never debits). */
+  paper_card_id: string | null;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -1205,6 +1258,30 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      paper_cards: {
+        Row: PaperCard;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      paper_card_unmatched_dates: {
+        Row: { card_id: string; used_date: string };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      paper_card_checks: {
+        Row: PaperCardCheck;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      ai_jobs: {
+        Row: AiJob;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       payment_items: {
         Row: PaymentItem;
         Insert: never;
@@ -1782,6 +1859,58 @@ export type Database = {
       staff_reconcile_deposit: {
         Args: { p_deposit_id: string };
         Returns: undefined;
+      };
+      admin_create_paper_card: {
+        Args: { p_player_id: string };
+        Returns: string;
+      };
+      admin_attach_paper_card_photos: {
+        Args: { p_card_id: string; p_paths: string[] };
+        Returns: undefined;
+      };
+      admin_save_paper_card_extraction: {
+        Args: {
+          p_card_id: string;
+          p_extracted: Record<string, unknown> | null;
+          p_needs_manual: boolean;
+          p_card_no?: string | null;
+          p_package_credits?: number | null;
+          p_squad_marks?: string[] | null;
+        };
+        Returns: undefined;
+      };
+      admin_discard_paper_card: {
+        Args: { p_card_id: string };
+        Returns: string[];
+      };
+      admin_confirm_paper_card: {
+        Args: {
+          p_card_id: string;
+          p_card_no: string | null;
+          p_package_credits: number;
+          p_used_dates: string[];
+          p_remaining: number;
+        };
+        Returns: Record<string, unknown>;
+      };
+      admin_purge_paper_card_photos: {
+        Args: { p_card_id: string };
+        Returns: undefined;
+      };
+      staff_record_paper_card_check: {
+        Args: { p_player_id: string; p_card_remaining: number; p_note?: string | null };
+        Returns: Record<string, unknown>;
+      };
+      admin_record_ai_job: {
+        Args: {
+          p_kind: string;
+          p_model: string;
+          p_input_ref: string | null;
+          p_output: unknown;
+          p_status: string;
+          p_cost_usd?: number | null;
+        };
+        Returns: string;
       };
       admin_set_director: {
         Args: { p_user_id: string; p_enabled: boolean };

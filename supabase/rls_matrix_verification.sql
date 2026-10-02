@@ -173,7 +173,15 @@ begin
       'public.director_close_cash_day(date)',
       'public.director_record_deposit(date, integer, uuid[], text, text)',
       'public.staff_reconcile_deposit(uuid)',
-      'public.admin_set_director(uuid, boolean)'
+      'public.admin_set_director(uuid, boolean)',
+      'public.admin_create_paper_card(uuid)',
+      'public.admin_attach_paper_card_photos(uuid, text[])',
+      'public.admin_save_paper_card_extraction(uuid, jsonb, boolean, text, integer, text[])',
+      'public.admin_discard_paper_card(uuid)',
+      'public.admin_confirm_paper_card(uuid, text, integer, date[], integer)',
+      'public.admin_purge_paper_card_photos(uuid)',
+      'public.staff_record_paper_card_check(uuid, integer, text)',
+      'public.admin_record_ai_job(text, text, text, jsonb, text, numeric)'
     ]) as fn
   loop
     if has_function_privilege('anon', v_check.fn, 'execute') then

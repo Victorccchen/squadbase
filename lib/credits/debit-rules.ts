@@ -43,6 +43,7 @@ export const CREDIT_LEDGER_ENTRY_TYPES = [
   "match_debit",
   "admin_adjust",
   "reversal",
+  "opening_balance",
 ] as const;
 export type CreditLedgerEntryType = (typeof CREDIT_LEDGER_ENTRY_TYPES)[number];
 

@@ -23,6 +23,8 @@ export const KNOWN_TASK_KINDS = [
   "cash.close_day",
   "cash.deposit_due",
   "deposit.reconcile",
+  // PR-09
+  "paper_card.mismatch",
 ] as const;
 export type KnownTaskKind = (typeof KNOWN_TASK_KINDS)[number];
 
@@ -48,6 +50,8 @@ export function taskHref(task: LinkableTask): string | null {
       return "/app/cash";
     case "deposit.reconcile":
       return "/app/admin/deposits";
+    case "paper_card.mismatch":
+      return "/app/admin/paper-cards/checks";
     case "guardian_link.pending":
       return "/app/admin/bindings";
     case "leave_request.pending": {
