@@ -86,7 +86,8 @@
       "parent": "Parent",
       "coach": "Coach",
       "admin": "Admin",
-      "player": "Player"
+      "player": "Player",
+      "director": "Youth director"
     },
     "placeholders": {
       "children": {
@@ -180,10 +181,16 @@
       "settings": {
         "title": "Notification settings",
         "body": "Enable or disable PWA push on this device. Parents who have not opted in are skipped."
+      },
+      "cash": {
+        "title": "Cash",
+        "body": "Take cash at the field, issue e-receipts, close the day and record deposits."
       }
     },
     "openAssessments": "Open assessments",
-    "openSettings": "Open settings"
+    "openSettings": "Open settings",
+    "directorSection": "Youth director",
+    "openCash": "Open cash"
   },
   "nav": {
     "label": "App sections",
@@ -207,7 +214,9 @@
     "reports": "Reports",
     "opsDashboard": "Ops dashboard",
     "settings": "Settings",
-    "venues": "Venues"
+    "venues": "Venues",
+    "cash": "Cash",
+    "deposits": "Deposits"
   },
   "access": {
     "deniedTitle": "You cannot open this page",
@@ -607,7 +616,14 @@
       "invalidTaxId": "A company tax ID has 8 digits.",
       "missingItem": "Choose what the payment is for.",
       "invoiceNumberInvalid": "Invoice number: letters, digits and -, 2 to 20 characters.",
-      "itemNameRequired": "Enter an item name."
+      "itemNameRequired": "Enter an item name.",
+      "receiptAlreadyClosed": "This receipt is in a closed day and cannot be voided.",
+      "receiptAlreadyVoided": "This receipt is already voided.",
+      "nothingToClose": "No receipts to close for that day.",
+      "closingAlreadyDeposited": "A selected closing is already in a deposit.",
+      "noClosingsSelected": "Choose at least one closing.",
+      "cannotReconcileOwnDeposit": "You cannot reconcile a deposit you recorded.",
+      "depositAmountMismatch": "The deposit does not match the selected closings."
     },
     "crossSquad": "Cross 梯隊 (playing up)",
     "crossSquadNone": "None",
@@ -926,7 +942,10 @@
     "noticeNew": "New",
     "noticesMarkRead": "Mark all as read",
     "backfillNotice": "{child} attended the session on {date} but did not scan in, so the staff recorded the attendance ({debited} credit(s) used, {remaining} left). If anything looks wrong, please contact the club right away. Thank you.",
-    "reportSubmitted": "Transfer report received. The club will confirm it."
+    "reportSubmitted": "Transfer report received. The club will confirm it.",
+    "cashReceiptsTitle": "Cash receipts",
+    "cashReceiptNo": "Receipt {no}",
+    "cashReceiptVoided": "This receipt was voided."
   },
   "matches": {
     "title": "Match schedule",
@@ -1219,13 +1238,15 @@
       "attendance": "Attendance",
       "registrations": "Registrations",
       "credit_ledger": "Credit ledger",
-      "match_roster": "Match roster"
+      "match_roster": "Match roster",
+      "payments": "Payments"
     },
     "typeHint": {
       "attendance": "One row per session and player with an attendance mark. Includes credits debited and any leave note.",
       "registrations": "session_registrations: status, parent note, registered time, and whether Q&A exists (not the thread).",
       "credit_ledger": "Credit transactions: player, time, type, amount, related session, actor role. Matches the admin credit labels.",
-      "match_roster": "Staff match lineup (published or unpublished): title, date, 隊伍, opponent, player, jersey, publish status."
+      "match_roster": "Staff match lineup (published or unpublished): title, date, 隊伍, opponent, player, jersey, publish status.",
+      "payments": "Money in: approved transfer reports and cash receipts (voided ones excluded). Date, method, reference, player, item, amount, invoice. No phone numbers or account digits."
     },
     "privacyHint": "Downloads stay in the browser. Parent phones and other contact PII are not included. Training reports use 梯隊; match roster uses 隊伍.",
     "dateFrom": "From date",
@@ -1286,7 +1307,12 @@
       "actorRole": "Actor role",
       "opponent": "Opponent",
       "published": "Publish status",
-      "publicStatus": "Match status"
+      "publicStatus": "Match status",
+      "method": "Method",
+      "reference": "Reference",
+      "item": "Item",
+      "amountTwd": "Amount (TWD)",
+      "invoice": "Invoice"
     },
     "ledgerTypes": {
       "purchase": "Purchase",
@@ -1295,7 +1321,13 @@
       "match_debit": "Match debit",
       "admin_adjust": "Admin adjust",
       "reversal": "Reversal"
-    }
+    },
+    "paymentMethods": {
+      "transfer": "Transfer",
+      "cash": "Cash"
+    },
+    "invoiceNotNeeded": "Not needed",
+    "invoicePending": "To issue"
   },
   "dashboard": {
     "title": "Ops dashboard",
@@ -1658,7 +1690,10 @@
       "credits_limit_reached": "Owed-credit limit reached",
       "attendance_headcount_mismatch": "Head count does not match: backfill",
       "attendance_headcount_missing": "Session ended without a head count",
-      "invoice_pending": "Invoice to issue"
+      "invoice_pending": "Invoice to issue",
+      "cash_close_day": "Cash not closed",
+      "cash_deposit_due": "Closed 7+ days without a deposit",
+      "deposit_reconcile": "Deposit to reconcile"
     }
   },
   "venues": {
@@ -1757,5 +1792,52 @@
       "camp": "Camp",
       "other": "Other"
     }
+  },
+  "cash": {
+    "title": "Cash",
+    "lead": "Record cash as soon as you take it; parents see the e-receipt on their credits page. Close the day before you leave, then deposit to the company account and record it.",
+    "closedDone": "Day closed.",
+    "depositedDone": "Deposit recorded; waiting for Kaori to reconcile.",
+    "todo": "To do",
+    "recordTitle": "Record a payment",
+    "receiptIssued": "Receipt number",
+    "receiptParentSees": "The parent can already see this e-receipt on their credits page.",
+    "another": "Next payment",
+    "change": "Change",
+    "searchChild": "Find the child",
+    "searchPlaceholder": "Chinese, English or Japanese name, or 梯隊",
+    "note": "Note (optional)",
+    "confirmReceipt": "Confirm and issue receipt",
+    "openTitle": "Receipts not closed yet",
+    "openEmpty": "No open receipts.",
+    "dayTotal": "{count} receipts, {total} TWD",
+    "closeDay": "Close this day",
+    "closeConfirm": "After closing, these {count} receipts ({total} TWD) can no longer be voided. Close the day?",
+    "voidReason": "Reason to void",
+    "void": "Void",
+    "depositTitle": "Record a deposit",
+    "depositEmpty": "No closings waiting for a deposit.",
+    "depositClosings": "Closings in this deposit",
+    "depositAmount": "Amount deposited (TWD)",
+    "depositAmountHint": "Selected closings total {total} TWD; a different amount cannot be reconciled.",
+    "depositDate": "Deposit date",
+    "depositSlip": "Deposit slip photo (optional)",
+    "recordDeposit": "Record deposit",
+    "reconcile": "Reconcile",
+    "removeDirector": "Remove director",
+    "makeDirector": "Make director",
+    "depositsAdminTitle": "Deposit reconciliation",
+    "depositsAdminLead": "Deposits recorded by the youth director are reconciled by someone else: the selected closings must add up to the deposit. Whoever recorded a deposit cannot reconcile it.",
+    "depositsList": "Deposits",
+    "depositsEmptyTitle": "No deposits yet",
+    "depositsEmptyBody": "They appear here once the director closes a day and records a deposit.",
+    "reconciled": "Reconciled",
+    "closingsCovered": "Closings: {dates} (total {total} TWD)",
+    "viewSlip": "View deposit slip",
+    "blockOwnDeposit": "You recorded this deposit; another staff member must reconcile it.",
+    "blockMismatch": "Deposit {amount} TWD does not match the closings total {total} TWD. Check with the director.",
+    "directorsTitle": "Youth directors",
+    "directorsLead": "Directors can take cash, void receipts before the day is closed, close days and record deposits on the Cash page, and can see the player list and credits (read-only).",
+    "addDirector": "Add a director"
   }
 }

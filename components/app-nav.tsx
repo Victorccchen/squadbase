@@ -6,6 +6,7 @@ import { Link, usePathname } from "@/i18n/navigation";
 type AppNavProps = {
   isAdmin: boolean;
   canRoster: boolean;
+  canCash?: boolean;
 };
 
 function navClass(active: boolean) {
@@ -14,7 +15,7 @@ function navClass(active: boolean) {
     : "rounded-full px-3 py-1.5 text-sm font-medium text-foreground/80 hover:bg-black/5 dark:hover:bg-white/10";
 }
 
-export function AppNav({ isAdmin, canRoster }: AppNavProps) {
+export function AppNav({ isAdmin, canRoster, canCash = false }: AppNavProps) {
   const t = useTranslations("nav");
   const pathname = usePathname();
 
@@ -61,6 +62,12 @@ export function AppNav({ isAdmin, canRoster }: AppNavProps) {
       label: t("roster"),
       show: canRoster,
       match: (path: string) => path.startsWith("/app/roster"),
+    },
+    {
+      href: "/app/cash",
+      label: t("cash"),
+      show: canCash,
+      match: (path: string) => path.startsWith("/app/cash"),
     },
     {
       href: "/app/admin",

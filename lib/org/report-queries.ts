@@ -19,6 +19,7 @@ import {
   sessionPassesFilters,
   type AttendanceSourceRow,
   type LedgerSourceRow,
+  type PaymentSourceRow,
   type MatchRosterSourceRow,
   type RegistrationSourceRow,
   type ReportFilters,
@@ -27,6 +28,8 @@ import {
 import type { SessionKind } from "@/lib/org/session-recurrence";
 import type { MatchPublicStatus, SessionRegistrationStatus } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
+import { paymentItemName } from "@/lib/payments/model";
+import type { PaymentItem } from "@/lib/supabase/database.types";
 
 const PAGE = 1000;
 const SOURCE_SCAN_CAP = 25000;
@@ -602,3 +605,94 @@ export async function queryMatchRosterReport(
 }
 
 
+
+/**
+ * PR-08b 收款明細: approved transfer reports (by review time) and cash receipts
+ * that were not voided (by receipt time). Session and team filters do not apply.
+ * No phone numbers or bank digits; transfers are referenced by a short id.
+ */
+export async function queryPaymentsReport(
+  supabase: AdminClient,
+  filters: ReportFilters,
+): Promise<QueryResult<PaymentSourceRow>> {
+  const bounds = reportDateBounds(filters);
+  const [claims, receipts] = await Promise.all([
+    fetchPages((from, to) => {
+      let query = supabase
+        .from("payment_claims")
+        .select(`id, reviewed_at, created_at, amount_twd, invoice_needed, players (${PLAYER_SELECT}), payment_items (*)`)
+        .eq("status", "approved")
+        .order("reviewed_at", { ascending: true });
+      if (bounds) {
+        query = query.gte("reviewed_at", bounds.from).lt("reviewed_at", bounds.toExclusive);
+      }
+      return Promise.resolve(query.range(from, to));
+    }),
+    fetchPages((from, to) => {
+      let query = supabase
+        .from("cash_receipts")
+        .select(`id, receipt_no, received_at, amount_twd, invoice_needed, players (${PLAYER_SELECT}), payment_items (*)`)
+        .is("voided_at", null)
+        .order("received_at", { ascending: true });
+      if (bounds) {
+        query = query.gte("received_at", bounds.from).lt("received_at", bounds.toExclusive);
+      }
+      return Promise.resolve(query.range(from, to));
+    }),
+  ]);
+  if (!claims.ok) {
+    return claims;
+  }
+  if (!receipts.ok) {
+    return receipts;
+  }
+  if (reportCap(claims.rows.length + receipts.rows.length)) {
+    return { ok: false, errorKey: "reportTooManyRows" };
+  }
+
+  const { data: invoices } = await supabase.from("invoices").select("payment_type, payment_id, invoice_no");
+  const invoiceNo = new Map(
+    (invoices ?? []).map((row) => [`${row.payment_type}:${row.payment_id}`, row.invoice_no as string | null]),
+  );
+  const itemOf = (value: unknown) => {
+    const item = Array.isArray(value) ? value[0] : value;
+    return item ? paymentItemName(item as PaymentItem, filters.locale) : "";
+  };
+
+  const rows: PaymentSourceRow[] = [];
+  for (const raw of claims.rows) {
+    const row = raw as Record<string, unknown>;
+    const player = mapPlayer(row.players);
+    if (!player) {
+      continue;
+    }
+    rows.push({
+      at: String(row.reviewed_at ?? row.created_at ?? ""),
+      method: "transfer",
+      reference: `T-${String(row.id).slice(0, 8)}`,
+      player,
+      itemName: itemOf(row.payment_items),
+      amountTwd: Number(row.amount_twd ?? 0),
+      invoiceNeeded: Boolean(row.invoice_needed),
+      invoiceNo: invoiceNo.get(`transfer_claim:${row.id}`) ?? null,
+    });
+  }
+  for (const raw of receipts.rows) {
+    const row = raw as Record<string, unknown>;
+    const player = mapPlayer(row.players);
+    if (!player) {
+      continue;
+    }
+    rows.push({
+      at: String(row.received_at ?? ""),
+      method: "cash",
+      reference: String(row.receipt_no ?? ""),
+      player,
+      itemName: itemOf(row.payment_items),
+      amountTwd: Number(row.amount_twd ?? 0),
+      invoiceNeeded: Boolean(row.invoice_needed),
+      invoiceNo: invoiceNo.get(`cash_receipt:${row.id}`) ?? null,
+    });
+  }
+  return { ok: true, rows };
+}

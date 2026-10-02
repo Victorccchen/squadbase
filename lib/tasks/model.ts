@@ -19,6 +19,10 @@ export const KNOWN_TASK_KINDS = [
   "attendance.headcount_missing",
   // PR-08a
   "invoice.pending",
+  // PR-08b
+  "cash.close_day",
+  "cash.deposit_due",
+  "deposit.reconcile",
 ] as const;
 export type KnownTaskKind = (typeof KNOWN_TASK_KINDS)[number];
 
@@ -39,6 +43,11 @@ export function taskHref(task: LinkableTask): string | null {
     case "payment_claim.pending":
     case "invoice.pending":
       return "/app/admin/claims";
+    case "cash.close_day":
+    case "cash.deposit_due":
+      return "/app/cash";
+    case "deposit.reconcile":
+      return "/app/admin/deposits";
     case "guardian_link.pending":
       return "/app/admin/bindings";
     case "leave_request.pending": {

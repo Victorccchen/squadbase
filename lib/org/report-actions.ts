@@ -9,6 +9,7 @@ import { reportCopyForLocale } from "@/lib/org/report-copy";
 import {
   queryAttendanceReport,
   queryLedgerReport,
+  queryPaymentsReport,
   queryMatchRosterReport,
   queryRegistrationsReport,
 } from "@/lib/org/report-queries";
@@ -17,6 +18,7 @@ import {
   bytesToBase64,
   encodeReportFile,
   ledgerTable,
+  paymentsTable,
   matchRosterTable,
   parseReportFormData,
   registrationsTable,
@@ -88,6 +90,12 @@ export async function exportAdminReport(formData: FormData): Promise<ReportExpor
       return failed(result.errorKey);
     }
     table = ledgerTable(result.rows, copy, filters.locale);
+  } else if (filters.reportType === "payments") {
+    const result = await queryPaymentsReport(supabase, filters);
+    if (!result.ok) {
+      return failed(result.errorKey);
+    }
+    table = paymentsTable(result.rows, copy, filters.locale);
   } else {
     const result = await queryMatchRosterReport(supabase, filters);
     if (!result.ok) {

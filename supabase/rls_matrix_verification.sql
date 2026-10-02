@@ -167,7 +167,13 @@ begin
       'public.mark_parent_notices_read(uuid[])',
       'public.submit_payment_report(uuid, uuid, integer, date, text, boolean, text, text, text)',
       'public.admin_upsert_payment_item(uuid, text, text, text, text, integer, boolean, integer)',
-      'public.admin_record_invoice(uuid, text)'
+      'public.admin_record_invoice(uuid, text)',
+      'public.director_record_cash(uuid, uuid, integer, text, boolean, text, text)',
+      'public.director_void_cash_receipt(uuid, text)',
+      'public.director_close_cash_day(date)',
+      'public.director_record_deposit(date, integer, uuid[], text, text)',
+      'public.staff_reconcile_deposit(uuid)',
+      'public.admin_set_director(uuid, boolean)'
     ]) as fn
   loop
     if has_function_privilege('anon', v_check.fn, 'execute') then

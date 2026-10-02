@@ -1,4 +1,5 @@
-export type AppRole = "parent" | "coach" | "admin" | "player";
+/** director (PR-08b): youth director, collects cash, closes the day, records deposits. */
+export type AppRole = "parent" | "coach" | "admin" | "player" | "director";
 export type AgeBand =
   | "U6"
   | "U8"
@@ -336,6 +337,50 @@ export type Invoice = {
   issued_at: string | null;
   issued_by: string | null;
   created_at: string;
+};
+
+/** PR-08b: cash taken by the youth director; receipt_no is the parent's e-receipt. */
+export type CashReceipt = {
+  id: string;
+  receipt_no: string;
+  player_id: string;
+  item_id: string;
+  package_id: string | null;
+  amount_twd: number;
+  credits_snapshot: number | null;
+  price_twd_snapshot: number | null;
+  received_on: string;
+  received_at: string;
+  received_by: string;
+  note: string | null;
+  invoice_needed: boolean;
+  invoice_tax_id: string | null;
+  invoice_title: string | null;
+  closing_id: string | null;
+  voided_at: string | null;
+  voided_by: string | null;
+  void_reason: string | null;
+};
+
+export type CashClosing = {
+  id: string;
+  closing_date: string;
+  total_twd: number;
+  receipt_count: number;
+  closed_by: string;
+  closed_at: string;
+};
+
+export type BankDeposit = {
+  id: string;
+  deposit_date: string;
+  amount_twd: number;
+  slip_path: string | null;
+  note: string | null;
+  recorded_by: string;
+  recorded_at: string;
+  reconciled_by: string | null;
+  reconciled_at: string | null;
 };
 
 export type PaymentClaim = {
@@ -1136,6 +1181,30 @@ export type Database = {
           },
         ];
       };
+      cash_receipts: {
+        Row: CashReceipt;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      cash_closings: {
+        Row: CashClosing;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      bank_deposits: {
+        Row: BankDeposit;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      bank_deposit_closings: {
+        Row: { deposit_id: string; closing_id: string };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       payment_items: {
         Row: PaymentItem;
         Insert: never;
@@ -1679,6 +1748,44 @@ export type Database = {
           p_sort_order?: number;
         };
         Returns: string;
+      };
+      director_record_cash: {
+        Args: {
+          p_player_id: string;
+          p_item_id: string;
+          p_amount_twd?: number | null;
+          p_note?: string | null;
+          p_invoice_needed?: boolean;
+          p_invoice_tax_id?: string | null;
+          p_invoice_title?: string | null;
+        };
+        Returns: unknown;
+      };
+      director_void_cash_receipt: {
+        Args: { p_receipt_id: string; p_reason: string };
+        Returns: undefined;
+      };
+      director_close_cash_day: {
+        Args: { p_day: string };
+        Returns: string;
+      };
+      director_record_deposit: {
+        Args: {
+          p_deposit_date: string;
+          p_amount_twd: number;
+          p_closing_ids: string[];
+          p_note?: string | null;
+          p_slip_path?: string | null;
+        };
+        Returns: string;
+      };
+      staff_reconcile_deposit: {
+        Args: { p_deposit_id: string };
+        Returns: undefined;
+      };
+      admin_set_director: {
+        Args: { p_user_id: string; p_enabled: boolean };
+        Returns: undefined;
       };
       admin_record_invoice: {
         Args: { p_invoice_id: string; p_invoice_no: string };

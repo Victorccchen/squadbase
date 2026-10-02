@@ -13,6 +13,7 @@ const LINKS = [
   { href: "/app/admin/venues", key: "venues" as const, match: "/app/admin/venues", prefetch: false },
   { href: "/app/admin/matches", key: "matches" as const, match: "/app/admin/matches", prefetch: true },
   { href: "/app/admin/claims", key: "claims" as const, match: "/app/admin/claims", prefetch: false },
+  { href: "/app/admin/deposits", key: "deposits" as const, match: "/app/admin/deposits", prefetch: false },
   { href: "/app/admin/credits", key: "creditsAdmin" as const, match: "/app/admin/credits", prefetch: false },
   { href: "/app/admin/import", key: "import" as const, match: "/app/admin/import", prefetch: false },
   { href: "/app/admin/notices", key: "notices" as const, match: "/app/admin/notices", prefetch: false },
