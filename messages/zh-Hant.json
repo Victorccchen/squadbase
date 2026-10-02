@@ -86,7 +86,8 @@
       "parent": "家長",
       "coach": "教練",
       "admin": "管理員",
-      "player": "球員"
+      "player": "球員",
+      "director": "梯隊總監"
     },
     "placeholders": {
       "children": {
@@ -180,10 +181,16 @@
       "settings": {
         "title": "通知設定",
         "body": "在這支裝置開啟或關閉 PWA 推播。未開啟的家長不會收到管理員推播。"
+      },
+      "cash": {
+        "title": "收現金",
+        "body": "在球場收費、開電子收據、日結與存款登記。"
       }
     },
     "openAssessments": "開啟能力評量",
-    "openSettings": "開啟設定"
+    "openSettings": "開啟設定",
+    "directorSection": "梯隊總監",
+    "openCash": "開啟收現金"
   },
   "nav": {
     "label": "功能區",
@@ -207,7 +214,9 @@
     "reports": "報表",
     "opsDashboard": "營運看板",
     "settings": "設定",
-    "venues": "場地"
+    "venues": "場地",
+    "cash": "收現金",
+    "deposits": "存款核對"
   },
   "access": {
     "deniedTitle": "你沒有權限開啟此頁",
@@ -607,7 +616,14 @@
       "invalidTaxId": "統一編號是 8 位數字。",
       "missingItem": "請選擇繳費項目。",
       "invoiceNumberInvalid": "發票號碼格式不正確（英數字與 -，2–20 字）。",
-      "itemNameRequired": "請輸入項目名稱。"
+      "itemNameRequired": "請輸入項目名稱。",
+      "receiptAlreadyClosed": "這張收據已日結，不能作廢。",
+      "receiptAlreadyVoided": "這張收據已作廢。",
+      "nothingToClose": "這一天沒有可日結的收據。",
+      "closingAlreadyDeposited": "所選日結已登記過存款。",
+      "noClosingsSelected": "請至少選一個日結。",
+      "cannotReconcileOwnDeposit": "不能核對自己登記的存款。",
+      "depositAmountMismatch": "存款金額與所選日結合計不符。"
     },
     "crossSquad": "跨上梯隊",
     "crossSquadNone": "不跨上",
@@ -926,7 +942,10 @@
     "noticeNew": "新",
     "noticesMarkRead": "全部標為已讀",
     "backfillNotice": "{child} 於 {date} 的課程已出席，但未進行掃碼簽到，由工作人員代為補登記上課（扣 {debited} 堂，剩餘 {remaining} 堂）。若有疑問請立即聯繫球團，謝謝。",
-    "reportSubmitted": "已收到匯款回報，球團確認後會更新。"
+    "reportSubmitted": "已收到匯款回報，球團確認後會更新。",
+    "cashReceiptsTitle": "現金收據",
+    "cashReceiptNo": "收據 {no}",
+    "cashReceiptVoided": "此收據已作廢。"
   },
   "matches": {
     "title": "比賽賽程",
@@ -1219,13 +1238,15 @@
       "attendance": "出缺席",
       "registrations": "報名",
       "credit_ledger": "堂數流水",
-      "match_roster": "比賽名單"
+      "match_roster": "比賽名單",
+      "payments": "收款明細"
     },
     "typeHint": {
       "attendance": "每一場次／球員一列，含出缺席狀態、已扣堂數與請假備註（如有）。",
       "registrations": "報名列：狀態、家長備註、報名時間，以及是否有問答（不含完整對話）。",
       "credit_ledger": "堂數交易：球員、時間、類型、數量、相關場次、操作角色。標籤與管理介面一致。",
-      "match_roster": "工作人員比賽名單（已發布或未發布）：標題、日期、隊伍、對手、球員、背號、發布狀態。"
+      "match_roster": "工作人員比賽名單（已發布或未發布）：標題、日期、隊伍、對手、球員、背號、發布狀態。",
+      "payments": "收款：已核准的轉帳回報與現金收據（不含作廢）。日期、方式、編號、球員、項目、金額、發票。不含電話與帳號。"
     },
     "privacyHint": "檔案只在瀏覽器下載，不上傳外部空間。不含家長電話等聯絡個資。訓練報表對應梯隊；比賽名單對應隊伍。",
     "dateFrom": "起始日期",
@@ -1286,7 +1307,12 @@
       "actorRole": "操作角色",
       "opponent": "對手",
       "published": "發布狀態",
-      "publicStatus": "比賽狀態"
+      "publicStatus": "比賽狀態",
+      "method": "方式",
+      "reference": "編號",
+      "item": "項目",
+      "amountTwd": "金額（元）",
+      "invoice": "發票"
     },
     "ledgerTypes": {
       "purchase": "儲值",
@@ -1295,7 +1321,13 @@
       "match_debit": "比賽扣堂",
       "admin_adjust": "管理員調整",
       "reversal": "沖銷"
-    }
+    },
+    "paymentMethods": {
+      "transfer": "轉帳",
+      "cash": "現金"
+    },
+    "invoiceNotNeeded": "不需要",
+    "invoicePending": "待開"
   },
   "dashboard": {
     "title": "營運看板",
@@ -1658,7 +1690,10 @@
       "credits_limit_reached": "已達欠堂上限",
       "attendance_headcount_mismatch": "清點人數與出席不符，請補登",
       "attendance_headcount_missing": "課程結束仍未清點",
-      "invoice_pending": "待開發票"
+      "invoice_pending": "待開發票",
+      "cash_close_day": "現金尚未日結",
+      "cash_deposit_due": "日結超過 7 天未存款",
+      "deposit_reconcile": "存款待核對"
     }
   },
   "venues": {
@@ -1757,5 +1792,52 @@
       "camp": "營隊",
       "other": "其他"
     }
+  },
+  "cash": {
+    "title": "收現金",
+    "lead": "在球場收費後立即登記，家長會在課程卡頁看到電子收據。每天結束前日結，再把現金存入公司帳戶並登記。",
+    "closedDone": "已日結。",
+    "depositedDone": "已登記存款，等待香織核對。",
+    "todo": "待辦",
+    "recordTitle": "登記收款",
+    "receiptIssued": "收據號碼",
+    "receiptParentSees": "家長已可在課程卡頁看到這張電子收據。",
+    "another": "再收一筆",
+    "change": "更換",
+    "searchChild": "搜尋孩子",
+    "searchPlaceholder": "輸入中文、英文或日文姓名、梯隊",
+    "note": "備註（選填）",
+    "confirmReceipt": "確認收款並開收據",
+    "openTitle": "尚未日結的收據",
+    "openEmpty": "目前沒有未日結的收據。",
+    "dayTotal": "{count} 筆，共 {total} 元",
+    "closeDay": "日結這一天",
+    "closeConfirm": "日結後這 {count} 筆（共 {total} 元）不能再作廢。確定日結？",
+    "voidReason": "作廢原因",
+    "void": "作廢",
+    "depositTitle": "存款登記",
+    "depositEmpty": "沒有待存款的日結。",
+    "depositClosings": "這筆存款包含的日結",
+    "depositAmount": "存入金額（元）",
+    "depositAmountHint": "所選日結合計 {total} 元；金額不同時香織無法核對。",
+    "depositDate": "存款日期",
+    "depositSlip": "存款憑證照片（選填）",
+    "recordDeposit": "登記存款",
+    "reconcile": "核對無誤",
+    "removeDirector": "移除總監",
+    "makeDirector": "設為總監",
+    "depositsAdminTitle": "存款核對",
+    "depositsAdminLead": "梯隊總監登記的存款，由另一個人核對：所選日結的總額必須等於存款金額。登記的人不能核對自己的存款。",
+    "depositsList": "存款",
+    "depositsEmptyTitle": "還沒有存款紀錄",
+    "depositsEmptyBody": "總監日結並登記存款後會出現在這裡。",
+    "reconciled": "已核對",
+    "closingsCovered": "日結：{dates}（合計 {total} 元）",
+    "viewSlip": "查看存款憑證",
+    "blockOwnDeposit": "這筆存款是你登記的，需由其他工作人員核對。",
+    "blockMismatch": "存款 {amount} 元與日結合計 {total} 元不符，請先和總監確認。",
+    "directorsTitle": "梯隊總監",
+    "directorsLead": "總監可以在「收現金」頁收費、作廢未日結的收據、日結與登記存款，並看得到球員名單與堂數（唯讀）。",
+    "addDirector": "新增總監"
   }
 }

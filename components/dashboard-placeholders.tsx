@@ -57,6 +57,7 @@ function LinkCard({
     | "/app/admin/reports"
     | "/app/admin/dashboard"
     | "/app/settings"
+    | "/app/cash"
     | "/matches";
   title: string;
   body: string;
@@ -90,6 +91,7 @@ export async function DashboardPlaceholders({ roles }: DashboardPlaceholdersProp
   const hasCoach = roles.includes("coach");
   const hasAdmin = canAccessAdmin(roles);
   const hasPlayer = roles.includes("player");
+  const hasDirector = roles.includes("director");
   const hasDashboardRole = roles.some(isDashboardRole);
 
   return (
@@ -183,6 +185,22 @@ export async function DashboardPlaceholders({ roles }: DashboardPlaceholdersProp
               title={t("placeholders.assessments.title")}
               body={t("placeholders.assessments.body")}
               action={t("openAssessments")}
+            />
+          </div>
+        </section>
+      ) : null}
+
+      {hasDirector ? (
+        <section className="flex flex-col gap-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+            {t("directorSection")}
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <LinkCard
+              href="/app/cash"
+              title={t("placeholders.cash.title")}
+              body={t("placeholders.cash.body")}
+              action={t("openCash")}
             />
           </div>
         </section>

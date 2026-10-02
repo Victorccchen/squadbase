@@ -36,6 +36,7 @@ export const REPORT_TYPES = [
   "registrations",
   "credit_ledger",
   "match_roster",
+  "payments",
 ] as const;
 export type ReportType = (typeof REPORT_TYPES)[number];
 
@@ -95,6 +96,11 @@ export type ReportCopy = {
     opponent: string;
     published: string;
     publicStatus: string;
+    method: string;
+    reference: string;
+    item: string;
+    amountTwd: string;
+    invoice: string;
   };
   kinds: Record<SessionKind, string>;
   attendance: Record<AttendanceStatus, string>;
@@ -109,6 +115,21 @@ export type ReportCopy = {
   yes: string;
   no: string;
   opponentTbd: string;
+  paymentMethods: Record<"transfer" | "cash", string>;
+  invoiceNotNeeded: string;
+  invoicePending: string;
+};
+
+/** PR-08b: one money-in line (approved transfer report or cash receipt). No phone, no bank digits. */
+export type PaymentSourceRow = {
+  at: string;
+  method: "transfer" | "cash";
+  reference: string;
+  player: PlayerNameFields;
+  itemName: string;
+  amountTwd: number;
+  invoiceNeeded: boolean;
+  invoiceNo: string | null;
 };
 
 export type AttendanceSourceRow = {
@@ -354,6 +375,9 @@ function pickActorRole(roles: readonly AppRole[]): AppRole | null {
   if (roles.includes("admin")) {
     return "admin";
   }
+  if (roles.includes("director")) {
+    return "director";
+  }
   if (roles.includes("coach")) {
     return "coach";
   }
@@ -483,12 +507,41 @@ export function matchRosterTable(
   return [header, ...body];
 }
 
+export function paymentsTable(
+  rows: readonly PaymentSourceRow[],
+  copy: ReportCopy,
+  locale: string,
+): string[][] {
+  const header = [
+    copy.columns.date,
+    copy.columns.method,
+    copy.columns.reference,
+    copy.columns.player,
+    copy.columns.item,
+    copy.columns.amountTwd,
+    copy.columns.invoice,
+  ];
+  const body = [...rows]
+    .sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0))
+    .map((row) => [
+      formatClubWallStamp(row.at),
+      copy.paymentMethods[row.method],
+      row.reference,
+      playerCell(row.player, locale),
+      row.itemName,
+      String(row.amountTwd),
+      !row.invoiceNeeded ? copy.invoiceNotNeeded : (row.invoiceNo ?? copy.invoicePending),
+    ]);
+  return [header, ...body];
+}
+
 export function buildReportTable(
   input:
     | { type: "attendance"; rows: readonly AttendanceSourceRow[] }
     | { type: "registrations"; rows: readonly RegistrationSourceRow[] }
     | { type: "credit_ledger"; rows: readonly LedgerSourceRow[] }
-    | { type: "match_roster"; rows: readonly MatchRosterSourceRow[] },
+    | { type: "match_roster"; rows: readonly MatchRosterSourceRow[] }
+    | { type: "payments"; rows: readonly PaymentSourceRow[] },
   copy: ReportCopy,
   locale: string,
 ): string[][] {
@@ -500,6 +553,9 @@ export function buildReportTable(
   }
   if (input.type === "credit_ledger") {
     return ledgerTable(input.rows, copy, locale);
+  }
+  if (input.type === "payments") {
+    return paymentsTable(input.rows, copy, locale);
   }
   return matchRosterTable(input.rows, copy, locale);
 }

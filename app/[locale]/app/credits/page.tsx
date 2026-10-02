@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { PaymentReportForm } from "@/components/payments/payment-report-form";
 import { listPaymentItems } from "@/lib/payments/queries";
+import { listOwnCashReceipts } from "@/lib/cash/queries";
 import { paymentItemName } from "@/lib/payments/model";
 import { clubTodayDate } from "@/lib/org/session-calendar";
 import { CopyTextButton } from "@/components/credits/copy-text-button";
@@ -42,7 +43,7 @@ export default async function ParentCreditsPage({
   const links = await listOwnGuardianLinks();
   const children = uniqueEligibleChildrenByPlayer(approvedChildrenFromLinks(links, "age_squad"));
   const playerIds = [...new Set(children.map((child) => child.player.id))];
-  const [balances, attended, packages, claims, transferHint, notices, items] = await Promise.all([
+  const [balances, attended, packages, claims, transferHint, notices, items, cashReceipts] = await Promise.all([
     listBalancesForPlayers(playerIds),
     listAttendedCounts(playerIds),
     listPrimaryPackages(),
@@ -50,6 +51,7 @@ export default async function ParentCreditsPage({
     getBankTransferHint(),
     listOwnParentNotices(playerIds),
     listPaymentItems(),
+    listOwnCashReceipts(playerIds),
   ]);
   const unread = notices.filter((notice) => !notice.read_at);
   const childName = (playerId: string) => {
@@ -212,6 +214,35 @@ export default async function ParentCreditsPage({
             today={clubTodayDate()}
           />
         </section>
+
+        {cashReceipts.length > 0 ? (
+          <section className="flex flex-col gap-4">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+              {t("cashReceiptsTitle")}
+            </h2>
+            <ul className="grid gap-3">
+              {cashReceipts.map((receipt) => (
+                <li
+                  key={receipt.id}
+                  className="flex flex-col gap-1 rounded-2xl border border-zinc-200 bg-white p-5 text-sm dark:border-zinc-800 dark:bg-zinc-900"
+                >
+                  <span className="font-medium">
+                    {t("cashReceiptNo", { no: receipt.receipt_no })} · {t("priceTwd", { amount: receipt.amount_twd })}
+                  </span>
+                  <span className="text-zinc-500">
+                    {receipt.player ? localizedPlayerName(receipt.player, locale) : ""}
+                    {receipt.item ? ` · ${paymentItemName(receipt.item, locale)}` : ""}
+                    {` · ${receipt.received_on}`}
+                    {receipt.credits_snapshot ? ` · ${t("creditsCount", { count: receipt.credits_snapshot })}` : ""}
+                  </span>
+                  {receipt.voided_at ? (
+                    <span className="text-red-700 dark:text-red-300">{t("cashReceiptVoided")}</span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         <section className="flex flex-col gap-4">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">

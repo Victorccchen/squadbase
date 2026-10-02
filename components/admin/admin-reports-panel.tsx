@@ -141,6 +141,8 @@ export function AdminReportsPanel({
           </label>
         </div>
         <p className="text-xs text-zinc-500">{t("dateHint")}</p>
+        {reportType === "payments" ? null : (
+        <>
         <fieldset className="flex flex-col gap-2">
           <legend className="text-sm font-medium">{sessionsT("kind")}</legend>
           <div className="flex flex-wrap gap-3">
@@ -189,6 +191,8 @@ export function AdminReportsPanel({
           <input type="checkbox" name="includeDeleted" value="1" />
           {t("includeDeleted")}
         </label>
+        </>
+        )}
         {errorKey ? (
           <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-900 dark:bg-red-950 dark:text-red-100">
             {errorText(errorKey)}

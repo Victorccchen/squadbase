@@ -86,7 +86,8 @@
       "parent": "保護者",
       "coach": "コーチ",
       "admin": "管理者",
-      "player": "選手"
+      "player": "選手",
+      "director": "梯隊ディレクター"
     },
     "placeholders": {
       "children": {
@@ -180,10 +181,16 @@
       "settings": {
         "title": "通知設定",
         "body": "この端末の PWA プッシュをオン／オフします。未設定の保護者には送りません。"
+      },
+      "cash": {
+        "title": "現金受領",
+        "body": "会場での集金、電子領収書、日次締め、入金登録。"
       }
     },
     "openAssessments": "能力評価を開く",
-    "openSettings": "設定を開く"
+    "openSettings": "設定を開く",
+    "directorSection": "梯隊ディレクター",
+    "openCash": "現金受領を開く"
   },
   "nav": {
     "label": "アプリの区画",
@@ -207,7 +214,9 @@
     "reports": "レポート",
     "opsDashboard": "運営ダッシュボード",
     "settings": "設定",
-    "venues": "会場"
+    "venues": "会場",
+    "cash": "現金受領",
+    "deposits": "入金照合"
   },
   "access": {
     "deniedTitle": "このページを開けません",
@@ -607,7 +616,14 @@
       "invalidTaxId": "統一編号は8桁の数字です。",
       "missingItem": "お支払い項目を選んでください。",
       "invoiceNumberInvalid": "発票番号の形式が正しくありません（英数字と -、2〜20文字）。",
-      "itemNameRequired": "項目名を入力してください。"
+      "itemNameRequired": "項目名を入力してください。",
+      "receiptAlreadyClosed": "この領収書は締め済みのため取り消せません。",
+      "receiptAlreadyVoided": "この領収書は取り消し済みです。",
+      "nothingToClose": "この日に締める領収書はありません。",
+      "closingAlreadyDeposited": "選択した締めは入金登録済みです。",
+      "noClosingsSelected": "締めを1つ以上選んでください。",
+      "cannotReconcileOwnDeposit": "自分で登録した入金は照合できません。",
+      "depositAmountMismatch": "入金額が選択した締めの合計と一致しません。"
     },
     "crossSquad": "飛び級梯隊",
     "crossSquadNone": "なし",
@@ -926,7 +942,10 @@
     "noticeNew": "新着",
     "noticesMarkRead": "すべて既読にする",
     "backfillNotice": "{child} さんは {date} の練習に出席しましたが、QRチェックインがなかったため、スタッフが代わりに出席を登録しました（{debited} 回消化、残り {remaining} 回）。ご不明な点はすぐにクラブへご連絡ください。",
-    "reportSubmitted": "振込の報告を受け付けました。クラブが確認後に反映します。"
+    "reportSubmitted": "振込の報告を受け付けました。クラブが確認後に反映します。",
+    "cashReceiptsTitle": "現金領収書",
+    "cashReceiptNo": "領収書 {no}",
+    "cashReceiptVoided": "この領収書は取り消されました。"
   },
   "matches": {
     "title": "試合日程",
@@ -1219,13 +1238,15 @@
       "attendance": "出欠",
       "registrations": "申込",
       "credit_ledger": "単位台帳",
-      "match_roster": "試合メンバー"
+      "match_roster": "試合メンバー",
+      "payments": "入金明細"
     },
     "typeHint": {
       "attendance": "セッション／選手ごとに1行。出欠、減算単位、休暇メモ（あれば）を含みます。",
       "registrations": "申込：状態、保護者メモ、申込時刻、Q&A の有無（スレッド全文は出しません）。",
       "credit_ledger": "単位取引：選手、時刻、種類、数量、関連セッション、操作ロール。管理画面のラベルと揃えます。",
-      "match_roster": "スタッフ試合メンバー（公開／非公開）：タイトル、日付、隊伍、対戦相手、選手、背番号、公開状態。"
+      "match_roster": "スタッフ試合メンバー（公開／非公開）：タイトル、日付、隊伍、対戦相手、選手、背番号、公開状態。",
+      "payments": "入金：承認済みの振込報告と現金領収書（取消を除く）。日付、方法、番号、選手、項目、金額、発票。電話番号や口座番号は含みません。"
     },
     "privacyHint": "ファイルはブラウザでダウンロードするだけです。保護者の電話など連絡先 PII は含めません。練習レポートは梯隊、試合メンバーは隊伍です。",
     "dateFrom": "開始日",
@@ -1286,7 +1307,12 @@
       "actorRole": "操作ロール",
       "opponent": "対戦相手",
       "published": "公開状態",
-      "publicStatus": "試合状態"
+      "publicStatus": "試合状態",
+      "method": "方法",
+      "reference": "番号",
+      "item": "項目",
+      "amountTwd": "金額（元）",
+      "invoice": "発票"
     },
     "ledgerTypes": {
       "purchase": "購入",
@@ -1295,7 +1321,13 @@
       "match_debit": "試合減算",
       "admin_adjust": "管理者調整",
       "reversal": "取消"
-    }
+    },
+    "paymentMethods": {
+      "transfer": "振込",
+      "cash": "現金"
+    },
+    "invoiceNotNeeded": "不要",
+    "invoicePending": "発行待ち"
   },
   "dashboard": {
     "title": "運営ダッシュボード",
@@ -1658,7 +1690,10 @@
       "credits_limit_reached": "不足上限に到達",
       "attendance_headcount_mismatch": "人数と出席記録が不一致・補登録",
       "attendance_headcount_missing": "終了後も人数未確認",
-      "invoice_pending": "発票の発行待ち"
+      "invoice_pending": "発票の発行待ち",
+      "cash_close_day": "現金が未締め",
+      "cash_deposit_due": "締めから7日以上未入金",
+      "deposit_reconcile": "入金の照合待ち"
     }
   },
   "venues": {
@@ -1757,5 +1792,52 @@
       "camp": "キャンプ",
       "other": "その他"
     }
+  },
+  "cash": {
+    "title": "現金受領",
+    "lead": "会場で受け取ったらすぐ登録してください。保護者は回数券ページで電子領収書を確認できます。一日の終わりに締めて、会社口座に入金して登録します。",
+    "closedDone": "締めました。",
+    "depositedDone": "入金を登録しました。香織さんの照合待ちです。",
+    "todo": "対応待ち",
+    "recordTitle": "受領を登録",
+    "receiptIssued": "領収書番号",
+    "receiptParentSees": "保護者は回数券ページでこの電子領収書を確認できます。",
+    "another": "次を登録",
+    "change": "変更",
+    "searchChild": "お子さまを検索",
+    "searchPlaceholder": "中国語・英語・日本語の名前、梯隊",
+    "note": "メモ（任意）",
+    "confirmReceipt": "受領を確定して領収書を発行",
+    "openTitle": "未締めの領収書",
+    "openEmpty": "未締めの領収書はありません。",
+    "dayTotal": "{count} 件、合計 {total} 元",
+    "closeDay": "この日を締める",
+    "closeConfirm": "締めた後、この {count} 件（合計 {total} 元）は取り消せません。締めますか？",
+    "voidReason": "取消の理由",
+    "void": "取消",
+    "depositTitle": "入金登録",
+    "depositEmpty": "入金待ちの締めはありません。",
+    "depositClosings": "この入金に含まれる締め",
+    "depositAmount": "入金額（元）",
+    "depositAmountHint": "選択した締めの合計は {total} 元です。金額が違うと照合できません。",
+    "depositDate": "入金日",
+    "depositSlip": "入金控えの写真（任意）",
+    "recordDeposit": "入金を登録",
+    "reconcile": "照合OK",
+    "removeDirector": "ディレクターから外す",
+    "makeDirector": "ディレクターにする",
+    "depositsAdminTitle": "入金照合",
+    "depositsAdminLead": "ディレクターが登録した入金は別の人が照合します。選択した締めの合計が入金額と一致する必要があります。登録した本人は照合できません。",
+    "depositsList": "入金",
+    "depositsEmptyTitle": "入金記録はまだありません",
+    "depositsEmptyBody": "ディレクターが締めて入金を登録するとここに表示されます。",
+    "reconciled": "照合済み",
+    "closingsCovered": "締め：{dates}（合計 {total} 元）",
+    "viewSlip": "入金控えを見る",
+    "blockOwnDeposit": "この入金はあなたが登録したため、他のスタッフが照合します。",
+    "blockMismatch": "入金 {amount} 元と締めの合計 {total} 元が一致しません。ディレクターに確認してください。",
+    "directorsTitle": "梯隊ディレクター",
+    "directorsLead": "ディレクターは「現金受領」ページで集金、未締め領収書の取消、締め、入金登録ができ、選手名簿と回数（閲覧のみ）を見られます。",
+    "addDirector": "ディレクターを追加"
   }
 }

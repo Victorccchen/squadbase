@@ -64,6 +64,9 @@ describe("task links and labels", () => {
     assert.equal(taskHref(task("attendance.headcount_mismatch", id)), `/app/admin/sessions/${id}`);
     assert.equal(taskHref(task("attendance.headcount_missing", id)), `/app/admin/sessions/${id}`);
     assert.equal(taskHref(task("invoice.pending", id)), "/app/admin/claims");
+    assert.equal(taskHref(task("cash.close_day", id)), "/app/cash");
+    assert.equal(taskHref(task("cash.deposit_due", id)), "/app/cash");
+    assert.equal(taskHref(task("deposit.reconcile", id)), "/app/admin/deposits");
     assert.equal(taskHref(task("something.new")), null);
   });
 

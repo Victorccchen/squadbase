@@ -35,6 +35,9 @@ export function reportCopyForLocale(locale: string): ReportCopy {
     yes: bundle.reports.yes,
     no: bundle.reports.no,
     opponentTbd: bundle.matches.opponentTbd,
+    paymentMethods: bundle.reports.paymentMethods,
+    invoiceNotNeeded: bundle.reports.invoiceNotNeeded,
+    invoicePending: bundle.reports.invoicePending,
   };
 }
 
