@@ -8,7 +8,9 @@ import {
   registerForSession,
 } from "@/lib/org/session-actions";
 import { INITIAL_ORG_ACTION_STATE, type OrgErrorKey } from "@/lib/org/errors";
-import { isGuardianCancelLocked } from "@/lib/org/session-time";
+import { isLateCancel } from "@/lib/credits/debit-rules";
+import { hasSessionStarted } from "@/lib/org/session-time";
+import type { SessionKind } from "@/lib/supabase/database.types";
 import {
   mutedLabelClassName,
   primaryButtonClassName,
@@ -81,12 +83,15 @@ function CancelButton({
   returnTo,
   seriesId,
   groupKey,
+  confirmMessage,
 }: {
   registrationId: string;
   sessionId: string;
   returnTo: string;
   seriesId?: string;
   groupKey?: string;
+  /** PR-06: shown before a late cancel that will be debited. */
+  confirmMessage: string | null;
 }) {
   const t = useTranslations("sessions");
   const org = useTranslations("org");
@@ -96,7 +101,15 @@ function CancelButton({
   );
 
   return (
-    <form action={formAction} className="flex flex-col items-end gap-2">
+    <form
+      action={formAction}
+      className="flex flex-col items-end gap-2"
+      onSubmit={(event) => {
+        if (confirmMessage && !window.confirm(confirmMessage)) {
+          event.preventDefault();
+        }
+      }}
+    >
       <LocaleHiddenField />
       <ReturnFields returnTo={returnTo} seriesId={seriesId} groupKey={groupKey} />
       <input type="hidden" name="registration_id" value={registrationId} />
@@ -113,6 +126,9 @@ type SessionListActionsProps = {
   sessionId: string;
   playerId: string;
   startsAt: string;
+  kind: SessionKind;
+  /** Credits a late cancel costs (special/match within 24 hours). */
+  lateCancelCredits: number;
   registrationId: string | null;
   showRegisteredLabel?: boolean;
   returnTo?: string;
@@ -124,6 +140,8 @@ export function SessionListActions({
   sessionId,
   playerId,
   startsAt,
+  kind,
+  lateCancelCredits,
   registrationId,
   showRegisteredLabel = true,
   returnTo = "sessions",
@@ -144,14 +162,20 @@ export function SessionListActions({
     );
   }
 
-  const locked = isGuardianCancelLocked(startsAt);
+  // PR-06: parents may cancel until the start. Special sessions and matches
+  // within 24 hours become a late cancel, debited like a no-show.
+  const started = hasSessionStarted(startsAt);
+  const confirmMessage =
+    isLateCancel({ kind, startsAt }) && lateCancelCredits > 0
+      ? t("lateCancelConfirm", { count: lateCancelCredits })
+      : null;
 
   return (
     <div className="flex flex-wrap items-center justify-end gap-1">
       {showRegisteredLabel ? (
         <span className={mutedLabelClassName}>{t("statuses.registered")}</span>
       ) : null}
-      {locked ? (
+      {started ? (
         <span className={mutedLabelClassName}>{t("cannotCancel")}</span>
       ) : (
         <CancelButton
@@ -160,6 +184,7 @@ export function SessionListActions({
           returnTo={returnTo}
           seriesId={seriesId}
           groupKey={groupKey}
+          confirmMessage={confirmMessage}
         />
       )}
     </div>

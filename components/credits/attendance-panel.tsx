@@ -53,7 +53,11 @@ export async function AttendancePanel({
                   ? `${t(`attendance.${row.attendanceStatus}`)} · ${t("debitedCredits", { count: row.creditsDebited })}`
                   : t("attendanceUnmarked")}
               {showCredits && row.creditsAvailable !== null
-                ? ` · ${t("remainingCredits", { count: row.creditsAvailable })}`
+                ? ` · ${
+                    row.creditsAvailable < 0
+                      ? t("owedCredits", { count: -row.creditsAvailable })
+                      : t("remainingCredits", { count: row.creditsAvailable })
+                  }`
                 : ""}
             </span>
           </div>

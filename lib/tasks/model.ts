@@ -7,21 +7,52 @@
 
 import type { Task } from "../supabase/database.types.ts";
 
-export const KNOWN_TASK_KINDS = ["payment_claim.pending", "guardian_link.pending"] as const;
+export const KNOWN_TASK_KINDS = [
+  "payment_claim.pending",
+  "guardian_link.pending",
+  // PR-06
+  "leave_request.pending",
+  "credits.renew",
+  "credits.limit_reached",
+] as const;
 export type KnownTaskKind = (typeof KNOWN_TASK_KINDS)[number];
-
-const TASK_HREF: Record<KnownTaskKind, "/app/admin/claims" | "/app/admin/bindings"> = {
-  "payment_claim.pending": "/app/admin/claims",
-  "guardian_link.pending": "/app/admin/bindings",
-};
 
 export function isKnownTaskKind(kind: string): kind is KnownTaskKind {
   return (KNOWN_TASK_KINDS as readonly string[]).includes(kind);
 }
 
+type LinkableTask = Pick<Task, "kind" | "entity_id" | "params">;
+
+function uuidParam(params: Task["params"], key: string): string | null {
+  const value = params && typeof params === "object" ? (params as Record<string, unknown>)[key] : null;
+  return typeof value === "string" && /^[0-9a-f-]{36}$/i.test(value) ? value : null;
+}
+
 /** Admin page that resolves the task, or null when the kind has no page yet. */
-export function taskHref(kind: string): "/app/admin/claims" | "/app/admin/bindings" | null {
-  return isKnownTaskKind(kind) ? TASK_HREF[kind] : null;
+export function taskHref(task: LinkableTask): string | null {
+  switch (task.kind) {
+    case "payment_claim.pending":
+      return "/app/admin/claims";
+    case "guardian_link.pending":
+      return "/app/admin/bindings";
+    case "leave_request.pending": {
+      const sessionId = uuidParam(task.params, "session_id");
+      return sessionId ? `/app/admin/sessions/${sessionId}` : null;
+    }
+    case "credits.renew":
+    case "credits.limit_reached":
+      return task.entity_id ? `/app/admin/players/${task.entity_id}` : null;
+    default:
+      return null;
+  }
+}
+
+/** Player the task is about, when the task itself names one. */
+export function taskPlayerId(task: Pick<Task, "kind" | "entity_type" | "entity_id" | "params">): string | null {
+  if (task.entity_type === "player") {
+    return task.entity_id;
+  }
+  return uuidParam(task.params, "player_id");
 }
 
 /** i18n key under `tasks.kinds`; unknown kinds fall back to `other`. */

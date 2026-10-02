@@ -591,7 +591,11 @@
       "crossSquadSameAsPrimary": "飛び級梯隊は主梯隊と同じにできません。",
       "crossSquadNeedsPrimary": "先に主梯隊を設定してから飛び級梯隊を追加してください。",
       "crossSquadLimit": "飛び級梯隊は一人一つまでです。",
-      "crossSquadTeamInactive": "この梯隊は停止中のため、飛び級梯隊に設定できません。"
+      "crossSquadTeamInactive": "この梯隊は停止中のため、飛び級梯隊に設定できません。",
+      "creditLimitReached": "3回分以上不足しています。追加購入後に申し込めます。",
+      "leaveReasonRequired": "欠席の理由を選んでください。",
+      "invalidLeaveReason": "欠席の理由が無効です。",
+      "sessionNotEnded": "まだ終了していないため確定できません。"
     },
     "crossSquad": "飛び級梯隊",
     "crossSquadNone": "なし",
@@ -662,7 +666,7 @@
     "registering": "申込中…",
     "cancelInline": "キャンセル",
     "cancel": "取消",
-    "cannotCancel": "取消不可",
+    "cannotCancel": "開始済みのため取消不可",
     "submitNote": "送信",
     "registerFromListHint": "先に一覧から申し込んでください。申込後、ここにクラブへのメモを書けます。",
     "noteSaved": "メモを保存しました。",
@@ -741,9 +745,12 @@
     "takeAttendance": "出欠",
     "statuses": {
       "registered": "申込済み",
-      "cancelled": "取消済み"
+      "cancelled": "取消済み",
+      "late_cancelled": "直前キャンセル"
     },
-    "crossSquadTag": "飛び級"
+    "crossSquadTag": "飛び級",
+    "lateCancelConfirm": "開始まで24時間を切っています。直前キャンセルは欠席扱いとなり {count} 回分を消化します。正当な理由（病気など）がある場合は欠席届を出してください。キャンセルしますか？",
+    "lateCancelledNotice": "直前キャンセル済みです。終了後に欠席扱いで消化されます。病気・けがなど正当な理由がある場合は下の欠席届を出してください。クラブが承認すれば消化されません。"
   },
   "competitions": {
     "title": "試合申込",
@@ -883,7 +890,23 @@
     "approveLeave": "欠席を承認",
     "rejectLeave": "欠席を却下",
     "backToRoster": "名簿に戻る",
-    "priceLockedHint": "このパックには申請があるため、価格と回数は変更できません。価格を変更する場合は、このパックを無効にしてから新しい価格のパックを追加してください。"
+    "priceLockedHint": "このパックには申請があるため、価格と回数は変更できません。価格を変更する場合は、このパックを無効にしてから新しい価格のパックを追加してください。",
+    "leaveReason": "欠席の理由",
+    "leaveReasonPlaceholder": "理由を選んでください",
+    "leaveReasons": {
+      "illness": "病気",
+      "injury": "けが",
+      "family": "家庭の事情",
+      "school": "学校行事",
+      "other": "その他"
+    },
+    "owedCredits": "{count} 回分不足",
+    "owedBalance": "回数が不足しています。早めに追加購入してください。{limit} 回分不足すると申し込みができなくなります。",
+    "creditLimitReached": "{limit} 回分以上不足しています。追加購入後に申し込みできます。出席は通常どおり記録されます。",
+    "finalizeAttendance": "未出席を確定",
+    "finalizeHint": "確定すると、申込済みまたは直前キャンセルで出席記録のない選手を欠席として消化します（通常練習は対象外）。確定しない場合は終了24時間後に自動で確定します。",
+    "finalizeConfirm": "確定しますか？出席記録のない申込者は欠席として消化されます。",
+    "finalizedAt": "{time} に確定済み。後から出席を記録すると消化も更新されます。"
   },
   "matches": {
     "title": "試合日程",
@@ -1609,7 +1632,10 @@
     "kinds": {
       "payment_claim_pending": "振込の確認待ち",
       "guardian_link_pending": "紐付け申請の審査待ち",
-      "other": "対応待ちの項目"
+      "other": "対応待ちの項目",
+      "leave_request_pending": "欠席届の審査待ち",
+      "credits_renew": "回数切れ・追加購入の案内",
+      "credits_limit_reached": "不足上限に到達"
     }
   }
 }

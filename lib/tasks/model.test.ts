@@ -46,9 +46,22 @@ describe("inbox order", () => {
 
 describe("task links and labels", () => {
   it("links known kinds to their admin page", () => {
-    assert.equal(taskHref("payment_claim.pending"), "/app/admin/claims");
-    assert.equal(taskHref("guardian_link.pending"), "/app/admin/bindings");
-    assert.equal(taskHref("something.new"), null);
+    const task = (kind: string, entity_id: string | null = null, params: Record<string, unknown> = {}) => ({
+      kind,
+      entity_id,
+      params,
+    });
+    const id = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    assert.equal(taskHref(task("payment_claim.pending")), "/app/admin/claims");
+    assert.equal(taskHref(task("guardian_link.pending")), "/app/admin/bindings");
+    assert.equal(taskHref(task("credits.renew", id)), `/app/admin/players/${id}`);
+    assert.equal(taskHref(task("credits.limit_reached", id)), `/app/admin/players/${id}`);
+    assert.equal(
+      taskHref(task("leave_request.pending", id, { session_id: id })),
+      `/app/admin/sessions/${id}`,
+    );
+    assert.equal(taskHref(task("leave_request.pending", id, { session_id: "x" })), null);
+    assert.equal(taskHref(task("something.new")), null);
   });
 
   it("maps kinds to message keys with a fallback", () => {

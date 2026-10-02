@@ -147,6 +147,17 @@ export function isSessionOpenForSignup(
 /** Matches `cancel_session_registration`: lock when starts_at <= now() + 24 hours. */
 export const GUARDIAN_CANCEL_LOCK_MS = 24 * 60 * 60 * 1000;
 
+/** PR-06: parents may cancel until the start (late-cancel rules apply within 24 hours). */
+export function hasSessionStarted(startsAt: string, now = new Date()): boolean {
+  const start = Date.parse(startsAt);
+  return Number.isNaN(start) || start <= now.getTime();
+}
+
+export function hasSessionEnded(endsAt: string, now = new Date()): boolean {
+  const end = Date.parse(endsAt);
+  return !Number.isNaN(end) && end <= now.getTime();
+}
+
 export function isGuardianCancelLocked(startsAt: string, now = new Date()): boolean {
   const start = Date.parse(startsAt);
   if (Number.isNaN(start)) {

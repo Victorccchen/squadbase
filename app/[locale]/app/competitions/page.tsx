@@ -1,3 +1,4 @@
+import { lateCancelCreditsForSession } from "@/lib/credits/debit-rules";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { EmptyState } from "@/components/empty-state";
@@ -281,6 +282,8 @@ export default async function ParentCompetitionsPage({
                           sessionId={row.session.id}
                           playerId={row.player_id}
                           startsAt={row.session.starts_at}
+                          kind={row.session.kind}
+                          lateCancelCredits={lateCancelCreditsForSession(row.session)}
                           registrationId={row.id}
                           showRegisteredLabel={false}
                           returnTo="competitions"

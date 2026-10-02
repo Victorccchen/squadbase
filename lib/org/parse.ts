@@ -537,6 +537,7 @@ type SessionRpcErrorKey =
   | "notApprovedGuardian"
   | "playerNotOnSessionTeam"
   | "alreadyRegistered"
+  | "creditLimitReached"
   | "cannotCancelRegistration"
   | "cannotCancelWithin24h"
   | "cannotSwitchSession"
@@ -572,6 +573,9 @@ export function sessionRpcErrorKey(error: PgLikeError): SessionRpcErrorKey {
   }
   if (text.includes("already registered") || isOpenSessionRegistrationViolation(error)) {
     return "alreadyRegistered";
+  }
+  if (text.includes("credit_limit_reached")) {
+    return "creditLimitReached";
   }
   if (text.includes("cannot cancel within 24 hours")) {
     return "cannotCancelWithin24h";
@@ -647,6 +651,8 @@ type CreditRpcErrorKey =
   | "activePackageExists"
   | "adjustWouldBeNegative"
   | "pendingLeaveExists"
+  | "invalidLeaveReason"
+  | "sessionNotEnded"
   | "leaveNotFound"
   | "sessionNotFound"
   | "playerNotOnSessionTeam"
@@ -702,6 +708,12 @@ export function creditRpcErrorKey(error: PgLikeError): CreditRpcErrorKey {
   }
   if (text.includes("leave request not found")) {
     return "leaveNotFound";
+  }
+  if (text.includes("invalid leave reason")) {
+    return "invalidLeaveReason";
+  }
+  if (text.includes("session has not ended")) {
+    return "sessionNotEnded";
   }
   if (text.includes("session not found")) {
     return "sessionNotFound";

@@ -19,11 +19,13 @@ import { getMatchForStaff } from "@/lib/org/match-queries";
 import { attachMatchPublication } from "@/lib/org/match-actions";
 import { AttachMatchForm } from "@/components/admin/attach-match-form";
 import { setSessionStatus, softDeleteSession, softDeleteSessionSeries } from "@/lib/org/session-actions";
-import { formatClubDateTime, formatClubDateTimeRange } from "@/lib/org/session-time";
+import { formatClubDateTime, formatClubDateTimeRange, hasSessionEnded } from "@/lib/org/session-time";
 import { secondaryButtonClassName } from "@/lib/ui";
 import { AttendancePanel } from "@/components/credits/attendance-panel";
 import { DebitOverrideForm } from "@/components/credits/debit-override-form";
 import { LeaveReviewForm } from "@/components/credits/leave-review-form";
+import { FinalizeAttendanceForm } from "@/components/credits/finalize-attendance-form";
+import { localizedPlayerName } from "@/lib/org/display-name";
 import { NoticeCopyPanel } from "@/components/credits/notice-copy-panel";
 import { ReportExportButtons } from "@/components/admin/report-export-buttons";
 import {
@@ -89,17 +91,30 @@ export default async function AdminSessionDetailPage({ params }: SessionDetailPa
   const useRoster = isMatchKind(session.kind);
   const attendancePlayers = useRoster
     ? roster.map((row) => ({ player: row.player, jerseyNumber: row.membership.jersey_number }))
-    : open
-        .filter((row) => row.player)
-        .map((row) => ({
-          player: row.player!,
-          jerseyNumber:
-            roster.find((item) => item.player.id === row.player_id)?.membership.jersey_number ?? null,
-        }));
+    : [
+        ...open
+          .filter((row) => row.player)
+          .map((row) => ({
+            player: row.player!,
+            jerseyNumber:
+              roster.find((item) => item.player.id === row.player_id)?.membership.jersey_number ?? null,
+          })),
+        // PR-06: players who came without signing up can still be marked (D1).
+        ...roster
+          .filter((item) => !open.some((row) => row.player_id === item.player.id))
+          .map((item) => ({ player: item.player, jerseyNumber: item.membership.jersey_number })),
+      ];
   const balances = await listBalancesForPlayers(attendancePlayers.map((row) => row.player.id));
   const balanceByPlayer = new Map(balances.map((row) => [row.player_id, row.credits_available]));
   const attendanceByPlayer = new Map(attendance.map((row) => [row.player_id, row]));
   const pendingLeave = leaveRequests.filter((row) => row.status === "pending");
+  const playerNameById = new Map(
+    registrations
+      .filter((row) => row.player)
+      .map((row) => [row.player_id, localizedPlayerName(row.player!, locale)]),
+  );
+  const canFinalize =
+    !isDeleted && session.kind !== "regular" && hasSessionEnded(session.ends_at);
 
   return (
     <>
@@ -257,6 +272,21 @@ export default async function AdminSessionDetailPage({ params }: SessionDetailPa
                 };
               })}
             />
+            {canFinalize ? (
+              <div className="flex flex-col gap-2 rounded-2xl border border-zinc-200 bg-white p-5 text-sm dark:border-zinc-800 dark:bg-zinc-900">
+                <p className="text-zinc-600 dark:text-zinc-300">
+                  {session.attendance_finalized_at
+                    ? creditsT("finalizedAt", {
+                        time: formatClubDateTime(session.attendance_finalized_at, locale),
+                      })
+                    : creditsT("finalizeHint")}
+                </p>
+                <FinalizeAttendanceForm
+                  sessionId={session.id}
+                  confirmMessage={creditsT("finalizeConfirm")}
+                />
+              </div>
+            ) : null}
           </section>
         )}
         {pendingLeave.length > 0 ? (
@@ -271,7 +301,8 @@ export default async function AdminSessionDetailPage({ params }: SessionDetailPa
                   className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900"
                 >
                   <p className="text-sm">
-                    {creditsT("leavePending")}
+                    {playerNameById.get(row.player_id) ?? creditsT("leavePending")}
+                    {row.reason_category ? ` · ${creditsT(`leaveReasons.${row.reason_category}`)}` : ""}
                     {row.parent_note ? ` · ${row.parent_note}` : ""}
                   </p>
                   <LeaveReviewForm requestId={row.id} sessionId={session.id} />

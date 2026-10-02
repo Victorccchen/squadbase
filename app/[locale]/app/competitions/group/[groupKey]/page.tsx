@@ -1,3 +1,4 @@
+import { lateCancelCreditsForSession } from "@/lib/credits/debit-rules";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
@@ -84,6 +85,7 @@ export default async function MatchGroupPage({ params }: MatchGroupPageProps) {
                 startsAt={session.starts_at}
                 endsAt={session.ends_at}
                 kind={session.kind}
+                lateCancelCredits={lateCancelCreditsForSession(session)}
                 isPlayoff={session.is_playoff}
                 locale={locale}
                 detailHref={`/app/competitions/${session.id}`}

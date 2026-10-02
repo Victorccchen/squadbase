@@ -1,3 +1,4 @@
+import { lateCancelCreditsForSession } from "@/lib/credits/debit-rules";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { EmptyState } from "@/components/empty-state";
@@ -206,6 +207,7 @@ export default async function ParentSessionsPage({ searchParams }: ParentSession
                             startsAt={session.starts_at}
                             endsAt={session.ends_at}
                             kind={session.kind}
+                            lateCancelCredits={lateCancelCreditsForSession(session)}
                             isPlayoff={session.is_playoff}
                             locale={locale}
                             returnTo="sessions"
@@ -322,6 +324,8 @@ export default async function ParentSessionsPage({ searchParams }: ParentSession
                           sessionId={row.session.id}
                           playerId={row.player_id}
                           startsAt={row.session.starts_at}
+                          kind={row.session.kind}
+                          lateCancelCredits={lateCancelCreditsForSession(row.session)}
                           registrationId={row.id}
                           showRegisteredLabel={false}
                           returnTo="sessions"

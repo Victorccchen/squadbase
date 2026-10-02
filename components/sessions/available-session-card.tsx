@@ -33,6 +33,8 @@ type AvailableSessionCardProps = {
   seriesId?: string;
   groupKey?: string;
   opponent?: string | null;
+  /** Credits a late cancel costs; see lateCancelCreditsForSession. */
+  lateCancelCredits?: number;
 };
 
 export async function AvailableSessionCard({
@@ -51,6 +53,7 @@ export async function AvailableSessionCard({
   seriesId,
   groupKey,
   opponent = null,
+  lateCancelCredits = 0,
 }: AvailableSessionCardProps) {
   const t = await getTranslations("sessions");
   const org = await getTranslations("org");
@@ -99,6 +102,8 @@ export async function AvailableSessionCard({
               sessionId={sessionId}
               playerId={singleChild.playerId}
               startsAt={startsAt}
+              kind={kind}
+              lateCancelCredits={lateCancelCredits}
               registrationId={singleChild.registrationId}
               returnTo={returnTo}
               seriesId={seriesId}
@@ -119,6 +124,8 @@ export async function AvailableSessionCard({
                 sessionId={sessionId}
                 playerId={child.playerId}
                 startsAt={startsAt}
+                kind={kind}
+                lateCancelCredits={lateCancelCredits}
                 registrationId={child.registrationId}
                 returnTo={returnTo}
                 seriesId={seriesId}

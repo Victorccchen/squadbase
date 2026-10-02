@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  hasSessionEnded,
+  hasSessionStarted,
   addMinutesToOffsetIso,
   formatClubDateTime,
   formatClubDateWithWeekday,
@@ -165,5 +167,19 @@ describe("T6P-3 weekday labels three locales", () => {
     assert.match(range, /2026-09-20（週日）/);
     assert.match(range, /10:00/);
     assert.match(range, /11:30/);
+  });
+});
+
+describe("hasSessionStarted / hasSessionEnded (PR-06)", () => {
+  const now = new Date("2026-10-10T00:00:00Z");
+  it("treats the start instant as started", () => {
+    assert.equal(hasSessionStarted("2026-10-10T00:00:00Z", now), true);
+    assert.equal(hasSessionStarted("2026-10-10T00:00:01Z", now), false);
+    assert.equal(hasSessionStarted("not a date", now), true);
+  });
+  it("ends at the end instant", () => {
+    assert.equal(hasSessionEnded("2026-10-09T23:59:59Z", now), true);
+    assert.equal(hasSessionEnded("2026-10-10T01:00:00Z", now), false);
+    assert.equal(hasSessionEnded("not a date", now), false);
   });
 });

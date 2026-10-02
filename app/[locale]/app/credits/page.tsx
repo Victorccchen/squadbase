@@ -16,7 +16,10 @@ import {
 import {
   catalogBandFromTeamAgeBand,
   creditsApplyToAgeBand,
+  CREDIT_OVERDRAFT_LIMIT,
+  isAtCreditLimit,
   isLowBalance,
+  owedCredits,
 } from "@/lib/credits/debit-rules";
 import { localizedPlayerName } from "@/lib/org/display-name";
 import { secondaryButtonClassName } from "@/lib/ui";
@@ -85,11 +88,20 @@ export default async function ParentCreditsPage() {
                     {applies ? (
                       <>
                         <p className="text-sm">
-                          {t("remainingCredits", { count: remaining })} · {t("attendedCount", { count: attendedCount })}
+                          {remaining < 0
+                            ? t("owedCredits", { count: owedCredits(remaining) })
+                            : t("remainingCredits", { count: remaining })}{" "}
+                          · {t("attendedCount", { count: attendedCount })}
                         </p>
                         {low ? (
                           <div className="flex flex-col gap-2 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:bg-amber-950 dark:text-amber-100">
-                            <p>{t("lowBalance")}</p>
+                            <p>
+                              {isAtCreditLimit(remaining)
+                                ? t("creditLimitReached", { limit: CREDIT_OVERDRAFT_LIMIT })
+                                : remaining < 0
+                                  ? t("owedBalance", { limit: CREDIT_OVERDRAFT_LIMIT })
+                                  : t("lowBalance")}
+                            </p>
                             <CopyTextButton
                               text={transferHint || t("transferHintMissing")}
                               label={t("copyTransferHint")}

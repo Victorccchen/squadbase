@@ -591,7 +591,11 @@
       "crossSquadSameAsPrimary": "跨上梯隊不能與主梯隊相同。",
       "crossSquadNeedsPrimary": "請先設定主梯隊，再加跨上梯隊。",
       "crossSquadLimit": "每位球員只能有一個跨上梯隊。",
-      "crossSquadTeamInactive": "此梯隊已停用，不能設為跨上梯隊。"
+      "crossSquadTeamInactive": "此梯隊已停用，不能設為跨上梯隊。",
+      "creditLimitReached": "已欠 3 堂以上，請先續購才能報名。",
+      "leaveReasonRequired": "請選擇請假原因。",
+      "invalidLeaveReason": "請假原因無效。",
+      "sessionNotEnded": "場次尚未結束，無法結算。"
     },
     "crossSquad": "跨上梯隊",
     "crossSquadNone": "不跨上",
@@ -662,7 +666,7 @@
     "registering": "報名中…",
     "cancelInline": "取消",
     "cancel": "取消",
-    "cannotCancel": "無法取消",
+    "cannotCancel": "已開始，無法取消",
     "submitNote": "送出",
     "registerFromListHint": "請先從場次列表報名。報名後可在此填寫給球團的備註。",
     "noteSaved": "備註已更新。",
@@ -741,9 +745,12 @@
     "takeAttendance": "出缺席",
     "statuses": {
       "registered": "已報名",
-      "cancelled": "已取消"
+      "cancelled": "已取消",
+      "late_cancelled": "臨時取消"
     },
-    "crossSquadTag": "跨上"
+    "crossSquadTag": "跨上",
+    "lateCancelConfirm": "距離開始不到 24 小時，臨時取消將視同未到，扣 {count} 堂。若有正當理由（如生病），請改為申請請假。確定要取消嗎？",
+    "lateCancelledNotice": "已臨時取消，場次結束後將視同未到扣堂。若有正當理由（如生病、受傷），請在下方申請請假，經球團核准後不扣堂。"
   },
   "competitions": {
     "title": "賽事",
@@ -883,7 +890,23 @@
     "approveLeave": "核准請假",
     "rejectLeave": "拒絕請假",
     "backToRoster": "返回名單",
-    "priceLockedHint": "這個方案已有家長申報，價格與堂數不能再修改。若要調價，請先停用這個方案，再新增一個新價格的方案。"
+    "priceLockedHint": "這個方案已有家長申報，價格與堂數不能再修改。若要調價，請先停用這個方案，再新增一個新價格的方案。",
+    "leaveReason": "請假原因",
+    "leaveReasonPlaceholder": "請選擇原因",
+    "leaveReasons": {
+      "illness": "生病",
+      "injury": "受傷",
+      "family": "家庭因素",
+      "school": "學校活動",
+      "other": "其他"
+    },
+    "owedCredits": "欠 {count} 堂",
+    "owedBalance": "目前欠堂。請盡快續購；欠 {limit} 堂時將無法再報名。",
+    "creditLimitReached": "已欠 {limit} 堂以上，請先續購才能報名。出席仍會照常記錄。",
+    "finalizeAttendance": "結算未到",
+    "finalizeHint": "結算後，已報名或臨時取消但沒有出席紀錄的球員會記為未到並扣堂（例行訓練不扣）。未結算的場次會在結束 24 小時後自動結算。",
+    "finalizeConfirm": "確定結算？沒有出席紀錄的報名者會記為未到並扣堂。",
+    "finalizedAt": "已於 {time} 結算。之後補登的出席仍會更新扣堂。"
   },
   "matches": {
     "title": "比賽賽程",
@@ -1609,7 +1632,10 @@
     "kinds": {
       "payment_claim_pending": "匯款待確認",
       "guardian_link_pending": "綁定申請待審核",
-      "other": "待處理事項"
+      "other": "待處理事項",
+      "leave_request_pending": "請假申請待審核",
+      "credits_renew": "堂數用完，提醒續購",
+      "credits_limit_reached": "已達欠堂上限"
     }
   }
 }
