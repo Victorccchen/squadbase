@@ -601,7 +601,13 @@
       "checkinNoChild": "お子さまを1人以上選んでください。",
       "headcountInvalid": "0〜500 の人数を入力してください。",
       "venueNameRequired": "会場名を入力してください。",
-      "attendanceNotFound": "この出席記録が見つかりません。"
+      "attendanceNotFound": "この出席記録が見つかりません。",
+      "invalidTransferDate": "今日以前、90日以内の振込日を選んでください。",
+      "invalidAmount": "1〜200,000 の金額を入力してください。",
+      "invalidTaxId": "統一編号は8桁の数字です。",
+      "missingItem": "お支払い項目を選んでください。",
+      "invoiceNumberInvalid": "発票番号の形式が正しくありません（英数字と -、2〜20文字）。",
+      "itemNameRequired": "項目名を入力してください。"
     },
     "crossSquad": "飛び級梯隊",
     "crossSquadNone": "なし",
@@ -919,7 +925,8 @@
     "noticesUnread": "未読 {count} 件",
     "noticeNew": "新着",
     "noticesMarkRead": "すべて既読にする",
-    "backfillNotice": "{child} さんは {date} の練習に出席しましたが、QRチェックインがなかったため、スタッフが代わりに出席を登録しました（{debited} 回消化、残り {remaining} 回）。ご不明な点はすぐにクラブへご連絡ください。"
+    "backfillNotice": "{child} さんは {date} の練習に出席しましたが、QRチェックインがなかったため、スタッフが代わりに出席を登録しました（{debited} 回消化、残り {remaining} 回）。ご不明な点はすぐにクラブへご連絡ください。",
+    "reportSubmitted": "振込の報告を受け付けました。クラブが確認後に反映します。"
   },
   "matches": {
     "title": "試合日程",
@@ -1650,7 +1657,8 @@
       "credits_renew": "回数切れ・追加購入の案内",
       "credits_limit_reached": "不足上限に到達",
       "attendance_headcount_mismatch": "人数と出席記録が不一致・補登録",
-      "attendance_headcount_missing": "終了後も人数未確認"
+      "attendance_headcount_missing": "終了後も人数未確認",
+      "invoice_pending": "発票の発行待ち"
     }
   },
   "venues": {
@@ -1707,6 +1715,47 @@
       "parent_qr": "QRチェックイン",
       "paper_card": "紙カード取込",
       "system": "システム確定"
+    }
+  },
+  "payments": {
+    "item": "お支払い項目",
+    "selectItem": "項目を選んでください",
+    "noPackagesForChild": "この梯隊は回数券を使いません。ユニフォームや試合費などは報告できます。",
+    "amount": "金額（台湾ドル）",
+    "transferDate": "振込日",
+    "screenshot": "振込画面のスクリーンショット（任意）",
+    "screenshotHint": "JPG／PNG／WebP、5 MB まで。クラブのスタッフのみ閲覧できます。",
+    "invoiceNeeded": "統一発票（領収書）が必要",
+    "taxId": "統一編号（任意）",
+    "taxIdHint": "会社で経費精算する場合のみ。8桁の数字。",
+    "invoiceTitle": "宛名（任意）",
+    "submit": "振込を報告する",
+    "invoice": "発票",
+    "invoiceNotNeeded": "不要",
+    "taxIdValue": "統一編号 {taxId}",
+    "noTaxId": "統一編号なし",
+    "viewScreenshot": "振込画面を見る",
+    "invoicesTitle": "発票の発行待ち",
+    "invoicesEmpty": "発行待ちの発票はありません。",
+    "invoiceNo": "発票番号",
+    "recordInvoice": "発票番号を登録",
+    "itemsTitle": "その他のお支払い項目",
+    "itemsLead": "ユニフォーム、試合費、キャンプなど。これらの報告は入金の記録のみで、回数は増えません。回数券は上で管理します。",
+    "itemKind": "種類",
+    "itemPrice": "標準金額（任意）",
+    "nameZh": "名称（中国語）",
+    "nameJa": "名称（日本語、任意）",
+    "nameEn": "名称（英語、任意）",
+    "itemActive": "報告を受け付ける",
+    "itemInactive": "停止中",
+    "addItem": "項目を追加",
+    "saveItem": "項目を保存",
+    "kinds": {
+      "credit_package": "回数券",
+      "kit": "ユニフォーム／用具",
+      "match_fee": "試合費",
+      "camp": "キャンプ",
+      "other": "その他"
     }
   }
 }

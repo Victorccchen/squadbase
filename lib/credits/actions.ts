@@ -16,7 +16,6 @@ import {
 import { type OrgActionState, type OrgErrorKey } from "@/lib/org/errors";
 import {
   parseAdjustReason,
-  parseLast5,
   parsePackageCatalogBand,
   parsePositiveInt,
 } from "@/lib/credits/packages";
@@ -49,44 +48,6 @@ async function requireConfiguredUser() {
     return { ok: false as const, errorKey: "forbidden" as const };
   }
   return { ok: true as const, ...account, supabase: await createClient() };
-}
-
-export async function submitPaymentClaim(
-  _prev: OrgActionState,
-  formData: FormData,
-): Promise<OrgActionState> {
-  const actor = await requireConfiguredUser();
-  if (!actor.ok) {
-    return fail(actor.errorKey);
-  }
-
-  const playerId = parseUuid(readString(formData, "player_id"));
-  const packageId = parseUuid(readString(formData, "package_id"));
-  const last5 = parseLast5(readString(formData, "last5"));
-  if (!playerId) {
-    return fail("missingPlayer");
-  }
-  if (!packageId) {
-    return fail("packageNotFound");
-  }
-  if (!last5) {
-    return fail("invalidLast5");
-  }
-
-  const { error } = await actor.supabase.rpc("submit_payment_claim", {
-    p_player_id: playerId,
-    p_package_id: packageId,
-    p_last5: last5,
-  });
-
-  if (error) {
-    console.error("submitPaymentClaim", error.message);
-    return fail(creditRpcErrorKey(error));
-  }
-
-  revalidateCredits();
-  redirect({ href: "/app/credits", locale: localeFromForm(formData) });
-  return ok();
 }
 
 export async function reviewPaymentClaim(

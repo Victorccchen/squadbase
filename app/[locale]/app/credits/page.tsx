@@ -2,7 +2,10 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
-import { ClaimForm } from "@/components/credits/claim-form";
+import { PaymentReportForm } from "@/components/payments/payment-report-form";
+import { listPaymentItems } from "@/lib/payments/queries";
+import { paymentItemName } from "@/lib/payments/model";
+import { clubTodayDate } from "@/lib/org/session-calendar";
 import { CopyTextButton } from "@/components/credits/copy-text-button";
 import { listOwnGuardianLinks, formatActiveMembershipSummary } from "@/lib/org/queries";
 import { approvedChildrenFromLinks, uniqueEligibleChildrenByPlayer } from "@/lib/org/session-queries";
@@ -26,7 +29,12 @@ import { backfillNoticeValues, listOwnParentNotices } from "@/lib/checkin/notice
 import { markNoticesRead } from "@/lib/checkin/notice-actions";
 import { secondaryButtonClassName } from "@/lib/ui";
 
-export default async function ParentCreditsPage() {
+export default async function ParentCreditsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ reported?: string | string[] }>;
+}) {
+  const reported = (await searchParams).reported === "1";
   const t = await getTranslations("credits");
   const org = await getTranslations("org");
   const common = await getTranslations("common");
@@ -34,13 +42,14 @@ export default async function ParentCreditsPage() {
   const links = await listOwnGuardianLinks();
   const children = uniqueEligibleChildrenByPlayer(approvedChildrenFromLinks(links, "age_squad"));
   const playerIds = [...new Set(children.map((child) => child.player.id))];
-  const [balances, attended, packages, claims, transferHint, notices] = await Promise.all([
+  const [balances, attended, packages, claims, transferHint, notices, items] = await Promise.all([
     listBalancesForPlayers(playerIds),
     listAttendedCounts(playerIds),
     listPrimaryPackages(),
     listOwnPaymentClaims(),
     getBankTransferHint(),
     listOwnParentNotices(playerIds),
+    listPaymentItems(),
   ]);
   const unread = notices.filter((notice) => !notice.read_at);
   const childName = (playerId: string) => {
@@ -49,9 +58,16 @@ export default async function ParentCreditsPage() {
   };
 
   const balanceByPlayer = new Map(balances.map((row) => [row.player_id, row.credits_available]));
-  const eligibleBuyers = children.filter((child) => creditsApplyToAgeBand(child.teamAgeBand));
-  const packagesForBuyers = packages.filter((pkg) =>
-    eligibleBuyers.some((child) => catalogBandFromTeamAgeBand(child.teamAgeBand) === pkg.age_band),
+  // PR-08a: every child can report a payment; credit packages follow the primary 梯隊 band.
+  // Only the primary purchase packages (10/20/30) are offered.
+  const packageBands = Object.fromEntries(packages.map((pkg) => [pkg.id, pkg.age_band]));
+  const reportChildren = children.map((child) => ({
+    playerId: child.player.id,
+    label: `${localizedPlayerName(child.player, locale)} · ${child.teamName}`,
+    band: creditsApplyToAgeBand(child.teamAgeBand) ? catalogBandFromTeamAgeBand(child.teamAgeBand) : null,
+  }));
+  const reportItems = items.filter(
+    (item) => item.kind !== "credit_package" || (item.package_id !== null && item.package_id in packageBands),
   );
 
   return (
@@ -174,16 +190,26 @@ export default async function ParentCreditsPage() {
           )}
         </section>
 
+        {reported ? (
+          <p
+            role="status"
+            className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100"
+          >
+            {t("reportSubmitted")}
+          </p>
+        ) : null}
         <section className="flex flex-col gap-4">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
             {t("buyTitle")}
           </h2>
           <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">{t("buyLead")}</p>
-          <ClaimForm
-            childrenOptions={eligibleBuyers}
-            packages={packagesForBuyers}
+          <PaymentReportForm
+            childrenOptions={reportChildren}
+            items={reportItems}
+            packageBands={packageBands}
             locale={locale}
             transferHint={transferHint}
+            today={clubTodayDate()}
           />
         </section>
 
@@ -202,12 +228,12 @@ export default async function ParentCreditsPage() {
                 >
                   <span className="font-medium">
                     {claim.player ? localizedPlayerName(claim.player, locale) : t("unknownPlayer")}
-                    {claim.package
-                      ? ` · ${t("creditsCount", { count: claim.credits_snapshot })} · ${t("priceTwd", { amount: claim.price_twd_snapshot })}`
-                      : ""}
+                    {claim.item ? ` · ${paymentItemName(claim.item, locale)}` : ""}
+                    {` · ${t("priceTwd", { amount: claim.amount_twd })}`}
                   </span>
                   <span className="text-zinc-500">
                     {t(`claimStatuses.${claim.status}`)} · {t("last5Value", { last5: claim.last5 })}
+                    {claim.transfer_date ? ` · ${claim.transfer_date}` : ""}
                   </span>
                   {claim.admin_note ? (
                     <span className="text-zinc-500">

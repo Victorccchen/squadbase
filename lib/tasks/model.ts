@@ -17,6 +17,8 @@ export const KNOWN_TASK_KINDS = [
   // PR-07
   "attendance.headcount_mismatch",
   "attendance.headcount_missing",
+  // PR-08a
+  "invoice.pending",
 ] as const;
 export type KnownTaskKind = (typeof KNOWN_TASK_KINDS)[number];
 
@@ -35,6 +37,7 @@ function uuidParam(params: Task["params"], key: string): string | null {
 export function taskHref(task: LinkableTask): string | null {
   switch (task.kind) {
     case "payment_claim.pending":
+    case "invoice.pending":
       return "/app/admin/claims";
     case "guardian_link.pending":
       return "/app/admin/bindings";

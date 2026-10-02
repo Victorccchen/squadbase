@@ -4,6 +4,9 @@ import { PageHeader } from "@/components/page-header";
 import { AdjustCreditsForm } from "@/components/credits/adjust-credits-form";
 import { NewPackageForm, PackageRowForm } from "@/components/credits/package-form";
 import { TransferHintForm } from "@/components/credits/transfer-hint-form";
+import { PaymentItemForm } from "@/components/payments/payment-item-form";
+import { listPaymentItems } from "@/lib/payments/queries";
+import { paymentItemName } from "@/lib/payments/model";
 import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import {
   getBankTransferHint,
@@ -21,13 +24,16 @@ export default async function AdminCreditsPage() {
   const t = await getTranslations("credits");
   const common = await getTranslations("common");
   const locale = await getLocale();
-  const [packages, players, totals, transferHint, claimedPackageIds] = await Promise.all([
+  const payments = await getTranslations("payments");
+  const [packages, players, totals, transferHint, claimedPackageIds, items] = await Promise.all([
     listPackagesForAdmin(),
     listPlayersForAdminCredits(),
     listCreditTotalsForAdmin(),
     getBankTransferHint(),
     listClaimedPackageIds(),
+    listPaymentItems({ includeInactive: true }),
   ]);
+  const otherItems = items.filter((item) => item.kind !== "credit_package");
 
   return (
     <>
@@ -83,6 +89,30 @@ export default async function AdminCreditsPage() {
           <div className="rounded-2xl border border-dashed border-zinc-300 p-5 dark:border-zinc-700">
             <h3 className="mb-3 text-sm font-medium">{t("addPackageTitle")}</h3>
             <NewPackageForm />
+          </div>
+        </section>
+        <section className="flex flex-col gap-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+            {payments("itemsTitle")}
+          </h2>
+          <p className="text-sm text-zinc-600 dark:text-zinc-300">{payments("itemsLead")}</p>
+          <ul className="grid gap-3">
+            {otherItems.map((item) => (
+              <li
+                key={item.id}
+                className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900"
+              >
+                <span className="text-sm font-medium">
+                  {paymentItemName(item, locale)} · {payments(`kinds.${item.kind}`)}
+                  {item.active ? "" : ` · ${payments("itemInactive")}`}
+                </span>
+                <PaymentItemForm item={item} />
+              </li>
+            ))}
+          </ul>
+          <div className="rounded-2xl border border-dashed border-zinc-300 p-5 dark:border-zinc-700">
+            <h3 className="mb-3 text-sm font-medium">{payments("addItem")}</h3>
+            <PaymentItemForm />
           </div>
         </section>
       </main>
