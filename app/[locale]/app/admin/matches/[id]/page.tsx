@@ -9,7 +9,11 @@ import { MatchForm } from "@/components/admin/match-form";
 import { MatchRosterForm } from "@/components/admin/match-roster-form";
 import { MatchResultForm } from "@/components/admin/match-result-form";
 import { MatchPublishForm } from "@/components/admin/match-publish-form";
-import { MatchCancelForm, MatchRestoreForm } from "@/components/admin/match-cancel-form";
+import {
+  MatchCancelForm,
+  MatchPostponeForm,
+  MatchRestoreForm,
+} from "@/components/admin/match-cancel-form";
 import { SessionSoftDeleteForm } from "@/components/admin/session-soft-delete-form";
 import {
   SessionDeletedBadge,
@@ -24,6 +28,7 @@ import { getMatchForStaff, listMatchRosterForStaff } from "@/lib/org/match-queri
 import { listSessionRegistrations } from "@/lib/org/session-queries";
 import {
   cancelMatch,
+  postponeMatch,
   restoreMatch,
   setMatchPublished,
   setMatchResult,
@@ -68,6 +73,8 @@ export default async function AdminMatchDetailPage({ params }: AdminMatchDetailP
   ]);
   const score = formatMatchScore(match.publication.club_score, match.publication.opponent_score);
   const cancelled = match.publication.public_status === "cancelled";
+  const postponed = match.publication.public_status === "postponed";
+  const completed = match.publication.public_status === "completed";
   const isDeleted = Boolean(match.deleted_at);
   const updateAction = updateMatch.bind(null, match.id);
   const registeredIds = registrations
@@ -133,6 +140,10 @@ export default async function AdminMatchDetailPage({ params }: AdminMatchDetailP
           <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:bg-amber-950 dark:text-amber-100">
             {matchesT("cancelledBanner")}
           </p>
+        ) : postponed ? (
+          <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:bg-amber-950 dark:text-amber-100">
+            {matchesT("postponedBanner")}
+          </p>
         ) : null}
         {isDeleted ? null : (
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
@@ -144,6 +155,14 @@ export default async function AdminMatchDetailPage({ params }: AdminMatchDetailP
                   action={setMatchPublished.bind(null, match.id)}
                   isPublished={match.publication.is_published}
                 />
+                {postponed ? (
+                  <MatchRestoreForm action={restoreMatch.bind(null, match.id)} />
+                ) : completed ? null : (
+                  <MatchPostponeForm
+                    action={postponeMatch.bind(null, match.id)}
+                    confirmMessage={matchesT("postponeConfirm", { title: match.title })}
+                  />
+                )}
                 <MatchCancelForm
                   action={cancelMatch.bind(null, match.id)}
                   confirmMessage={matchesT("cancelConfirm", { title: match.title })}
@@ -173,7 +192,7 @@ export default async function AdminMatchDetailPage({ params }: AdminMatchDetailP
             />
           </section>
         )}
-        {isDeleted || cancelled ? null : (
+        {isDeleted || cancelled || postponed ? null : (
           <section className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
               {matchesT("resultTitle")}

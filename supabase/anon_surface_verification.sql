@@ -20,7 +20,16 @@ declare
   v_allowed_functions text[] := array[
     'get_published_match(p_session_id uuid)',
     'list_published_match_roster(p_session_id uuid)',
-    'list_published_matches()'
+    'list_published_matches()',
+    'site_api_version()',
+    'site_get_match(p_id uuid)',
+    'site_get_standings(p_season_id uuid, p_competition_id uuid)',
+    'site_list_clubs()',
+    'site_list_competitions()',
+    'site_list_match_roster(p_id uuid)',
+    'site_list_matches(p_season_id uuid, p_team_id uuid)',
+    'site_list_seasons()',
+    'site_list_venues()'
   ];
   v_bad text;
   v_denied boolean;

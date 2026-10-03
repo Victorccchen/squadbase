@@ -149,7 +149,7 @@ flowchart LR
 1. **資料庫只在 Squadbase repo 改。** 官網 repo 不放 migration，也不直接改資料表。官網需要的新資料表，由 Claude Code 在 Squadbase 開 PR。
 2. **官網只呼叫 `site_*` 開頭的 RPC。** 不直接讀任何資料表，也不呼叫 `admin_*`。官網上線前，Squadbase 現有的 `list_published_*` 不動，避免影響現有頁面。
 3. **公開 RPC 是兩邊的合約。** 只回傳明確列出的欄位，不用 `select *`。改回傳欄位時只能新增；要刪除或改名，先在官網改好再改 RPC。`site_api_version()` 回傳合約版本（從 `1` 開始），官網啟動時記錄下來。Squadbase 的 PR 動到 `site_*`，說明裡要標註「影響官網」。
-4. **anon 權限白名單。** Supabase 雲端預設會把新的資料表開放給 anon，Postgres 的新函式也預設可以被 PUBLIC 執行。所以每支新 migration 都要 `revoke all … from public, anon`，再明確 grant。另寫 `supabase/site_anon_surface_verification.sql`，列出所有 anon 可以執行的函式和讀取的資料表，結果必須等於白名單（`site_*`、`list_published_*`、`get_published_match`）。
+4. **anon 權限白名單。** Supabase 雲端預設會把新的資料表開放給 anon，Postgres 的新函式也預設可以被 PUBLIC 執行。所以每支新 migration 都要 `revoke all … from public, anon`，再明確 grant。另寫 `supabase/anon_surface_verification.sql`，列出所有 anon 可以執行的函式和讀取的資料表，結果必須等於白名單（`site_*`、`list_published_*`、`get_published_match`）。
 5. **官網只用 anon key，而且只在伺服器端用。** 官網的環境變數不用 `NEXT_PUBLIC_` 開頭，所有資料都在 Server Component 或 Route Handler 取得，瀏覽器不直接連 Supabase。官網不放 service role key。安全仍然靠 grant 和 RLS，不靠金鑰保密（Squadbase 前端本來就公開了 anon key）。
 6. **型別自動產生。** 官網的 `database.types.ts` 用 Supabase CLI 從資料庫產生，不從 Squadbase 手動複製；官網程式只使用包裝過的 `PublicApi` 型別。官網 CI 每晚用 staging 產生型別並跑 `tsc`，上線前再用正式環境比對一次。
 7. **快取。** 取資料出錯時要拋出例外，**不要把空結果寫進快取**（Squadbase 現在的 portal 會把 `[]` 快取 60 秒）。時間到期當作保底：比賽 60 秒，其他資料 1 小時。
@@ -626,7 +626,7 @@ flowchart TD
 | 8 | **沒有輸入比分的時間**（v4 新增） | `match_publications` 只有 `updated_at`、`published_at` | 新增 `result_entered_at`，由 `admin_set_match_result` 寫入 |
 | 9 | 快取無法依存檔失效 | `lib/site/portal-match-query.ts` 的 `unstable_cache` 沒有 tag，只靠 60 秒到期；RPC 出錯時回傳 `[]` 也會被快取 | 公開頁面搬到官網 repo 後，由官網自己的快取加 tag；Squadbase 後台存檔後呼叫官網 revalidate（系統架構規則 7、8，13-C2） |
 | 10 | 權限太粗 | 比賽和新聞的編輯只有 admin；`app_role` 目前有 `parent, coach, admin, player, director` | 新增 `media`（5.6），**獨立的 migration** |
-| 11 | **anon 預設權限**（v4 新增） | 現有資料表都有明確 revoke；但雲端預設 `auto_expose_new_tables = true`，新函式也預設可以被 PUBLIC 執行 | 每支新 migration 都要 revoke 和明確 grant；新增 `site_anon_surface_verification.sql`（系統架構規則 4） |
+| 11 | **anon 預設權限**（v4 新增） | 現有資料表都有明確 revoke；但雲端預設 `auto_expose_new_tables = true`，新函式也預設可以被 PUBLIC 執行 | 每支新 migration 都要 revoke 和明確 grant；新增 `anon_surface_verification.sql`（系統架構規則 4） |
 | 12 | **PWA 會被轉到官網**（v4 新增） | `app/manifest.ts`：`start_url: "/"` | 轉址前先把 `start_url` 改成 `/zh-Hant/app`（系統架構規則 12） |
 
 ### 8.2 要新增的資料
@@ -743,7 +743,7 @@ flowchart TD
 | 6 | **CTFA 的延期公告方式** | 延期通常在哪裡公告、多早公告？（G10） | Grok-Bot 資料蒐集 |
 | 7 | **行事曆訂閱** | iPhone 行事曆、Google 日曆訂閱 `.ics` 後，改時間多久會同步 | Claude Code（preview 環境） |
 | 8 | **分享圖** | 在 LINE、Facebook 貼比賽頁網址，預覽圖是否正確；改比分後新網址是否更新 | Claude Code |
-| 9 | **anon 權限稽核**（v4） | 在 staging 和正式環境執行 `site_anon_surface_verification.sql`，結果等於白名單 | Claude Code |
+| 9 | **anon 權限稽核**（v4） | 在 staging 和正式環境執行 `anon_surface_verification.sql`，結果等於白名單 | Claude Code |
 | 10 | **名單隱私**（v4） | 用 anon 呼叫名單 RPC：U8–U12 的比賽回傳空集合；一線隊比賽不含未滿 18 歲的球員 | Claude Code |
 | 11 | **PWA 啟動**（v4） | 改 `start_url` 後，已安裝的 PWA 從手機桌面打開會進 `/app`，不會跑到官網 | Claude Code＋Victor 實機 |
 | 12 | **無障礙與效能**（v4） | Lighthouse 手機版：效能 ≥ 90、無障礙 ≥ 95；鍵盤操作走完首頁和比賽頁 | Claude Code |
@@ -924,7 +924,7 @@ flowchart TD
    - `site_list_first_team()`、`site_get_player(p_id)`、`site_list_staff()`
    - `site_list_news(p_category, p_limit, p_before)`、`site_get_news(p_slug)`
    - `site_list_partners()`、`site_list_clubs()`、`site_list_venues()`、`site_get_standings(p_season_id, p_competition_id)`
-   每支都用明確欄位，在 SQL 層過濾未成年和未同意的人，`crest_path` 只在有使用許可時回傳。另附 `site_anon_surface_verification.sql`。
+   每支都用明確欄位，在 SQL 層過濾未成年和未同意的人，`crest_path` 只在有使用許可時回傳。另附 `anon_surface_verification.sql`。
 3. **名單隱私修正**（可以先做）：`list_published_match_roster` 限制 senior／reserve，並依比賽日年齡過濾；附驗證 SQL（U8–U12 比賽回傳空集合）。
 4. **一線隊資料與比賽長度**：建立一線隊的隊伍；一線隊比賽預設 150 分（建立、批次建立、網址匯入）；回填已建立的一線隊比賽。
 5. **網址解析器與 oEmbed 檢查**：完整的接受和拒絕清單，含測試案例（`si=`、`t=`、`feature=share`、`m.youtube.com`、`/live/`、`/shorts/`、帶 `list=` 的網址）；oEmbed 檢查放在 Server Action 還是 API route，以及 timeout 和重試設定。

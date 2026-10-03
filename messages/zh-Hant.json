@@ -555,6 +555,8 @@
       "matchKindRequired": "公開比賽必須是盃賽、聯賽或友誼賽。",
       "matchNotFound": "找不到這場比賽。",
       "matchCancelled": "此場比賽已取消。請先恢復，才能發布或登錄賽果。",
+      "matchPostponed": "此場比賽已延期。請先恢復為已排程，才能登錄賽果。",
+      "matchCompleted": "此場比賽已完賽，不能延期。",
       "matchRosterPlayerInvalid": "每位勾選的球員都必須是此隊伍的在籍成員。",
       "tooManyMatches": "一次最多建立 40 場。",
       "matchKickoffRequired": "請至少填一個開賽時間。",
@@ -992,8 +994,11 @@
     "saveResult": "儲存賽果",
     "cancelMatch": "取消比賽",
     "restoreMatch": "恢復為已排程",
-    "cancelConfirm": "取消「{title}」？公開賽程將不再顯示。訓練場次不會被刪除。",
-    "cancelledBanner": "此場比賽已取消，不會出現在公開賽程。恢復後才能再編輯與發布。",
+    "cancelConfirm": "取消「{title}」？官網賽程會標示為已取消，Squadbase 公開賽程不再顯示。訓練場次不會被刪除。",
+    "cancelledBanner": "此場比賽已取消。官網賽程標示為已取消，Squadbase 公開賽程不顯示。恢復後才能變更發布狀態與登錄賽果。",
+    "postponeMatch": "延期（日期待定）",
+    "postponeConfirm": "將「{title}」標示為延期？官網賽程會顯示「延期」，直播與影片連結暫不顯示。新日期確定後，先改開賽時間，再恢復為已排程。",
+    "postponedBanner": "此場比賽已延期（日期待定）。新日期確定後，先修改開賽時間，再恢復為已排程。",
     "softDeleteMatch": "刪除此場比賽",
     "softDeleteMatchConfirm": "確定刪除「{title}」？會從後台與家長預設列表、公開賽程消失。這與「取消比賽」不同。名單與紀錄會保留。",
     "matchDeleted": "已刪除",
@@ -1028,6 +1033,7 @@
     },
     "statuses": {
       "scheduled": "已排程",
+      "postponed": "延期",
       "completed": "已完賽",
       "cancelled": "已取消"
     }

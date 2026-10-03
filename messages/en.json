@@ -555,6 +555,8 @@
       "matchKindRequired": "Public matches must be cup, league, or friendly.",
       "matchNotFound": "That match was not found.",
       "matchCancelled": "This match is cancelled. Restore it before publishing or setting a result.",
+      "matchPostponed": "This match is postponed. Restore it to scheduled before setting a result.",
+      "matchCompleted": "This match is completed and cannot be postponed.",
       "matchRosterPlayerInvalid": "Every selected player must have an active membership on this team.",
       "tooManyMatches": "Create at most 40 matches at once.",
       "matchKickoffRequired": "Add at least one kickoff time.",
@@ -992,8 +994,11 @@
     "saveResult": "Save result",
     "cancelMatch": "Cancel match",
     "restoreMatch": "Restore to scheduled",
-    "cancelConfirm": "Cancel “{title}”? It will disappear from the public schedule. The training session is not deleted.",
-    "cancelledBanner": "This match is cancelled. It is hidden from the public schedule. Restore it to edit and publish again.",
+    "cancelConfirm": "Cancel “{title}”? The official site shows it as cancelled; the Squadbase public schedule no longer lists it. The training session is not deleted.",
+    "cancelledBanner": "This match is cancelled. The official site shows it as cancelled; the Squadbase public schedule hides it. Restore it to change publishing or set a result.",
+    "postponeMatch": "Postpone (date TBC)",
+    "postponeConfirm": "Mark “{title}” as postponed? The official site shows it as postponed and hides stream and video links. When the new date is set, change the kickoff time, then restore it to scheduled.",
+    "postponedBanner": "This match is postponed (date TBC). When the new date is set, change the kickoff time, then restore it to scheduled.",
     "softDeleteMatch": "Delete this match",
     "softDeleteMatchConfirm": "Delete “{title}”? It leaves the default admin and parent lists and the public schedule. This is not the same as Cancel. Roster and history are kept.",
     "matchDeleted": "Deleted",
@@ -1028,6 +1033,7 @@
     },
     "statuses": {
       "scheduled": "Scheduled",
+      "postponed": "Postponed",
       "completed": "Completed",
       "cancelled": "Cancelled"
     }

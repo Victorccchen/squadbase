@@ -88,7 +88,12 @@ function copy(): ReportCopy {
     },
     actorRoles: { parent: "Parent", coach: "Coach", admin: "Admin", player: "Player" },
     actorUnknown: "—",
-    publicStatus: { scheduled: "Scheduled", completed: "Completed", cancelled: "Cancelled" },
+    publicStatus: {
+      scheduled: "Scheduled",
+      postponed: "Postponed",
+      completed: "Completed",
+      cancelled: "Cancelled",
+    },
     published: "Published",
     unpublished: "Unpublished",
     yes: "Yes",
