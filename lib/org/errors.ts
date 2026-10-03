@@ -118,6 +118,8 @@ export type OrgErrorKey =
   | "sessionKindUseMatches"
   | "matchNotFound"
   | "matchCancelled"
+  | "matchPostponed"
+  | "matchCompleted"
   | "matchRosterPlayerInvalid"
   | "tooManyMatches"
   | "matchKickoffRequired"

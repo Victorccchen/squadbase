@@ -139,6 +139,7 @@ describe("isPubliclyListedMatch", () => {
 
   it("hides cancelled matches instead of listing them (T5B-5)", () => {
     assert.equal(isPubliclyListedMatch({ ...base, publicStatus: "cancelled" }), false);
+    assert.equal(isPubliclyListedMatch({ ...base, publicStatus: "postponed" }), false);
   });
 
   it("hides inactive or soft-deleted sessions", () => {
@@ -269,6 +270,8 @@ describe("matchRpcErrorKey", () => {
     assert.equal(matchRpcErrorKey({ message: "kickoff required" }), "matchKickoffRequired");
     assert.equal(matchRpcErrorKey({ message: "too many matches" }), "tooManyMatches");
     assert.equal(matchRpcErrorKey({ message: "match is cancelled" }), "matchCancelled");
+    assert.equal(matchRpcErrorKey({ message: "match is postponed" }), "matchPostponed");
+    assert.equal(matchRpcErrorKey({ message: "match is completed" }), "matchCompleted");
     assert.equal(
       matchRpcErrorKey({ message: "match roster player is not on this team" }),
       "matchRosterPlayerInvalid",

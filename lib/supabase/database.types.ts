@@ -64,7 +64,8 @@ export type CreditLedgerEntryType =
   | "opening_balance";
 export type LeaveRequestStatus = "pending" | "approved" | "rejected";
 export type MatchSide = "home" | "away";
-export type MatchPublicStatus = "scheduled" | "completed" | "cancelled";
+export type MatchPublicStatus = "scheduled" | "postponed" | "completed" | "cancelled";
+export type MatchEmbedCheckStatus = "unknown" | "ok" | "blocked" | "not_found";
 export type NoticeTemplateKeyDb =
   | "regular_training_signup"
   | "special_training_signup"
@@ -532,6 +533,24 @@ export type MatchPublication = {
   club_score: number | null;
   opponent_score: number | null;
   result_note: string | null;
+  result_entered_at: string | null;
+  opponent_club_id: string | null;
+  public_venue_id: string | null;
+  season_id: string | null;
+  competition_id: string | null;
+  round_no: number | null;
+  round_label: string | null;
+  live_stream_url: string | null;
+  live_video_id: string | null;
+  replay_url: string | null;
+  replay_video_id: string | null;
+  highlights_url: string | null;
+  highlights_video_id: string | null;
+  embed_enabled: boolean;
+  embed_check_status: MatchEmbedCheckStatus;
+  embed_checked_at: string | null;
+  video_title: string | null;
+  live_window_before_min: number | null;
   published_at: string | null;
   created_at: string;
   updated_at: string;
@@ -2132,6 +2151,38 @@ export type Database = {
       };
       admin_restore_match: {
         Args: { p_session_id: string };
+        Returns: string;
+      };
+      admin_postpone_match: {
+        Args: { p_session_id: string };
+        Returns: string;
+      };
+      admin_set_match_broadcast: {
+        Args: {
+          p_session_id: string;
+          p_live_stream_url: string | null;
+          p_live_video_id: string | null;
+          p_replay_url: string | null;
+          p_replay_video_id: string | null;
+          p_highlights_url: string | null;
+          p_highlights_video_id: string | null;
+          p_embed_enabled: boolean;
+          p_embed_check_status: MatchEmbedCheckStatus;
+          p_video_title: string | null;
+          p_live_window_before_min: number | null;
+        };
+        Returns: string;
+      };
+      admin_set_match_listing: {
+        Args: {
+          p_session_id: string;
+          p_opponent_club_id: string | null;
+          p_public_venue_id: string | null;
+          p_season_id: string | null;
+          p_competition_id: string | null;
+          p_round_no: number | null;
+          p_round_label: string | null;
+        };
         Returns: string;
       };
       admin_set_match_roster: {

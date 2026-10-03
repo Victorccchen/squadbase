@@ -555,6 +555,8 @@
       "matchKindRequired": "公開試合はカップ、リーグ、または親善試合である必要があります。",
       "matchNotFound": "その試合は見つかりません。",
       "matchCancelled": "この試合は中止です。公開や結果入力の前に予定へ戻してください。",
+      "matchPostponed": "この試合は延期中です。結果入力の前に予定へ戻してください。",
+      "matchCompleted": "この試合は終了しているため延期できません。",
       "matchRosterPlayerInvalid": "選んだ選手はすべてこのチームの在籍メンバーである必要があります。",
       "tooManyMatches": "一度に作成できるのは最大40試合です。",
       "matchKickoffRequired": "キックオフを1つ以上入力してください。",
@@ -992,8 +994,11 @@
     "saveResult": "結果を保存",
     "cancelMatch": "試合を中止",
     "restoreMatch": "予定に戻す",
-    "cancelConfirm": "「{title}」を中止しますか？公開日程から消えます。練習セッションは削除されません。",
-    "cancelledBanner": "この試合は中止され、公開日程には出ません。戻してから再編集・公開できます。",
+    "cancelConfirm": "「{title}」を中止しますか？公式サイトの日程には「中止」と表示され、Squadbase の公開日程からは消えます。練習セッションは削除されません。",
+    "cancelledBanner": "この試合は中止です。公式サイトでは「中止」と表示され、Squadbase の公開日程には出ません。予定に戻すと公開設定の変更と結果入力ができます。",
+    "postponeMatch": "延期（日程未定）",
+    "postponeConfirm": "「{title}」を延期にしますか？公式サイトの日程に「延期」と表示され、配信・動画リンクは表示されなくなります。新しい日程が決まったら開始時刻を変更し、予定に戻してください。",
+    "postponedBanner": "この試合は延期中です（日程未定）。新しい日程が決まったら開始時刻を変更し、予定に戻してください。",
     "softDeleteMatch": "この試合を削除",
     "softDeleteMatchConfirm": "「{title}」を削除しますか？管理画面と保護者の通常リスト、公開日程から消えます。試合中止とは別です。メンバーと履歴は残ります。",
     "matchDeleted": "削除済み",
@@ -1028,6 +1033,7 @@
     },
     "statuses": {
       "scheduled": "予定",
+      "postponed": "延期",
       "completed": "終了",
       "cancelled": "中止"
     }

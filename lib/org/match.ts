@@ -17,7 +17,7 @@ import {
 export const MATCH_SIDES = ["home", "away"] as const;
 export type MatchSide = (typeof MATCH_SIDES)[number];
 
-export const MATCH_PUBLIC_STATUSES = ["scheduled", "completed", "cancelled"] as const;
+export const MATCH_PUBLIC_STATUSES = ["scheduled", "postponed", "completed", "cancelled"] as const;
 export type MatchPublicStatus = (typeof MATCH_PUBLIC_STATUSES)[number];
 
 export const MATCH_KINDS = ["cup", "league", "friendly"] as const;
@@ -296,6 +296,8 @@ export type MatchRpcErrorKey =
   | "invalidMatchSide"
   | "invalidMatchScore"
   | "matchCancelled"
+  | "matchPostponed"
+  | "matchCompleted"
   | "matchRosterPlayerInvalid"
   | "missingTitle"
   | "endsBeforeStart"
@@ -333,6 +335,12 @@ export function matchRpcErrorKey(error: PgLikeError): MatchRpcErrorKey {
   }
   if (text.includes("match is cancelled")) {
     return "matchCancelled";
+  }
+  if (text.includes("match is postponed")) {
+    return "matchPostponed";
+  }
+  if (text.includes("match is completed")) {
+    return "matchCompleted";
   }
   if (text.includes("match roster player is not on this team")) {
     return "matchRosterPlayerInvalid";

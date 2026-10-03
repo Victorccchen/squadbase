@@ -2,6 +2,7 @@ import type { MatchPublicStatus } from "@/lib/supabase/database.types";
 
 const STATUS_CLASS: Record<MatchPublicStatus, string> = {
   scheduled: "bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-100",
+  postponed: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-100",
   completed: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100",
   cancelled: "bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100",
 };

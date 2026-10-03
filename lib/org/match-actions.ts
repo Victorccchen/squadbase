@@ -495,6 +495,30 @@ export async function cancelMatch(
   return ok();
 }
 
+export async function postponeMatch(
+  sessionId: string,
+  _prev: OrgActionState,
+  formData: FormData,
+): Promise<OrgActionState> {
+  const actor = await requireAdminActor();
+  if (!actor.ok) {
+    return fail(actor.errorKey);
+  }
+
+  const { error } = await actor.supabase.rpc("admin_postpone_match", {
+    p_session_id: sessionId,
+  });
+
+  if (error) {
+    console.error("postponeMatch", error.message);
+    return fail(matchRpcErrorKey(error));
+  }
+
+  revalidateMatches();
+  redirectAdmin(`/app/admin/matches/${sessionId}`, formData);
+  return ok();
+}
+
 export async function restoreMatch(
   sessionId: string,
   _prev: OrgActionState,
