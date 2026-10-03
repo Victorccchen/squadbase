@@ -1,8 +1,15 @@
+import type { Metadata } from "next";
 import { SiteHeader } from "@/components/site-header";
 import { AppNav } from "@/components/app-nav";
 import { ServiceWorkerRegister } from "@/components/push/service-worker-register";
 import { loadSignedInAccount } from "@/lib/auth/session";
 import { canAccessAdmin, canAccessRoster, canHandleCash } from "@/lib/auth/roles";
+import { NO_INDEX_ROBOTS } from "@/lib/site/robots";
+
+// Logged-in area: never indexed (pages below inherit this).
+export const metadata: Metadata = {
+  robots: NO_INDEX_ROBOTS,
+};
 
 type AppLayoutProps = {
   children: React.ReactNode;

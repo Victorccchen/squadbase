@@ -6,7 +6,11 @@ import { tallyRegisteredCounts } from "@/lib/org/registration-counts";
 import type { SessionWindowProbe } from "@/lib/org/session-calendar";
 import { filterDefaultAdminList } from "@/lib/org/soft-delete";
 import type {
+  Club,
+  Competition,
   MatchPublication,
+  PublicVenue,
+  Season,
   MatchRosterRow,
   Player,
   PublishedMatch,
@@ -305,4 +309,42 @@ export async function listMatchRosterForStaff(sessionId: string): Promise<MatchR
       player: one(players),
     };
   });
+}
+
+export type MatchListingOptions = {
+  clubs: Pick<Club, "id" | "name_zh" | "short_zh" | "is_self">[];
+  venues: Pick<PublicVenue, "id" | "name_zh">[];
+  seasons: Pick<Season, "id" | "label" | "is_current">[];
+  competitions: Pick<Competition, "id" | "name_zh" | "short">[];
+};
+
+/** Reference rows for the admin listing selects (admin-only RLS on these tables). */
+export async function listMatchListingOptions(): Promise<MatchListingOptions> {
+  const empty: MatchListingOptions = { clubs: [], venues: [], seasons: [], competitions: [] };
+  if (!getPublicSupabaseEnv().isConfigured) {
+    return empty;
+  }
+  const supabase = await createClient();
+  const [clubs, venues, seasons, competitions] = await Promise.all([
+    supabase.from("clubs").select("id, name_zh, short_zh, is_self").order("is_self", { ascending: false }).order("name_zh"),
+    supabase.from("public_venues").select("id, name_zh").order("name_zh"),
+    supabase.from("seasons").select("id, label, is_current").order("starts_on", { ascending: false }),
+    supabase.from("competitions").select("id, name_zh, short").order("name_zh"),
+  ]);
+  for (const [label, result] of [
+    ["clubs", clubs],
+    ["public_venues", venues],
+    ["seasons", seasons],
+    ["competitions", competitions],
+  ] as const) {
+    if (result.error) {
+      console.error("listMatchListingOptions", label, result.error.message);
+    }
+  }
+  return {
+    clubs: clubs.data ?? [],
+    venues: venues.data ?? [],
+    seasons: seasons.data ?? [],
+    competitions: competitions.data ?? [],
+  };
 }

@@ -634,7 +634,10 @@
       "paperCardRemainingInvalid": "剩餘堂數需介於 0 到方案堂數之間。",
       "paperCardFutureDate": "已使用日期不能是未來的日期。",
       "paperCardTooManyDates": "已使用日期最多 30 格。",
-      "paperCardPhotosRequired": "請至少拍一張卡片照片（背面），或勾選「沒有照片，直接手動輸入」。"
+      "paperCardPhotosRequired": "請至少拍一張卡片照片（背面），或勾選「沒有照片，直接手動輸入」。",
+      "invalidVideoUrl": "請貼單場影片的 YouTube 網址（watch、youtu.be、/live/、/embed/、/shorts/）。不接受頻道、播放清單或其他網站。",
+      "invalidLiveWindow": "直播前置分鐘數要是 0 到 180 的整數。",
+      "invalidListing": "對手、場地、賽季或賽事資料無效，或輪次不是 1 到 99。請重新整理後再試一次。"
     },
     "crossSquad": "跨上梯隊",
     "crossSquadNone": "不跨上",
@@ -1036,7 +1039,8 @@
       "postponed": "延期",
       "completed": "已完賽",
       "cancelled": "已取消"
-    }
+    },
+    "durationDefaultHint": "沒填結束時間或長度時，一線隊和預備隊預設 150 分鐘（含中場和傷停緩衝），梯隊預設 90 分鐘。"
   },
   "assessments": {
     "title": "能力評量",
@@ -1937,5 +1941,52 @@
     "recentChecks": "最近的比對",
     "checksEmptyTitle": "還沒有比對紀錄",
     "checksEmptyBody": "每週挑幾位孩子的卡片比對一次即可。"
+  },
+  "matchBroadcast": {
+    "title": "直播與影片",
+    "hint": "貼上 CTFA TV 的單場 YouTube 網址。只存影片 ID；存檔時會向 YouTube 檢查能不能嵌入，結果只是提示，不影響存檔。",
+    "liveUrl": "直播網址",
+    "replayUrl": "重播網址（選填，沒填時官網沿用直播）",
+    "highlightsUrl": "精華網址（選填）",
+    "urlPlaceholder": "https://www.youtube.com/watch?v=…",
+    "embedEnabled": "在官網嵌入播放器（關掉時只顯示「到 YouTube 觀看」）",
+    "videoTitle": "影片標題（選填，空白時用 YouTube 的標題）",
+    "liveWindow": "直播前置分鐘數（選填，0 到 180；空白時用官網預設）",
+    "save": "儲存直播與影片",
+    "storedStatus": "嵌入檢查：",
+    "checkedAt": "檢查時間 {time}",
+    "notChecked": "尚未檢查",
+    "checksTitle": "這次的檢查結果",
+    "noVideos": "沒有影片網址，已清除直播與影片。",
+    "channelHint": "預期是 CTFA TV 頻道的影片。請看縮圖和標題，確認是這一場比賽。",
+    "hiddenWhileInactive": "延期或取消中的比賽，官網不會顯示直播和影片。改回排定後才會顯示。",
+    "thumbnailAlt": "{field}縮圖",
+    "openOnYouTube": "在 YouTube 開啟",
+    "fields": {
+      "live": "直播",
+      "replay": "重播",
+      "highlights": "精華"
+    },
+    "statuses": {
+      "ok": "可以嵌入",
+      "blocked": "不允許嵌入",
+      "not_found": "找不到影片（私人或尚未公開）",
+      "unknown": "無法確認"
+    }
+  },
+  "matchListing": {
+    "title": "官網賽程資訊",
+    "hint": "對手、場地、賽季、賽事和輪次，給官網的賽程和比賽頁使用。這裡的場地不是 QR 報到場地。",
+    "emptyRefs": "還沒有對手隊伍或公開場地的資料。請先匯入 2026/27 資料（docs/futuro-data-import.md）。",
+    "opponentClub": "對手隊伍",
+    "publicVenue": "比賽場地",
+    "season": "賽季",
+    "competition": "賽事",
+    "roundNo": "輪次",
+    "roundLabel": "輪次名稱（選填）",
+    "roundLabelPlaceholder": "例：準決賽",
+    "none": "未設定",
+    "currentSeason": "{label}（目前賽季）",
+    "save": "儲存官網賽程資訊"
   }
 }

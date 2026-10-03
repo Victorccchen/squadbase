@@ -17,7 +17,44 @@ import {
   publicOpponentLabel,
   publicPayloadHasForbiddenKeys,
   isMissingRpcFunction,
+  defaultMatchDurationMinutes,
+  isFirstTeamAgeBand,
 } from "./match.ts";
+
+describe("defaultMatchDurationMinutes", () => {
+  it("uses 150 minutes for senior and reserve teams", () => {
+    assert.equal(defaultMatchDurationMinutes("senior"), 150);
+    assert.equal(defaultMatchDurationMinutes("reserve"), 150);
+    assert.equal(isFirstTeamAgeBand("senior"), true);
+  });
+
+  it("keeps 90 minutes for youth and unknown teams", () => {
+    for (const band of ["U8", "U10", "U12", "U15", "U18", "", null, undefined, "SENIOR"]) {
+      assert.equal(defaultMatchDurationMinutes(band), 90, String(band));
+      assert.equal(isFirstTeamAgeBand(band), false);
+    }
+  });
+
+  it("feeds planBulkMatchCreates when duration is blank", () => {
+    const planned = planBulkMatchCreates({
+      kickoffLocals: ["2026-10-11T15:30"],
+      durationMinutes: "",
+      defaultDurationMinutes: defaultMatchDurationMinutes("senior"),
+    });
+    assert.equal(planned.ok, true);
+    if (!planned.ok) return;
+    assert.equal(Date.parse(planned.rows[0].endsAt) - Date.parse(planned.rows[0].startsAt), 150 * 60_000);
+
+    const explicit = planBulkMatchCreates({
+      kickoffLocals: ["2026-10-11T15:30"],
+      durationMinutes: "100",
+      defaultDurationMinutes: 150,
+    });
+    assert.equal(explicit.ok, true);
+    if (!explicit.ok) return;
+    assert.equal(Date.parse(explicit.rows[0].endsAt) - Date.parse(explicit.rows[0].startsAt), 100 * 60_000);
+  });
+});
 
 describe("parseMatchOpponent / publicOpponentLabel", () => {
   it("treats blank opponent as null on create/update", () => {

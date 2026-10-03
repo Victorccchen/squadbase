@@ -24,6 +24,13 @@ export const MATCH_KINDS = ["cup", "league", "friendly"] as const;
 export type MatchKind = (typeof MATCH_KINDS)[number];
 
 export const DEFAULT_MATCH_DURATION_MINUTES = 90;
+/**
+ * First-team (senior/reserve) default: 90 + 15 half-time + 45 buffer for
+ * stoppage and delays, so the official site's live window is not cut short
+ * (spec v4 §5.1). Youth matches keep 90.
+ */
+export const FIRST_TEAM_MATCH_DURATION_MINUTES = 150;
+export const FIRST_TEAM_AGE_BANDS = ["senior", "reserve"] as const;
 export const MAX_MATCH_OPPONENT = 200;
 export const MAX_MATCH_RESULT_NOTE = 200;
 export const MAX_MATCH_SCORE = 99;
@@ -73,6 +80,17 @@ export const FORBIDDEN_PUBLIC_MATCH_KEYS = [
   "photo_updated_at",
   "id_pdf_path",
 ] as const;
+
+export function isFirstTeamAgeBand(ageBand: string | null | undefined): boolean {
+  return (FIRST_TEAM_AGE_BANDS as readonly string[]).includes(ageBand ?? "");
+}
+
+/** Default match length when the admin gives no end time or duration. */
+export function defaultMatchDurationMinutes(ageBand: string | null | undefined): number {
+  return isFirstTeamAgeBand(ageBand)
+    ? FIRST_TEAM_MATCH_DURATION_MINUTES
+    : DEFAULT_MATCH_DURATION_MINUTES;
+}
 
 export function isMatchSide(value: string): value is MatchSide {
   return (MATCH_SIDES as readonly string[]).includes(value);
@@ -132,6 +150,8 @@ export type BulkMatchPlanErrorKey =
 export function planBulkMatchCreates(input: {
   kickoffLocals: readonly string[];
   durationMinutes?: string | number | null;
+  /** Used when durationMinutes is blank; see defaultMatchDurationMinutes. */
+  defaultDurationMinutes?: number;
 }):
   | { ok: true; rows: BulkMatchKickoff[] }
   | { ok: false; errorKey: BulkMatchPlanErrorKey } {
@@ -143,7 +163,7 @@ export function planBulkMatchCreates(input: {
     return { ok: false, errorKey: "tooManyMatches" };
   }
 
-  let duration = DEFAULT_MATCH_DURATION_MINUTES;
+  let duration = input.defaultDurationMinutes ?? DEFAULT_MATCH_DURATION_MINUTES;
   if (input.durationMinutes != null && String(input.durationMinutes).trim() !== "") {
     const parsed =
       typeof input.durationMinutes === "number"

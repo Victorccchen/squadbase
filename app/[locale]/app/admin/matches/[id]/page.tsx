@@ -9,6 +9,8 @@ import { MatchForm } from "@/components/admin/match-form";
 import { MatchRosterForm } from "@/components/admin/match-roster-form";
 import { MatchResultForm } from "@/components/admin/match-result-form";
 import { MatchPublishForm } from "@/components/admin/match-publish-form";
+import { MatchBroadcastForm } from "@/components/admin/match-broadcast-form";
+import { MatchListingForm } from "@/components/admin/match-listing-form";
 import {
   MatchCancelForm,
   MatchPostponeForm,
@@ -24,12 +26,18 @@ import { MatchSideBadge, MatchStatusBadge } from "@/components/matches/match-sta
 import { canRenderAdminPage } from "@/lib/auth/admin-page";
 import { suggestedNoticeAudience, suggestedNoticeTemplate } from "@/lib/credits/notice-templates";
 import { listTeams } from "@/lib/org/queries";
-import { getMatchForStaff, listMatchRosterForStaff } from "@/lib/org/match-queries";
+import {
+  getMatchForStaff,
+  listMatchListingOptions,
+  listMatchRosterForStaff,
+} from "@/lib/org/match-queries";
 import { listSessionRegistrations } from "@/lib/org/session-queries";
 import {
   cancelMatch,
   postponeMatch,
   restoreMatch,
+  setMatchBroadcast,
+  setMatchListing,
   setMatchPublished,
   setMatchResult,
   setMatchRoster,
@@ -38,7 +46,7 @@ import {
 } from "@/lib/org/match-actions";
 import { listActiveRosterForTeam } from "@/lib/credits/queries";
 import { formatMatchScore } from "@/lib/org/match";
-import { formatClubDateTimeRange } from "@/lib/org/session-time";
+import { formatClubDateTime, formatClubDateTimeRange } from "@/lib/org/session-time";
 import { ReportExportButtons } from "@/components/admin/report-export-buttons";
 import { secondaryButtonClassName } from "@/lib/ui";
 
@@ -65,11 +73,14 @@ export default async function AdminMatchDetailPage({ params }: AdminMatchDetailP
   const org = await getTranslations("org");
   const common = await getTranslations("common");
   const locale = await getLocale();
-  const [teams, roster, teamRoster, registrations] = await Promise.all([
+  const broadcastT = await getTranslations("matchBroadcast");
+  const listingT = await getTranslations("matchListing");
+  const [teams, roster, teamRoster, registrations, listingOptions] = await Promise.all([
     listTeams({ kind: "competition_team" }),
     listMatchRosterForStaff(match.id),
     match.team_id ? listActiveRosterForTeam(match.team_id) : Promise.resolve([]),
     listSessionRegistrations(match.id),
+    listMatchListingOptions(),
   ]);
   const score = formatMatchScore(match.publication.club_score, match.publication.opponent_score);
   const cancelled = match.publication.public_status === "cancelled";
@@ -189,6 +200,39 @@ export default async function AdminMatchDetailPage({ params }: AdminMatchDetailP
               session={match}
               publication={match.publication}
               submitLabel={t("save")}
+            />
+          </section>
+        )}
+        {isDeleted ? null : (
+          <section className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+              {listingT("title")}
+            </h2>
+            <MatchListingForm
+              action={setMatchListing.bind(null, match.id)}
+              options={listingOptions}
+              publication={match.publication}
+            />
+          </section>
+        )}
+        {isDeleted ? null : (
+          <section className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+              {broadcastT("title")}
+            </h2>
+            {cancelled || postponed ? (
+              <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">
+                {broadcastT("hiddenWhileInactive")}
+              </p>
+            ) : null}
+            <MatchBroadcastForm
+              action={setMatchBroadcast.bind(null, match.id)}
+              publication={match.publication}
+              checkedAtLabel={
+                match.publication.embed_checked_at
+                  ? formatClubDateTime(match.publication.embed_checked_at, locale)
+                  : null
+              }
             />
           </section>
         )}

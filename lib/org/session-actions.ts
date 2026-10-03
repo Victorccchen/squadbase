@@ -36,6 +36,7 @@ import {
   parseWeekdays,
 } from "@/lib/org/session-recurrence";
 import { isMatchKind } from "@/lib/org/match";
+import { notifySiteMatchesChanged } from "@/lib/site/revalidate-notify";
 import { type OrgActionState, type OrgErrorKey, type BulkRsvpState, type TeamCreateRowResult } from "@/lib/org/errors";
 import { decideMultiTeamCreate, parseSelectedTeamIds } from "@/lib/org/multi-team-create";
 import { isTeamKindAllowedForSessionKind } from "@/lib/org/squad-team";
@@ -65,6 +66,21 @@ function ok(): OrgActionState {
 
 function localeFromForm(formData: FormData) {
   return parseAppLocale(readString(formData, "locale"));
+}
+
+/** Status or soft-delete changes on a match session also change the official site. */
+async function notifySiteIfMatchSession(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  sessionId: string,
+) {
+  const { data } = await supabase
+    .from("training_sessions")
+    .select("kind")
+    .eq("id", sessionId)
+    .maybeSingle();
+  if (data && isMatchKind(data.kind)) {
+    notifySiteMatchesChanged([sessionId]);
+  }
 }
 
 function revalidateSessions() {
@@ -458,6 +474,7 @@ export async function setSessionStatus(
     return fail("sessionNotFound");
   }
 
+  await notifySiteIfMatchSession(actor.supabase, sessionId);
   revalidateSessions();
   if (readString(formData, "next") === "list") {
     redirectAdmin("/app/admin/sessions", formData);
@@ -486,6 +503,7 @@ export async function softDeleteSession(
     return fail(sessionRpcErrorKey(error));
   }
 
+  await notifySiteIfMatchSession(actor.supabase, sessionId);
   revalidateSessions();
   if (readString(formData, "next") === "list") {
     redirectAdmin("/app/admin/sessions", formData);

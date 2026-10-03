@@ -14,7 +14,7 @@ import type { OrgErrorKey } from "./errors.ts";
 import type { ImportTeam } from "./import-validate.ts";
 import { isCompetitionTeam } from "./squad-team.ts";
 import {
-  DEFAULT_MATCH_DURATION_MINUTES,
+  defaultMatchDurationMinutes,
   parseMatchOpponent,
   type MatchSide,
 } from "./match.ts";
@@ -140,7 +140,10 @@ function buildDraft(input: {
   if (!title) {
     errorKeys.push("missingTitle");
   }
-  const endsAt = addMinutesToOffsetIso(input.startsAt, DEFAULT_MATCH_DURATION_MINUTES);
+  const endsAt = addMinutesToOffsetIso(
+    input.startsAt,
+    defaultMatchDurationMinutes(input.team.age_band),
+  );
   if (!endsAt || !isEndsAfterStart(input.startsAt, endsAt)) {
     errorKeys.push("invalidSessionTime");
   }

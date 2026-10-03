@@ -634,7 +634,10 @@
       "paperCardRemainingInvalid": "残り回数は0からプランの回数までです。",
       "paperCardFutureDate": "使用日に未来の日付は使えません。",
       "paperCardTooManyDates": "使用日は最大30マスです。",
-      "paperCardPhotosRequired": "カードの写真（裏面）を1枚以上撮るか、「写真なしで手入力」を選んでください。"
+      "paperCardPhotosRequired": "カードの写真（裏面）を1枚以上撮るか、「写真なしで手入力」を選んでください。",
+      "invalidVideoUrl": "1試合分の YouTube 動画の URL を貼ってください（watch、youtu.be、/live/、/embed/、/shorts/）。チャンネル、再生リスト、他のサイトは使えません。",
+      "invalidLiveWindow": "配信の前倒し時間は 0〜180 の整数（分）で入力してください。",
+      "invalidListing": "対戦相手・会場・シーズン・大会のデータが無効か、節が 1〜99 ではありません。再読み込みしてもう一度お試しください。"
     },
     "crossSquad": "飛び級梯隊",
     "crossSquadNone": "なし",
@@ -1036,7 +1039,8 @@
       "postponed": "延期",
       "completed": "終了",
       "cancelled": "中止"
-    }
+    },
+    "durationDefaultHint": "終了時刻や長さを入れない場合、トップチームとリザーブは 150 分（ハーフタイムとアディショナルタイムの余裕を含む）、育成チームは 90 分になります。"
   },
   "assessments": {
     "title": "能力評価",
@@ -1937,5 +1941,52 @@
     "recentChecks": "最近の照合",
     "checksEmptyTitle": "まだ照合記録がありません",
     "checksEmptyBody": "毎週、数人の子どものカードを照合すれば十分です。"
+  },
+  "matchBroadcast": {
+    "title": "配信と動画",
+    "hint": "CTFA TV の試合ごとの YouTube URL を貼ってください。保存するのは動画 ID だけです。保存時に YouTube で埋め込みできるか確認しますが、結果は参考で、保存は止まりません。",
+    "liveUrl": "ライブ配信 URL",
+    "replayUrl": "見逃し配信 URL（任意。空欄なら公式サイトはライブ配信を使います）",
+    "highlightsUrl": "ハイライト URL（任意）",
+    "urlPlaceholder": "https://www.youtube.com/watch?v=…",
+    "embedEnabled": "公式サイトにプレーヤーを埋め込む（オフにすると「YouTube で見る」リンクだけ表示）",
+    "videoTitle": "動画タイトル（任意。空欄なら YouTube のタイトル）",
+    "liveWindow": "配信の前倒し時間（分、任意、0〜180。空欄なら公式サイトの既定値）",
+    "save": "配信と動画を保存",
+    "storedStatus": "埋め込みチェック：",
+    "checkedAt": "確認日時 {time}",
+    "notChecked": "未確認",
+    "checksTitle": "今回の確認結果",
+    "noVideos": "動画 URL がないため、配信と動画をクリアしました。",
+    "channelHint": "CTFA TV チャンネルの動画のはずです。サムネイルとタイトルで、この試合か確認してください。",
+    "hiddenWhileInactive": "延期・中止の試合は、公式サイトに配信と動画を表示しません。予定に戻すと表示されます。",
+    "thumbnailAlt": "{field}のサムネイル",
+    "openOnYouTube": "YouTube で開く",
+    "fields": {
+      "live": "ライブ配信",
+      "replay": "見逃し配信",
+      "highlights": "ハイライト"
+    },
+    "statuses": {
+      "ok": "埋め込み可",
+      "blocked": "埋め込み不可",
+      "not_found": "動画が見つかりません（非公開または公開前）",
+      "unknown": "確認できませんでした"
+    }
+  },
+  "matchListing": {
+    "title": "公式サイトの試合情報",
+    "hint": "対戦相手、会場、シーズン、大会、節。公式サイトの日程と試合ページで使います。ここでの会場は QR 出欠の会場ではありません。",
+    "emptyRefs": "対戦相手や公開会場のデータがまだありません。先に 2026/27 のデータを取り込んでください（docs/futuro-data-import.md）。",
+    "opponentClub": "対戦相手",
+    "publicVenue": "会場",
+    "season": "シーズン",
+    "competition": "大会",
+    "roundNo": "節",
+    "roundLabel": "節の表示名（任意）",
+    "roundLabelPlaceholder": "例：準決勝",
+    "none": "未設定",
+    "currentSeason": "{label}（今シーズン）",
+    "save": "公式サイトの試合情報を保存"
   }
 }

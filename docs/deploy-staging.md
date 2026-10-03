@@ -63,6 +63,8 @@ Match [`.env.example`](../.env.example):
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | `npx web-push generate-vapid-keys` public key. Browser subscribe only. | Required for Stage Notif push |
 | `VAPID_PRIVATE_KEY` | Matching private key. **Server-only.** Never `NEXT_PUBLIC_*`. | Required for Stage Notif push |
 | `VAPID_SUBJECT` | `mailto:staging-push@localhost` or a staging contact mailto. Not a secret key. | Recommended |
+| `SITE_REVALIDATE_URL` | Official site (preview/staging) revalidate endpoint, e.g. `https://YOUR_SITE_HOST/api/revalidate`. **Server-only.** | Optional (needed once the official site is live) |
+| `SITE_REVALIDATE_SECRET` | Same random value as the official site's `SITE_REVALIDATE_SECRET` (e.g. `openssl rand -hex 32`). **Server-only.** Never `NEXT_PUBLIC_*`, never in git. | Optional (pair with the URL) |
 
 Never add:
 
@@ -72,6 +74,20 @@ Never add:
 - VAPID **private** keys in git or in `NEXT_PUBLIC_*` (the public VAPID key may be `NEXT_PUBLIC_*`)
 - Real bank codes or account numbers
 - Vercel tokens in GitHub Actions
+
+### Official site revalidation
+
+After an admin saves anything that changes public match data (create, edit, publish/unpublish, result, cancel, restore, postpone, soft delete, roster, broadcast, listing fields), Squadbase calls the official site after the response is sent:
+
+```
+POST $SITE_REVALIDATE_URL
+Authorization: Bearer $SITE_REVALIDATE_SECRET
+Content-Type: application/json
+
+{"tags":["matches","match:<session uuid>"]}
+```
+
+Roster changes add `"squad"`. At most 20 tags; only the tags the site accepts are sent (`matches`, `match:<uuid>`, `squad`, `player:<uuid>`, `news`, `news:<slug>`, `standings`, `partners`, `clubs`, `venues`). Timeout 3 s; a failure is only logged (`notifySiteRevalidate` in the Vercel function logs) and never fails the save. If either variable is unset, the call is skipped. Code: [`lib/site/revalidate.ts`](../lib/site/revalidate.ts), [`lib/site/revalidate-notify.ts`](../lib/site/revalidate-notify.ts).
 
 `NEXT_PUBLIC_*` values are baked into the client bundle. After you change them, **Redeploy** (Deployments → ⋯ → Redeploy) so the new values appear.
 

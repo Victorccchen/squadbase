@@ -558,6 +558,102 @@ export type MatchPublication = {
   updated_by: string | null;
 };
 
+export type CompetitionKind = "league" | "cup" | "continental" | "friendly";
+export type CrestPermission = "unknown" | "granted" | "denied";
+export type VenueSurface = "natural" | "artificial" | "mixed";
+
+/** Official-site competition season (e.g. 2026/27). Admin-only table; site reads via site_* RPCs. */
+export type Season = {
+  id: string;
+  label: string;
+  starts_on: string;
+  ends_on: string;
+  is_current: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Competition = {
+  id: string;
+  slug: string;
+  name_zh: string;
+  name_ja: string | null;
+  name_en: string | null;
+  short: string | null;
+  kind: CompetitionKind;
+  organizer: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Public match venue. Not Venue (training venues with QR check-in secrets). */
+export type PublicVenue = {
+  id: string;
+  slug: string;
+  name_zh: string;
+  name_ja: string | null;
+  name_en: string | null;
+  address_zh: string | null;
+  address_en: string | null;
+  lat: number | null;
+  lng: number | null;
+  map_url: string | null;
+  transit_zh: string | null;
+  transit_ja: string | null;
+  transit_en: string | null;
+  parking_zh: string | null;
+  parking_ja: string | null;
+  parking_en: string | null;
+  accessibility_zh: string | null;
+  capacity: number | null;
+  surface: VenueSurface | null;
+  training_venue_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Club = {
+  id: string;
+  slug: string;
+  name_zh: string;
+  name_ja: string | null;
+  name_en: string | null;
+  short_zh: string | null;
+  short_en: string | null;
+  abbr: string | null;
+  crest_path: string | null;
+  crest_permission: CrestPermission;
+  home_venue_id: string | null;
+  website_url: string | null;
+  instagram_url: string | null;
+  facebook_url: string | null;
+  youtube_url: string | null;
+  is_self: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Standing = {
+  id: string;
+  season_id: string;
+  competition_id: string;
+  after_round: number;
+  club_id: string;
+  rank: number;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  goals_for: number;
+  goals_against: number;
+  points: number;
+  is_official: boolean;
+  source_url: string | null;
+  fetched_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type PlayerAssessment = {
   id: string;
   player_id: string;
@@ -702,6 +798,28 @@ export type NotificationSend = {
   failed_count: number;
   created_at: string;
   created_by: string | null;
+};
+
+/** Listing and broadcast columns (site API v1). Admin code writes them via RPCs. */
+type MatchPublicationListingWrite = {
+  opponent_club_id?: string | null;
+  public_venue_id?: string | null;
+  season_id?: string | null;
+  competition_id?: string | null;
+  round_no?: number | null;
+  round_label?: string | null;
+  live_stream_url?: string | null;
+  live_video_id?: string | null;
+  replay_url?: string | null;
+  replay_video_id?: string | null;
+  highlights_url?: string | null;
+  highlights_video_id?: string | null;
+  embed_enabled?: boolean;
+  embed_check_status?: MatchEmbedCheckStatus;
+  embed_checked_at?: string | null;
+  video_title?: string | null;
+  live_window_before_min?: number | null;
+  result_entered_at?: string | null;
 };
 
 type TimestampInsert = {
@@ -1364,7 +1482,8 @@ export type Database = {
           opponent_score?: number | null;
           result_note?: string | null;
           published_at?: string | null;
-        } & TimestampInsert;
+        } & MatchPublicationListingWrite &
+          TimestampInsert;
         Update: {
           opponent?: string | null;
           side?: MatchSide;
@@ -1376,7 +1495,7 @@ export type Database = {
           published_at?: string | null;
           updated_at?: string;
           updated_by?: string | null;
-        };
+        } & MatchPublicationListingWrite;
         Relationships: [
           {
             foreignKeyName: "match_publications_session_id_fkey";
@@ -1415,6 +1534,221 @@ export type Database = {
             columns: ["player_id"];
             isOneToOne: false;
             referencedRelation: "players";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      seasons: {
+        Row: Season;
+        Insert: {
+          id?: string;
+          label: string;
+          starts_on: string;
+          ends_on: string;
+          is_current?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          label?: string;
+          starts_on?: string;
+          ends_on?: string;
+          is_current?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      competitions: {
+        Row: Competition;
+        Insert: {
+          id?: string;
+          slug: string;
+          name_zh: string;
+          name_ja?: string | null;
+          name_en?: string | null;
+          short?: string | null;
+          kind: CompetitionKind;
+          organizer?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          slug?: string;
+          name_zh?: string;
+          name_ja?: string | null;
+          name_en?: string | null;
+          short?: string | null;
+          kind?: CompetitionKind;
+          organizer?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      public_venues: {
+        Row: PublicVenue;
+        Insert: {
+          id?: string;
+          slug: string;
+          name_zh: string;
+          name_ja?: string | null;
+          name_en?: string | null;
+          address_zh?: string | null;
+          address_en?: string | null;
+          lat?: number | null;
+          lng?: number | null;
+          map_url?: string | null;
+          transit_zh?: string | null;
+          transit_ja?: string | null;
+          transit_en?: string | null;
+          parking_zh?: string | null;
+          parking_ja?: string | null;
+          parking_en?: string | null;
+          accessibility_zh?: string | null;
+          capacity?: number | null;
+          surface?: VenueSurface | null;
+          training_venue_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          slug?: string;
+          name_zh?: string;
+          name_ja?: string | null;
+          name_en?: string | null;
+          address_zh?: string | null;
+          address_en?: string | null;
+          lat?: number | null;
+          lng?: number | null;
+          map_url?: string | null;
+          transit_zh?: string | null;
+          transit_ja?: string | null;
+          transit_en?: string | null;
+          parking_zh?: string | null;
+          parking_ja?: string | null;
+          parking_en?: string | null;
+          accessibility_zh?: string | null;
+          capacity?: number | null;
+          surface?: VenueSurface | null;
+          training_venue_id?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "public_venues_training_venue_id_fkey";
+            columns: ["training_venue_id"];
+            isOneToOne: false;
+            referencedRelation: "venues";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      clubs: {
+        Row: Club;
+        Insert: {
+          id?: string;
+          slug: string;
+          name_zh: string;
+          name_ja?: string | null;
+          name_en?: string | null;
+          short_zh?: string | null;
+          short_en?: string | null;
+          abbr?: string | null;
+          crest_path?: string | null;
+          crest_permission?: CrestPermission;
+          home_venue_id?: string | null;
+          website_url?: string | null;
+          instagram_url?: string | null;
+          facebook_url?: string | null;
+          youtube_url?: string | null;
+          is_self?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          slug?: string;
+          name_zh?: string;
+          name_ja?: string | null;
+          name_en?: string | null;
+          short_zh?: string | null;
+          short_en?: string | null;
+          abbr?: string | null;
+          crest_path?: string | null;
+          crest_permission?: CrestPermission;
+          home_venue_id?: string | null;
+          website_url?: string | null;
+          instagram_url?: string | null;
+          facebook_url?: string | null;
+          youtube_url?: string | null;
+          is_self?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "clubs_home_venue_id_fkey";
+            columns: ["home_venue_id"];
+            isOneToOne: false;
+            referencedRelation: "public_venues";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      standings: {
+        Row: Standing;
+        Insert: {
+          id?: string;
+          season_id: string;
+          competition_id: string;
+          after_round: number;
+          club_id: string;
+          rank: number;
+          played?: number;
+          won?: number;
+          drawn?: number;
+          lost?: number;
+          goals_for?: number;
+          goals_against?: number;
+          points?: number;
+          is_official?: boolean;
+          source_url?: string | null;
+          fetched_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          after_round?: number;
+          rank?: number;
+          played?: number;
+          won?: number;
+          drawn?: number;
+          lost?: number;
+          goals_for?: number;
+          goals_against?: number;
+          points?: number;
+          is_official?: boolean;
+          source_url?: string | null;
+          fetched_at?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "standings_season_id_fkey";
+            columns: ["season_id"];
+            isOneToOne: false;
+            referencedRelation: "seasons";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "standings_competition_id_fkey";
+            columns: ["competition_id"];
+            isOneToOne: false;
+            referencedRelation: "competitions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "standings_club_id_fkey";
+            columns: ["club_id"];
+            isOneToOne: false;
+            referencedRelation: "clubs";
             referencedColumns: ["id"];
           },
         ];

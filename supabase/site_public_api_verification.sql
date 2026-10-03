@@ -67,10 +67,13 @@ begin
   if v_season is null then
     raise exception 'setup failed: no current season seeded';
   end if;
-  select id into v_comp from public.competitions where slug = 'tfpl';
-  if v_comp is null then
+  if not exists (select 1 from public.competitions where slug = 'tfpl') then
     raise exception 'setup failed: tfpl competition not seeded';
   end if;
+  -- Own competition so imported TFPL standings (supabase/seeds/futuro_2026_27.sql) do not mix in.
+  insert into public.competitions (slug, name_zh, kind)
+  values ('site-verify-league', 'SITE 驗證聯賽', 'league')
+  returning id into v_comp;
   insert into public.seasons (label, starts_on, ends_on)
   values ('SITE 24/25', date '2024-08-01', date '2025-07-31')
   returning id into v_old_season;
