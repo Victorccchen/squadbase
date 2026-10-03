@@ -18,6 +18,7 @@
 | 商業 | 流量分析、媒體專區（6.9、第 11 節） |
 | 上線 | 舊 Wix 站轉址、翻譯不齊時的處理、帳號歸屬（第 11 節） |
 | 資料補齊 | 缺少的資料交給 Grok-Bot 上網蒐集，回傳格式和規則見第 14 節 |
+| 系統架構 | **官網另開新前台專案，資料庫共用 Squadbase 的 Supabase**（2026-10-03 Victor 核准）。分工見「系統架構」一節，第 13 節依專案分開列 |
 | 事實更正 | 10/25 對手是**台中磐石**；第 1、2 輪主場在**台中西屯足球場**，10/18 主場在**太原足球場**，本季主場安排待球團確認 |
 
 ---
@@ -42,6 +43,7 @@
 
 **第一階段範圍**
 - 只做**公開官網**。後台營運功能（報名、出勤、點數、繳費）暫時不對外開放，只在青訓頁留一個家長登入入口。
+- 官網是**新的前台專案**，不放在 Squadbase repo 裡；資料庫和管理後台沿用 Squadbase（見下一節）。
 
 **隱私原則（硬性規定）**
 - 公開頁面只能顯示姓名、背號、位置這類公開資訊。
@@ -59,6 +61,64 @@
 - 2026-10-03 實測：CTFA TV 的直播結束後，**同一個網址會直接變成完整重播**（例：第 1 輪「台中FUTURO vs 大同石虎」`BX5z_31ePNk`，長 2:01:25；第 2 輪「台中FUTURO vs 高雄先鋒」`2xp137k-j2c`，長 2:10:00）。
 - 抽查 3 支已結束的直播，YouTube 都回報 `playableInEmbed: true`，oEmbed 回傳 200，代表**目前允許嵌入**。
 - 直播進行中能不能嵌入，還要找一場真的直播再驗證一次（見第 9 節）。
+
+---
+
+## 系統架構：新前台專案＋共用資料庫（v3 新增）
+
+2026-10-03 決定：官網另開一個新的前台專案，資料庫和管理後台共用 Squadbase。
+
+**為什麼這樣分**
+- Squadbase 目前 56 個頁面裡有 52 個是登入後的後台（報名、點數、現金、出勤、報到）。官網放進去，只會是整個專案的一小部分，還要跟著後台一起部署。
+- 比賽、比分、名單、直播網址只輸入一次，官網和家長端都讀同一份資料。另開資料庫就要兩邊同步。
+- 官網只呼叫匿名的公開 RPC，碰不到後台資料；Squadbase 的後台怎麼改，只要公開 RPC 的格式不變，官網就不受影響。
+
+```mermaid
+flowchart LR
+  subgraph SB[Squadbase repo（現有）]
+    ADMIN[管理後台<br/>比賽・直播網址・新聞・積分榜・夥伴・名單]
+    PARENT[家長／教練端<br/>報名・出勤・點數]
+    MIG[(migrations・RLS・公開 RPC)]
+  end
+  subgraph DB[Supabase（共用）]
+    TABLES[(資料表)]
+    RPC[匿名公開 RPC<br/>list_published_matches 等]
+    STORE[(Storage<br/>公開 bucket：新聞圖、隊徽、夥伴 logo)]
+  end
+  subgraph SITE[官網 repo（新）]
+    PAGES[公開頁面<br/>首頁・比賽・一線隊・消息・觀賽・青訓・球團・夥伴]
+  end
+  ADMIN --> TABLES
+  PARENT --> TABLES
+  MIG --> TABLES
+  TABLES --> RPC
+  RPC -->|anon key，唯讀| PAGES
+  STORE -->|公開網址| PAGES
+  PAGES -->|家長登入連結| PARENT
+  PAGES -.嵌入.-> YT[(CTFA TV／YouTube)]
+```
+
+**分工**
+
+| 放在哪裡 | 內容 |
+|---|---|
+| **Squadbase repo**（現有） | 所有資料庫 migration、RLS、公開 RPC；管理後台（比賽與直播網址、新聞、積分榜、夥伴、對手、場地、球員公開資料與同意紀錄）；`media` 角色；家長和教練端 |
+| **官網 repo**（新） | 本文件第 2–6 節的所有公開頁面、首頁四種主視覺、`<MatchVideo>`、比賽狀態判斷（顯示用）、行事曆訂閱、分享圖、JSON-LD、SEO、流量分析 |
+| **Supabase**（共用） | 資料表、公開 RPC、Storage（公開 bucket 給官網用的圖片；私有 bucket 仍只給後台） |
+
+**規則（兩個專案都要遵守）**
+1. **資料庫只在 Squadbase repo 改。** 官網 repo 不放 migration，也不直接改資料表。
+2. **官網只用 anon key。** 不放 service role key，不呼叫任何 `admin_*` RPC，只讀公開 RPC 和公開 bucket。
+3. **公開 RPC 是兩邊的合約。** 改公開 RPC 的回傳欄位時，只能新增欄位；要刪除或改名，先在官網改好再改 RPC。Squadbase 的 PR 動到公開 RPC，要在說明裡標註「影響官網」。
+4. **型別自動產生。** 官網的 `database.types.ts` 用 Supabase CLI 從資料庫產生，不從 Squadbase 手動複製。
+5. **快取失效。** 後台存檔時，Squadbase 呼叫官網的 revalidate 端點（帶密鑰）讓官網快取立即更新；沒呼叫到也有短時間自動到期作為保底（13-C2）。
+6. **Squadbase 現有的公開首頁**（`/[locale]` 的 portal、`/[locale]/matches`）在官網上線後轉址到官網，不再維護兩份公開頁面。
+
+**官網專案的技術選擇**
+- Next.js（和 Squadbase 同版本，方便共用經驗）、TypeScript、next-intl（zh-Hant／ja／en）、Tailwind。
+- 部署：新的 Vercel 專案，網域指向球團的正式網域。
+- 不需要登入、不需要 PWA；以 SEO 和載入速度為優先。
+- 品牌設定（隊徽、配色、字型）從 Squadbase 的 `lib/site/site-config.ts` 搬過去，**以官網為準**；Squadbase 後台只保留自己需要的部分。
 
 ---
 
@@ -472,7 +532,7 @@ flowchart TD
 | 無法判斷是不是一線隊 | `list_published_matches` 沒有回傳 `age_band`；友誼賽也會公開 | `list_published_matches`、`get_published_match` 加回傳 `age_band`（以及第 8.2 新增的欄位）；賽程頁預設只顯示 `senior` |
 | 青訓比賽名單公開了未成年姓名 | `list_published_match_roster` 對任何已公開的比賽都回傳姓名和背號 | 只對 `age_band in ('senior','reserve')` 的比賽回傳名單；其他回傳空集合。預備隊若有未成年球員，個別排除（待確認） |
 | 直播結束時間 | v2 打算新增 `live_window_duration_min` | 改用現有的 `training_sessions.ends_at`（必填），不新增欄位 |
-| 快取無法依存檔失效 | `lib/site/portal-match-query.ts` 的 `unstable_cache` 沒有 tag，只靠 60 秒到期 | 加上 tag（例如 `published-matches`），後台存檔時讓這個 tag 失效。Next 16 的快取 API 有變，實作前先讀 `node_modules/next/dist/docs/` 的快取章節 |
+| 快取無法依存檔失效 | `lib/site/portal-match-query.ts` 的 `unstable_cache` 沒有 tag，只靠 60 秒到期 | 公開頁面搬到官網 repo 後，由官網自己的快取加 tag；Squadbase 後台存檔時呼叫官網的 revalidate 端點（13-C2）。Next 16 的快取 API 有變，實作前先讀 `node_modules/next/dist/docs/` 的快取章節 |
 | 權限太粗 | 比賽和新聞的編輯只有 admin | `app_role` 新增 `media`（5.6） |
 
 ### 8.2 要新增的資料（v3 新增）
@@ -539,6 +599,8 @@ flowchart TD
 
 ### 8.3 第一階段支援對照
 
+> 「現況」指 Squadbase repo。標示「需新做」的公開頁面、元件和 SEO 項目都在**官網 repo** 新做；資料表、RPC 和後台輸入在 **Squadbase repo** 新做（依「系統架構」一節的分工）。
+
 | 第一階段項目 | 現況 | 判定 |
 |---|---|---|
 | 賽程與結果（列表與詳情） | 已有 `/[locale]/matches`、`/[locale]/matches/[id]`，資料來自匿名 RPC `list_published_matches` | ✅ 已支援（要加一線隊篩選，8.1） |
@@ -588,6 +650,7 @@ flowchart TD
 - 測試 CTFA 賽程能不能用網址匯入；把 2026/27 的 21 場比賽建成已公開的比賽。
 - **10/11 實測直播嵌入**（第 9 節）。
 - 確認帳號歸屬、網域。
+- **建立官網 repo 和 Vercel 專案**，接上共用的 Supabase（只用 anon key），先做出首頁和比賽頁的雛形。
 
 ### 第 1 階段：MVP 官網
 - 首頁 12 個區塊（含**主視覺四種狀態**）
@@ -605,6 +668,7 @@ flowchart TD
 - 繁中全站；日文和英文做關鍵頁
 - 手機底部固定列（含 LIVE 狀態）；SEO、每場分享圖、JSON-LD
 - 流量分析；舊 Wix 站轉址
+- Squadbase 現有的公開首頁和比賽頁轉址到官網
 
 ### 第 2 階段：上線後 1–3 個月
 - 比賽事件、先發與替補、球員本季數據、完整積分榜頁
@@ -631,7 +695,8 @@ flowchart TD
 | **舊 Wix 站轉址** | 上線前列出 Wix 站所有網址（Grok-Bot 蒐集，第 14 節），每一個對應到新站的頁面，做 301 轉址；網域移轉後在 Google Search Console 登錄新站並提交 sitemap |
 | **翻譯不齊** | 日文或英文沒有翻譯的內容：顯示繁中原文，上方加一行「本頁尚未提供日本語／English 版本」。這種頁面**不宣告**該語言的 hreflang，也不列入該語言的 sitemap，避免被搜尋引擎當成重複內容 |
 | **SEO 基本** | sitemap.xml、robots.txt、每頁 title 和 description、OG 圖、JSON-LD（`SportsTeam`、`SportsEvent`、`NewsArticle`） |
-| **帳號歸屬** | 網域、Vercel、Supabase、Google Search Console、流量分析，都用**球團的帳號**開，我們以協作者身分管理。合作結束時網站仍屬於球團 |
+| **帳號歸屬** | 網域、官網的 Vercel 專案、Google Search Console、流量分析，都用**球團的帳號**開，我們以協作者身分管理。合作結束時官網仍屬於球團 |
+| **共用資料庫的歸屬** | 官網的資料來自 Squadbase 的 Supabase。要和球團談清楚：資料屬於球團；若將來球團只要官網、不再使用 Squadbase，要怎麼移交資料（匯出公開資料、或把 Supabase 專案轉給球團）。這一點寫進合約 |
 | **費用與維護範圍** | 建置費＋每月維護費；維護費寫清楚包含什麼（內容更新次數、問題回應時間、主機費是否包含） |
 | **對手隊徽許可** | 向 CTFA 或各隊確認能否在官網使用隊徽；沒有許可前用縮寫圓章 |
 | **效能** | 圖片一律經過 Next.js 圖片最佳化；首頁在手機 4G 下 LCP 目標 2.5 秒內 |
@@ -647,29 +712,49 @@ flowchart TD
 5. 主場比賽收不收費？在哪裡售票？
 6. 誰負責新聞？誰是比賽日負責人？
 7. 網域，以及現有的 Wix 站要不要轉址？
-8. 網域、Vercel、Supabase 帳號用誰的名義開？
-9. 要不要和大分三神互放連結？
-10. Futuro 有沒有自己的 YouTube 頻道，或有沒有自製精華？
-11. 球員肖像同意書由誰準備、誰保管？
+8. 網域、Vercel、Supabase 帳號用誰的名義開？官網的 GitHub repo 放在誰的帳號下？
+9. 共用資料庫的資料歸屬與日後移交方式（第 11 節），要不要寫進合約？
+10. 要不要和大分三神互放連結？
+11. Futuro 有沒有自己的 YouTube 頻道，或有沒有自製精華？
+12. 球員肖像同意書由誰準備、誰保管？
 
 ---
 
 ## 13. 給 Claude 的待展開問題
 
-1. **Schema**：依 5.1 和第 8 節，提出 migration（影片欄位、`postponed`、`clubs`、`venues`、`seasons`、`competitions`、`standings`、`publicity_consents`、`media` 角色）、RLS、RPC 修改（`match_is_publicly_visible`、`list_published_matches`、`get_published_match`、`list_published_match_roster`），以及 `database.types.ts` 的更新。
-2. **狀態判斷函式**：寫出 `getMatchBroadcastState(match, now, settings)` 的完整規格和測試案例，包括：upcoming、live_window、post_match、archived、postponed、cancelled、輸入比分後的緩衝、`ends_at` 被延長、跨日、時區（Asia/Taipei）、同時段兩場比賽、休賽期（沒有下一場）。另寫 `getHomeHeroState(matches, now, settings)` 決定首頁四種主視覺。
-3. **快取策略**：先讀 Next 16 文件確認 `unstable_cache` 和新快取 API 的現況；公開比賽的快取加 tag，存檔時讓 tag 失效；直播時段是否需要縮短快取；用戶端計時切換要怎麼避免 hydration mismatch。
-4. **`<MatchVideo>` 元件 API**：props（videoId、mode: live／replay／highlights、title、autoload、onError）、點擊才載入的外觀、錯誤偵測方式（是否使用 YouTube IFrame API 的 onError，或只用 timeout）、無障礙規格。
-5. **網址解析器**：完整的接受和拒絕清單，含測試案例（`si=`、`t=`、`feature=share`、`m.youtube.com`、`/live/`、`/shorts/`、帶 `list=` 的網址）；oEmbed 檢查要放在 Server Action 還是 API route，以及 timeout 和重試設定。
-6. **後台 UX**：「直播與影片」區塊的版面、驗證訊息文案（三語）、縮圖與標題預覽、比賽列表的狀態欄、延期操作、對手與場地選擇器、批次貼網址的需求。
-7. **首頁主視覺**：四種狀態的桌機和手機版面規格（播放器、對戰資訊條、比分、LIVE 標示、CTA），沒有照片時的排版主視覺。**等球團選定風格後再展開**。
-8. **安全與隱私**：CSP、Referrer-Policy 的設定（YouTube 嵌入需要 Referer），隱私權政策要加的第三方嵌入與流量分析文字，`media` 角色的 RLS。
-9. **一線隊公開名單**：`players` 要新增哪些公開欄位（位置、國籍、前所屬隊、簡介、公開照片路徑）；公開 RPC 怎麼結合 `publicity_consents`，確保未成年和沒有同意（或已撤回）的球員不會出現。
-10. **新聞 CMS 和夥伴資料表**：最小可行的 schema、三語欄位策略、四種新聞範本、攝影者署名、圖片存放（Supabase Storage 的公開 bucket）、後台編輯頁、夥伴點擊紀錄。
-11. **積分榜**：人工輸入的後台畫面，以及匯入 Grok-Bot 整理好的 CSV（第 14 節格式）的流程。
-12. **行事曆與分享**：`.ics` 訂閱路由（每個賽季、隊伍）、UID 規則（讓改時間能同步）、每場 OG 圖的版面、JSON-LD 範例。
-13. **資料匯入**：把 Grok-Bot 交回的 CSV（對手、場地、賽程、積分榜）匯入的腳本或後台頁，含「待確認」標記和來源欄位。
-14. **測試計畫**：10/11 實測直播嵌入的步驟清單，以及 Playwright e2e 要涵蓋的範圍（四種主視覺、延期、取消、備援、手機、三語）。
+依「系統架構」一節的分工，分成三組。原本的編號放在括號裡方便對照 v3 初稿。
+
+### 13-A｜Squadbase repo（資料庫與後台）
+
+1. **Schema**（原 1）：依 5.1 和第 8 節，提出 migration（影片欄位、`postponed`、`clubs`、`venues`、`seasons`、`competitions`、`standings`、`publicity_consents`、`media` 角色）、RLS、RPC 修改（`match_is_publicly_visible`、`list_published_matches`、`get_published_match`、`list_published_match_roster`），以及 `database.types.ts` 的更新。
+2. **公開 RPC 合約**（新）：官網需要的所有公開 RPC 清單（比賽、名單、一線隊球員、教練、新聞、夥伴、對手、場地、積分榜、site settings），每支的回傳欄位、排序、篩選參數。確認 anon 只能讀到公開資料，未成年與未同意的球員不會出現。
+3. **網址解析器與 oEmbed 檢查**（原 5）：完整的接受和拒絕清單，含測試案例（`si=`、`t=`、`feature=share`、`m.youtube.com`、`/live/`、`/shorts/`、帶 `list=` 的網址）；oEmbed 檢查放在 Server Action 還是 API route，以及 timeout 和重試設定。
+4. **後台 UX**（原 6）：「直播與影片」區塊的版面、驗證訊息文案（三語）、縮圖與標題預覽、比賽列表的狀態欄、延期操作、對手與場地選擇器、批次貼網址的需求。
+5. **`media` 角色與權限**（原 8 的一部分）：RLS、後台選單依角色顯示、兩步驟驗證。
+6. **一線隊公開資料**（原 9）：`players` 要新增哪些公開欄位（位置、國籍、前所屬隊、簡介、公開照片路徑）；公開 RPC 怎麼結合 `publicity_consents`。
+7. **新聞與夥伴後台**（原 10 的後台部分）：最小可行的 schema、三語欄位策略、四種新聞範本、攝影者署名、圖片上傳到公開 bucket、夥伴點擊紀錄的寫入方式（匿名寫入要防濫用）。
+8. **積分榜後台**（原 11）：人工輸入畫面，以及匯入 Grok-Bot 整理好的 CSV（第 14 節格式）。
+9. **資料匯入**（原 13）：Grok-Bot 交回的 CSV（對手、場地、賽程、積分榜）匯入腳本或後台頁，含「待確認」標記和來源欄位。
+10. **轉址**（新）：官網上線後，Squadbase 的 `/[locale]` portal 和 `/[locale]/matches` 轉址到官網；登入後的 `/[locale]/app` 不受影響。
+
+### 13-B｜官網 repo（新前台）
+
+1. **專案骨架**（新）：Next.js、TypeScript、next-intl（zh-Hant／ja／en）、Tailwind、Supabase anon client、型別產生指令、環境變數清單（只有公開的 URL 和 anon key，加上 revalidate 密鑰）、ESLint、單元測試、CI。
+2. **狀態判斷函式**（原 2）：`getMatchBroadcastState(match, now, settings)` 和 `getHomeHeroState(matches, now, settings)` 的完整規格和測試案例，包括 upcoming、live_window、post_match、archived、postponed、cancelled、輸入比分後的緩衝、`ends_at` 被延長、跨日、時區（Asia/Taipei）、同時段兩場比賽、休賽期。
+3. **`<MatchVideo>` 元件 API**（原 4）：props（videoId、mode: live／replay／highlights、title、autoload、onError）、點擊才載入的外觀、錯誤偵測方式（YouTube IFrame API 的 onError 或 timeout）、無障礙規格。
+4. **首頁主視覺**（原 7）：四種狀態的桌機和手機版面規格，沒有照片時的排版主視覺。**等球團選定風格後再展開**。
+5. **頁面與元件**（新）：第 2–6 節每一頁的路由、資料來源（對應 13-A2 的 RPC）、空狀態、三語文案、翻譯不齊時的處理（第 11 節）。
+6. **行事曆與分享**（原 12）：`.ics` 訂閱路由（每個賽季、隊伍）、UID 規則、每場 OG 圖的版面、JSON-LD 範例。
+7. **安全與隱私**（原 8 的前台部分）：CSP、Referrer-Policy（YouTube 嵌入需要 Referer）、隱私權政策要加的第三方嵌入與流量分析文字。
+8. **SEO 與效能**（新）：sitemap、hreflang 規則、圖片最佳化、LCP 目標、流量分析的安裝。
+9. **測試計畫**（原 14 的前台部分）：Playwright e2e 涵蓋四種主視覺、延期、取消、影片備援、手機、三語。
+
+### 13-C｜兩個專案之間
+
+1. **合約變更流程**（新）：公開 RPC 的版本管理方式；Squadbase PR 動到公開 RPC 時，怎麼確認官網不會壞（例如官網 CI 對 staging 資料庫跑型別檢查）。
+2. **快取失效**（原 3）：官網的快取策略（先讀 Next 16 文件確認新快取 API）；Squadbase 後台存檔時呼叫官網 revalidate 端點的設計（端點路徑、密鑰、要失效哪些 tag）；直播時段是否縮短快取；用戶端計時切換如何避免 hydration mismatch。
+3. **環境對應**（新）：官網的 preview 和 production 分別接哪個 Supabase（staging 或正式）；Squadbase staging 資料要怎麼準備才能在官網 preview 上看到完整畫面。
+4. **10/11 實測**（原 14 的實測部分）：直播嵌入的步驟清單。實測時官網 repo 可能還沒建好，可以先用一個獨立的測試頁。
 
 ---
 
