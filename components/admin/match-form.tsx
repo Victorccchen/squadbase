@@ -177,10 +177,11 @@ export function MatchForm({
         <input
           name="duration_minutes"
           inputMode="numeric"
-          placeholder="90"
+          placeholder="90 / 150"
           className={inputClassName}
         />
       </label>
+      <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-300">{t("durationDefaultHint")}</p>
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         {t("venue")}
         <input

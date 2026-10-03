@@ -634,7 +634,10 @@
       "paperCardRemainingInvalid": "Remaining sessions must be between 0 and the plan size.",
       "paperCardFutureDate": "Used dates cannot be in the future.",
       "paperCardTooManyDates": "A card has at most 30 used dates.",
-      "paperCardPhotosRequired": "Take at least one photo of the card (the back), or choose “Enter by hand, no AI”."
+      "paperCardPhotosRequired": "Take at least one photo of the card (the back), or choose “Enter by hand, no AI”.",
+      "invalidVideoUrl": "Paste a single-video YouTube URL (watch, youtu.be, /live/, /embed/, /shorts/). Channels, playlists, and other sites are not accepted.",
+      "invalidLiveWindow": "Live lead time must be a whole number of minutes from 0 to 180.",
+      "invalidListing": "The opponent, venue, season, or competition is not valid, or the round is not 1–99. Reload and try again."
     },
     "crossSquad": "Cross 梯隊 (playing up)",
     "crossSquadNone": "None",
@@ -1036,7 +1039,8 @@
       "postponed": "Postponed",
       "completed": "Completed",
       "cancelled": "Cancelled"
-    }
+    },
+    "durationDefaultHint": "With no end time or length, first-team and reserve matches default to 150 minutes (half-time and stoppage buffer included); youth matches default to 90."
   },
   "assessments": {
     "title": "Ability assessments",
@@ -1937,5 +1941,52 @@
     "recentChecks": "Recent checks",
     "checksEmptyTitle": "No checks yet",
     "checksEmptyBody": "A few children’s cards each week is enough."
+  },
+  "matchBroadcast": {
+    "title": "Stream and videos",
+    "hint": "Paste the CTFA TV YouTube URL for this match. Only the video ID is stored. Saving checks with YouTube whether the video can be embedded; the result is advisory and never blocks saving.",
+    "liveUrl": "Live stream URL",
+    "replayUrl": "Replay URL (optional; the official site uses the live stream if blank)",
+    "highlightsUrl": "Highlights URL (optional)",
+    "urlPlaceholder": "https://www.youtube.com/watch?v=…",
+    "embedEnabled": "Embed the player on the official site (off shows only “Watch on YouTube”)",
+    "videoTitle": "Video title (optional; YouTube’s title if blank)",
+    "liveWindow": "Live lead time in minutes (optional, 0–180; site default if blank)",
+    "save": "Save stream and videos",
+    "storedStatus": "Embed check:",
+    "checkedAt": "Checked {time}",
+    "notChecked": "Not checked yet",
+    "checksTitle": "Check results",
+    "noVideos": "No video URLs, so stream and videos were cleared.",
+    "channelHint": "These should be CTFA TV channel videos. Check the thumbnail and title to confirm it is this match.",
+    "hiddenWhileInactive": "The official site hides stream and videos while a match is postponed or cancelled. They show again after you restore it to scheduled.",
+    "thumbnailAlt": "{field} thumbnail",
+    "openOnYouTube": "Open on YouTube",
+    "fields": {
+      "live": "Live",
+      "replay": "Replay",
+      "highlights": "Highlights"
+    },
+    "statuses": {
+      "ok": "Embeddable",
+      "blocked": "Embedding not allowed",
+      "not_found": "Video not found (private or not public yet)",
+      "unknown": "Could not check"
+    }
+  },
+  "matchListing": {
+    "title": "Official site listing",
+    "hint": "Opponent, venue, season, competition, and round for the official site’s fixtures and match pages. This venue is not the QR check-in venue.",
+    "emptyRefs": "No opponent clubs or public venues yet. Import the 2026/27 data first (docs/futuro-data-import.md).",
+    "opponentClub": "Opponent club",
+    "publicVenue": "Venue",
+    "season": "Season",
+    "competition": "Competition",
+    "roundNo": "Round",
+    "roundLabel": "Round label (optional)",
+    "roundLabelPlaceholder": "e.g. Semi-final",
+    "none": "Not set",
+    "currentSeason": "{label} (current)",
+    "save": "Save official site listing"
   }
 }

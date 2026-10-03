@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { matchRpcErrorKey } from "@/lib/org/match";
 import { isCompetitionTeam } from "@/lib/org/squad-team";
 import type { ImportTeam } from "@/lib/org/import-validate";
+import { notifySiteMatchesChanged } from "@/lib/site/revalidate-notify";
 import { parsePublicScheduleHtml } from "@/lib/org/schedule-extract";
 import { fetchScheduleHtml } from "@/lib/org/torneopal-fetch";
 import {
@@ -273,6 +274,9 @@ export async function confirmTorneopalSchedule(
 
     if (created.length > 0) {
       revalidatePath("/", "layout");
+      notifySiteMatchesChanged(
+        created.flatMap((row) => (row.createdId ? [row.createdId] : [])),
+      );
     }
 
     return {
