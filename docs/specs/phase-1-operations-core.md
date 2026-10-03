@@ -418,6 +418,8 @@ tasks(
 
 ## 10. 第二階段 spec 預告（不在本文件範圍）
 
+> 已展開為 [`phase-2-line-and-engagement.md`](phase-2-line-and-engagement.md)（PR-10～PR-23）。
+
 依藍圖路線圖，建議順序：
 
 1. 邀請碼綁定、同意紀錄、隱私權政策頁（上線對外前必做）
