@@ -1,5 +1,7 @@
 # 台中 FUTURO 官網：網站架構提案 v3
 
+> **Superseded by [v4](futuro-site-architecture-v4.md)** (2026-10-03), which folds in the code review in `futuro-v3-review.md`.
+
 > 版本：v3｜2026-10-03（台北時間）
 > 用途：交給 Claude 展開細部設定（資料表、元件、後台流程、文案）。這份文件可以單獨閱讀。
 > 配套文件：
