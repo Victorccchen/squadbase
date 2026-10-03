@@ -17,7 +17,10 @@ import {
 } from "./squad-team.ts";
 import { jerseyNumberTakenOnTeam } from "./parse.ts";
 import type { OrgErrorKey } from "./errors.ts";
+import { defaultMatchDurationMinutes, DEFAULT_MATCH_DURATION_MINUTES } from "./match.ts";
+import { addMinutesToOffsetIso } from "./session-time.ts";
 import {
+  cell,
   parseCoachImportValues,
   parseMatchImportValues,
   parsePlayerImportValues,
@@ -436,13 +439,23 @@ export function previewMatchRecords(
     if (!team.ok) {
       errorKeys.push(team.errorKey);
     }
+    let draft = parsed.draft;
+    const defaultDuration = team.ok
+      ? defaultMatchDurationMinutes(team.team.age_band)
+      : DEFAULT_MATCH_DURATION_MINUTES;
+    if (!cell(record.values, "ends_at") && defaultDuration !== DEFAULT_MATCH_DURATION_MINUTES) {
+      const endsAt = addMinutesToOffsetIso(draft.startsAt, defaultDuration);
+      if (endsAt) {
+        draft = { ...draft, endsAt };
+      }
+    }
     const keys = uniqueKeys(errorKeys);
     return {
       line: record.line,
       valid: keys.length === 0,
       errorKeys: keys,
-      summary: matchSummary(parsed.draft),
-      draft: keys.length === 0 ? parsed.draft : null,
+      summary: matchSummary(draft),
+      draft: keys.length === 0 ? draft : null,
     };
   });
 }
