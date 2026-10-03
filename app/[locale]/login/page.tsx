@@ -1,8 +1,14 @@
+import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { PhoneOtpForm } from "@/components/phone-otp-form";
 import { SiteHeader } from "@/components/site-header";
 import { getPublicSupabaseEnv } from "@/lib/env";
 import { safeAppNext } from "@/lib/auth/paths";
+import { NO_INDEX_ROBOTS } from "@/lib/site/robots";
+
+export const metadata: Metadata = {
+  robots: NO_INDEX_ROBOTS,
+};
 
 type LoginPageProps = {
   searchParams: Promise<{ next?: string }>;
